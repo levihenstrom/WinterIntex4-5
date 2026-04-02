@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Intex.API.Data;
 using Microsoft.AspNetCore.Identity;
 using Intex.API.Infrastructure;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.HttpOverrides;
 using Scalar.AspNetCore;
@@ -81,14 +82,23 @@ builder.Services.Configure<IdentityOptions>(options =>
     options.Password.RequiredUniqueChars = 1;
 });
 
-// Cookie auth config
+// Cookie auth: dev uses Lax (Vite proxy → same-origin /api). Production SPA + API on different
+// registrable domains (azurestaticapps.net vs azurewebsites.net) requires None + Secure or fetch
+// won't send the session cookie and /api/auth/me stays anonymous.
+var isDev = builder.Environment.IsDevelopment();
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.Cookie.HttpOnly = true;
-    options.Cookie.SameSite = SameSiteMode.Lax;
     options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SameSite = isDev ? SameSiteMode.Lax : SameSiteMode.None;
     options.ExpireTimeSpan = TimeSpan.FromDays(7);
     options.SlidingExpiration = true;
+});
+
+builder.Services.Configure<CookieAuthenticationOptions>(IdentityConstants.ExternalScheme, options =>
+{
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SameSite = isDev ? SameSiteMode.Lax : SameSiteMode.None;
 });
 
 // CORS — endpoints must opt in with RequireCors(...) or [EnableCors] or the browser gets 200 without ACAO headers.
