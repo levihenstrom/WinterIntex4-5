@@ -104,7 +104,7 @@ public class AuthController(
 
         var signInResult = await signInManager.ExternalLoginSignInAsync(
             info.LoginProvider, info.ProviderKey,
-            isPersistent: false, bypassTwoFactor: true);
+            isPersistent: true, bypassTwoFactor: true);
 
         if (signInResult.Succeeded)
             return Redirect(BuildFrontendSuccessUrl(returnPath));
@@ -134,7 +134,7 @@ public class AuthController(
         if (!addLoginResult.Succeeded)
             return Redirect(BuildFrontendErrorUrl("Unable to associate the external login with the local account."));
 
-        await signInManager.SignInAsync(user, isPersistent: false, info.LoginProvider);
+        await signInManager.SignInAsync(user, isPersistent: true, info.LoginProvider);
         return Redirect(BuildFrontendSuccessUrl(returnPath));
     }
 
