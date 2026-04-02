@@ -1,8 +1,33 @@
 # WinterIntex4-5
 
-IS Core Winter 2026: Group 4-5
+IS Core Winter 2026: Group 4-5 — Intex (INTECH) week project.
 
-.NET 10 Web API + React (Vite/TypeScript) with ASP.NET Core Identity auth, MFA, Google OAuth, and Azure deployment.
+## What the app does today
+
+This repo is a **working auth scaffold** for a future “Netflix-like” recommendation experience (see `plan.md` for the full vision). **Domain features (catalog, ML, recommendations) are not built yet.**
+
+**Backend (`backend/Intex.API/`)**
+
+- .NET 10 Web API with **ASP.NET Core Identity** map group at `/api/auth` (register, login, MFA, password flows).
+- Custom **`AuthController`** at `/api/auth`: `me`, `providers`, Google `external-login` / `external-callback`, **`exchange-token`** and **`refresh-session`** (single-use and refresh tokens for cross-origin / mobile Safari), `logout`.
+- **Two SQLite databases**: `Identity.sqlite` (Identity + migrations applied at startup), `App.sqlite` (empty `AppDbContext` — ready for rubric models).
+- **Forwarded headers** for Azure (correct HTTPS scheme for Google OAuth).
+- **`GET /health`** — JSON health check (no auth).
+- **CORS**: `FrontendUrl` can be **semicolon- or comma-separated** multiple origins (Static Web Apps preview + production).
+- **Security**: cookie settings (dev: `SameSite=Lax`; prod: `SameSite=None` + `Secure`), `SecurityHeaders` middleware, Scalar/OpenAPI in Development.
+
+**Frontend (`frontend/`)**
+
+- Vite + React + TypeScript, Bootstrap UI.
+- **Routes**: `/`, `/login`, `/register`, `/logout`, `/mfa`, `/privacy`.
+- **`AuthContext`** + **`authAPI.ts`**: cookie session, **localStorage** session/refresh token fallback after Google OAuth (`AuthTokenExchanger` strips `?authToken=` from the URL).
+- **Cookie consent** banner + **Privacy** page (GDPR-oriented UX).
+- Production API base: **`VITE_API_BASE_URL`** or fallback constant in `src/api/IntextAPI.ts` (update when the backend URL changes).
+
+**Docs for contributors and AI agents**
+
+- **`plan.md`** — product goals, architecture ideas, Scrum/ML notes (no full rubric yet).
+- **`claude.md`** — how the codebase fits together and **where to read next** when exploring or extending the app.
 
 ---
 
@@ -1106,6 +1131,7 @@ WinterIntex4-5/
 │       │   └── AppDbContext.cs
 │       ├── Infrastructure/
 │       │   └── SecurityHeaders.cs
+│       ├── Migrations/
 │       ├── Properties/
 │       │   └── launchSettings.json
 │       ├── Program.cs
@@ -1113,24 +1139,33 @@ WinterIntex4-5/
 │       └── Intex.API.csproj
 ├── frontend/
 │   ├── src/
+│   │   ├── api/
+│   │   │   └── IntextAPI.ts          # production API URL fallback
+│   │   ├── components/
+│   │   │   └── CookieConsentBanner.tsx
 │   │   ├── context/
-│   │   │   └── AuthContext.tsx
+│   │   │   ├── AuthContext.tsx
+│   │   │   └── CookieConsentContext.tsx
 │   │   ├── lib/
 │   │   │   └── authAPI.ts
 │   │   ├── pages/
 │   │   │   ├── LoginPage.tsx
 │   │   │   ├── RegisterPage.tsx
 │   │   │   ├── LogoutPage.tsx
-│   │   │   └── ManageMFAPage.tsx
+│   │   │   ├── ManageMFAPage.tsx
+│   │   │   └── PrivacyPage.tsx
 │   │   ├── types/
 │   │   │   ├── AuthSession.ts
 │   │   │   └── TwoFactorStatus.ts
 │   │   ├── App.tsx
 │   │   └── main.tsx
+│   ├── public/
+│   │   └── staticwebapp.config.json
 │   ├── vite.config.ts
 │   └── package.json
 ├── .gitignore
 ├── plan.md
+├── claude.md
 └── README.md
 ```
 
@@ -1147,19 +1182,15 @@ cd frontend && npm run dev
 Backend: `https://localhost:5000` (Scalar API docs at `/scalar/v1`)
 Frontend: `http://localhost:3000`
 
+---
 
+## Troubleshooting: Azure App Service HTTP 500.30
 
+If the backend fails to start in Azure (`500.30 - ASP.NET Core app failed to start`), typical causes are:
 
-tried deploying backend, got this error 
+1. **SQLite file path** — Ensure `Identity.sqlite` / `App.sqlite` are included in publish output if you rely on bundled DB files, or switch to Azure SQL and set connection strings in **Configuration**.
+2. **Missing configuration** — Set `FrontendUrl`, Google OAuth secrets, and connection strings in **App Service → Configuration** (not only `appsettings.json`).
+3. **Startup exception** — In Azure Portal: **Diagnose and solve problems → Application Logs**, or enable **stdout logging** in `web.config` / logging settings to see the first exception in the pipeline.
+4. **Migrations** — This app runs `Database.MigrateAsync()` on `AuthIdentityDbContext` at startup; the process must be able to create/write the identity database file or use a server DB with valid permissions.
 
-HTTP Error 500.30 - ASP.NET Core app failed to start
-Common solutions to this issue:
-The app failed to start
-The app started but then stopped
-The app started but threw an exception during startup
-Troubleshooting steps:
-Check the system event log for error messages
-Enable logging the application process' stdout messages
-Attach a debugger to the application process and inspect
-For more guidance on diagnosing and handling these errors, visit Troubleshoot ASP.NET Core on Azure App Service and IIS.
-
+See Microsoft’s guide: [Troubleshoot ASP.NET Core on Azure App Service and IIS](https://learn.microsoft.com/en-us/troubleshoot/developer/webapps/iis-health/troubleshoot-aspnet-core-on-iis).
