@@ -99,16 +99,101 @@ export async function getExternalProviders(): Promise<
   return response.json();
 }
 
+const REFRESH_TOKEN_KEY = 'intex-refresh-token';
+const SESSION_KEY = 'intex-session';
+
+export function getStoredSession(): AuthSession | null {
+  try {
+    const raw = window.localStorage.getItem(SESSION_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as AuthSession;
+  } catch {
+    return null;
+  }
+}
+
+export function storeSession(session: AuthSession, refreshToken?: string): void {
+  window.localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  if (refreshToken) {
+    window.localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+  }
+}
+
+export function clearStoredSession(): void {
+  window.localStorage.removeItem(SESSION_KEY);
+  window.localStorage.removeItem(REFRESH_TOKEN_KEY);
+}
+
+export function getStoredRefreshToken(): string | null {
+  return window.localStorage.getItem(REFRESH_TOKEN_KEY);
+}
+
 export async function getAuthSession(): Promise<AuthSession> {
+  // First try cookie-based session (works on desktop / same-origin)
   const response = await fetch(`${apiBaseUrl}/api/auth/me`, {
     credentials: 'include',
   });
 
-  if (!response.ok) {
-    throw new Error('Unable to load auth session.');
+  if (response.ok) {
+    const session: AuthSession = await response.json();
+    if (session.isAuthenticated) {
+      return session;
+    }
   }
 
-  return response.json();
+  // Cookie didn't work (mobile Safari) — try refresh token from localStorage
+  const refreshToken = getStoredRefreshToken();
+  if (refreshToken) {
+    const refreshResponse = await fetch(`${apiBaseUrl}/api/auth/refresh-session`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken }),
+    });
+
+    if (refreshResponse.ok) {
+      return refreshResponse.json();
+    }
+
+    // Refresh token expired/invalid — clear stored session
+    clearStoredSession();
+  }
+
+  // Check localStorage as last resort (may have been stored during OAuth flow)
+  const stored = getStoredSession();
+  if (stored?.isAuthenticated) {
+    return stored;
+  }
+
+  return {
+    isAuthenticated: false,
+    userName: null,
+    email: null,
+    roles: [],
+  };
+}
+
+export async function exchangeAuthToken(token: string): Promise<AuthSession> {
+  const response = await fetch(`${apiBaseUrl}/api/auth/exchange-token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ token }),
+  });
+
+  if (!response.ok) {
+    throw new Error('Unable to complete sign-in.');
+  }
+
+  const data = await response.json();
+  const session: AuthSession = {
+    isAuthenticated: data.isAuthenticated,
+    userName: data.userName,
+    email: data.email,
+    roles: data.roles,
+  };
+
+  storeSession(session, data.refreshToken);
+  return session;
 }
 
 export async function registerUser(
@@ -175,9 +260,14 @@ export async function loginUser(
 }
 
 export async function logoutUser(): Promise<void> {
+  const refreshToken = getStoredRefreshToken();
+  clearStoredSession();
+
   const response = await fetch(`${apiBaseUrl}/api/auth/logout`, {
     method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
+    body: JSON.stringify({ refreshToken }),
   });
 
   if (!response.ok) {
