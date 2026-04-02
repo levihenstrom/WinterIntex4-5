@@ -83,8 +83,7 @@ builder.Services.Configure<IdentityOptions>(options =>
 });
 
 // Cookie auth: dev uses Lax (Vite proxy → same-origin /api). Production SPA + API on different
-// registrable domains (azurestaticapps.net vs azurewebsites.net) requires None + Secure or fetch
-// won't send the session cookie and /api/auth/me stays anonymous.
+// registrable domains (azurestaticapps.net vs azurewebsites.net) requires None + Secure.
 var isDev = builder.Environment.IsDevelopment();
 builder.Services.ConfigureApplicationCookie(options =>
 {

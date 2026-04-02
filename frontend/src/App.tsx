@@ -1,4 +1,5 @@
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Link, useSearchParams, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CookieConsentProvider } from './context/CookieConsentContext';
 import CookieConsentBanner from './components/CookieConsentBanner';
@@ -7,6 +8,7 @@ import RegisterPage from './pages/RegisterPage';
 import LogoutPage from './pages/LogoutPage';
 import ManageMFAPage from './pages/ManageMFAPage';
 import PrivacyPage from './pages/PrivacyPage';
+import { API_URL } from './api/IntextAPI';
 import './App.css';
 
 function NavBar() {
@@ -52,6 +54,37 @@ function NavBar() {
   );
 }
 
+/**
+ * After Google OAuth, the backend redirects here with ?authToken=...
+ * We immediately redirect to the backend's exchange-token endpoint as a
+ * top-level navigation so the auth cookie is set first-party (fixes mobile Safari/Chrome).
+ */
+function AuthTokenExchanger() {
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+
+  useEffect(() => {
+    const authToken = searchParams.get('authToken');
+    if (!authToken) return;
+
+    const apiBase = (import.meta.env.VITE_API_BASE_URL || API_URL).replace(/\/$/, '');
+    const exchangeUrl = new URL(`${apiBase}/api/auth/exchange-token`);
+    exchangeUrl.searchParams.set('token', authToken);
+    exchangeUrl.searchParams.set('returnPath', location.pathname);
+    window.location.replace(exchangeUrl.toString());
+  }, [searchParams, location.pathname]);
+
+  if (searchParams.get('authToken')) {
+    return (
+      <div className="container text-center mt-5">
+        <p>Completing sign-in...</p>
+      </div>
+    );
+  }
+
+  return null;
+}
+
 function HomePage() {
   const { isAuthenticated, authSession } = useAuth();
 
@@ -80,6 +113,7 @@ function App() {
     <CookieConsentProvider>
       <AuthProvider>
         <Router>
+          <AuthTokenExchanger />
           <NavBar />
           <Routes>
             <Route path="/" element={<HomePage />} />
