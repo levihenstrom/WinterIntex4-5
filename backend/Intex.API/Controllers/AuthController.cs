@@ -175,33 +175,103 @@ public class AuthController(
         return Redirect(redirectUrl);
     }
 
-    [HttpGet("exchange-token")]
-    public async Task<IActionResult> ExchangeToken(
-        [FromQuery] string token,
-        [FromQuery] string? returnPath = null)
+    /// <summary>
+    /// Frontend calls this (fetch, not redirect) with the single-use token.
+    /// Returns the session JSON so the frontend can store it in localStorage.
+    /// Also sets the Identity cookie (works on desktop; ignored on mobile Safari).
+    /// </summary>
+    [HttpPost("exchange-token")]
+    public async Task<IActionResult> ExchangeToken([FromBody] ExchangeTokenRequest request)
     {
         PurgeExpiredTokens();
 
-        if (!_pendingTokens.TryRemove(token, out var entry))
-            return Redirect(BuildFrontendErrorUrl("Invalid or expired login token. Please try again."));
+        if (string.IsNullOrWhiteSpace(request.Token))
+            return BadRequest(new { message = "Token is required." });
+
+        if (!_pendingTokens.TryRemove(request.Token, out var entry))
+            return Unauthorized(new { message = "Invalid or expired login token." });
 
         if (DateTime.UtcNow > entry.Expiry)
-            return Redirect(BuildFrontendErrorUrl("Login token has expired. Please try again."));
+            return Unauthorized(new { message = "Login token has expired." });
 
         var user = await userManager.FindByIdAsync(entry.UserId);
         if (user is null)
-            return Redirect(BuildFrontendErrorUrl("User account not found."));
+            return Unauthorized(new { message = "User account not found." });
 
+        // Set cookie (works where third-party cookies are allowed)
         await signInManager.SignInAsync(user, isPersistent: true);
-        return Redirect(BuildFrontendSuccessUrl(returnPath));
+
+        var roles = (await userManager.GetRolesAsync(user))
+            .OrderBy(r => r).ToArray();
+
+        // Return session data so frontend can store it regardless of cookie support.
+        // Also return a refreshToken the frontend can use to re-validate later.
+        var refreshToken = GenerateToken();
+        _pendingTokens[refreshToken] = (user.Id, DateTime.UtcNow.AddDays(7));
+
+        return Ok(new
+        {
+            isAuthenticated = true,
+            userName = user.UserName,
+            email = user.Email,
+            roles,
+            refreshToken
+        });
     }
+
+    /// <summary>
+    /// Frontend calls this with a stored refreshToken to re-validate the session
+    /// (e.g., on page reload when cookies aren't available).
+    /// </summary>
+    [HttpPost("refresh-session")]
+    public async Task<IActionResult> RefreshSession([FromBody] RefreshSessionRequest request)
+    {
+        PurgeExpiredTokens();
+
+        if (string.IsNullOrWhiteSpace(request.RefreshToken))
+            return Unauthorized(new { message = "Refresh token is required." });
+
+        if (!_pendingTokens.TryGetValue(request.RefreshToken, out var entry))
+            return Unauthorized(new { message = "Invalid or expired refresh token." });
+
+        if (DateTime.UtcNow > entry.Expiry)
+        {
+            _pendingTokens.TryRemove(request.RefreshToken, out _);
+            return Unauthorized(new { message = "Refresh token has expired." });
+        }
+
+        var user = await userManager.FindByIdAsync(entry.UserId);
+        if (user is null)
+            return Unauthorized(new { message = "User account not found." });
+
+        var roles = (await userManager.GetRolesAsync(user))
+            .OrderBy(r => r).ToArray();
+
+        return Ok(new
+        {
+            isAuthenticated = true,
+            userName = user.UserName,
+            email = user.Email,
+            roles
+        });
+    }
+
+    public record ExchangeTokenRequest(string Token);
+    public record RefreshSessionRequest(string RefreshToken);
 
     [HttpPost("logout")]
-    public async Task<IActionResult> Logout()
+    public async Task<IActionResult> Logout([FromBody] LogoutRequest? request = null)
     {
         await signInManager.SignOutAsync();
+
+        // Remove stored refresh token if provided
+        if (!string.IsNullOrWhiteSpace(request?.RefreshToken))
+            _pendingTokens.TryRemove(request.RefreshToken, out _);
+
         return Ok(new { message = "Logout successful." });
     }
+
+    public record LogoutRequest(string? RefreshToken);
 
     private bool IsGoogleConfigured() =>
         !string.IsNullOrWhiteSpace(configuration["Authentication:Google:ClientId"]) &&
