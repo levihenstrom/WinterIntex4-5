@@ -20,7 +20,18 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 });
 const string FrontendCorsPolicy = "FrontendClient";
 const string DefaultFrontendUrl = "http://localhost:3000";
-var frontendUrl = builder.Configuration["FrontendUrl"] ?? DefaultFrontendUrl;
+
+// Semicolon or comma separated. Browsers send an exact Origin; include preview + production SWA URLs if needed.
+static string[] ParseCorsOrigins(string? configured, string fallback)
+{
+    var raw = string.IsNullOrWhiteSpace(configured) ? fallback : configured!;
+    return raw.Split([';', ','], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+        .Select(o => o.TrimEnd('/'))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToArray();
+}
+
+var corsOrigins = ParseCorsOrigins(builder.Configuration["FrontendUrl"], DefaultFrontendUrl);
 var googleClientId = builder.Configuration["Authentication:Google:ClientId"];
 var googleClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
 
@@ -80,12 +91,12 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.SlidingExpiration = true;
 });
 
-// CORS
+// CORS — endpoints must opt in with RequireCors(...) or [EnableCors] or the browser gets 200 without ACAO headers.
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(FrontendCorsPolicy, policy =>
     {
-        policy.WithOrigins(frontendUrl)
+        policy.WithOrigins(corsOrigins)
             .AllowCredentials()
             .AllowAnyMethod()
             .AllowAnyHeader();
@@ -119,10 +130,14 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseSecurityHeaders();
-app.UseCors(FrontendCorsPolicy);
 app.UseHttpsRedirection();
+app.UseRouting();
+app.UseCors(FrontendCorsPolicy);
 app.UseAuthentication();
 app.UseAuthorization();
-app.MapControllers();
-app.MapGroup("/api/auth").MapIdentityApi<ApplicationUser>();
+
+app.MapControllers().RequireCors(FrontendCorsPolicy);
+app.MapGroup("/api/auth")
+    .RequireCors(FrontendCorsPolicy)
+    .MapIdentityApi<ApplicationUser>();
 app.Run();
