@@ -1,4 +1,6 @@
+using System.Collections.Concurrent;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -16,6 +18,11 @@ public class AuthController(
 {
     private const string DefaultFrontendUrl = "http://localhost:3000";
     private const string DefaultExternalReturnPath = "/";
+
+    // Single-use tokens for cross-site OAuth flow (mobile Safari/Chrome block third-party cookies).
+    // After Google sign-in the backend mints a token → frontend redirects back to /api/auth/exchange-token
+    // as a top-level navigation → cookie is set first-party → redirect to frontend.
+    private static readonly ConcurrentDictionary<string, (string UserId, DateTime Expiry)> _pendingTokens = new();
 
     [HttpGet("me")]
     public async Task<IActionResult> GetCurrentSession()
@@ -102,39 +109,90 @@ public class AuthController(
         if (info is null)
             return Redirect(BuildFrontendErrorUrl("External login information was unavailable."));
 
+        // Try to find an existing user for this external login
         var signInResult = await signInManager.ExternalLoginSignInAsync(
             info.LoginProvider, info.ProviderKey,
             isPersistent: true, bypassTwoFactor: true);
 
+        ApplicationUser? resolvedUser = null;
+
         if (signInResult.Succeeded)
-            return Redirect(BuildFrontendSuccessUrl(returnPath));
-
-        var email = info.Principal.FindFirstValue(ClaimTypes.Email)
-                    ?? info.Principal.FindFirstValue("email");
-
-        if (string.IsNullOrWhiteSpace(email))
-            return Redirect(BuildFrontendErrorUrl("The external provider did not return an email address."));
-
-        var user = await userManager.FindByEmailAsync(email);
-        if (user is null)
         {
-            user = new ApplicationUser
-            {
-                UserName = email,
-                Email = email,
-                EmailConfirmed = true
-            };
+            // ExternalLoginSignInAsync set a cookie on this domain, but we need
+            // the userId for the token flow. Look up by email from the provider.
+            var email2 = info.Principal.FindFirstValue(ClaimTypes.Email)
+                         ?? info.Principal.FindFirstValue("email");
+            if (!string.IsNullOrWhiteSpace(email2))
+                resolvedUser = await userManager.FindByEmailAsync(email2);
+        }
+        else
+        {
+            var email = info.Principal.FindFirstValue(ClaimTypes.Email)
+                        ?? info.Principal.FindFirstValue("email");
 
-            var createResult = await userManager.CreateAsync(user);
-            if (!createResult.Succeeded)
-                return Redirect(BuildFrontendErrorUrl("Unable to create a local account for the external login."));
+            if (string.IsNullOrWhiteSpace(email))
+                return Redirect(BuildFrontendErrorUrl("The external provider did not return an email address."));
+
+            resolvedUser = await userManager.FindByEmailAsync(email);
+            if (resolvedUser is null)
+            {
+                resolvedUser = new ApplicationUser
+                {
+                    UserName = email,
+                    Email = email,
+                    EmailConfirmed = true
+                };
+
+                var createResult = await userManager.CreateAsync(resolvedUser);
+                if (!createResult.Succeeded)
+                    return Redirect(BuildFrontendErrorUrl("Unable to create a local account for the external login."));
+            }
+
+            var addLoginResult = await userManager.AddLoginAsync(resolvedUser, info);
+            if (!addLoginResult.Succeeded)
+                return Redirect(BuildFrontendErrorUrl("Unable to associate the external login with the local account."));
         }
 
-        var addLoginResult = await userManager.AddLoginAsync(user, info);
-        if (!addLoginResult.Succeeded)
-            return Redirect(BuildFrontendErrorUrl("Unable to associate the external login with the local account."));
+        if (resolvedUser is null)
+            return Redirect(BuildFrontendErrorUrl("Unable to resolve the user account."));
 
-        await signInManager.SignInAsync(user, isPersistent: true, info.LoginProvider);
+        // Sign out any external scheme cookie (cleanup)
+        await signInManager.SignOutAsync();
+
+        // Mint a single-use token and redirect to the frontend with it.
+        // The frontend will immediately redirect to /api/auth/exchange-token (top-level navigation)
+        // which sets the Identity cookie as a first-party cookie (fixes mobile Safari/Chrome).
+        var token = GenerateToken();
+        PurgeExpiredTokens();
+        _pendingTokens[token] = (resolvedUser.Id, DateTime.UtcNow.AddMinutes(2));
+
+        var frontendUrl = configuration["FrontendUrl"] ?? DefaultFrontendUrl;
+        var callbackPath = NormalizeReturnPath(returnPath);
+        var redirectUrl = QueryHelpers.AddQueryString(
+            $"{frontendUrl.TrimEnd('/')}{callbackPath}",
+            new Dictionary<string, string?> { ["authToken"] = token });
+
+        return Redirect(redirectUrl);
+    }
+
+    [HttpGet("exchange-token")]
+    public async Task<IActionResult> ExchangeToken(
+        [FromQuery] string token,
+        [FromQuery] string? returnPath = null)
+    {
+        PurgeExpiredTokens();
+
+        if (!_pendingTokens.TryRemove(token, out var entry))
+            return Redirect(BuildFrontendErrorUrl("Invalid or expired login token. Please try again."));
+
+        if (DateTime.UtcNow > entry.Expiry)
+            return Redirect(BuildFrontendErrorUrl("Login token has expired. Please try again."));
+
+        var user = await userManager.FindByIdAsync(entry.UserId);
+        if (user is null)
+            return Redirect(BuildFrontendErrorUrl("User account not found."));
+
+        await signInManager.SignInAsync(user, isPersistent: true);
         return Redirect(BuildFrontendSuccessUrl(returnPath));
     }
 
@@ -165,5 +223,21 @@ public class AuthController(
         var frontendUrl = configuration["FrontendUrl"] ?? DefaultFrontendUrl;
         var loginUrl = $"{frontendUrl.TrimEnd('/')}/login";
         return QueryHelpers.AddQueryString(loginUrl, "externalError", errorMessage);
+    }
+
+    private static string GenerateToken()
+    {
+        return Convert.ToBase64String(RandomNumberGenerator.GetBytes(32))
+            .Replace('+', '-').Replace('/', '_').TrimEnd('=');
+    }
+
+    private static void PurgeExpiredTokens()
+    {
+        var now = DateTime.UtcNow;
+        foreach (var key in _pendingTokens.Keys)
+        {
+            if (_pendingTokens.TryGetValue(key, out var val) && now > val.Expiry)
+                _pendingTokens.TryRemove(key, out _);
+        }
     }
 }
