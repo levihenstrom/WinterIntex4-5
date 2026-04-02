@@ -82,11 +82,16 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Seed roles + admin user
+// Apply Identity migrations before seeding (required on Azure / fresh SQLite files)
 using (var scope = app.Services.CreateScope())
 {
+    var identityDb = scope.ServiceProvider.GetRequiredService<AuthIdentityDbContext>();
+    await identityDb.Database.MigrateAsync();
     await AuthIdentityGenerator.GenerateDefaultIdentityAsync(scope.ServiceProvider, app.Configuration);
 }
+
+// Simple health check — use to verify the site and runtime without auth
+app.MapGet("/health", () => Results.Json(new { status = "ok", utc = DateTime.UtcNow }));
 
 if (app.Environment.IsDevelopment())
 {

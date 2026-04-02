@@ -25,4 +25,13 @@
     <PackageReference Include="Scalar.AspNetCore" Version="2.13.18" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Bookstore.sqlite">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Identity.sqlite">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
