@@ -1,7 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { registerUser } from '../lib/authAPI';
+import {
+  buildExternalLoginUrl,
+  getExternalProviders,
+  registerUser,
+  type ExternalAuthProvider,
+} from '../lib/authAPI';
 
 function RegisterPage() {
   const navigate = useNavigate();
@@ -11,6 +16,19 @@ function RegisterPage() {
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [externalProviders, setExternalProviders] = useState<
+    ExternalAuthProvider[]
+  >([]);
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        setExternalProviders(await getExternalProviders());
+      } catch {
+        setExternalProviders([]);
+      }
+    })();
+  }, []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -35,6 +53,10 @@ function RegisterPage() {
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  function handleExternalLogin(providerName: string) {
+    window.location.assign(buildExternalLoginUrl(providerName, '/'));
   }
 
   return (
@@ -103,6 +125,25 @@ function RegisterPage() {
                   {isSubmitting ? 'Creating account...' : 'Create account'}
                 </button>
               </form>
+
+              {externalProviders.length > 0 ? (
+                <>
+                  <div className="text-center text-muted my-3">or</div>
+                  <div className="d-grid gap-2">
+                    {externalProviders.map((provider) => (
+                      <button
+                        key={provider.name}
+                        type="button"
+                        className="btn btn-outline-dark"
+                        onClick={() => handleExternalLogin(provider.name)}
+                      >
+                        Continue with {provider.displayName}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              ) : null}
+
               <p className="mt-3 mb-0">
                 Already registered? <Link to="/login">Go to login</Link>.
               </p>
