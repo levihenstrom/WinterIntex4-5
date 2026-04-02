@@ -1,14 +1,14 @@
-import { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useSearchParams, useLocation } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CookieConsentProvider } from './context/CookieConsentContext';
 import CookieConsentBanner from './components/CookieConsentBanner';
+import { exchangeAuthToken } from './lib/authAPI';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import LogoutPage from './pages/LogoutPage';
 import ManageMFAPage from './pages/ManageMFAPage';
 import PrivacyPage from './pages/PrivacyPage';
-import { API_URL } from './api/IntextAPI';
 import './App.css';
 
 function NavBar() {
@@ -56,23 +56,33 @@ function NavBar() {
 
 /**
  * After Google OAuth, the backend redirects here with ?authToken=...
- * We immediately redirect to the backend's exchange-token endpoint as a
- * top-level navigation so the auth cookie is set first-party (fixes mobile Safari/Chrome).
+ * We exchange it via fetch for session data + refresh token stored in localStorage.
+ * This avoids relying on cross-origin cookies (which mobile Safari/Chrome block).
  */
 function AuthTokenExchanger() {
-  const [searchParams] = useSearchParams();
-  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { refreshAuthState } = useAuth();
+  const navigate = useNavigate();
+  const [exchanging, setExchanging] = useState(false);
 
   useEffect(() => {
     const authToken = searchParams.get('authToken');
-    if (!authToken) return;
+    if (!authToken || exchanging) return;
 
-    const apiBase = (import.meta.env.VITE_API_BASE_URL || API_URL).replace(/\/$/, '');
-    const exchangeUrl = new URL(`${apiBase}/api/auth/exchange-token`);
-    exchangeUrl.searchParams.set('token', authToken);
-    exchangeUrl.searchParams.set('returnPath', location.pathname);
-    window.location.replace(exchangeUrl.toString());
-  }, [searchParams, location.pathname]);
+    setExchanging(true);
+
+    exchangeAuthToken(authToken)
+      .then(() => refreshAuthState())
+      .then(() => {
+        // Remove authToken from URL without a full reload
+        searchParams.delete('authToken');
+        setSearchParams(searchParams, { replace: true });
+        navigate('/', { replace: true });
+      })
+      .catch(() => {
+        navigate('/login?externalError=Unable+to+complete+sign-in.', { replace: true });
+      });
+  }, [searchParams, setSearchParams, refreshAuthState, navigate, exchanging]);
 
   if (searchParams.get('authToken')) {
     return (
