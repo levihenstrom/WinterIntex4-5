@@ -1146,3 +1146,20 @@ cd frontend && npm run dev
 
 Backend: `https://localhost:5000` (Scalar API docs at `/scalar/v1`)
 Frontend: `http://localhost:3000`
+
+
+
+
+tried deploying backend, got this error 
+
+HTTP Error 500.30 - ASP.NET Core app failed to start
+Common solutions to this issue:
+The app failed to start
+The app started but then stopped
+The app started but threw an exception during startup
+Troubleshooting steps:
+Check the system event log for error messages
+Enable logging the application process' stdout messages
+Attach a debugger to the application process and inspect
+For more guidance on diagnosing and handling these errors, visit Troubleshoot ASP.NET Core on Azure App Service and IIS.
+
