@@ -4,6 +4,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import LogoutPage from './pages/LogoutPage';
 import ManageMFAPage from './pages/ManageMFAPage';
+import PrivacyPage from './pages/PrivacyPage';
 
 function NavBar() {
   const { isAuthenticated, authSession, isLoading } = useAuth();
@@ -82,7 +83,15 @@ function App() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/logout" element={<LogoutPage />} />
           <Route path="/mfa" element={<ManageMFAPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
         </Routes>
+        <footer className="bg-dark text-light text-center py-3 mt-auto">
+          <div className="container">
+            <Link className="text-light" to="/privacy">
+              Privacy Policy
+            </Link>
+          </div>
+        </footer>
       </Router>
     </AuthProvider>
   );
