@@ -39,13 +39,28 @@ var googleClientSecret = builder.Configuration["Authentication:Google:ClientSecr
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
-// Domain data context (SQLite for now — swap to UseSqlServer for Azure SQL later)
+// Domain data context — SQLite when AppConnection uses Data Source= (local + Intex.sqlite); Azure SQL otherwise.
+// EF migrations under Migrations/AppDb target SQLite; Azure SQL deployments need a compatible migration set or SQL script.
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("AppConnection")));
+{
+    var cs = builder.Configuration.GetConnectionString("AppConnection");
+    if (string.IsNullOrWhiteSpace(cs))
+        throw new InvalidOperationException("ConnectionStrings:AppConnection is not configured.");
+    if (cs.StartsWith("Data Source=", StringComparison.OrdinalIgnoreCase))
+        options.UseSqlite(cs);
+    else
+        options.UseSqlServer(cs);
+});
 
-// Identity context (separate DB)
+// Identity context — SQLite locally, SQL Server in production (same DB as AppConnection is fine)
 builder.Services.AddDbContext<AuthIdentityDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("IdentityConnection")));
+{
+    var cs = builder.Configuration.GetConnectionString("IdentityConnection");
+    if (string.IsNullOrWhiteSpace(cs) || cs.StartsWith("Data Source=", StringComparison.OrdinalIgnoreCase))
+        options.UseSqlite(cs ?? "Data Source=Identity.sqlite");
+    else
+        options.UseSqlServer(cs);
+});
 
 // Identity API endpoints + roles
 builder.Services.AddIdentityApiEndpoints<ApplicationUser>()
@@ -114,12 +129,24 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Apply Identity migrations before seeding (required on Azure / fresh SQLite files)
+// Apply Identity + App domain migrations; optional CSV seed after migrate when DB is empty (see Intex:SeedCsvAfterMigrate).
 using (var scope = app.Services.CreateScope())
 {
-    var identityDb = scope.ServiceProvider.GetRequiredService<AuthIdentityDbContext>();
+    var sp = scope.ServiceProvider;
+    var identityDb = sp.GetRequiredService<AuthIdentityDbContext>();
     await identityDb.Database.MigrateAsync();
-    await AuthIdentityGenerator.GenerateDefaultIdentityAsync(scope.ServiceProvider, app.Configuration);
+    await AuthIdentityGenerator.GenerateDefaultIdentityAsync(sp, app.Configuration);
+
+    var appDb = sp.GetRequiredService<AppDbContext>();
+    await appDb.Database.MigrateAsync();
+
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    var seedLogger = loggerFactory.CreateLogger("Intex.Seed");
+    await IntexDevSeedRunner.SeedAfterMigrateIfEmptyAsync(
+        appDb,
+        sp.GetRequiredService<IHostEnvironment>(),
+        app.Configuration,
+        seedLogger);
 }
 
 // Simple health check — use to verify the site and runtime without auth
