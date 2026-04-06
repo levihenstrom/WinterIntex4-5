@@ -39,14 +39,17 @@ var googleClientSecret = builder.Configuration["Authentication:Google:ClientSecr
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
-// Domain data context — Azure SQL in production, SQLite locally if AppConnection not set
-var appConnection = builder.Configuration.GetConnectionString("AppConnection");
+// Domain data context — SQLite when AppConnection uses Data Source= (local + Intex.sqlite); Azure SQL otherwise.
+// EF migrations under Migrations/AppDb target SQLite; Azure SQL deployments need a compatible migration set or SQL script.
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    if (string.IsNullOrEmpty(appConnection) || appConnection.StartsWith("Data Source="))
-        options.UseSqlite(appConnection ?? "Data Source=App.sqlite");
+    var cs = builder.Configuration.GetConnectionString("AppConnection");
+    if (string.IsNullOrWhiteSpace(cs))
+        throw new InvalidOperationException("ConnectionStrings:AppConnection is not configured.");
+    if (cs.StartsWith("Data Source=", StringComparison.OrdinalIgnoreCase))
+        options.UseSqlite(cs);
     else
-        options.UseSqlServer(appConnection);
+        options.UseSqlServer(cs);
 });
 
 // Identity context (separate DB)
