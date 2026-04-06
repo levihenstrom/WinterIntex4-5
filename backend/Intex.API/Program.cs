@@ -52,9 +52,15 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         options.UseSqlServer(cs);
 });
 
-// Identity context (separate DB)
+// Identity context — SQLite locally, SQL Server in production (same DB as AppConnection is fine)
 builder.Services.AddDbContext<AuthIdentityDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("IdentityConnection")));
+{
+    var cs = builder.Configuration.GetConnectionString("IdentityConnection");
+    if (string.IsNullOrWhiteSpace(cs) || cs.StartsWith("Data Source=", StringComparison.OrdinalIgnoreCase))
+        options.UseSqlite(cs ?? "Data Source=Identity.sqlite");
+    else
+        options.UseSqlServer(cs);
+});
 
 // Identity API endpoints + roles
 builder.Services.AddIdentityApiEndpoints<ApplicationUser>()
