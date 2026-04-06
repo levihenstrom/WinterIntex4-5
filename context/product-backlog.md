@@ -381,6 +381,20 @@
 
 ---
 
+**[QA-3] End-to-end security & UX verification for demo video**
+
+- **Points:** 2
+- **Description:** Final verification pass before demo video recording. Confirm every delete action uses the confirmation modal, all security headers are present, HTTPS redirect works, and no credentials are exposed in the repo or DevTools.
+- **Acceptance Criteria:**
+  - Every delete button on every page shows `DeleteConfirmModal` before executing
+  - DevTools Network tab shows CSP, X-Content-Type-Options, X-Frame-Options, Referrer-Policy on API responses
+  - HTTP → HTTPS redirect returns 301 (verify with curl or browser)
+  - No secrets or `.sqlite` files in the repo (`git log --all -- "*.sqlite"` shows only deletions)
+  - Password registration rejects passwords under 14 characters
+  - Admin-only endpoints return 401/403 for unauthenticated/non-admin users
+
+---
+
 ## Summary
 
 
