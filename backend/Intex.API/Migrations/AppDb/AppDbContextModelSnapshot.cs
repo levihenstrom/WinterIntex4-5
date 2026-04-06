@@ -3,6 +3,7 @@ using System;
 using Intex.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -15,61 +16,67 @@ namespace Intex.API.Migrations.AppDb
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "10.0.0");
+            modelBuilder
+                .HasAnnotation("ProductVersion", "10.0.0")
+                .HasAnnotation("Relational:MaxIdentifierLength", 128);
+
+            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
             modelBuilder.Entity("Intex.API.Models.Donation", b =>
                 {
                     b.Property<int>("DonationId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("donation_id");
 
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DonationId"));
+
                     b.Property<decimal?>("Amount")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("decimal(18,2)")
                         .HasColumnName("amount");
 
                     b.Property<string>("CampaignName")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("campaign_name");
 
                     b.Property<string>("ChannelSource")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("channel_source");
 
                     b.Property<string>("CurrencyCode")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("currency_code");
 
                     b.Property<DateTime?>("DonationDate")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("datetime2")
                         .HasColumnName("donation_date");
 
                     b.Property<string>("DonationType")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("donation_type");
 
                     b.Property<decimal?>("EstimatedValue")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("decimal(18,2)")
                         .HasColumnName("estimated_value");
 
                     b.Property<string>("ImpactUnit")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("impact_unit");
 
                     b.Property<bool?>("IsRecurring")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("bit")
                         .HasColumnName("is_recurring");
 
                     b.Property<string>("Notes")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("notes");
 
                     b.Property<int?>("ReferralPostId")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("referral_post_id");
 
                     b.Property<int>("SupporterId")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("supporter_id");
 
                     b.HasKey("DonationId");
@@ -85,31 +92,33 @@ namespace Intex.API.Migrations.AppDb
                 {
                     b.Property<int>("AllocationId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("allocation_id");
 
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AllocationId"));
+
                     b.Property<DateTime?>("AllocationDate")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("datetime2")
                         .HasColumnName("allocation_date");
 
                     b.Property<string>("AllocationNotes")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("allocation_notes");
 
                     b.Property<decimal?>("AmountAllocated")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("decimal(18,2)")
                         .HasColumnName("amount_allocated");
 
                     b.Property<int>("DonationId")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("donation_id");
 
                     b.Property<string>("ProgramArea")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("program_area");
 
                     b.Property<int>("SafehouseId")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("safehouse_id");
 
                     b.HasKey("AllocationId");
@@ -125,43 +134,45 @@ namespace Intex.API.Migrations.AppDb
                 {
                     b.Property<int>("EducationRecordId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("education_record_id");
 
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("EducationRecordId"));
+
                     b.Property<decimal?>("AttendanceRate")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("decimal(18,2)")
                         .HasColumnName("attendance_rate");
 
                     b.Property<string>("CompletionStatus")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("completion_status");
 
                     b.Property<string>("EducationLevel")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("education_level");
 
                     b.Property<string>("EnrollmentStatus")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("enrollment_status");
 
                     b.Property<string>("Notes")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("notes");
 
                     b.Property<decimal?>("ProgressPercent")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("decimal(18,2)")
                         .HasColumnName("progress_percent");
 
                     b.Property<DateTime?>("RecordDate")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("datetime2")
                         .HasColumnName("record_date");
 
                     b.Property<int>("ResidentId")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("resident_id");
 
                     b.Property<string>("SchoolName")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("school_name");
 
                     b.HasKey("EducationRecordId");
@@ -175,59 +186,61 @@ namespace Intex.API.Migrations.AppDb
                 {
                     b.Property<int>("HealthRecordId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("health_record_id");
 
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("HealthRecordId"));
+
                     b.Property<decimal?>("Bmi")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("decimal(18,2)")
                         .HasColumnName("bmi");
 
                     b.Property<bool?>("DentalCheckupDone")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("bit")
                         .HasColumnName("dental_checkup_done");
 
                     b.Property<decimal?>("EnergyLevelScore")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("decimal(18,2)")
                         .HasColumnName("energy_level_score");
 
                     b.Property<decimal?>("GeneralHealthScore")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("decimal(18,2)")
                         .HasColumnName("general_health_score");
 
                     b.Property<decimal?>("HeightCm")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("decimal(18,2)")
                         .HasColumnName("height_cm");
 
                     b.Property<bool?>("MedicalCheckupDone")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("bit")
                         .HasColumnName("medical_checkup_done");
 
                     b.Property<string>("Notes")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("notes");
 
                     b.Property<decimal?>("NutritionScore")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("decimal(18,2)")
                         .HasColumnName("nutrition_score");
 
                     b.Property<bool?>("PsychologicalCheckupDone")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("bit")
                         .HasColumnName("psychological_checkup_done");
 
                     b.Property<DateTime?>("RecordDate")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("datetime2")
                         .HasColumnName("record_date");
 
                     b.Property<int>("ResidentId")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("resident_id");
 
                     b.Property<decimal?>("SleepQualityScore")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("decimal(18,2)")
                         .HasColumnName("sleep_quality_score");
 
                     b.Property<decimal?>("WeightKg")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("decimal(18,2)")
                         .HasColumnName("weight_kg");
 
                     b.HasKey("HealthRecordId");
@@ -241,59 +254,61 @@ namespace Intex.API.Migrations.AppDb
                 {
                     b.Property<int>("VisitationId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("visitation_id");
 
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("VisitationId"));
+
                     b.Property<string>("FamilyCooperationLevel")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("family_cooperation_level");
 
                     b.Property<string>("FamilyMembersPresent")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("family_members_present");
 
                     b.Property<bool?>("FollowUpNeeded")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("bit")
                         .HasColumnName("follow_up_needed");
 
                     b.Property<string>("FollowUpNotes")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("follow_up_notes");
 
                     b.Property<string>("LocationVisited")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("location_visited");
 
                     b.Property<string>("Observations")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("observations");
 
                     b.Property<string>("Purpose")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("purpose");
 
                     b.Property<int>("ResidentId")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("resident_id");
 
                     b.Property<bool?>("SafetyConcernsNoted")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("bit")
                         .HasColumnName("safety_concerns_noted");
 
                     b.Property<string>("SocialWorker")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("social_worker");
 
                     b.Property<DateTime?>("VisitDate")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("datetime2")
                         .HasColumnName("visit_date");
 
                     b.Property<string>("VisitOutcome")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("visit_outcome");
 
                     b.Property<string>("VisitType")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("visit_type");
 
                     b.HasKey("VisitationId");
@@ -307,39 +322,41 @@ namespace Intex.API.Migrations.AppDb
                 {
                     b.Property<int>("ItemId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("item_id");
 
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ItemId"));
+
                     b.Property<int>("DonationId")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("donation_id");
 
                     b.Property<decimal?>("EstimatedUnitValue")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("decimal(18,2)")
                         .HasColumnName("estimated_unit_value");
 
                     b.Property<string>("IntendedUse")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("intended_use");
 
                     b.Property<string>("ItemCategory")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("item_category");
 
                     b.Property<string>("ItemName")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("item_name");
 
                     b.Property<int?>("Quantity")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("quantity");
 
                     b.Property<string>("ReceivedCondition")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("received_condition");
 
                     b.Property<string>("UnitOfMeasure")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("unit_of_measure");
 
                     b.HasKey("ItemId");
@@ -353,51 +370,53 @@ namespace Intex.API.Migrations.AppDb
                 {
                     b.Property<int>("IncidentId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("incident_id");
 
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IncidentId"));
+
                     b.Property<string>("Description")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("description");
 
                     b.Property<bool?>("FollowUpRequired")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("bit")
                         .HasColumnName("follow_up_required");
 
                     b.Property<DateTime?>("IncidentDate")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("datetime2")
                         .HasColumnName("incident_date");
 
                     b.Property<string>("IncidentType")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("incident_type");
 
                     b.Property<string>("ReportedBy")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("reported_by");
 
                     b.Property<int>("ResidentId")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("resident_id");
 
                     b.Property<DateTime?>("ResolutionDate")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("datetime2")
                         .HasColumnName("resolution_date");
 
                     b.Property<bool?>("Resolved")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("bit")
                         .HasColumnName("resolved");
 
                     b.Property<string>("ResponseTaken")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("response_taken");
 
                     b.Property<int>("SafehouseId")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("safehouse_id");
 
                     b.Property<string>("Severity")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("severity");
 
                     b.HasKey("IncidentId");
@@ -413,47 +432,49 @@ namespace Intex.API.Migrations.AppDb
                 {
                     b.Property<int>("PlanId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("plan_id");
 
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PlanId"));
+
                     b.Property<DateTime?>("CaseConferenceDate")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("datetime2")
                         .HasColumnName("case_conference_date");
 
                     b.Property<DateTime?>("CreatedAt")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("datetime2")
                         .HasColumnName("created_at");
 
                     b.Property<string>("PlanCategory")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("plan_category");
 
                     b.Property<string>("PlanDescription")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("plan_description");
 
                     b.Property<int>("ResidentId")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("resident_id");
 
                     b.Property<string>("ServicesProvided")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("services_provided");
 
                     b.Property<string>("Status")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("status");
 
                     b.Property<DateTime?>("TargetDate")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("datetime2")
                         .HasColumnName("target_date");
 
                     b.Property<decimal?>("TargetValue")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("decimal(18,2)")
                         .HasColumnName("target_value");
 
                     b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("datetime2")
                         .HasColumnName("updated_at");
 
                     b.HasKey("PlanId");
@@ -467,51 +488,53 @@ namespace Intex.API.Migrations.AppDb
                 {
                     b.Property<int>("PartnerId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("partner_id");
 
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PartnerId"));
+
                     b.Property<string>("ContactName")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("contact_name");
 
                     b.Property<string>("Email")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("email");
 
                     b.Property<DateTime?>("EndDate")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("datetime2")
                         .HasColumnName("end_date");
 
                     b.Property<string>("Notes")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("notes");
 
                     b.Property<string>("PartnerName")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("partner_name");
 
                     b.Property<string>("PartnerType")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("partner_type");
 
                     b.Property<string>("Phone")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("phone");
 
                     b.Property<string>("Region")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("region");
 
                     b.Property<string>("RoleType")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("role_type");
 
                     b.Property<DateTime?>("StartDate")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("datetime2")
                         .HasColumnName("start_date");
 
                     b.Property<string>("Status")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("status");
 
                     b.HasKey("PartnerId");
@@ -523,39 +546,41 @@ namespace Intex.API.Migrations.AppDb
                 {
                     b.Property<int>("AssignmentId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("assignment_id");
 
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AssignmentId"));
+
                     b.Property<DateTime?>("AssignmentEnd")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("datetime2")
                         .HasColumnName("assignment_end");
 
                     b.Property<DateTime?>("AssignmentStart")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("datetime2")
                         .HasColumnName("assignment_start");
 
                     b.Property<bool>("IsPrimary")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("bit")
                         .HasColumnName("is_primary");
 
                     b.Property<int>("PartnerId")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("partner_id");
 
                     b.Property<string>("ProgramArea")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("program_area");
 
                     b.Property<string>("ResponsibilityNotes")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("responsibility_notes");
 
                     b.Property<int?>("SafehouseId")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("safehouse_id");
 
                     b.Property<string>("Status")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("status");
 
                     b.HasKey("AssignmentId");
@@ -571,63 +596,65 @@ namespace Intex.API.Migrations.AppDb
                 {
                     b.Property<int>("RecordingId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("recording_id");
 
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RecordingId"));
+
                     b.Property<bool?>("ConcernsFlagged")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("bit")
                         .HasColumnName("concerns_flagged");
 
                     b.Property<string>("EmotionalStateEnd")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("emotional_state_end");
 
                     b.Property<string>("EmotionalStateObserved")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("emotional_state_observed");
 
                     b.Property<string>("FollowUpActions")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("follow_up_actions");
 
                     b.Property<string>("InterventionsApplied")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("interventions_applied");
 
                     b.Property<string>("NotesRestricted")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("notes_restricted");
 
                     b.Property<bool?>("ProgressNoted")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("bit")
                         .HasColumnName("progress_noted");
 
                     b.Property<bool?>("ReferralMade")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("bit")
                         .HasColumnName("referral_made");
 
                     b.Property<int>("ResidentId")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("resident_id");
 
                     b.Property<DateTime?>("SessionDate")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("datetime2")
                         .HasColumnName("session_date");
 
                     b.Property<int?>("SessionDurationMinutes")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("session_duration_minutes");
 
                     b.Property<string>("SessionNarrative")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("session_narrative");
 
                     b.Property<string>("SessionType")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("session_type");
 
                     b.Property<string>("SocialWorker")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("social_worker");
 
                     b.HasKey("RecordingId");
@@ -641,31 +668,33 @@ namespace Intex.API.Migrations.AppDb
                 {
                     b.Property<int>("SnapshotId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("snapshot_id");
 
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SnapshotId"));
+
                     b.Property<string>("Headline")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("headline");
 
                     b.Property<bool?>("IsPublished")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("bit")
                         .HasColumnName("is_published");
 
                     b.Property<string>("MetricPayloadJson")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("metric_payload_json");
 
                     b.Property<DateTime?>("PublishedAt")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("datetime2")
                         .HasColumnName("published_at");
 
                     b.Property<DateTime?>("SnapshotDate")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("datetime2")
                         .HasColumnName("snapshot_date");
 
                     b.Property<string>("SummaryText")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("summary_text");
 
                     b.HasKey("SnapshotId");
@@ -677,199 +706,201 @@ namespace Intex.API.Migrations.AppDb
                 {
                     b.Property<int>("ResidentId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("resident_id");
 
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ResidentId"));
+
                     b.Property<string>("AgeUponAdmission")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("age_upon_admission");
 
                     b.Property<string>("AssignedSocialWorker")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("assigned_social_worker");
 
                     b.Property<string>("BirthStatus")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("birth_status");
 
                     b.Property<string>("CaseCategory")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("case_category");
 
                     b.Property<string>("CaseControlNo")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("case_control_no");
 
                     b.Property<string>("CaseStatus")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("case_status");
 
                     b.Property<DateTime?>("CreatedAt")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("datetime2")
                         .HasColumnName("created_at");
 
                     b.Property<string>("CurrentRiskLevel")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("current_risk_level");
 
                     b.Property<DateTime?>("DateCaseStudyPrepared")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("datetime2")
                         .HasColumnName("date_case_study_prepared");
 
                     b.Property<DateTime?>("DateClosed")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("datetime2")
                         .HasColumnName("date_closed");
 
                     b.Property<DateTime?>("DateColbObtained")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("datetime2")
                         .HasColumnName("date_colb_obtained");
 
                     b.Property<DateTime?>("DateColbRegistered")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("datetime2")
                         .HasColumnName("date_colb_registered");
 
                     b.Property<DateTime?>("DateEnrolled")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("datetime2")
                         .HasColumnName("date_enrolled");
 
                     b.Property<DateTime?>("DateOfAdmission")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("datetime2")
                         .HasColumnName("date_of_admission");
 
                     b.Property<DateTime?>("DateOfBirth")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("datetime2")
                         .HasColumnName("date_of_birth");
 
                     b.Property<bool?>("FamilyIndigenous")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("bit")
                         .HasColumnName("family_indigenous");
 
                     b.Property<bool?>("FamilyInformalSettler")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("bit")
                         .HasColumnName("family_informal_settler");
 
                     b.Property<bool?>("FamilyIs4ps")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("bit")
                         .HasColumnName("family_is_4ps");
 
                     b.Property<bool?>("FamilyParentPwd")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("bit")
                         .HasColumnName("family_parent_pwd");
 
                     b.Property<bool?>("FamilySoloParent")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("bit")
                         .HasColumnName("family_solo_parent");
 
                     b.Property<bool?>("HasSpecialNeeds")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("bit")
                         .HasColumnName("has_special_needs");
 
                     b.Property<string>("InitialCaseAssessment")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("initial_case_assessment");
 
                     b.Property<string>("InitialRiskLevel")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("initial_risk_level");
 
                     b.Property<string>("InternalCode")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("internal_code");
 
                     b.Property<bool?>("IsPwd")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("bit")
                         .HasColumnName("is_pwd");
 
                     b.Property<string>("LengthOfStay")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("length_of_stay");
 
                     b.Property<string>("NotesRestricted")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("notes_restricted");
 
                     b.Property<string>("PlaceOfBirth")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("place_of_birth");
 
                     b.Property<string>("PresentAge")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("present_age");
 
                     b.Property<string>("PwdType")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("pwd_type");
 
                     b.Property<string>("ReferralSource")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("referral_source");
 
                     b.Property<string>("ReferringAgencyPerson")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("referring_agency_person");
 
                     b.Property<string>("ReintegrationStatus")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("reintegration_status");
 
                     b.Property<string>("ReintegrationType")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("reintegration_type");
 
                     b.Property<string>("Religion")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("religion");
 
                     b.Property<int>("SafehouseId")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("safehouse_id");
 
                     b.Property<string>("Sex")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("sex");
 
                     b.Property<string>("SpecialNeedsDiagnosis")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("special_needs_diagnosis");
 
                     b.Property<bool?>("SubCatAtRisk")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("bit")
                         .HasColumnName("sub_cat_at_risk");
 
                     b.Property<bool?>("SubCatChildLabor")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("bit")
                         .HasColumnName("sub_cat_child_labor");
 
                     b.Property<bool?>("SubCatChildWithHiv")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("bit")
                         .HasColumnName("sub_cat_child_with_hiv");
 
                     b.Property<bool?>("SubCatCicl")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("bit")
                         .HasColumnName("sub_cat_cicl");
 
                     b.Property<bool?>("SubCatOrphaned")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("bit")
                         .HasColumnName("sub_cat_orphaned");
 
                     b.Property<bool?>("SubCatOsaec")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("bit")
                         .HasColumnName("sub_cat_osaec");
 
                     b.Property<bool?>("SubCatPhysicalAbuse")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("bit")
                         .HasColumnName("sub_cat_physical_abuse");
 
                     b.Property<bool?>("SubCatSexualAbuse")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("bit")
                         .HasColumnName("sub_cat_sexual_abuse");
 
                     b.Property<bool?>("SubCatStreetChild")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("bit")
                         .HasColumnName("sub_cat_street_child");
 
                     b.Property<bool?>("SubCatTrafficked")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("bit")
                         .HasColumnName("sub_cat_trafficked");
 
                     b.HasKey("ResidentId");
@@ -883,57 +914,59 @@ namespace Intex.API.Migrations.AppDb
                 {
                     b.Property<int>("SafehouseId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("safehouse_id");
 
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SafehouseId"));
+
                     b.Property<int?>("CapacityGirls")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("capacity_girls");
 
                     b.Property<int?>("CapacityStaff")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("capacity_staff");
 
                     b.Property<string>("City")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("city");
 
                     b.Property<string>("Country")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("country");
 
                     b.Property<int?>("CurrentOccupancy")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("current_occupancy");
 
                     b.Property<string>("Name")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("name");
 
                     b.Property<string>("Notes")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("notes");
 
                     b.Property<DateTime?>("OpenDate")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("datetime2")
                         .HasColumnName("open_date");
 
                     b.Property<string>("Province")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("province");
 
                     b.Property<string>("Region")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("region");
 
                     b.Property<string>("SafehouseCode")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(50)")
                         .HasColumnName("safehouse_code");
 
                     b.Property<string>("Status")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("status");
 
                     b.HasKey("SafehouseId");
@@ -945,47 +978,49 @@ namespace Intex.API.Migrations.AppDb
                 {
                     b.Property<int>("MetricId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("metric_id");
 
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("MetricId"));
+
                     b.Property<int?>("ActiveResidents")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("active_residents");
 
                     b.Property<decimal?>("AvgEducationProgress")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("decimal(18,2)")
                         .HasColumnName("avg_education_progress");
 
                     b.Property<decimal?>("AvgHealthScore")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("decimal(18,2)")
                         .HasColumnName("avg_health_score");
 
                     b.Property<int?>("HomeVisitationCount")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("home_visitation_count");
 
                     b.Property<int?>("IncidentCount")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("incident_count");
 
                     b.Property<DateTime?>("MonthEnd")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("datetime2")
                         .HasColumnName("month_end");
 
                     b.Property<DateTime?>("MonthStart")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("datetime2")
                         .HasColumnName("month_start");
 
                     b.Property<string>("Notes")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("notes");
 
                     b.Property<int?>("ProcessRecordingCount")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("process_recording_count");
 
                     b.Property<int>("SafehouseId")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("safehouse_id");
 
                     b.HasKey("MetricId");
@@ -999,159 +1034,161 @@ namespace Intex.API.Migrations.AppDb
                 {
                     b.Property<int>("PostId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("post_id");
 
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PostId"));
+
                     b.Property<int?>("AvgViewDurationSeconds")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("avg_view_duration_seconds");
 
                     b.Property<decimal?>("BoostBudgetPhp")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("decimal(18,2)")
                         .HasColumnName("boost_budget_php");
 
                     b.Property<string>("CallToActionType")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("call_to_action_type");
 
                     b.Property<string>("CampaignName")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("campaign_name");
 
                     b.Property<string>("Caption")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("caption");
 
                     b.Property<int?>("CaptionLength")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("caption_length");
 
                     b.Property<int?>("ClickThroughs")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("click_throughs");
 
                     b.Property<int?>("Comments")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("comments");
 
                     b.Property<string>("ContentTopic")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("content_topic");
 
                     b.Property<DateTime?>("CreatedAt")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("datetime2")
                         .HasColumnName("created_at");
 
                     b.Property<string>("DayOfWeek")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("day_of_week");
 
                     b.Property<int?>("DonationReferrals")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("donation_referrals");
 
                     b.Property<decimal?>("EngagementRate")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("decimal(18,2)")
                         .HasColumnName("engagement_rate");
 
                     b.Property<decimal?>("EstimatedDonationValuePhp")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("decimal(18,2)")
                         .HasColumnName("estimated_donation_value_php");
 
                     b.Property<bool?>("FeaturesResidentStory")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("bit")
                         .HasColumnName("features_resident_story");
 
                     b.Property<int?>("FollowerCountAtPost")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("follower_count_at_post");
 
                     b.Property<decimal?>("Forwards")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("decimal(18,2)")
                         .HasColumnName("forwards");
 
                     b.Property<bool?>("HasCallToAction")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("bit")
                         .HasColumnName("has_call_to_action");
 
                     b.Property<string>("Hashtags")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("hashtags");
 
                     b.Property<int?>("Impressions")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("impressions");
 
                     b.Property<bool?>("IsBoosted")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("bit")
                         .HasColumnName("is_boosted");
 
                     b.Property<int?>("Likes")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("likes");
 
                     b.Property<string>("MediaType")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("media_type");
 
                     b.Property<int?>("MentionsCount")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("mentions_count");
 
                     b.Property<int?>("NumHashtags")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("num_hashtags");
 
                     b.Property<string>("Platform")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("platform");
 
                     b.Property<string>("PlatformPostId")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("platform_post_id");
 
                     b.Property<int?>("PostHour")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("post_hour");
 
                     b.Property<string>("PostType")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("post_type");
 
                     b.Property<string>("PostUrl")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("post_url");
 
                     b.Property<int?>("ProfileVisits")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("profile_visits");
 
                     b.Property<int?>("Reach")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("reach");
 
                     b.Property<int?>("Saves")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("saves");
 
                     b.Property<string>("SentimentTone")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("sentiment_tone");
 
                     b.Property<int?>("Shares")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("shares");
 
                     b.Property<int?>("SubscriberCountAtPost")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("subscriber_count_at_post");
 
                     b.Property<int?>("VideoViews")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("video_views");
 
                     b.Property<int?>("WatchTimeSeconds")
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("watch_time_seconds");
 
                     b.HasKey("PostId");
@@ -1163,63 +1200,65 @@ namespace Intex.API.Migrations.AppDb
                 {
                     b.Property<int>("SupporterId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasColumnName("supporter_id");
 
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SupporterId"));
+
                     b.Property<string>("AcquisitionChannel")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("acquisition_channel");
 
                     b.Property<string>("Country")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("country");
 
                     b.Property<DateTime?>("CreatedAt")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("datetime2")
                         .HasColumnName("created_at");
 
                     b.Property<string>("DisplayName")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("display_name");
 
                     b.Property<string>("Email")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("email");
 
                     b.Property<DateTime?>("FirstDonationDate")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("datetime2")
                         .HasColumnName("first_donation_date");
 
                     b.Property<string>("FirstName")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("first_name");
 
                     b.Property<string>("LastName")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("last_name");
 
                     b.Property<string>("OrganizationName")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("organization_name");
 
                     b.Property<string>("Phone")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("phone");
 
                     b.Property<string>("Region")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("region");
 
                     b.Property<string>("RelationshipType")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("relationship_type");
 
                     b.Property<string>("Status")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("status");
 
                     b.Property<string>("SupporterType")
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("supporter_type");
 
                     b.HasKey("SupporterId");
