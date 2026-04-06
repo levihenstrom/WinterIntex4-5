@@ -1,0 +1,403 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans)}
+.wrap{padding:1rem 0}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1.25rem}
+.tab{padding:6px 14px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);font-size:13px;font-weight:500;cursor:pointer;background:var(--color-background-primary);color:var(--color-text-secondary);transition:all .15s}
+.tab.active{background:var(--color-background-tertiary);color:var(--color-text-primary);border-color:var(--color-border-primary)}
+.progress-bar-wrap{background:var(--color-background-secondary);border-radius:999px;height:8px;overflow:hidden;margin-bottom:1.5rem}
+.progress-bar{height:100%;border-radius:999px;transition:width .3s;background:#1D9E75}
+.progress-label{font-size:13px;color:var(--color-text-secondary);margin-bottom:6px}
+.section{margin-bottom:1.25rem}
+.section-title{font-size:14px;font-weight:500;color:var(--color-text-secondary);margin-bottom:8px;padding:4px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
+.item{display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border-radius:var(--border-radius-md);cursor:pointer;transition:background .1s;border:0.5px solid transparent}
+.item:hover{background:var(--color-background-secondary)}
+.item.checked{opacity:.65}
+.cb{width:18px;height:18px;border-radius:4px;border:1.5px solid var(--color-border-secondary);flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:all .15s;background:var(--color-background-primary)}
+.item.checked .cb{background:#1D9E75;border-color:#1D9E75}
+.checkmark{display:none;color:#fff;font-size:12px;line-height:1}
+.item.checked .checkmark{display:block}
+.label{font-size:14px;color:var(--color-text-primary);line-height:1.45}
+.item.checked .label{text-decoration:line-through;color:var(--color-text-tertiary)}
+.tab-content{display:none}
+.tab-content.active{display:block}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-bottom:1.25rem}
+.stat{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 12px;text-align:center}
+.stat-n{font-size:22px;font-weight:500}
+.stat-l{font-size:12px;color:var(--color-text-secondary);margin-top:2px}
+.cls-header{font-size:15px;font-weight:500;color:var(--color-text-primary);margin:1.5rem 0 0.75rem;padding-bottom:6px;border-bottom:0.5px solid var(--color-border-secondary)}
+</style>
+<div class="wrap">
+  <div class="tabs" id="tabs">
+    <div class="tab active" onclick="switchTab('all')">All</div>
+    <div class="tab" onclick="switchTab('401')">IS 401 – PM</div>
+    <div class="tab" onclick="switchTab('413')">IS 413 – Dev</div>
+    <div class="tab" onclick="switchTab('414')">IS 414 – Security</div>
+    <div class="tab" onclick="switchTab('455')">IS 455 – ML</div>
+    <div class="tab" onclick="switchTab('final')">Final Submission</div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="stat-n" id="stat-total">0</div><div class="stat-l">Total</div></div>
+    <div class="stat"><div class="stat-n" id="stat-done" style="color:#1D9E75">0</div><div class="stat-l">Done</div></div>
+    <div class="stat"><div class="stat-n" id="stat-pct" style="color:#1D9E75">0%</div><div class="stat-l">Progress</div></div>
+  </div>
+
+  <p class="progress-label" id="prog-label">0 of 0 completed</p>
+  <div class="progress-bar-wrap"><div class="progress-bar" id="progress-bar" style="width:0%"></div></div>
+
+  <div id="tab-all" class="tab-content active"></div>
+  <div id="tab-401" class="tab-content"></div>
+  <div id="tab-413" class="tab-content"></div>
+  <div id="tab-414" class="tab-content"></div>
+  <div id="tab-455" class="tab-content"></div>
+  <div id="tab-final" class="tab-content"></div>
+</div>
+
+<script>
+const data = {
+  "401": {
+    label: "IS 401 – Project Management & Systems Design",
+    sections: [
+      {
+        title: "Monday — Requirements (6.5 pts)",
+        items: [
+          {text:"Assign a Scrum Master and a Product Owner"},
+          {text:"Create 2 customer personas — justify why these are the most important users to solve for"},
+          {text:"Journey map: key steps users take today + their pain points"},
+          {text:"Clear problem statement"},
+          {text:"MoSCoW table: all requirements + at least 5 nice-to-haves + 1 feature you chose NOT to build (with justification)"},
+          {text:"Product backlog: product goal + at least 12 backlog cards"},
+          {text:"Sprint 'Monday' backlog: sprint goal + at least 8 cards with point estimates and exactly 1 person assigned each"},
+          {text:"Screenshot of sprint backlog BEFORE starting Monday work"},
+          {text:"Burndown chart set up to track progress all week"},
+          {text:"Figma wireframes: 3 most important screens in Desktop view"},
+        ]
+      },
+      {
+        title: "Tuesday — Design (4 pts)",
+        items: [
+          {text:"Sprint 'Tuesday' backlog: sprint goal + at least 8 cards with point estimates and exactly 1 person assigned each"},
+          {text:"Screenshot of sprint backlog BEFORE starting Tuesday work"},
+          {text:"9 screenshots of 3 different AI-generated UI designs (3 screenshots each)"},
+          {text:"5 questions asked to AI about each of the 3 designs (15 total) with 1–2 sentence summaries of takeaways per design"},
+          {text:"Design decision: which UI was chosen + short justification paragraph + 3 changes made to AI output"},
+          {text:"Tech stack diagram: logos for frontend, backend, and database"},
+        ]
+      },
+      {
+        title: "Wednesday — One working page (4.5 pts)",
+        items: [
+          {text:"Sprint 'Wednesday' backlog: sprint goal + at least 8 cards with point estimates and exactly 1 person assigned each"},
+          {text:"Screenshot of sprint backlog BEFORE starting Wednesday work"},
+          {text:"Screenshots of at least 5 pages in both desktop AND mobile views"},
+          {text:"One page deployed to the cloud that persists data in the database"},
+          {text:"User feedback: show site to a real person matching the target persona, observe them, write down 5 specific changes you plan to make"},
+          {text:"Up-to-date burndown chart"},
+        ]
+      },
+      {
+        title: "Thursday — Iterate (5 pts)",
+        items: [
+          {text:"Sprint 'Thursday' backlog: sprint goal + at least 8 cards with point estimates and exactly 1 person assigned each"},
+          {text:"Screenshot of sprint backlog BEFORE starting Thursday work"},
+          {text:"OKR metric: track and display 1 meaningful metric in the app + explain why it's the most important measure of success"},
+          {text:"Lighthouse accessibility score ≥ 90% on EVERY page"},
+          {text:"Responsiveness: every page resizes correctly for desktop and mobile"},
+          {text:"Retrospective: each person writes 2 things going well, 2 things to improve, and their greatest personal contribution"},
+          {text:"Team reflection: how well does your solution solve the customer problem you set out to improve"},
+        ]
+      }
+    ]
+  },
+  "413": {
+    label: "IS 413 – Enterprise Application Development",
+    sections: [
+      {
+        title: "Public pages (unauthenticated users)",
+        items: [
+          {text:"Home / Landing Page: modern, professional, clear calls to action"},
+          {text:"Impact / Donor-Facing Dashboard: aggregated, anonymized impact data visualized clearly"},
+          {text:"Login Page: username/password authentication with validation and error handling"},
+          {text:"Privacy Policy + Cookie Consent: GDPR-compliant policy and cookie notification"},
+        ]
+      },
+      {
+        title: "Admin / Staff portal (authenticated users only)",
+        items: [
+          {text:"Admin Dashboard: high-level overview — active residents, recent donations, upcoming case conferences, progress summaries"},
+          {text:"Donors & Contributions: view/create/manage supporter profiles (type & status), all contribution types, donation history, allocation across safehouses and program areas"},
+          {text:"Caseload Inventory: full resident profiles — demographics, case category & sub-categories, disability info, family socio-demographic profile, admission details, referral info, assigned social workers, reintegration tracking. Filtering and searching."},
+          {text:"Process Recording: forms for dated counseling session notes — session date, social worker, type, emotional state (start & end), narrative, interventions, follow-up actions. Full chronological history per resident."},
+          {text:"Home Visitation & Case Conferences: log visits (type, home observations, family cooperation, safety concerns, follow-up). View case conference history and upcoming conferences per resident."},
+          {text:"Reports & Analytics: donation trends, resident outcome metrics, safehouse comparisons, reintegration success rates. Aligned with Annual Accomplishment Report format."},
+        ]
+      },
+      {
+        title: "Technical requirements",
+        items: [
+          {text:"Backend: .NET 10 / C#"},
+          {text:"Frontend: React / TypeScript (Vite)"},
+          {text:"Database: Azure SQL, MySQL, or PostgreSQL"},
+          {text:"App AND database both deployed to the cloud"},
+          {text:"Data validation and error handling — site is robust and reliable"},
+          {text:"Pagination implemented"},
+          {text:"Titles, icons, logo, consistent look and feel throughout"},
+          {text:"Additional pages as needed for security, social media, accessibility, or partner features"},
+        ]
+      }
+    ]
+  },
+  "414": {
+    label: "IS 414 – Security",
+    sections: [
+      {
+        title: "Confidentiality / Encryption (1.5 pts)",
+        items: [
+          {text:"HTTPS for all public connections with valid TLS certificate (1 pt)"},
+          {text:"Redirect HTTP traffic to HTTPS (0.5 pt)"},
+        ]
+      },
+      {
+        title: "Authentication (5 pts)",
+        items: [
+          {text:"Username/password authentication using ASP.NET Identity (3 pts)"},
+          {text:"Unauthenticated users can browse the home page and other public pages"},
+          {text:"Authenticated users can access the admin portal pages"},
+          {text:"Password policy configured stricter than ASP.NET Identity defaults (as taught in class) (1 pt)"},
+          {text:"All API endpoints have appropriate authentication/authorization levels (1 pt)"},
+        ]
+      },
+      {
+        title: "Role-Based Access Control — RBAC (1.5 pts)",
+        items: [
+          {text:"Only admin users can add, modify, or delete data (CUD operations + endpoints)"},
+          {text:"Donor users can view their donation history and impact of their donations"},
+          {text:"Unauthenticated users (no role) can only see public pages"},
+        ]
+      },
+      {
+        title: "Integrity (1 pt)",
+        items: [
+          {text:"Data can only be changed or deleted by authorized, authenticated users"},
+          {text:"Confirmation required before deleting any data"},
+        ]
+      },
+      {
+        title: "Credentials (1 pt)",
+        items: [
+          {text:"Credentials handled securely (.env file, secrets manager, or environment variables)"},
+          {text:"No credentials in code or public repositories"},
+        ]
+      },
+      {
+        title: "Privacy (2 pts)",
+        items: [
+          {text:"GDPR-compliant privacy policy created, customized for the site, linked from footer (1 pt)"},
+          {text:"GDPR-compliant cookie consent notification — fully functional (1 pt)"},
+        ]
+      },
+      {
+        title: "Attack mitigations (2 pts)",
+        items: [
+          {text:"Content-Security-Policy (CSP) HTTP HEADER set with specific allowed sources — not in a meta tag, must appear in DevTools response headers"},
+        ]
+      },
+      {
+        title: "Availability (4 pts)",
+        items: [
+          {text:"Site is publicly accessible and deployed to a cloud provider"},
+        ]
+      },
+      {
+        title: "Additional security features (2 pts — implement one or more)",
+        items: [
+          {text:"[OPTIONAL] Third-party authentication (OAuth/SSO)"},
+          {text:"[OPTIONAL] Two-factor or multi-factor authentication — keep at least one admin and one donor account without MFA for graders"},
+          {text:"[OPTIONAL] HTTP Strict Transport Security (HSTS)"},
+          {text:"[OPTIONAL] Browser-accessible cookie (NOT httponly) that saves a user preference used by React to change the page (e.g., dark/light mode)"},
+          {text:"[OPTIONAL] Data sanitization (incoming) or data encoding (frontend) to prevent injection attacks"},
+          {text:"[OPTIONAL] Both operational and identity databases deployed to a real DBMS (not SQLite)"},
+          {text:"[OPTIONAL] Deploy using Docker containers instead of a VM"},
+        ]
+      },
+      {
+        title: "IS 414 video — must clearly demonstrate ALL of the following",
+        items: [
+          {text:"Show HTTPS in use and HTTP → HTTPS redirect"},
+          {text:"Show login/logout and that protected pages require authentication"},
+          {text:"Show password policy configuration (stricter than defaults)"},
+          {text:"Demonstrate RBAC: admin vs donor vs unauthenticated user"},
+          {text:"Demonstrate delete confirmation dialog"},
+          {text:"Show how credentials are stored securely (not in code)"},
+          {text:"Show privacy policy page and cookie consent notification"},
+          {text:"Show CSP header in browser DevTools (Network/Headers tab)"},
+          {text:"Explain any additional security features implemented and why"},
+        ]
+      }
+    ]
+  },
+  "455": {
+    label: "IS 455 – Machine Learning",
+    sections: [
+      {
+        title: "General requirements",
+        items: [
+          {text:"Identify all viable ML pipelines — cover donor domain, case management domain, and social media/outreach domain"},
+          {text:"Each pipeline addresses a genuinely different business problem"},
+          {text:"Include at least 1 predictive model and 1 explanatory model across all pipelines"},
+          {text:"All notebooks placed in the ml-pipelines/ folder in the GitHub repo"},
+          {text:"Notebooks named descriptively (e.g., donor-churn-classifier.ipynb, reintegration-readiness.ipynb)"},
+          {text:"Every notebook is fully executable top-to-bottom (reproducible)"},
+          {text:"Data paths are correct relative to the repository structure"},
+        ]
+      },
+      {
+        title: "Each pipeline must include these sections",
+        items: [
+          {text:"1. Problem Framing: clear business problem, who cares and why, explicit justification of predictive vs. explanatory approach"},
+          {text:"2. Data Acquisition, Preparation & Exploration: load data, explore visually and statistically, document findings (distributions, correlations, outliers), feature engineering decisions justified, joins across tables documented, built as a reproducible pipeline"},
+          {text:"3. Modeling & Feature Selection: build model(s), compare approaches where appropriate, justify feature selection, include hyperparameter tuning if relevant"},
+          {text:"4. Evaluation & Interpretation: appropriate metrics, proper validation (train/test split or cross-validation), results interpreted in business terms, real-world consequences of false positives/negatives discussed"},
+          {text:"5. Causal and Relationship Analysis: most important features and why, causal story from coefficients or feature importances, honest discussion of correlation vs. causation and limitations"},
+          {text:"6. Deployment Notes: how the model is deployed and integrated into the web app (API endpoint, dashboard, interactive form) + relevant code snippets or repo references"},
+        ]
+      },
+      {
+        title: "Web app integration",
+        items: [
+          {text:"Model outputs visible in the deployed app (predictions, dashboards, or interactive tools)"},
+          {text:"At least one API endpoint serving model predictions"},
+        ]
+      }
+    ]
+  },
+  "final": {
+    label: "Final Submission & Presentation",
+    sections: [
+      {
+        title: "Submission — Friday April 10 before 10:00 AM",
+        items: [
+          {text:"Submit the form: https://byu.az1.qualtrics.com/jfe/form/SV_bsjPxSQyEdIQRhA"},
+          {text:"Correct group number and all group members listed"},
+          {text:"Website URL (double-check for typos)"},
+          {text:"GitHub repository URL (correct branch, repository set to PUBLIC)"},
+          {text:"URLs to each .ipynb pipeline notebook"},
+          {text:"3 video links (one per class: IS413, IS414, IS455) — publicly accessible (not private)"},
+          {text:"Admin user credentials WITHOUT MFA"},
+          {text:"Donor user credentials WITHOUT MFA (connected to historical donations)"},
+          {text:"One account (admin or donor) WITH MFA enabled — for graders to verify MFA is required"},
+        ]
+      },
+      {
+        title: "Videos — one per class, each covers only that class",
+        items: [
+          {text:"IS 413 video: demonstrate all pages and full app functionality"},
+          {text:"IS 414 video: demonstrate every security requirement clearly (see IS 414 checklist above)"},
+          {text:"IS 455 video: demonstrate each ML pipeline + integration in the app"},
+          {text:"All videos publicly accessible via link (Box, Dropbox, YouTube, etc.)"},
+          {text:"High enough resolution that all features are clearly visible"},
+          {text:"Concise — don't ramble, go straight through requirements"},
+          {text:"Watch your own videos before submitting to confirm they show what you think they show"},
+        ]
+      },
+      {
+        title: "Presentation — Friday April 10 starting at 12:00 PM",
+        items: [
+          {text:"Confirm your assigned room and time slot (arrange a swap via Slack if needed)"},
+          {text:"Prioritize the tech demo — it is the most important part of the 20-minute presentation"},
+          {text:"Frame the pitch around business problems and how your system solves them"},
+          {text:"Prepare answers for the 5-minute Q&A"},
+          {text:"Do NOT bring handouts"},
+        ]
+      },
+      {
+        title: "Peer evaluation — Friday April 10 before 11:59 PM",
+        items: [
+          {text:"Complete the peer eval: https://byu.az1.qualtrics.com/jfe/form/SV_7VXtQGm7rT4cvoa — REQUIRED to receive an INTEX grade"},
+        ]
+      }
+    ]
+  }
+};
+
+const state = {};
+let currentTab = 'all';
+
+function getKey(cls,si,ii){ return `${cls}-${si}-${ii}`; }
+function loadState(){ try{ const s=JSON.parse(localStorage.getItem('intex_checklist_en')||'{}'); Object.assign(state,s); }catch(e){} }
+function saveState(){ try{ localStorage.setItem('intex_checklist_en', JSON.stringify(state)); }catch(e){} }
+
+function buildSections(cls, container){
+  data[cls].sections.forEach((sec,si)=>{
+    const sd=document.createElement('div');
+    sd.className='section';
+    const st=document.createElement('div');
+    st.className='section-title';
+    st.textContent=sec.title;
+    sd.appendChild(st);
+    sec.items.forEach((item,ii)=>{
+      const key=getKey(cls,si,ii);
+      const div=document.createElement('div');
+      div.className='item'+(state[key]?' checked':'');
+      div.onclick=()=>toggle(key,div);
+      div.innerHTML=`<div class="cb"><span class="checkmark">✓</span></div><span class="label">${item.text}</span>`;
+      sd.appendChild(div);
+    });
+    container.appendChild(sd);
+  });
+}
+
+function toggle(key,div){
+  state[key]=!state[key];
+  div.classList.toggle('checked',state[key]);
+  saveState();
+  updateProgress();
+}
+
+function updateProgress(){
+  let total=0,done=0;
+  const classes=currentTab==='all'?Object.keys(data):[currentTab];
+  classes.forEach(cls=>{
+    data[cls].sections.forEach((sec,si)=>{
+      sec.items.forEach((_,ii)=>{
+        total++;
+        if(state[getKey(cls,si,ii)]) done++;
+      });
+    });
+  });
+  const pct=total?Math.round(done/total*100):0;
+  document.getElementById('progress-bar').style.width=pct+'%';
+  document.getElementById('prog-label').textContent=`${done} of ${total} completed`;
+  document.getElementById('stat-total').textContent=total;
+  document.getElementById('stat-done').textContent=done;
+  document.getElementById('stat-pct').textContent=pct+'%';
+}
+
+function switchTab(tab){
+  currentTab=tab;
+  document.querySelectorAll('.tab').forEach(t=>{
+    t.classList.toggle('active',t.getAttribute('onclick').includes(`'${tab}'`));
+  });
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  updateProgress();
+}
+
+function init(){
+  loadState();
+  const allContainer=document.getElementById('tab-all');
+  Object.keys(data).forEach(cls=>{
+    const h=document.createElement('div');
+    h.className='cls-header';
+    h.textContent=data[cls].label;
+    allContainer.appendChild(h);
+    buildSections(cls,allContainer);
+    buildSections(cls,document.getElementById('tab-'+cls));
+  });
+  updateProgress();
+}
+
+init();
+</script>
