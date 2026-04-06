@@ -120,12 +120,24 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Apply Identity migrations before seeding (required on Azure / fresh SQLite files)
+// Apply Identity + App domain migrations; optional CSV seed after migrate when DB is empty (see Intex:SeedCsvAfterMigrate).
 using (var scope = app.Services.CreateScope())
 {
-    var identityDb = scope.ServiceProvider.GetRequiredService<AuthIdentityDbContext>();
+    var sp = scope.ServiceProvider;
+    var identityDb = sp.GetRequiredService<AuthIdentityDbContext>();
     await identityDb.Database.MigrateAsync();
-    await AuthIdentityGenerator.GenerateDefaultIdentityAsync(scope.ServiceProvider, app.Configuration);
+    await AuthIdentityGenerator.GenerateDefaultIdentityAsync(sp, app.Configuration);
+
+    var appDb = sp.GetRequiredService<AppDbContext>();
+    await appDb.Database.MigrateAsync();
+
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    var seedLogger = loggerFactory.CreateLogger("Intex.Seed");
+    await IntexDevSeedRunner.SeedAfterMigrateIfEmptyAsync(
+        appDb,
+        sp.GetRequiredService<IHostEnvironment>(),
+        app.Configuration,
+        seedLogger);
 }
 
 // Simple health check — use to verify the site and runtime without auth
