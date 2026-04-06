@@ -39,13 +39,17 @@ var googleClientSecret = builder.Configuration["Authentication:Google:ClientSecr
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
-// Domain data context — SQLite + EF migrations (see Migrations/AppDb). For Azure PostgreSQL: add Npgsql.EntityFrameworkCore.PostgreSQL,
-// use UseNpgsql(connectionString), and generate a new Initial migration with IDesignTimeDbContextFactory pointing at PostgreSQL (SQLite migrations do not apply to Postgres).
+// Domain data context — SQLite when AppConnection uses Data Source= (local + Intex.sqlite); Azure SQL otherwise.
+// EF migrations under Migrations/AppDb target SQLite; Azure SQL deployments need a compatible migration set or SQL script.
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    var cs = builder.Configuration.GetConnectionString("AppConnection")
-        ?? throw new InvalidOperationException("ConnectionStrings:AppConnection is not configured.");
-    options.UseSqlite(cs);
+    var cs = builder.Configuration.GetConnectionString("AppConnection");
+    if (string.IsNullOrWhiteSpace(cs))
+        throw new InvalidOperationException("ConnectionStrings:AppConnection is not configured.");
+    if (cs.StartsWith("Data Source=", StringComparison.OrdinalIgnoreCase))
+        options.UseSqlite(cs);
+    else
+        options.UseSqlServer(cs);
 });
 
 // Identity context (separate DB)
