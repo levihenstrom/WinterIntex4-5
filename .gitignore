@@ -51,13 +51,4 @@ CodeCoverage/
 # NUnit
 *.VisualState.xml
 TestResult.xml
-nunit-*.xml
-
-# SQLite dev databases — never commit local DB files
-*.sqlite
-*.sqlite3
-*.db
-
-# Deployment artifacts
-deploy.zip
-publish/
+nunit-*.xml**/.DS_Store
