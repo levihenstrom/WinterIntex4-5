@@ -1,9 +1,18 @@
 """
 Build backend/Intex.API/Intex.sqlite from data/lighthouse_csv_v7/*.csv
 with foreign keys matching the INTEX data dictionary.
+
+Usage:
+  python scripts/build_intex_sqlite.py
+      Create a new Intex.sqlite (drops existing): run DDL + load all CSVs.
+
+  python scripts/build_intex_sqlite.py --data-only
+      Use after `dotnet ef database update` on an EF-managed SQLite file:
+      clears domain tables (preserves __EFMigrationsHistory) and reloads CSVs.
 """
 from __future__ import annotations
 
+import argparse
 import csv
 import sqlite3
 from pathlib import Path
@@ -409,6 +418,35 @@ def parse_cell(column: str, raw: str | None) -> str | int | float | None:
         return raw
 
 
+# Delete order: children before parents (FK-safe with foreign_keys OFF).
+_TABLE_DELETE_ORDER = [
+    "public_impact_snapshots",
+    "safehouse_monthly_metrics",
+    "incident_reports",
+    "intervention_plans",
+    "health_wellbeing_records",
+    "education_records",
+    "home_visitations",
+    "process_recordings",
+    "residents",
+    "donation_allocations",
+    "in_kind_donation_items",
+    "donations",
+    "partner_assignments",
+    "social_media_posts",
+    "supporters",
+    "partners",
+    "safehouses",
+]
+
+
+def clear_domain_tables(conn: sqlite3.Connection) -> None:
+    conn.execute("PRAGMA foreign_keys = OFF")
+    for name in _TABLE_DELETE_ORDER:
+        conn.execute(f'DELETE FROM "{name}"')
+    conn.execute("PRAGMA foreign_keys = ON")
+
+
 def load_csv(conn: sqlite3.Connection, table: str, filename: str) -> None:
     path = CSV_DIR / filename
     with path.open(newline="", encoding="utf-8") as f:
@@ -424,11 +462,74 @@ def load_csv(conn: sqlite3.Connection, table: str, filename: str) -> None:
     conn.executemany(sql, rows)
 
 
+_CSV_LOAD_ORDER = [
+    ("safehouses", "safehouses.csv"),
+    ("partners", "partners.csv"),
+    ("supporters", "supporters.csv"),
+    ("social_media_posts", "social_media_posts.csv"),
+    ("partner_assignments", "partner_assignments.csv"),
+    ("donations", "donations.csv"),
+    ("in_kind_donation_items", "in_kind_donation_items.csv"),
+    ("donation_allocations", "donation_allocations.csv"),
+    ("residents", "residents.csv"),
+    ("process_recordings", "process_recordings.csv"),
+    ("home_visitations", "home_visitations.csv"),
+    ("education_records", "education_records.csv"),
+    ("health_wellbeing_records", "health_wellbeing_records.csv"),
+    ("intervention_plans", "intervention_plans.csv"),
+    ("incident_reports", "incident_reports.csv"),
+    ("safehouse_monthly_metrics", "safehouse_monthly_metrics.csv"),
+    ("public_impact_snapshots", "public_impact_snapshots.csv"),
+]
+
+
+def _load_all_csvs(conn: sqlite3.Connection) -> None:
+    for table, fn in _CSV_LOAD_ORDER:
+        load_csv(conn, table, fn)
+
+
+def _print_table_counts(conn: sqlite3.Connection) -> None:
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY 1"
+    )
+    tables = [r[0] for r in cur.fetchall()]
+    print("Tables:", ", ".join(tables))
+    for t in tables:
+        cur.execute(f'SELECT COUNT(*) FROM "{t}"')
+        print(f"  {t}: {cur.fetchone()[0]} rows")
+
+
 def main() -> None:
+    parser = argparse.ArgumentParser(description="Build or seed Intex.sqlite from CSVs.")
+    parser.add_argument(
+        "--data-only",
+        action="store_true",
+        help="Clear domain data and reload CSVs; keep EF __EFMigrationsHistory (run after dotnet ef database update).",
+    )
+    args = parser.parse_args()
+
     if not CSV_DIR.is_dir():
         raise SystemExit(f"CSV folder not found: {CSV_DIR}")
 
     OUT_DB.parent.mkdir(parents=True, exist_ok=True)
+
+    if args.data_only:
+        if not OUT_DB.is_file():
+            raise SystemExit(
+                f"Database not found: {OUT_DB}. Run `dotnet ef database update` first, or run this script without --data-only."
+            )
+        conn = sqlite3.connect(str(OUT_DB))
+        try:
+            clear_domain_tables(conn)
+            _load_all_csvs(conn)
+            conn.commit()
+            _print_table_counts(conn)
+        finally:
+            conn.close()
+        print(f"Seeded (data-only) {OUT_DB}")
+        return
+
     if OUT_DB.exists():
         OUT_DB.unlink()
 
@@ -436,39 +537,9 @@ def main() -> None:
     try:
         conn.executescript(DDL)
         conn.execute("PRAGMA foreign_keys = ON")
-
-        order = [
-            ("safehouses", "safehouses.csv"),
-            ("partners", "partners.csv"),
-            ("supporters", "supporters.csv"),
-            ("social_media_posts", "social_media_posts.csv"),
-            ("partner_assignments", "partner_assignments.csv"),
-            ("donations", "donations.csv"),
-            ("in_kind_donation_items", "in_kind_donation_items.csv"),
-            ("donation_allocations", "donation_allocations.csv"),
-            ("residents", "residents.csv"),
-            ("process_recordings", "process_recordings.csv"),
-            ("home_visitations", "home_visitations.csv"),
-            ("education_records", "education_records.csv"),
-            ("health_wellbeing_records", "health_wellbeing_records.csv"),
-            ("intervention_plans", "intervention_plans.csv"),
-            ("incident_reports", "incident_reports.csv"),
-            ("safehouse_monthly_metrics", "safehouse_monthly_metrics.csv"),
-            ("public_impact_snapshots", "public_impact_snapshots.csv"),
-        ]
-        for table, fn in order:
-            load_csv(conn, table, fn)
-
+        _load_all_csvs(conn)
         conn.commit()
-        cur = conn.cursor()
-        cur.execute(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY 1"
-        )
-        tables = [r[0] for r in cur.fetchall()]
-        print("Tables:", ", ".join(tables))
-        for t in tables:
-            cur.execute(f'SELECT COUNT(*) FROM "{t}"')
-            print(f"  {t}: {cur.fetchone()[0]} rows")
+        _print_table_counts(conn)
     finally:
         conn.close()
 

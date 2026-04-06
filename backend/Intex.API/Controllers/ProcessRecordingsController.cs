@@ -1,0 +1,85 @@
+using Intex.API.Contracts;
+using Intex.API.Data;
+using Intex.API.Extensions;
+using Intex.API.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+
+namespace Intex.API.Controllers;
+
+[ApiController]
+[Route("api/process-recordings")]
+[Authorize(Policy = AuthPolicies.ManageCatalog)]
+public class ProcessRecordingsController(AppDbContext db) : ControllerBase
+{
+    [HttpGet]
+    [ProducesResponseType(typeof(PagedResult<ProcessRecording>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResult<ProcessRecording>>> GetPage(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = Pagination.DefaultPageSize,
+        [FromQuery] int? residentId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = db.ProcessRecordings.AsNoTracking().AsQueryable();
+        if (residentId is { } rid)
+            query = query.Where(p => p.ResidentId == rid);
+
+        query = query.OrderByDescending(p => p.SessionDate).ThenBy(p => p.RecordingId);
+        var result = await query.ToPagedResultAsync(page, pageSize, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpGet("{id:int}")]
+    [ProducesResponseType(typeof(ProcessRecording), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ProcessRecording>> GetById(int id, CancellationToken cancellationToken)
+    {
+        var entity = await db.ProcessRecordings.AsNoTracking().FirstOrDefaultAsync(p => p.RecordingId == id, cancellationToken);
+        if (entity is null)
+            return NotFound();
+        return Ok(entity);
+    }
+
+    [HttpPost]
+    [ProducesResponseType(typeof(ProcessRecording), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<ProcessRecording>> Create([FromBody] ProcessRecording recording, CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+        recording.RecordingId = 0;
+        db.ProcessRecordings.Add(recording);
+        await db.SaveChangesAsync(cancellationToken);
+        return CreatedAtAction(nameof(GetById), new { id = recording.RecordingId }, recording);
+    }
+
+    [HttpPut("{id:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Update(int id, [FromBody] ProcessRecording recording, CancellationToken cancellationToken)
+    {
+        if (id != recording.RecordingId)
+            return BadRequest();
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        db.ProcessRecordings.Update(recording);
+        await db.SaveChangesAsync(cancellationToken);
+        return NoContent();
+    }
+
+    [HttpDelete("{id:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
+    {
+        var entity = await db.ProcessRecordings.FindAsync([id], cancellationToken);
+        if (entity is null)
+            return NotFound();
+        db.ProcessRecordings.Remove(entity);
+        await db.SaveChangesAsync(cancellationToken);
+        return NoContent();
+    }
+}
