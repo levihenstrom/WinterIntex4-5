@@ -16,6 +16,9 @@ public static class SecurityHeaders
                       context.Request.Path.StartsWithSegments("/swagger")))
                 {
                     context.Response.Headers["Content-Security-Policy"] = ContentSecurityPolicy;
+                    context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+                    context.Response.Headers["X-Frame-Options"] = "DENY";
+                    context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
                 }
                 return Task.CompletedTask;
             });
