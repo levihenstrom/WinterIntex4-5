@@ -5,8 +5,9 @@ This file helps humans and coding agents **orient quickly**: what exists, how au
 ## Project purpose
 
 - **Course**: IS Core Winter 2026, Group 4-5 (Intex / INTECH).
-- **End goal** (see `plan.md`): a deployed web app with a Netflix-style loop — catalog, user preferences, **ML-driven recommendations**, secure auth, and Azure hosting.
-- **Current repo state**: **authentication and shell UI are implemented**; **domain data, recommendation API, and ML pipeline are not** yet (`AppDbContext` has no entities).
+- **Client**: HealingWings Sanctuary — a nonprofit managing safehouses for trafficking/abuse survivors in the Philippines.
+- **End goal** (see `BUILDPLAN.md`): a deployed, secure full-stack web app covering donor management, resident case management, social media analytics, and ML-driven insights.
+- **Current repo state**: **authentication and shell UI are implemented**; **domain data, all admin/donor pages, and ML pipelines are not yet built** (`AppDbContext` has no entities).
 
 ## Tech stack
 
@@ -50,7 +51,9 @@ This file helps humans and coding agents **orient quickly**: what exists, how au
 | Routes, navbar, OAuth token handler | `frontend/src/App.tsx` |
 | Session state | `frontend/src/context/AuthContext.tsx` |
 | Cookie consent | `frontend/src/context/CookieConsentContext.tsx`, `components/CookieConsentBanner.tsx` |
-| Product vision & week plan | `plan.md` |
+| Build plan, layer order, domain models, ML pipelines | `BUILDPLAN.md` |
+| Product backlog (Trello cards) | `product-backlog.md` |
+| MoSCoW requirements table | `moscow.md` |
 | Scaffold & deploy steps | `README.md` |
 
 ## Configuration agents should know
