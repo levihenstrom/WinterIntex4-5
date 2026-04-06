@@ -1,0 +1,208 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  HealingWings Design Tokens — edit ALL colors here          ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+:root {
+  /* Brand palette */
+  --hw-purple:        #6B21A8;
+  --hw-purple-light:  #7C3AED;
+  --hw-purple-soft:   #D8B4FE;   /* accent text on dark bg     */
+  --hw-teal:          #0D9488;
+  --hw-teal-dark:     #0F766E;
+  --hw-navy:          #1E3A5F;
+  --hw-amber:         #D97706;   /* primary CTA button         */
+  --hw-amber-hover:   #B45309;   /* primary CTA button hover   */
+
+  /* Section backgrounds */
+  --hw-bg-white:      #ffffff;
+  --hw-bg-off-white:  #FAFAF9;
+  --hw-bg-gray:       #F5F5F4;
+  --hw-bg-lavender:   #F5F3FF;
+  --hw-bg-lavender2:  #EDE9FE;
+  --hw-bg-navy:       #1E3A5F;
+
+  /* Hero overlay — change opacity here to lighten/darken the photo */
+  --hw-hero-overlay: linear-gradient(
+    135deg,
+    rgba(99, 55, 210, 0.40),    /* lila tenue */
+    rgba(15, 23, 102, 0.65)
+  );
+
+  /* Pillar card overlays */
+  --hw-pillar-edu:    rgba(107, 33, 168, 0.68);
+  --hw-pillar-heal:   rgba(13, 148, 136, 0.68);
+  --hw-pillar-reint:  rgba(30, 58, 95, 0.75);
+
+  /* Gradients */
+  --hw-gradient-donate: linear-gradient(135deg, var(--hw-purple) 0%, var(--hw-teal) 100%);
+  --hw-gradient-mission-photo: linear-gradient(90deg, rgba(107,33,168,0.28) 0%, transparent 100%);
+  --hw-gradient-partner-logo:  rgba(107,33,168,0.10);
+
+  /* Typography */
+  --hw-font-heading: 'Poppins', 'Inter', system-ui, sans-serif;
+  --hw-font-body:    'Inter', 'Poppins', system-ui, sans-serif;
+}
+
+/* ── Utility classes (use these in JSX instead of inline styles) ─ */
+
+/* Backgrounds */
+.hw-bg-offwhite   { background: var(--hw-bg-off-white); }
+.hw-bg-gray       { background: var(--hw-bg-gray); }
+.hw-bg-lavender   { background: var(--hw-bg-lavender); }
+.hw-bg-lavender2  { background: var(--hw-bg-lavender2); }
+.hw-bg-white      { background: var(--hw-bg-white); }
+.hw-bg-navy       { background: var(--hw-bg-navy); }
+
+/* Text */
+.hw-text-purple   { color: var(--hw-purple); }
+.hw-text-teal     { color: var(--hw-teal); }
+.hw-text-soft     { color: var(--hw-purple-soft); }
+
+/* Headings */
+.hw-heading       { font-family: var(--hw-font-heading); color: var(--hw-purple); }
+.hw-eyebrow       { color: var(--hw-teal); font-size: 0.7rem; font-weight: 700;
+                    text-transform: uppercase; letter-spacing: 0.2em; }
+
+/* Hero overlay (single transparent purple) */
+.hw-hero-overlay  { background: var(--hw-hero-overlay); }
+
+/* Donate banner gradient */
+.hw-bg-donate     { background: var(--hw-gradient-donate); }
+
+/* Partner logo bg */
+.hw-partner-bg    { background: var(--hw-gradient-partner-logo); }
+
+/* Mission photo overlay */
+.hw-photo-overlay { background: var(--hw-gradient-mission-photo); }
+
+/* Mission badge */
+.hw-badge-purple  { background: var(--hw-purple); }
+
+/* Poppins heading font (replaces inline style fontFamily) */
+.hw-heading-font  { font-family: var(--hw-font-heading); }
+
+
+/* ── Scroll-triggered fade-in ─────────────────────────────────── */
+.hw-fade-in {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.7s ease-out, transform 0.7s ease-out;
+}
+.hw-fade-in.hw-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Stagger delays ───────────────────────────────────────────── */
+.hw-delay-100 { transition-delay: 100ms; }
+.hw-delay-200 { transition-delay: 200ms; }
+.hw-delay-300 { transition-delay: 300ms; }
+
+/* ── Pillar card hover zoom ───────────────────────────────────── */
+.pillar-card .pillar-bg {
+  transition: transform 0.5s ease;
+}
+.pillar-card:hover .pillar-bg {
+  transform: scale(1.06);
+}
+
+/* ── Amber-gold filled button (primary CTA) ─────────────────── */
+.hw-btn-magenta {
+  background: #D97706;
+  color: white;
+  border: none;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
+}
+.hw-btn-magenta:hover {
+  background: #B45309;
+  box-shadow: 0 8px 24px rgba(180, 83, 9, 0.45);
+  transform: translateY(-2px);
+}
+
+/* ── Ghost white button ───────────────────────────────────────── */
+.hw-btn-ghost-white {
+  background: transparent;
+  border: 1.5px solid rgba(255,255,255,0.65);
+  color: white;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
+}
+.hw-btn-ghost-white:hover {
+  background: rgba(255,255,255,0.12);
+  box-shadow: 0 4px 20px rgba(255,255,255,0.15);
+  transform: translateY(-2px);
+}
+
+/* ── Ghost purple button ──────────────────────────────────────── */
+.hw-btn-ghost-purple {
+  background: transparent;
+  border: 1.5px solid #6B21A8;
+  color: #6B21A8;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
+}
+.hw-btn-ghost-purple:hover {
+  background: rgba(107,33,168,0.08);
+  box-shadow: 0 4px 20px rgba(107,33,168,0.15);
+  transform: translateY(-2px);
+}
+
+/* ── Nav ghost Log In button ─────────────────────────────────── */
+.hw-nav-login {
+  background: transparent;
+  border: 1.5px solid rgba(255,255,255,0.55);
+  color: white;
+  transition: background 0.2s, border-color 0.2s;
+}
+.hw-nav-login:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.85);
+}
+
+/* ── Nav Sign Up (amber-gold) ───────────────────────────────────── */
+.hw-nav-signup {
+  background: #D97706;
+  color: white;
+  border: none;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+.hw-nav-signup:hover {
+  background: #B45309;
+  box-shadow: 0 4px 16px rgba(180,83,9,0.4);
+}
+
+/* ── Scroll indicator bounce ──────────────────────────────────── */
+@keyframes hw-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(10px); }
+}
+.hw-scroll-bounce { animation: hw-bounce 1.8s ease-in-out infinite; }
+
+/* ── Partner logo hover ───────────────────────────────────────── */
+.hw-partner-logo {
+  opacity: 0.4;
+  transition: opacity 0.3s;
+}
+.hw-partner-logo:hover { opacity: 1; }
+
+/* ── Donation amount button ───────────────────────────────────── */
+.hw-amount-btn {
+  background: rgba(255,255,255,0.15);
+  border: 1.5px solid rgba(255,255,255,0.35);
+  color: white;
+  transition: all 0.2s;
+}
+.hw-amount-btn:hover {
+  background: rgba(255,255,255,0.25);
+}
+.hw-amount-btn.active {
+  background: white;
+  color: #6B21A8;
+  border-color: white;
+  font-weight: 700;
+  box-shadow: 0 4px 16px rgba(255,255,255,0.3);
+}
+
+/* ── Metric counter ───────────────────────────────────────────── */
+.hw-metric-num { font-variant-numeric: tabular-nums; }
