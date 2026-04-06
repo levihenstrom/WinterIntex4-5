@@ -39,9 +39,15 @@ var googleClientSecret = builder.Configuration["Authentication:Google:ClientSecr
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
-// Domain data context (SQLite for now — swap to UseSqlServer for Azure SQL later)
+// Domain data context — Azure SQL in production, SQLite locally if AppConnection not set
+var appConnection = builder.Configuration.GetConnectionString("AppConnection");
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("AppConnection")));
+{
+    if (string.IsNullOrEmpty(appConnection) || appConnection.StartsWith("Data Source="))
+        options.UseSqlite(appConnection ?? "Data Source=App.sqlite");
+    else
+        options.UseSqlServer(appConnection);
+});
 
 // Identity context (separate DB)
 builder.Services.AddDbContext<AuthIdentityDbContext>(options =>
