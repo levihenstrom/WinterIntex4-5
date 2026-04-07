@@ -85,3 +85,26 @@ export async function deleteJson(path: string): Promise<void> {
     throw new Error(await readApiError(response));
   }
 }
+
+/** POST JSON and return the created entity. */
+export async function postJson<T>(path: string, body: unknown): Promise<T> {
+  const response = await fetch(`${apiBaseUrl}${path}`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) throw new Error(await readApiError(response));
+  return response.json() as Promise<T>;
+}
+
+/** PUT JSON to a resource (expects 204 No Content). */
+export async function putJson(path: string, body: unknown): Promise<void> {
+  const response = await fetch(`${apiBaseUrl}${path}`, {
+    method: 'PUT',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) throw new Error(await readApiError(response));
+}
