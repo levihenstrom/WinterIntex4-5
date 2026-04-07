@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { deleteJson, fetchAllPaged, postJson } from '../../lib/apiClient';
+import 'bootstrap-icons/font/bootstrap-icons.css';
 
 interface SupporterOpt {
   supporterId: number;
