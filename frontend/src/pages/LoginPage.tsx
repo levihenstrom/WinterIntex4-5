@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import GoogleIcon from '../components/hw/GoogleIcon';
 import {
@@ -15,7 +15,9 @@ type LoginStep = 'credentials' | 'twoFactor';
 
 function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
+  const from = (location.state as { from?: Location })?.from?.pathname ?? '/';
   const { refreshAuthState } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -60,7 +62,7 @@ function LoginPage() {
       }
 
       await refreshAuthState();
-      navigate('/');
+      navigate(from, { replace: true });
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : 'Unable to log in.'
@@ -82,7 +84,7 @@ function LoginPage() {
         recoveryCode || undefined
       );
       await refreshAuthState();
-      navigate('/');
+      navigate(from, { replace: true });
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : 'Unable to verify MFA.'

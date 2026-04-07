@@ -10,7 +10,7 @@ public class AuthIdentityGenerator
         var userManager = serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
         var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
 
-        foreach (var roleName in new[] { AuthRoles.Admin, AuthRoles.Customer })
+        foreach (var roleName in new[] { AuthRoles.Admin, AuthRoles.Staff, AuthRoles.Donor, AuthRoles.LegacyCustomer })
         {
             if (!await roleManager.RoleExistsAsync(roleName))
             {
@@ -21,31 +21,49 @@ public class AuthIdentityGenerator
             }
         }
 
-        var adminSection = configuration.GetSection("GenerateDefaultIdentityAdmin");
-        var adminEmail = adminSection["Email"] ?? "admin@intex.local";
-        var adminPassword = adminSection["Password"] ?? "Intex2026!Admin";
+        await EnsureSeedUserAsync(userManager, configuration,
+            "GenerateDefaultIdentityAdmin", "admin@intex.local", "Intex2026!Admin", AuthRoles.Admin);
 
-        var adminUser = await userManager.FindByEmailAsync(adminEmail);
-        if (adminUser == null)
+        await EnsureSeedUserAsync(userManager, configuration,
+            "GenerateDefaultIdentityStaff", "staff@intex.local", "Intex2026!Staff", AuthRoles.Staff);
+
+        await EnsureSeedUserAsync(userManager, configuration,
+            "GenerateDefaultIdentityDonor", "donor@intex.local", "Intex2026!Donor", AuthRoles.Donor);
+    }
+
+    private static async Task EnsureSeedUserAsync(
+        UserManager<ApplicationUser> userManager,
+        IConfiguration configuration,
+        string configSection,
+        string defaultEmail,
+        string defaultPassword,
+        string role)
+    {
+        var section = configuration.GetSection(configSection);
+        var email = section["Email"] ?? defaultEmail;
+        var password = section["Password"] ?? defaultPassword;
+
+        var user = await userManager.FindByEmailAsync(email);
+        if (user == null)
         {
-            adminUser = new ApplicationUser
+            user = new ApplicationUser
             {
-                UserName = adminEmail,
-                Email = adminEmail,
+                UserName = email,
+                Email = email,
                 EmailConfirmed = true
             };
 
-            var createResult = await userManager.CreateAsync(adminUser, adminPassword);
+            var createResult = await userManager.CreateAsync(user, password);
             if (!createResult.Succeeded)
-                throw new Exception("Failed to create admin user: "
+                throw new Exception($"Failed to create seed user '{email}': "
                     + string.Join(", ", createResult.Errors.Select(e => e.Description)));
         }
 
-        if (!await userManager.IsInRoleAsync(adminUser, AuthRoles.Admin))
+        if (!await userManager.IsInRoleAsync(user, role))
         {
-            var roleResult = await userManager.AddToRoleAsync(adminUser, AuthRoles.Admin);
+            var roleResult = await userManager.AddToRoleAsync(user, role);
             if (!roleResult.Succeeded)
-                throw new Exception("Failed to assign admin role: "
+                throw new Exception($"Failed to assign role '{role}' to '{email}': "
                     + string.Join(", ", roleResult.Errors.Select(e => e.Description)));
         }
     }
