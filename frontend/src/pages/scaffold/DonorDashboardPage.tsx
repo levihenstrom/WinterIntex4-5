@@ -268,12 +268,12 @@ export default function DonorDashboardPage() {
                   <p className="text-stone-400 font-medium italic m-0 text-lg">Your generosity will fuel measurable change across our programs.</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                   {programImpact.map((row, idx) => (
                     <ProgramImpactCard 
                       key={row.label} 
                       row={row} 
-                      delay={`hw-delay-${(idx % 2 + 1) * 100}`} 
+                      delay={`hw-delay-${(idx % 3 + 1) * 100}`} 
                     />
                   ))}
                 </div>
