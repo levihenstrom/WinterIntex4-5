@@ -4,9 +4,9 @@ import { useAuth } from '../../context/AuthContext';
 
 const NAV_LINKS = [
   { label: 'Home', hash: '#hero' },
-  { label: 'Impact', hash: '#impact' },
   { label: 'About', hash: '#mission' },
   { label: 'Donate', hash: '#donate' },
+  { label: 'Impact', hash: '#impact' },
 
 ];
 
