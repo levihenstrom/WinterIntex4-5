@@ -64,9 +64,13 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         : RequireProductionConnectionString(builder.Configuration, "AppConnection");
 
     if (IsSqliteConnectionString(cs))
+    {
         options.UseSqlite(cs);
+    }
     else
-        options.UseSqlServer(cs);
+    {
+        options.UseSqlServer(cs, sqlOptions => sqlOptions.EnableRetryOnFailure());
+    }
 });
 
 // Identity context — SQLite for local development; SQL Server in production.
@@ -77,9 +81,13 @@ builder.Services.AddDbContext<AuthIdentityDbContext>(options =>
         : RequireProductionConnectionString(builder.Configuration, "IdentityConnection");
 
     if (IsSqliteConnectionString(cs))
+    {
         options.UseSqlite(cs);
+    }
     else
-        options.UseSqlServer(cs);
+    {
+        options.UseSqlServer(cs, sqlOptions => sqlOptions.EnableRetryOnFailure());
+    }
 });
 
 // Identity API endpoints + roles
@@ -153,19 +161,22 @@ using (var scope = app.Services.CreateScope())
 {
     var sp = scope.ServiceProvider;
     var identityDb = sp.GetRequiredService<AuthIdentityDbContext>();
-    await identityDb.Database.MigrateAsync();
-    await AuthIdentityGenerator.GenerateDefaultIdentityAsync(sp, app.Configuration);
-
     var appDb = sp.GetRequiredService<AppDbContext>();
-    await appDb.Database.MigrateAsync();
-
     var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
     var seedLogger = loggerFactory.CreateLogger("Intex.Seed");
-    await IntexDevSeedRunner.SeedAfterMigrateIfEmptyAsync(
-        appDb,
-        sp.GetRequiredService<IHostEnvironment>(),
-        app.Configuration,
-        seedLogger);
+
+    if (isDevelopment)
+    {
+        await identityDb.Database.MigrateAsync();
+        await appDb.Database.MigrateAsync();
+        await IntexDevSeedRunner.SeedAfterMigrateIfEmptyAsync(
+            appDb,
+            sp.GetRequiredService<IHostEnvironment>(),
+            app.Configuration,
+            seedLogger);
+    }
+
+    await AuthIdentityGenerator.GenerateDefaultIdentityAsync(sp, app.Configuration);
 }
 
 // Simple health check — use to verify the site and runtime without auth
