@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { fetchPaged } from '../../lib/apiClient';
+import { fetchPaged, type PagedResult } from '../../lib/apiClient';
 import { useAuth } from '../../context/AuthContext';
 
 interface MetricState {
@@ -130,10 +130,46 @@ function QuickLink({ to, icon, title, description }: QuickLinkProps) {
   );
 }
 
+interface RecentDonationRow {
+  donationId: number;
+  donationDate?: string | null;
+  donationType?: string | null;
+  amount?: number | null;
+  currencyCode?: string | null;
+  campaignName?: string | null;
+  supporter?: { displayName?: string | null; organizationName?: string | null } | null;
+}
+
+function fmtDonationMoney(n: number | null | undefined, currency = 'PHP') {
+  if (n == null) return '—';
+  try {
+    return new Intl.NumberFormat('en-PH', { style: 'currency', currency, maximumFractionDigits: 0 }).format(n);
+  } catch {
+    return `${currency} ${n.toFixed(0)}`;
+  }
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function AdminHomePage() {
   const { authSession } = useAuth();
+
+  const [recentDonations, setRecentDonations] = useState<PagedResult<RecentDonationRow> | null>(null);
+  const [recentError, setRecentError] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchPaged<RecentDonationRow>('/api/donations', 1, 8)
+      .then((r) => {
+        if (!cancelled) setRecentDonations(r);
+      })
+      .catch(() => {
+        if (!cancelled) setRecentError(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const totalResidents   = useCount('/api/residents');
   const activeResidents  = useCount('/api/residents', { caseStatus: 'Active' });
@@ -201,6 +237,72 @@ export default function AdminHomePage() {
             icon="🏠"
             linkTo="/admin/residents/visits-conferences"
           />
+        </div>
+
+        {/* Recent donations */}
+        <div className="mb-5">
+          <p className="hw-eyebrow mb-2">Fundraising</p>
+          <div className="card border-0 shadow-sm rounded-3 overflow-hidden">
+            <div className="card-body p-0">
+              <div className="d-flex align-items-center justify-content-between px-4 py-3 border-bottom" style={{ background: 'var(--hw-bg-lavender)' }}>
+                <span className="fw-semibold" style={{ color: 'var(--hw-navy)' }}>
+                  Recent donations
+                </span>
+                <Link to="/admin/donations/contributions" className="small fw-semibold text-decoration-none" style={{ color: 'var(--hw-purple)' }}>
+                  View all →
+                </Link>
+              </div>
+              {recentError && (
+                <div className="px-4 py-3 text-danger small">Could not load donations.</div>
+              )}
+              {!recentError && recentDonations === null && (
+                <div className="px-4 py-4 text-muted small">Loading…</div>
+              )}
+              {!recentError && recentDonations && recentDonations.items.length === 0 && (
+                <div className="px-4 py-4 text-muted small">No donation rows yet.</div>
+              )}
+              {!recentError && recentDonations && recentDonations.items.length > 0 && (
+                <div className="table-responsive">
+                  <table className="table table-sm table-hover mb-0 align-middle">
+                    <thead className="table-light">
+                      <tr>
+                        <th className="ps-4 small text-muted">Date</th>
+                        <th className="small text-muted">Supporter</th>
+                        <th className="small text-muted">Type</th>
+                        <th className="small text-muted">Amount</th>
+                        <th className="pe-4 small text-muted">Campaign</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {recentDonations.items.map((d) => {
+                        const name =
+                          d.supporter?.displayName?.trim() ||
+                          d.supporter?.organizationName?.trim() ||
+                          '—';
+                        return (
+                          <tr key={d.donationId}>
+                            <td className="ps-4 text-muted small">
+                              {d.donationDate
+                                ? new Date(d.donationDate).toLocaleDateString()
+                                : '—'}
+                            </td>
+                            <td className="fw-medium" style={{ color: 'var(--hw-navy)' }}>
+                              {name}
+                            </td>
+                            <td className="small">{d.donationType ?? '—'}</td>
+                            <td className="small tabular-nums">
+                              {fmtDonationMoney(d.amount != null ? Number(d.amount) : null, d.currencyCode ?? 'PHP')}
+                            </td>
+                            <td className="pe-4 small text-muted">{d.campaignName ?? '—'}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Upcoming conferences banner */}

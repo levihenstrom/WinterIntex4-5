@@ -25,7 +25,10 @@ public class DonationsController(AppDbContext db, StaffScopeResolver scopeResolv
         CancellationToken cancellationToken = default)
     {
         var scope = await scopeResolver.GetForUserAsync(User, cancellationToken);
-        var query = scope.Apply(db.Donations.AsNoTracking().AsQueryable());
+        var query = scope.Apply(
+            db.Donations.AsNoTracking()
+                .Include(d => d.Supporter)
+                .AsQueryable());
         if (supporterId is { } sid)
             query = query.Where(d => d.SupporterId == sid);
         if (!string.IsNullOrWhiteSpace(donationType))
@@ -61,12 +64,55 @@ public class DonationsController(AppDbContext db, StaffScopeResolver scopeResolv
         }
 
         var query = db.Donations.AsNoTracking()
+            .Include(d => d.Supporter)
             .Where(d => d.SupporterId == supporterId)
             .OrderByDescending(d => d.DonationDate)
             .ThenBy(d => d.DonationId);
 
         var result = await query.ToPagedResultAsync(page, pageSize, cancellationToken);
         return Ok(result);
+    }
+
+    /// <summary>
+    /// Records a non-payment-processor "demo" gift for the logged-in donor's linked supporter (IS 413).
+    /// </summary>
+    [HttpPost("demo-gift")]
+    [Authorize(Policy = AuthPolicies.DonorSelfService)]
+    [ProducesResponseType(typeof(Donation), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<Donation>> RecordDemoGift(
+        [FromBody] RecordDemoGiftRequest body,
+        CancellationToken cancellationToken)
+    {
+        var supporterIdClaim = User.FindFirstValue(StaffScopeResolver.SupporterIdClaimType);
+        if (!int.TryParse(supporterIdClaim, out var supporterId))
+            return BadRequest(new { message = "Your account is not linked to a supporter profile. Staff can record gifts in the admin portal." });
+
+        if (body.Amount <= 0)
+            return BadRequest(new { message = "Amount must be greater than zero." });
+
+        var donation = new Donation
+        {
+            SupporterId = supporterId,
+            DonationType = string.IsNullOrWhiteSpace(body.DonationType) ? "Monetary" : body.DonationType.Trim(),
+            DonationDate = DateTime.UtcNow.Date,
+            IsRecurring = false,
+            CampaignName = string.IsNullOrWhiteSpace(body.CampaignName) ? "Demo / classroom gift" : body.CampaignName.Trim(),
+            ChannelSource = "DemoPortal",
+            CurrencyCode = string.IsNullOrWhiteSpace(body.CurrencyCode) ? "PHP" : body.CurrencyCode.Trim(),
+            Amount = body.Amount,
+            EstimatedValue = body.Amount,
+            ImpactUnit = body.ImpactUnit,
+            Notes = string.IsNullOrWhiteSpace(body.Notes)
+                ? "Recorded via donor portal (demo — not a live payment)."
+                : body.Notes.Trim(),
+        };
+
+        db.Donations.Add(donation);
+        await db.SaveChangesAsync(cancellationToken);
+
+        await db.Entry(donation).Reference(d => d.Supporter).LoadAsync(cancellationToken);
+        return StatusCode(StatusCodes.Status201Created, donation);
     }
 
     [HttpGet("{id:int}")]
@@ -127,4 +173,14 @@ public class DonationsController(AppDbContext db, StaffScopeResolver scopeResolv
         await db.SaveChangesAsync(cancellationToken);
         return NoContent();
     }
+}
+
+public sealed class RecordDemoGiftRequest
+{
+    public decimal Amount { get; set; }
+    public string? DonationType { get; set; }
+    public string? CampaignName { get; set; }
+    public string? CurrencyCode { get; set; }
+    public string? ImpactUnit { get; set; }
+    public string? Notes { get; set; }
 }
