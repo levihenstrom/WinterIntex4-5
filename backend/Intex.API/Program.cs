@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
+var isDevelopment = builder.Environment.IsDevelopment();
 
 // Azure App Service (and other reverse proxies) terminate TLS; without this, Request.Scheme
 // stays "http" and Google OAuth builds redirect_uri as http://... → redirect_uri_mismatch.
@@ -39,25 +40,44 @@ var googleClientSecret = builder.Configuration["Authentication:Google:ClientSecr
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
-// Domain data context — SQLite when AppConnection uses Data Source= (local + Intex.sqlite); Azure SQL otherwise.
-// EF migrations under Migrations/AppDb target SQLite; Azure SQL deployments need a compatible migration set or SQL script.
+static bool IsSqliteConnectionString(string? connectionString) =>
+    !string.IsNullOrWhiteSpace(connectionString)
+    && connectionString.StartsWith("Data Source=", StringComparison.OrdinalIgnoreCase);
+
+static string RequireProductionConnectionString(IConfiguration configuration, string name)
+{
+    var connectionString = configuration.GetConnectionString(name);
+    if (string.IsNullOrWhiteSpace(connectionString))
+        throw new InvalidOperationException($"ConnectionStrings:{name} must be configured in production.");
+
+    if (IsSqliteConnectionString(connectionString))
+        throw new InvalidOperationException($"ConnectionStrings:{name} cannot use SQLite in production.");
+
+    return connectionString;
+}
+
+// Domain data context — SQLite for local development; SQL Server in production.
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    var cs = builder.Configuration.GetConnectionString("AppConnection");
-    if (string.IsNullOrWhiteSpace(cs))
-        throw new InvalidOperationException("ConnectionStrings:AppConnection is not configured.");
-    if (cs.StartsWith("Data Source=", StringComparison.OrdinalIgnoreCase))
+    var cs = isDevelopment
+        ? builder.Configuration.GetConnectionString("AppConnection") ?? "Data Source=Intex.sqlite"
+        : RequireProductionConnectionString(builder.Configuration, "AppConnection");
+
+    if (IsSqliteConnectionString(cs))
         options.UseSqlite(cs);
     else
         options.UseSqlServer(cs);
 });
 
-// Identity context — SQLite locally, SQL Server in production (same DB as AppConnection is fine)
+// Identity context — SQLite for local development; SQL Server in production.
 builder.Services.AddDbContext<AuthIdentityDbContext>(options =>
 {
-    var cs = builder.Configuration.GetConnectionString("IdentityConnection");
-    if (string.IsNullOrWhiteSpace(cs) || cs.StartsWith("Data Source=", StringComparison.OrdinalIgnoreCase))
-        options.UseSqlite(cs ?? "Data Source=Identity.sqlite");
+    var cs = isDevelopment
+        ? builder.Configuration.GetConnectionString("IdentityConnection") ?? "Data Source=Identity.sqlite"
+        : RequireProductionConnectionString(builder.Configuration, "IdentityConnection");
+
+    if (IsSqliteConnectionString(cs))
+        options.UseSqlite(cs);
     else
         options.UseSqlServer(cs);
 });
@@ -99,12 +119,11 @@ builder.Services.Configure<IdentityOptions>(options =>
 
 // Cookie auth: dev uses Lax (Vite proxy → same-origin /api). Production SPA + API on different
 // registrable domains (azurestaticapps.net vs azurewebsites.net) requires None + Secure.
-var isDev = builder.Environment.IsDevelopment();
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.Cookie.HttpOnly = true;
     options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-    options.Cookie.SameSite = isDev ? SameSiteMode.Lax : SameSiteMode.None;
+    options.Cookie.SameSite = isDevelopment ? SameSiteMode.Lax : SameSiteMode.None;
     options.ExpireTimeSpan = TimeSpan.FromDays(7);
     options.SlidingExpiration = true;
 });
@@ -112,7 +131,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 builder.Services.Configure<CookieAuthenticationOptions>(IdentityConstants.ExternalScheme, options =>
 {
     options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-    options.Cookie.SameSite = isDev ? SameSiteMode.Lax : SameSiteMode.None;
+    options.Cookie.SameSite = isDevelopment ? SameSiteMode.Lax : SameSiteMode.None;
 });
 
 // CORS — endpoints must opt in with RequireCors(...) or [EnableCors] or the browser gets 200 without ACAO headers.
