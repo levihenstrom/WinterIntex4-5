@@ -62,7 +62,6 @@ function fmtMoneyPhp(n: number) {
   }
 }
 
-/* ── Badge ───────────────────────────────────────────────────── */
 function Badge({ label, bg, text }: { label: string; bg: string; text: string }) {
   return (
     <span
