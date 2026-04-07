@@ -1,14 +1,21 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 
 const NAV_LINKS = [
   { label: 'Home', hash: '#hero' },
-  { label: 'About', hash: '#mission' },
   { label: 'Impact', hash: '#impact' },
-  { label: 'Stories', hash: '#stories' },
+  { label: 'About', hash: '#mission' },
   { label: 'Donate', hash: '#donate' },
-  { label: 'Contact', hash: '#footer' },
+
+];
+
+const ADMIN_NAV_LINKS = [
+  { label: 'Home', to: '/admin/home' },
+  { label: 'Donations', to: '/admin/donations' },
+  { label: 'Residents', to: '/admin/residents' },
+  { label: 'Social Media', to: '/admin/social-media' },
+  { label: 'Reports', to: '/admin/reports/donations' },
 ];
 
 export default function NavBar() {
@@ -17,6 +24,12 @@ export default function NavBar() {
   const location = useLocation();
   const { isAuthenticated, authSession, isLoading } = useAuth();
   const isHome = location.pathname === '/';
+  const isAdminPortalUser = authSession.roles.includes('Admin') || authSession.roles.includes('Staff');
+  const portalPath = authSession.roles.includes('Admin') || authSession.roles.includes('Staff')
+    ? '/admin/home'
+    : (authSession.roles.includes('Donor') || authSession.roles.includes('LegacyCustomer')
+      ? '/donor/dashboard'
+      : '/');
 
   /** Section anchors only exist on `/`; from other routes link to `/#section`. */
   function sectionHref(hash: string) {
@@ -28,7 +41,7 @@ export default function NavBar() {
       <div className="max-w-7xl mx-auto px-6 lg:px-10 flex items-center justify-between h-16 lg:h-18">
 
         {/* Logo */}
-        <a href={sectionHref('#hero')} className="flex items-center gap-2 no-underline flex-shrink-0">
+        <a href={isAdminPortalUser ? '/' : sectionHref('#hero')} className="flex items-center gap-2 no-underline flex-shrink-0">
           <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
             <path d="M14 26C14 26 3 19 3 11C3 7.13 6.13 4 10 4C11.9 4 13.6 4.78 14 5C14.4 4.78 16.1 4 18 4C21.87 4 25 7.13 25 11C25 19 14 26 14 26Z" fill="#0D9488" opacity="0.9" />
             <path d="M14 26C14 26 7 17 7 11C7 8.24 9.24 6 12 6C13.1 6 14 6.45 14 6.45V26Z" fill="#5eead4" opacity="0.5" />
@@ -40,15 +53,30 @@ export default function NavBar() {
 
         {/* Desktop nav links */}
         <nav className="hidden lg:flex items-center gap-7">
-          {NAV_LINKS.map((link) => (
-            <a
-              key={link.label}
-              href={sectionHref(link.hash)}
-              className="text-sm font-medium text-white/75 hover:text-white transition-colors no-underline"
-            >
-              {link.label}
-            </a>
-          ))}
+          {isAdminPortalUser ? (
+            ADMIN_NAV_LINKS.map((link) => (
+              <NavLink
+                key={link.label}
+                to={link.to}
+                className={({ isActive }) =>
+                  'text-sm font-medium no-underline transition-colors '
+                  + (isActive ? 'text-white' : 'text-white/75 hover:text-white')
+                }
+              >
+                {link.label}
+              </NavLink>
+            ))
+          ) : (
+            NAV_LINKS.map((link) => (
+              <a
+                key={link.label}
+                href={sectionHref(link.hash)}
+                className="text-sm font-medium text-white/75 hover:text-white transition-colors no-underline"
+              >
+                {link.label}
+              </a>
+            ))
+          )}
         </nav>
 
         {/* Desktop: account or auth CTAs */}
@@ -58,6 +86,15 @@ export default function NavBar() {
               <span className="text-sm text-white/70 truncate max-w-[180px]">
                 {authSession.email}
               </span>
+              {!isAdminPortalUser ? (
+                <button
+                  type="button"
+                  onClick={() => navigate(portalPath)}
+                  className="px-4 py-2 rounded-full text-sm font-semibold cursor-pointer border border-white/30 text-white/90 hover:text-white"
+                >
+                  Portal
+                </button>
+              ) : null}
               {authSession.roles[0] && (
                 <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-teal-500/20 text-teal-300 border border-teal-400/30">
                   {authSession.roles[0]}
@@ -117,16 +154,32 @@ export default function NavBar() {
       {/* Mobile drawer */}
       {menuOpen && (
         <div className="lg:hidden border-t border-white/20 px-6 py-4 bg-[#1E3A5F]/75 backdrop-blur-xl">
-          {NAV_LINKS.map((link) => (
-            <a
-              key={link.label}
-              href={sectionHref(link.hash)}
-              onClick={() => setMenuOpen(false)}
-              className="block py-3 text-white/75 hover:text-white font-medium text-sm border-b border-white/10 no-underline transition-colors"
-            >
-              {link.label}
-            </a>
-          ))}
+          {isAdminPortalUser ? (
+            ADMIN_NAV_LINKS.map((link) => (
+              <NavLink
+                key={link.label}
+                to={link.to}
+                onClick={() => setMenuOpen(false)}
+                className={({ isActive }) =>
+                  'block py-3 font-medium text-sm border-b border-white/10 no-underline transition-colors '
+                  + (isActive ? 'text-white' : 'text-white/75 hover:text-white')
+                }
+              >
+                {link.label}
+              </NavLink>
+            ))
+          ) : (
+            NAV_LINKS.map((link) => (
+              <a
+                key={link.label}
+                href={sectionHref(link.hash)}
+                onClick={() => setMenuOpen(false)}
+                className="block py-3 text-white/75 hover:text-white font-medium text-sm border-b border-white/10 no-underline transition-colors"
+              >
+                {link.label}
+              </a>
+            ))
+          )}
           <div className="mt-5 flex flex-col gap-3">
             {isLoading ? null : isAuthenticated ? (
               <>
@@ -138,6 +191,15 @@ export default function NavBar() {
                     </span>
                   )}
                 </div>
+                {!isAdminPortalUser ? (
+                  <Link
+                    to={portalPath}
+                    onClick={() => setMenuOpen(false)}
+                    className="block text-center py-3 rounded-full text-sm font-semibold text-white/90 border border-white/30 no-underline"
+                  >
+                    Portal
+                  </Link>
+                ) : null}
                 <Link
                   to="/mfa"
                   onClick={() => setMenuOpen(false)}

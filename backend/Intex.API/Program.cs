@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Intex.API.Authorization;
 using Intex.API.Data;
 using Microsoft.AspNetCore.Identity;
 using Intex.API.Infrastructure;
@@ -40,6 +41,7 @@ var googleClientSecret = builder.Configuration["Authentication:Google:ClientSecr
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 builder.Services.AddHostedService<IdentityBootstrapHostedService>();
+builder.Services.AddScoped<StaffScopeResolver>();
 
 static bool IsSqliteConnectionString(string? connectionString) =>
     !string.IsNullOrWhiteSpace(connectionString)
