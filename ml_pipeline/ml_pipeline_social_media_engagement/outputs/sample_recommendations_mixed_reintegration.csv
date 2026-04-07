@@ -1,0 +1,4 @@
+platform,post_type,media_type,post_hour,content_topic,has_call_to_action,call_to_action_type,features_resident_story,predicted_engagement_rate,predicted_p_any_referral,predicted_referrals_count,ranking_score,goal,why_recommended
+WhatsApp,ImpactStory,Video,20,Reintegration,1.0,ShareStory,1.0,0.1416,0.9837,53.71,0.9629,mixed,media Video; Pred engagement 0.142; P(any referral) 0.984; expected referrals 53.7; CTA included; resident story content; mixed goal weighting
+Instagram,ImpactStory,Video,20,Reintegration,1.0,ShareStory,1.0,0.1452,0.9841,47.07,0.9456,mixed,media Video; Pred engagement 0.145; P(any referral) 0.984; expected referrals 47.1; CTA included; resident story content; mixed goal weighting
+TikTok,ImpactStory,Video,20,Reintegration,1.0,ShareStory,1.0,0.1391,0.9843,51.46,0.945,mixed,media Video; Pred engagement 0.139; P(any referral) 0.984; expected referrals 51.5; CTA included; resident story content; mixed goal weighting

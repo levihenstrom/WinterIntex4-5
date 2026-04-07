@@ -16,3 +16,9 @@ SERIALIZED_DIR = PACKAGE_DIR / "serialized_models"
 RANDOM_STATE = 42
 TEST_SIZE = 0.2
 RIDGE_ALPHAS = tuple(10 ** (i / 2 - 1) for i in range(0, 13))
+
+# Gradient boosting / forest predict_proba is often overconfident. Calibrate at export (no extra data).
+CALIBRATE_ANY_REFERRAL_CLASSIFIER = True
+# "sigmoid" = Platt scaling (stable on ~hundreds of rows). "isotonic" can overfit small samples.
+CALIBRATION_METHOD: str = "sigmoid"
+CALIBRATION_N_SPLITS = 5
