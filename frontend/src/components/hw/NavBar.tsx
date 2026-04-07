@@ -24,7 +24,7 @@ export default function NavBar() {
   }
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 shadow-lg" style={{ background: '#1E3A5F' }}>
+    <header className="fixed top-0 left-0 right-0 z-50 shadow-sm bg-[#1E3A5F]/50 backdrop-blur-xl border-b border-white/20 transition-all duration-300">
       <div className="max-w-7xl mx-auto px-6 lg:px-10 flex items-center justify-between h-16 lg:h-18">
 
         {/* Logo */}
@@ -53,50 +53,20 @@ export default function NavBar() {
 
         {/* Desktop: account or auth CTAs */}
         <div className="hidden lg:flex items-center gap-3 min-w-0">
-          {isLoading ? null : isAuthenticated ? (
-            <>
-              <span className="text-sm text-white/70 truncate max-w-[200px]">
-                {authSession.email}
-                {authSession.roles.length > 0 && (
-                  <span
-                    className="ms-2 rounded-full px-2 py-0.5 text-xs font-semibold"
-                    style={{ background: 'var(--hw-teal)', color: 'white' }}
-                  >
-                    {authSession.roles.join(', ')}
-                  </span>
-                )}
-              </span>
-              <Link
-                to="/mfa"
-                className="text-sm font-medium text-white/75 hover:text-white no-underline shrink-0"
-              >
-                MFA
-              </Link>
-              <Link
-                to="/logout"
-                className="text-sm font-medium text-white/75 hover:text-white no-underline shrink-0"
-              >
-                Logout
-              </Link>
-            </>
-          ) : (
-            <>
-              <button
-                type="button"
-                onClick={() => navigate('/login')}
-                className="hw-nav-login px-4 py-2 rounded-full text-sm font-semibold cursor-pointer"
-              >
-                Log In
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate('/register')}
-                className="hw-nav-signup px-4 py-2 rounded-full text-sm font-semibold cursor-pointer"
-              >
-                Sign Up
-              </button>
-            </>
-          )}
+          <button
+            type="button"
+            onClick={() => navigate('/login')}
+            className="hw-nav-login px-4 py-2 rounded-full text-sm font-semibold cursor-pointer"
+          >
+            Log In
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate('/register')}
+            className="hw-nav-signup px-4 py-2 rounded-full text-sm font-semibold cursor-pointer"
+          >
+            Sign Up
+          </button>
         </div>
 
         {/* Mobile hamburger */}
@@ -124,7 +94,7 @@ export default function NavBar() {
 
       {/* Mobile drawer */}
       {menuOpen && (
-        <div className="lg:hidden border-t border-white/10 px-6 py-4" style={{ background: '#1E3A5F' }}>
+        <div className="lg:hidden border-t border-white/20 px-6 py-4 bg-[#1E3A5F]/50 backdrop-blur-xl">
           {NAV_LINKS.map((link) => (
             <a
               key={link.label}
