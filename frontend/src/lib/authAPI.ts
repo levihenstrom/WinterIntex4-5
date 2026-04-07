@@ -1,6 +1,6 @@
 import type { AuthSession } from '../types/AuthSession';
 import type { TwoFactorStatus } from '../types/TwoFactorStatus';
-import { API_URL } from '../api/IntextAPI';
+import { API_BASE_URL as apiBaseUrl } from './apiBaseUrl';
 
 export interface ExternalAuthProvider {
   name: string;
@@ -14,18 +14,6 @@ export interface PasswordLoginResult {
   email: string | null;
   roles: string[];
 }
-
-/** Dev: empty → Vite proxy. Prod: VITE_API_BASE_URL, or API_URL so deploys work even if env is missing at build. */
-const apiBaseUrl: string = (() => {
-  const fromEnv = import.meta.env.VITE_API_BASE_URL;
-  if (fromEnv !== undefined && fromEnv !== '') {
-    return fromEnv.replace(/\/$/, '');
-  }
-  if (import.meta.env.DEV) {
-    return '';
-  }
-  return API_URL.replace(/\/$/, '');
-})();
 
 async function readApiError(
   response: Response,

@@ -1,16 +1,4 @@
-import { API_URL } from '../api/IntextAPI';
-
-/** Shared base URL resolution — mirrors authAPI.ts. */
-const apiBaseUrl: string = (() => {
-  const fromEnv = import.meta.env.VITE_API_BASE_URL;
-  if (fromEnv !== undefined && fromEnv !== '') {
-    return fromEnv.replace(/\/$/, '');
-  }
-  if (import.meta.env.DEV) {
-    return '';
-  }
-  return API_URL.replace(/\/$/, '');
-})();
+import { API_BASE_URL as apiBaseUrl } from './apiBaseUrl';
 
 export interface PagedResult<T> {
   page: number;
