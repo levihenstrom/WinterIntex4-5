@@ -1,0 +1,39 @@
+{
+  "interpretation_note": "Raw scores are best interpreted as relative near-term readiness under a rare-event setting. For active residents, priority rank and percentile are more operationally useful than the absolute probability alone.",
+  "operational_rules": {
+    "priority_rank_definition": "1 = lowest raw readiness score among current active residents (highest intervention priority).",
+    "readiness_percentile_definition": "Higher percentile = higher raw score within this cohort (better relative readiness).",
+    "support_priority_group_rule": "Quartiles by rank/n: \u226425% Top Priority, \u226450% High Priority, \u226475% Moderate Priority, else Lower Priority.",
+    "operational_band_maps_to_group": {
+      "Top Priority": "Needs Immediate Review",
+      "High Priority": "Needs Close Follow-up",
+      "Moderate Priority": "Routine Monitoring",
+      "Lower Priority": "Lower Urgency"
+    },
+    "raw_probability_band_note": "readiness_band uses fixed score cutoffs from config.READINESS_BANDS; often all active residents fall in the lowest band when probabilities are compressed.",
+    "tie_handling": "Identical raw scores are ordered by resident_id for support_priority_rank; quartile groups use rank/n, so tied scores can land in different priority groups."
+  },
+  "score_compression_diagnostics": {
+    "n_scores": 23,
+    "score_min": 0.0,
+    "score_max": 0.0273,
+    "score_range": 0.0273,
+    "score_median": 0.0031,
+    "unique_scores_rounded_6": 15,
+    "quantiles_0_25_50_75_100": [
+      0.0,
+      0.00105,
+      0.0031,
+      0.0093,
+      0.0273
+    ],
+    "pct_scores_below_0_05": 100.0,
+    "score_compression_flag": true,
+    "compression_note": "Scores are tightly clustered near zero; use cohort rank and percentile for triage."
+  },
+  "trained_model_horizon_days": 60,
+  "alternate_horizons_todo_days": [
+    90,
+    120
+  ]
+}
