@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { fetchJson } from '../../lib/apiClient';
+import 'bootstrap-icons/font/bootstrap-icons.css';
 import NavBar from '../../components/hw/NavBar';
 import MetricCard from '../../components/hw/MetricCard';
 import {

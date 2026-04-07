@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { fetchAllPaged } from '../../lib/apiClient';
+import 'bootstrap-icons/font/bootstrap-icons.css';
 
 interface DonationAllocationRow {
   allocationId: number;
