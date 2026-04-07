@@ -1,25 +1,34 @@
-import { useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
 
 const NAV_LINKS = [
-  { label: 'Home', href: '#hero' },
-  { label: 'About', href: '#mission' },
-  { label: 'Impact', href: '#impact' },
-  { label: 'Stories', href: '#stories' },
-  { label: 'Donate', href: '#donate' },
-  { label: 'Contact', href: '#footer' },
+  { label: 'Home', hash: '#hero' },
+  { label: 'About', hash: '#mission' },
+  { label: 'Impact', hash: '#impact' },
+  { label: 'Stories', hash: '#stories' },
+  { label: 'Donate', hash: '#donate' },
+  { label: 'Contact', hash: '#footer' },
 ];
 
 export default function NavBar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const { isAuthenticated, authSession, isLoading } = useAuth();
+  const isHome = location.pathname === '/';
+
+  /** Section anchors only exist on `/`; from other routes link to `/#section`. */
+  function sectionHref(hash: string) {
+    return isHome ? hash : `/${hash}`;
+  }
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 shadow-lg" style={{ background: '#1E3A5F' }}>
       <div className="max-w-7xl mx-auto px-6 lg:px-10 flex items-center justify-between h-16 lg:h-18">
 
         {/* Logo */}
-        <a href="#hero" className="flex items-center gap-2 no-underline flex-shrink-0">
+        <a href={sectionHref('#hero')} className="flex items-center gap-2 no-underline flex-shrink-0">
           <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
             <path d="M14 26C14 26 3 19 3 11C3 7.13 6.13 4 10 4C11.9 4 13.6 4.78 14 5C14.4 4.78 16.1 4 18 4C21.87 4 25 7.13 25 11C25 19 14 26 14 26Z" fill="#0D9488" opacity="0.9" />
             <path d="M14 26C14 26 7 17 7 11C7 8.24 9.24 6 12 6C13.1 6 14 6.45 14 6.45V26Z" fill="#5eead4" opacity="0.5" />
@@ -34,7 +43,7 @@ export default function NavBar() {
           {NAV_LINKS.map((link) => (
             <a
               key={link.label}
-              href={link.href}
+              href={sectionHref(link.hash)}
               className="text-sm font-medium text-white/75 hover:text-white transition-colors no-underline"
             >
               {link.label}
@@ -42,20 +51,52 @@ export default function NavBar() {
           ))}
         </nav>
 
-        {/* Desktop auth buttons */}
-        <div className="hidden lg:flex items-center gap-3">
-          <button
-            onClick={() => navigate('/login')}
-            className="hw-nav-login px-4 py-2 rounded-full text-sm font-semibold cursor-pointer"
-          >
-            Log In
-          </button>
-          <button
-            onClick={() => navigate('/register')}
-            className="hw-nav-signup px-4 py-2 rounded-full text-sm font-semibold cursor-pointer"
-          >
-            Sign Up
-          </button>
+        {/* Desktop: account or auth CTAs */}
+        <div className="hidden lg:flex items-center gap-3 min-w-0">
+          {isLoading ? null : isAuthenticated ? (
+            <>
+              <span className="text-sm text-white/70 truncate max-w-[200px]">
+                {authSession.email}
+                {authSession.roles.length > 0 && (
+                  <span
+                    className="ms-2 rounded-full px-2 py-0.5 text-xs font-semibold"
+                    style={{ background: 'var(--hw-teal)', color: 'white' }}
+                  >
+                    {authSession.roles.join(', ')}
+                  </span>
+                )}
+              </span>
+              <Link
+                to="/mfa"
+                className="text-sm font-medium text-white/75 hover:text-white no-underline shrink-0"
+              >
+                MFA
+              </Link>
+              <Link
+                to="/logout"
+                className="text-sm font-medium text-white/75 hover:text-white no-underline shrink-0"
+              >
+                Logout
+              </Link>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => navigate('/login')}
+                className="hw-nav-login px-4 py-2 rounded-full text-sm font-semibold cursor-pointer"
+              >
+                Log In
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('/register')}
+                className="hw-nav-signup px-4 py-2 rounded-full text-sm font-semibold cursor-pointer"
+              >
+                Sign Up
+              </button>
+            </>
+          )}
         </div>
 
         {/* Mobile hamburger */}
@@ -87,7 +128,7 @@ export default function NavBar() {
           {NAV_LINKS.map((link) => (
             <a
               key={link.label}
-              href={link.href}
+              href={sectionHref(link.hash)}
               onClick={() => setMenuOpen(false)}
               className="block py-3 text-white/75 hover:text-white font-medium text-sm border-b border-white/10 no-underline transition-colors"
             >
@@ -95,18 +136,44 @@ export default function NavBar() {
             </a>
           ))}
           <div className="mt-5 flex flex-col gap-3">
-            <button
-              onClick={() => { setMenuOpen(false); navigate('/login'); }}
-              className="hw-nav-login w-full py-3 rounded-full text-sm font-semibold cursor-pointer"
-            >
-              Log In
-            </button>
-            <button
-              onClick={() => { setMenuOpen(false); navigate('/register'); }}
-              className="hw-nav-signup w-full py-3 rounded-full text-sm font-semibold cursor-pointer"
-            >
-              Sign Up
-            </button>
+            {isLoading ? null : isAuthenticated ? (
+              <>
+                <p className="text-sm text-white/70 mb-1 px-1 truncate">
+                  {authSession.email}
+                </p>
+                <Link
+                  to="/mfa"
+                  onClick={() => setMenuOpen(false)}
+                  className="block text-center py-3 rounded-full text-sm font-semibold text-white/90 border border-white/30 no-underline"
+                >
+                  MFA
+                </Link>
+                <Link
+                  to="/logout"
+                  onClick={() => setMenuOpen(false)}
+                  className="block text-center py-3 rounded-full text-sm font-semibold text-white/90 border border-white/30 no-underline"
+                >
+                  Logout
+                </Link>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => { setMenuOpen(false); navigate('/login'); }}
+                  className="hw-nav-login w-full py-3 rounded-full text-sm font-semibold cursor-pointer"
+                >
+                  Log In
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setMenuOpen(false); navigate('/register'); }}
+                  className="hw-nav-signup w-full py-3 rounded-full text-sm font-semibold cursor-pointer"
+                >
+                  Sign Up
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}

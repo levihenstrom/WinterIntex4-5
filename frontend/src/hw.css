@@ -208,6 +208,17 @@
 .hw-metric-num { font-variant-numeric: tabular-nums; }
 
 /* ── Auth pages (login / register) — single centered card ───── */
+/* Offset below fixed NavBar for all auth routes (see AuthLayout in App.tsx) */
+.hw-auth-page-content {
+  padding-top: 4rem;
+}
+
+@media (min-width: 1024px) {
+  .hw-auth-page-content {
+    padding-top: 4.5rem;
+  }
+}
+
 .hw-auth-shell {
   flex: 1;
   min-height: calc(100vh - 12rem);
