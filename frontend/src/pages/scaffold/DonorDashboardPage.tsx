@@ -41,13 +41,12 @@ async function fetchAllDonationsMine(): Promise<DonationMine[]> {
   return items;
 }
 
-function formatMoney(amount: number | null | undefined, currency: string | null | undefined): string {
+function formatMoney(amount: number | null | undefined): string {
   if (amount == null) return '—';
-  const c = (currency && currency.trim()) || 'USD';
   try {
-    return new Intl.NumberFormat(undefined, { style: 'currency', currency: c }).format(amount);
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
   } catch {
-    return `${amount} ${c}`;
+    return `$${amount.toFixed(2)}`;
   }
 }
 
@@ -57,7 +56,7 @@ function formatDate(iso: string | null | undefined): string {
   if (Number.isNaN(d.getTime())) return iso;
   return d.toLocaleDateString(undefined, {
     year: 'numeric',
-    month: 'short',
+    month: 'long',
     day: 'numeric',
   });
 }
@@ -67,7 +66,7 @@ function buildProgramImpact(donations: DonationMine[]): ProgramImpactRow[] {
   const map = new Map<string, Acc>();
 
   const bump = (key: string, donation: DonationMine, amount: number) => {
-    const k = key.trim() || 'General support';
+    const k = key.trim() || 'General Support';
     let acc = map.get(k);
     if (!acc) {
       acc = { totalAmount: 0, donationIds: new Set<number>(), hints: new Set<string>() };
@@ -95,10 +94,10 @@ function buildProgramImpact(donations: DonationMine[]): ProgramImpactRow[] {
     }
     if (allocs.length > 0) {
       const share = amountBase / allocs.length;
-      for (const _ of allocs) bump('Program allocation', d, share);
+      for (const _ of allocs) bump('Program Allocation', d, share);
       continue;
     }
-    bump(d.campaignName?.trim() || 'General support', d, amountBase);
+    bump(d.campaignName?.trim() || 'General Support', d, amountBase);
   }
 
   return [...map.entries()]
@@ -125,9 +124,9 @@ function useFadeIn() {
 function StatBox({ label, value, color, bg, border, delay }: { label: string; value: string; color: string; bg: string; border: string; delay?: string }) {
   const ref = useFadeIn();
   return (
-    <div ref={ref} className={`hw-fade-in ${delay}`} style={{ background: bg, border: `1px solid ${border}`, borderRadius: 16, padding: '1.5rem', textAlign: 'center', boxShadow: '0 4px 12px rgba(30,58,95,0.06)' }}>
-      <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 900, fontSize: '2.4rem', color, lineHeight: 1 }}>{value}</div>
-      <div style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color, opacity: 0.7, marginTop: 10 }}>{label}</div>
+    <div ref={ref} className={`hw-fade-in ${delay}`} style={{ background: bg, border: `1px solid ${border}`, borderRadius: 20, padding: '2rem 1.5rem', textAlign: 'center', boxShadow: '0 4px 20px rgba(30,58,95,0.04)' }}>
+      <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 900, fontSize: '2.8rem', color, lineHeight: 1, letterSpacing: '-0.02em' }}>{value}</div>
+      <div style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.15em', color, opacity: 0.6, marginTop: 12 }}>{label}</div>
     </div>
   );
 }
@@ -135,42 +134,45 @@ function StatBox({ label, value, color, bg, border, delay }: { label: string; va
 function Card({ title, className = "", children }: { title: string; className?: string; children: React.ReactNode }) {
   const ref = useFadeIn();
   return (
-    <div ref={ref} className={`hw-fade-in bg-white rounded-2xl border border-stone-200 shadow-md p-6 lg:p-8 ${className}`} style={{ boxShadow: '0 4px 20px rgba(30,58,95,0.04)' }}>
-      <p style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, color: '#1E3A5F', fontSize: '1.1rem', marginBottom: '1.5rem' }}>{title}</p>
+    <div ref={ref} className={`hw-fade-in bg-white rounded-[2rem] border border-stone-200 shadow-sm p-8 lg:p-10 ${className}`} style={{ boxShadow: '0 10px 40px rgba(30,58,95,0.03)' }}>
+      <p style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 800, color: '#1E3A5F', fontSize: '1.25rem', marginBottom: '2rem', letterSpacing: '-0.01em' }}>{title}</p>
       {children}
     </div>
   );
 }
 
-function ProgramImpactCard({ row, currency, delay }: { row: ProgramImpactRow; currency: string; delay: string }) {
+function ProgramImpactCard({ row, delay }: { row: ProgramImpactRow; delay: string }) {
   const ref = useFadeIn();
   return (
     <div 
       ref={ref}
-      className={`hw-fade-in ${delay} group rounded-2xl border border-stone-200 bg-white p-7 shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1`}
+      className={`hw-fade-in ${delay} group rounded-[1.5rem] border border-stone-200 bg-white p-8 shadow-sm transition-all duration-500 hover:shadow-xl hover:-translate-y-1.5 flex flex-col justify-between`}
+      style={{ minHeight: '280px' }}
     >
-       <div className="mb-4">
-         <span className="inline-block px-3 py-1 bg-stone-100 text-stone-600 rounded-full text-[10px] uppercase font-bold tracking-wider mb-3">
-           Allocated Funding
-         </span>
-         <h3 className="font-bold text-xl text-[#6B21A8] mb-1 group-hover:text-[#0D9488] transition-colors">{row.label}</h3>
-         <div className="flex items-baseline gap-2 mt-2">
-           <span className="text-3xl font-black text-[#1E3A5F] tabular-nums">
-             {formatMoney(row.totalAmount, currency)}
+       <div>
+         <div className="flex justify-between items-start mb-6">
+           <span className="inline-block px-3 py-1.5 bg-violet-50 text-[#6B21A8] rounded-full text-[10px] uppercase font-bold tracking-widest">
+             Program Funding
            </span>
-           <span className="text-stone-400 text-sm font-medium">· {row.giftCount} gift{row.giftCount === 1 ? '' : 's'}</span>
+         </div>
+         <h3 className="font-extrabold text-2xl text-[#1E3A5F] mb-3 group-hover:text-[#6B21A8] transition-colors leading-tight">{row.label}</h3>
+         <div className="flex items-baseline gap-2 mb-6">
+           <span className="text-3xl font-black text-[#0D9488] tabular-nums tracking-tight">
+             {formatMoney(row.totalAmount)}
+           </span>
+           <span className="text-stone-400 text-sm font-semibold">from {row.giftCount} gift{row.giftCount === 1 ? '' : 's'}</span>
          </div>
        </div>
        
-       <div className="pt-4 border-t border-stone-100">
-         <p className="text-sm leading-relaxed text-stone-600">
+       <div className="pt-6 border-t border-stone-100 mt-auto">
+         <p className="text-[0.925rem] leading-relaxed text-stone-500 font-medium italic">
            {row.outcomeNotes.length > 0 ? (
              <>
-               <span className="font-semibold text-stone-800">Your legacy: </span>
+               <span className="text-stone-700 not-italic font-bold">Aggregate Outcomes: </span>
                {row.outcomeNotes.join(' · ')}
              </>
            ) : (
-             "These funds are pooled to provide essential resident resources and staffing."
+             "Funding is pooled to maximize direct resident services and programs."
            )}
          </p>
        </div>
@@ -196,14 +198,12 @@ export default function DonorDashboardPage() {
   }, []);
 
   const totals = useMemo(() => {
-    if (!donations) return { count: 0, sum: 0, currency: 'USD' };
+    if (!donations) return { count: 0, sum: 0 };
     let sum = 0;
-    let currency: string | undefined;
     for (const d of donations) {
       if (d.amount != null) sum += Number(d.amount);
-      if (d.currencyCode) currency = d.currencyCode;
     }
-    return { count: donations.length, sum, currency: currency || 'USD' };
+    return { count: donations.length, sum };
   }, [donations]);
 
   const programImpact = useMemo(() => (donations ? buildProgramImpact(donations) : []), [donations]);
@@ -213,75 +213,78 @@ export default function DonorDashboardPage() {
   return (
     <div style={{ fontFamily: 'var(--hw-font-body)', background: '#f8fafc', minHeight: '100vh' }}>
       {/* ── Hero ── */}
-      <section style={{ background: 'linear-gradient(135deg, #1E3A5F 0%, #0f2744 100%)', paddingTop: '4rem', paddingBottom: '6rem', paddingLeft: '1.5rem', paddingRight: '1.5rem' }}>
-        <div ref={heroRef} className="hw-fade-in" style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <span className="hw-eyebrow" style={{ color: '#5eead4' }}>Donor Dashboard</span>
-          <h1 style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 900, fontSize: 'clamp(2rem, 5vw, 3rem)', color: '#fff', margin: '0.5rem 0 1rem', lineHeight: 1.1 }}>
-            Your Giving Journey
+      <section style={{ background: 'linear-gradient(135deg, #1E3A5F 0%, #0f2744 100%)', paddingTop: '6rem', paddingBottom: '9rem', paddingLeft: '1.5rem', paddingRight: '1.5rem', textAlign: 'center' }}>
+        <div ref={heroRef} className="hw-fade-in" style={{ maxWidth: 900, margin: '0 auto' }}>
+          <span className="hw-eyebrow" style={{ color: '#5eead4', fontSize: '0.8rem' }}>Supporter Portal</span>
+          <h1 style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 900, fontSize: 'clamp(2.5rem, 6vw, 4rem)', color: '#fff', margin: '1rem 0 1.5rem', lineHeight: 1, letterSpacing: '-0.03em' }}>
+            Your Giving & Impact
           </h1>
-          <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '1.1rem', maxWidth: 640, lineHeight: 1.6, margin: 0 }}>
-            Every contribution you've made has helped provide safe housing and restorative care.
-            This dashboard summarizes your personal impact and history with HealingWings.
+          <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '1.25rem', maxWidth: 700, lineHeight: 1.6, margin: '0 auto' }}>
+            Because of your generosity, we are able to provide safe housing and restorative care to those who need it most. 
+            Thank you for being part of the HealingWings mission.
           </p>
         </div>
       </section>
 
       {/* ── KPI Grid (overlapping) ── */}
-      <SectionContainer style={{ marginTop: '-3rem', position: 'relative', zIndex: 10 }}>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <SectionContainer style={{ marginTop: '-4rem', position: 'relative', zIndex: 10 }}>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <StatBox 
             label="Lifetime Gifts" 
-            value={loading ? '...' : String(totals.count)} 
-            color="#6B21A8" bg="#f5f3ff" border="#e9d5ff" delay="hw-delay-100" 
+            value={loading ? '—' : String(totals.count)} 
+            color="#6B21A8" bg="#fff" border="#e9d5ff" delay="hw-delay-100" 
           />
           <StatBox 
-            label="Total Impact" 
-            value={loading ? '...' : formatMoney(totals.sum, totals.currency)} 
-            color="#0D9488" bg="#f0fdf4" border="#bbf7d0" delay="hw-delay-200" 
+            label="Total Amount (USD)" 
+            value={loading ? '—' : formatMoney(totals.sum)} 
+            color="#0D9488" bg="#fff" border="#bbf7d0" delay="hw-delay-200" 
           />
           <StatBox 
-            label="Causes Funded" 
-            value={loading ? '...' : String(programImpact.length)} 
-            color="#D97706" bg="#fffbeb" border="#fde68a" delay="hw-delay-300" 
+            label="Program Areas Funded" 
+            value={loading ? '—' : String(programImpact.length)} 
+            color="#D97706" bg="#fff" border="#fde68a" delay="hw-delay-300" 
           />
         </div>
       </SectionContainer>
 
-      <SectionContainer className="py-12 lg:py-16">
+      <SectionContainer className="py-20 lg:py-24">
         {loading && (
           <div className="py-24 text-center">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-[#1E3A5F] border-t-transparent mb-4"></div>
-            <p className="text-stone-500 font-medium">Quantifying your impact...</p>
+            <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-[#1E3A5F] border-t-transparent mb-6"></div>
+            <p className="text-stone-400 font-bold uppercase tracking-widest text-sm">Synchronizing your giving data...</p>
           </div>
         )}
 
         {error && (
-          <div className="hw-alert-error max-w-2xl mx-auto shadow-sm" role="alert">
-            <span className="font-bold block mb-1">Error fetching data</span>
-            {error}
+          <div className="hw-alert-error max-w-2xl mx-auto shadow-xl p-10 text-center" role="alert">
+             <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10" /><path d="m15 9-6 6M9 9l6 6" /></svg>
+             </div>
+            <h3 className="font-extrabold text-xl mb-2 text-[#991B1B]">Unable to load dashboard</h3>
+            <p className="text-red-700/70">{error}</p>
           </div>
         )}
 
         {!loading && !error && donations && (
-          <div className="space-y-12">
+          <div className="space-y-24">
             {/* ── Program Area Impact ── */}
             <section>
-              <div className="mb-8">
-                <span className="hw-eyebrow">Direct Impact</span>
-                <h2 className="hw-heading mt-2 text-2xl font-extrabold md:text-3xl text-[#1E3A5F]">By Program Area</h2>
+              <div className="mb-12 text-center">
+                <span className="hw-eyebrow" style={{ color: '#0D9488' }}>Social Impact</span>
+                <h2 className="hw-heading mt-3 text-3xl font-black md:text-4xl text-[#1E3A5F] tracking-tight">Impact by Category</h2>
+                <div className="h-1.5 w-20 bg-[#5eead4] mx-auto mt-6 rounded-full" />
               </div>
 
               {programImpact.length === 0 ? (
-                <div className="bg-white rounded-2xl border border-stone-200 p-10 text-center shadow-sm">
-                  <p className="text-stone-500 italic m-0">Your first donation will ignite measurable change here.</p>
+                <div className="bg-white rounded-[2rem] border border-stone-200 p-16 text-center shadow-sm">
+                  <p className="text-stone-400 font-medium italic m-0 text-lg">Your generosity will fuel measurable change across our programs. Check back after your first gift!</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                   {programImpact.map((row, idx) => (
                     <ProgramImpactCard 
                       key={row.label} 
                       row={row} 
-                      currency={totals.currency} 
                       delay={`hw-delay-${(idx % 3 + 1) * 100}`} 
                     />
                   ))}
@@ -291,50 +294,52 @@ export default function DonorDashboardPage() {
 
             {/* ── History Table ── */}
             <section>
-              <div className="mb-8">
-                <span className="hw-eyebrow">Financial Record</span>
-                <h2 className="hw-heading mt-2 text-2xl font-extrabold md:text-3xl text-[#1E3A5F]">Giving History</h2>
+              <div className="mb-12">
+                <span className="hw-eyebrow" style={{ color: '#6B21A8' }}>Financial History</span>
+                <h2 className="hw-heading mt-3 text-3xl font-black md:text-4xl text-[#1E3A5F] tracking-tight">Record of Stewardship</h2>
               </div>
 
               {donations.length === 0 ? (
-                <p className="text-stone-500">No records found.</p>
+                <div className="bg-white rounded-[2rem] border border-stone-200 p-12 text-center">
+                   <p className="text-stone-400 font-medium text-lg italic">No financial transactions found on your account.</p>
+                </div>
               ) : (
-                <Card title="Detailed Transactions" className="overflow-hidden p-0 lg:p-0">
+                <Card title="Donation Ledger" className="overflow-hidden p-0 lg:p-0 border-none">
                   <div className="overflow-x-auto">
                     <table className="w-full border-collapse text-left">
                       <thead>
-                        <tr className="bg-stone-50 border-b border-stone-200">
-                          <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-stone-400">Date</th>
-                          <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-stone-400">Amount</th>
-                          <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-stone-400">Project / Campaign</th>
-                          <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-stone-400 text-center">Plan</th>
+                        <tr className="bg-stone-50/50 border-b border-stone-100">
+                          <th className="px-8 py-6 text-xs font-black uppercase tracking-[0.2em] text-stone-400">Date</th>
+                          <th className="px-8 py-6 text-xs font-black uppercase tracking-[0.2em] text-stone-400">Amount (USD)</th>
+                          <th className="px-8 py-6 text-xs font-black uppercase tracking-[0.2em] text-stone-400">Initiative</th>
+                          <th className="px-8 py-6 text-xs font-black uppercase tracking-[0.2em] text-stone-400 text-center">Frequency</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-stone-100">
+                      <tbody className="divide-y divide-stone-50">
                         {donations.map((d) => (
-                          <tr key={d.donationId} className="hover:bg-violet-50/40 transition-colors group">
-                            <td className="px-6 py-5 text-stone-600 font-medium">
+                          <tr key={d.donationId} className="hover:bg-violet-50/30 transition-all group">
+                            <td className="px-8 py-7 text-stone-500 font-semibold text-[0.95rem]">
                               {formatDate(d.donationDate)}
                             </td>
-                            <td className="px-6 py-5">
-                              <span className="font-bold text-[#1E3A5F] text-lg tabular-nums">
-                                {formatMoney(d.amount, d.currencyCode)}
+                            <td className="px-8 py-7">
+                              <span className="font-black text-[#1E3A5F] text-xl tabular-nums tracking-tight">
+                                {formatMoney(d.amount)}
                               </span>
-                              <span className="block text-[10px] text-stone-400 uppercase font-bold mt-0.5">{d.donationType || 'Standard'}</span>
+                              <span className="block text-[10px] text-stone-400 uppercase font-black mt-1.5 tracking-widest">{d.donationType || 'Gift'}</span>
                             </td>
-                            <td className="px-6 py-5 text-stone-700">
-                              <span className="font-semibold">{d.campaignName?.trim() || 'General Fund'}</span>
-                              {d.impactUnit && <span className="block text-xs text-[#0D9488] mt-1">{d.impactUnit}</span>}
+                            <td className="px-8 py-7">
+                              <span className="font-bold text-[#1E3A5F] text-[1.05rem] leading-snug block mb-1">{d.campaignName?.trim() || 'General Mission'}</span>
+                              {d.impactUnit && <span className="inline-flex px-2 py-0.5 bg-teal-50 text-[#0D9488] text-[10px] font-bold uppercase rounded-md tracking-wider">{d.impactUnit}</span>}
                             </td>
-                            <td className="px-6 py-5 text-center">
+                            <td className="px-8 py-7 text-center">
                               {d.isRecurring ? (
-                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#EDE9FE] text-[#6B21A8] text-[11px] font-bold uppercase tracking-tight">
-                                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="m3 2 19 19m-5 1 5-5-5-5M2 9l5 5 5-5" /></svg>
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-violet-100 text-[#6B21A8] text-[10px] font-black uppercase tracking-widest">
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" className="animate-spin-slow"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" /><polyline points="21 3 21 8 16 8" /></svg>
                                   Recurring
                                 </span>
                               ) : (
-                                <span className="inline-flex px-2.5 py-1 rounded-full bg-stone-100 text-stone-400 text-[11px] font-bold uppercase tracking-tight">
-                                  One-time
+                                <span className="inline-flex px-3 py-1.5 rounded-full bg-stone-100 text-stone-400 text-[10px] font-black uppercase tracking-widest">
+                                  One-Time
                                 </span>
                               )}
                             </td>
@@ -351,17 +356,18 @@ export default function DonorDashboardPage() {
       </SectionContainer>
       
       {/* ── Footer / CTA ── */}
-      <section className="py-20 bg-stone-50 border-t border-stone-200">
-        <div className="max-w-4xl mx-auto px-6 text-center">
-           <h3 className="hw-heading-font text-3xl font-black text-[#1E3A5F] mb-4">Want to further your impact?</h3>
-           <p className="text-stone-500 text-lg mb-10">Your next gift could be the turning point for another resident waiting for care.</p>
-           <div className="flex flex-wrap justify-center gap-4">
-              <a href="/#donate" className="hw-btn-magenta h-14 px-10 flex items-center justify-center rounded-full text-lg font-bold">
-                Give Again →
+      <section className="py-24 bg-[#1E3A5F] relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10 pointer-events-none">
+           <div className="absolute top-0 right-0 w-96 h-96 bg-white rounded-full blur-[120px]" />
+           <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#5eead4] rounded-full blur-[100px]" />
+        </div>
+        <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
+           <h3 className="hw-heading-font text-4xl font-black text-white mb-6 tracking-tight italic">Continue your legacy of giving.</h3>
+           <p className="text-white/60 text-xl mb-12 max-w-2xl mx-auto leading-relaxed">Your continued support allows us to expand our outreach and bring hope to even more individuals.</p>
+           <div className="flex justify-center">
+              <a href="/#donate" className="hw-btn-magenta h-16 px-14 flex items-center justify-center rounded-full text-xl font-black shadow-2xl hover:scale-105 transition-transform">
+                Give Again Now →
               </a>
-              <button className="hw-btn-ghost-purple h-14 px-10 flex items-center justify-center rounded-full text-lg font-bold bg-white">
-                Download Annual Receipt
-              </button>
            </div>
         </div>
       </section>
