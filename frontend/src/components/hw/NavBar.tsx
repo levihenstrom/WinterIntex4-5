@@ -4,11 +4,10 @@ import { useAuth } from '../../context/AuthContext';
 
 const NAV_LINKS = [
   { label: 'Home', hash: '#hero' },
-  { label: 'About', hash: '#mission' },
   { label: 'Impact', hash: '#impact' },
-  { label: 'Stories', hash: '#stories' },
+  { label: 'About', hash: '#mission' },
   { label: 'Donate', hash: '#donate' },
-  { label: 'Contact', hash: '#footer' },
+
 ];
 
 export default function NavBar() {
