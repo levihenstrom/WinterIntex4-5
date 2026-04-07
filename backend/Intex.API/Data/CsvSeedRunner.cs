@@ -70,6 +70,12 @@ public static class CsvSeedRunner
         }
 
         var replaceExisting = config.GetValue("Intex:SeedCsvReplaceExisting", false);
+        logger.LogInformation(
+            "CSV seed requested. Environment={Environment}, ReplaceExisting={ReplaceExisting}, Provider={Provider}",
+            env.EnvironmentName,
+            replaceExisting,
+            db.Database.ProviderName);
+
         if (!replaceExisting && await db.Supporters.AsNoTracking().AnyAsync(cancellationToken))
         {
             logger.LogInformation(
@@ -103,9 +109,6 @@ public static class CsvSeedRunner
 
         try
         {
-            if (isSqlServer)
-                await ExecuteNonQueryAsync(connection, transaction, "EXEC sp_MSforeachtable 'ALTER TABLE ? NOCHECK CONSTRAINT ALL';", cancellationToken);
-
             foreach (var table in DeleteOrder)
                 await ExecuteNonQueryAsync(connection, transaction, $"DELETE FROM [{table}];", cancellationToken);
 
@@ -129,9 +132,6 @@ public static class CsvSeedRunner
 
                 logger.LogInformation("CSV seed loaded {Rows} rows into {Table}", rowsLoaded, table);
             }
-
-            if (isSqlServer)
-                await ExecuteNonQueryAsync(connection, transaction, "EXEC sp_MSforeachtable 'ALTER TABLE ? WITH CHECK CHECK CONSTRAINT ALL';", cancellationToken);
 
             await transaction.CommitAsync(cancellationToken);
             logger.LogInformation("CSV seed completed successfully.");
