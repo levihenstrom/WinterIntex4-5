@@ -37,6 +37,7 @@ static string[] ParseCorsOrigins(string? configured, string fallback)
 var corsOrigins = ParseCorsOrigins(builder.Configuration["FrontendUrl"], DefaultFrontendUrl);
 var googleClientId = builder.Configuration["Authentication:Google:ClientId"];
 var googleClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
+var useSqliteInDevelopment = builder.Configuration.GetValue("Intex:UseSqliteInDevelopment", true);
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
@@ -62,7 +63,7 @@ static string RequireProductionConnectionString(IConfiguration configuration, st
 // Domain data context — SQLite for local development; SQL Server in production.
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    var cs = isDevelopment
+    var cs = isDevelopment && useSqliteInDevelopment
         ? builder.Configuration.GetConnectionString("AppConnection") ?? "Data Source=Intex.sqlite"
         : RequireProductionConnectionString(builder.Configuration, "AppConnection");
 
@@ -79,7 +80,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Identity context — SQLite for local development; SQL Server in production.
 builder.Services.AddDbContext<AuthIdentityDbContext>(options =>
 {
-    var cs = isDevelopment
+    var cs = isDevelopment && useSqliteInDevelopment
         ? builder.Configuration.GetConnectionString("IdentityConnection") ?? "Data Source=Identity.sqlite"
         : RequireProductionConnectionString(builder.Configuration, "IdentityConnection");
 

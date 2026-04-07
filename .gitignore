@@ -59,6 +59,9 @@ nunit-*.xml
 
 sqlite/
 *.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite-journal
 *.db
 *.db-*
 *.zip
