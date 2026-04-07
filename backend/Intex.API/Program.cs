@@ -169,14 +169,13 @@ using (var scope = app.Services.CreateScope())
     {
         await identityDb.Database.MigrateAsync();
         await appDb.Database.MigrateAsync();
+        await AuthIdentityGenerator.GenerateDefaultIdentityAsync(sp, app.Configuration);
         await IntexDevSeedRunner.SeedAfterMigrateIfEmptyAsync(
             appDb,
             sp.GetRequiredService<IHostEnvironment>(),
             app.Configuration,
             seedLogger);
     }
-
-    await AuthIdentityGenerator.GenerateDefaultIdentityAsync(sp, app.Configuration);
 }
 
 // Simple health check — use to verify the site and runtime without auth
