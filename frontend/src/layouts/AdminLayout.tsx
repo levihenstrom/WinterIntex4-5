@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import NavBar from '../components/hw/NavBar';
 
 const tabs = [
   { to: '/admin/home', label: 'Home' },
@@ -18,38 +19,49 @@ export default function AdminLayout() {
   const { authSession } = useAuth();
   return (
     <div className="d-flex flex-column min-vh-100">
-      <header className="bg-dark text-white p-3">
-        <div className="container d-flex justify-content-between align-items-center">
-          <strong>HealingWings — Admin Portal (scaffold)</strong>
-          <span className="small">
-            {authSession.email} · roles: {authSession.roles.join(', ') || 'none'}
-          </span>
-        </div>
-      </header>
-      <nav className="bg-light border-bottom">
-        <div className="container">
-          <ul className="nav nav-tabs border-0 pt-2">
-            {tabs.map((tab) => (
-              <li key={tab.to} className="nav-item">
-                <NavLink
-                  to={tab.to}
-                  className={({ isActive }) =>
-                    'nav-link' + (isActive ? ' active' : '')
-                  }
-                >
-                  {tab.label}
-                </NavLink>
+      <NavBar />
+      <div className="hw-auth-page-content flex-grow-1">
+        <header className="bg-dark text-white p-3">
+          <div className="container d-flex justify-content-between align-items-center">
+            <strong>HealingWings — Admin Portal (scaffold)</strong>
+            <span className="small">
+              {authSession.email} · roles: {authSession.roles.join(', ') || 'none'}
+            </span>
+          </div>
+        </header>
+        <nav className="bg-light border-bottom">
+          <div className="container">
+            <ul className="nav nav-tabs border-0 pt-2">
+              {tabs.map((tab) => (
+                <li key={tab.to} className="nav-item">
+                  <NavLink
+                    to={tab.to}
+                    className={({ isActive }) =>
+                      'nav-link' + (isActive ? ' active' : '')
+                    }
+                  >
+                    {tab.label}
+                  </NavLink>
+                </li>
+              ))}
+              <li className="nav-item ms-auto">
+                <NavLink to="/logout" className="nav-link">Logout</NavLink>
               </li>
-            ))}
-            <li className="nav-item ms-auto">
-              <NavLink to="/logout" className="nav-link">Logout</NavLink>
-            </li>
-          </ul>
+            </ul>
+          </div>
+        </nav>
+        <main className="flex-grow-1">
+          <Outlet />
+        </main>
+        <footer
+          className="text-center py-3 mt-auto text-white-50 small"
+          style={{ background: 'var(--hw-navy)' }}
+        >
+          <div className="container">
+            Signed in as {authSession.email}
+          </div>
+        </footer>
         </div>
-      </nav>
-      <main className="flex-grow-1">
-        <Outlet />
-      </main>
     </div>
   );
 }

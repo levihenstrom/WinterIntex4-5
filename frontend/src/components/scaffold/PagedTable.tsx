@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { fetchPaged, type PagedResult } from '../../lib/apiClient';
+import { useAuth } from '../../context/AuthContext';
 
 interface PagedTableProps {
   /** API path like "/api/donations" — page + pageSize are appended automatically. */
@@ -16,6 +17,7 @@ interface PagedTableProps {
  * the individual page cards own the real UX.
  */
 export default function PagedTable({ endpoint, heading, pageSize = 20 }: PagedTableProps) {
+  const { authSession } = useAuth();
   const [page, setPage] = useState(1);
   const [data, setData] = useState<PagedResult<Record<string, unknown>> | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -41,6 +43,8 @@ export default function PagedTable({ endpoint, heading, pageSize = 20 }: PagedTa
   }, [endpoint, page, pageSize]);
 
   const columns = data && data.items.length > 0 ? Object.keys(data.items[0]) : [];
+  const isAdmin = authSession.roles.includes('Admin');
+  const isStaff = authSession.roles.includes('Staff');
 
   return (
     <section className="container my-4">
@@ -62,7 +66,15 @@ export default function PagedTable({ endpoint, heading, pageSize = 20 }: PagedTa
             {data.totalCount} total &middot; page {data.page} of {data.totalPages || 1}
           </div>
           {data.items.length === 0 ? (
-            <p><em>No rows. (If you're logged in as staff, your partner scope may not include this data.)</em></p>
+            <p>
+              <em>
+                {isAdmin
+                  ? 'No rows returned. This usually means the current app database has no data for this entity yet.'
+                  : isStaff
+                    ? 'No rows returned. Your partner scope may not include this data.'
+                    : 'No rows returned.'}
+              </em>
+            </p>
           ) : (
             <div className="table-responsive">
               <table className="table table-sm table-bordered">
