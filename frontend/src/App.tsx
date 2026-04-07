@@ -3,6 +3,7 @@ import {
   BrowserRouter as Router,
   Routes,
   Route,
+  Navigate,
   Link,
   useSearchParams,
   useNavigate,
@@ -37,8 +38,7 @@ import VisitsPage from './pages/scaffold/VisitsPage';
 import ResidentVisitsAndConferencesPage from './pages/scaffold/ResidentVisitsAndConferencesPage';
 import SocialMediaHistoryPage from './pages/scaffold/SocialMediaHistoryPage';
 import SocialMediaSuggestPage from './pages/scaffold/SocialMediaSuggestPage';
-import DonationsReportPage from './pages/scaffold/DonationsReportPage';
-import OutcomesReportPage from './pages/scaffold/OutcomesReportPage';
+import ReportsAnalyticsPage from './pages/scaffold/ReportsAnalyticsPage';
 
 // Auth pages — same fixed NavBar as the landing page (see NavBar.tsx)
 function AuthLayout({ children }: { children: React.ReactNode }) {
@@ -184,8 +184,9 @@ function App() {
                   </RequireAuth>
                 }
               />
-              <Route path="reports/donations" element={<DonationsReportPage />} />
-              <Route path="reports/outcomes" element={<OutcomesReportPage />} />
+              <Route path="reports" element={<ReportsAnalyticsPage />} />
+              <Route path="reports/donations" element={<Navigate to="/admin/reports" replace />} />
+              <Route path="reports/outcomes" element={<Navigate to="/admin/reports" replace />} />
             </Route>
           </Routes>
           <CookieConsentBanner />

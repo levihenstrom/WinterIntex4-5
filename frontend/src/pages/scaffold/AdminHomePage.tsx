@@ -266,16 +266,10 @@ export default function AdminHomePage() {
             description="Manage donor profiles and contribution history."
           />
           <QuickLink
-            to="/admin/reports/donations"
+            to="/admin/reports"
             icon="📊"
-            title="Donation Trends"
-            description="Analyze giving patterns over time."
-          />
-          <QuickLink
-            to="/admin/reports/outcomes"
-            icon="📈"
-            title="Resident Outcomes"
-            description="Track reintegration and case closure metrics."
+            title="Reports &amp; Analytics"
+            description="Giving trends, outcomes, site performance, and annual service summaries."
           />
         </div>
       </div>
