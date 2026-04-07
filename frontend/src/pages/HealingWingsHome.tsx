@@ -103,36 +103,29 @@ function ImpactBar() {
 // ─────────────────────────────────────────────────────────────────────────────
 function MissionSection() {
   return (
-    <section id="mission" className="py-24 lg:py-32 overflow-hidden hw-bg-offwhite">
-      <SectionContainer>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
+    <section id="mission" className="py-10 overflow-hidden hw-bg-offwhite">
+      <div className="w-[95%] max-w-[1600px] mx-auto">
+        <div className="hw-fade-in hw-mission-card grid grid-cols-1 lg:grid-cols-2 p-0 group cursor-default" ref={useFadeIn()}>
           {/* Photo */}
-          <div className="hw-fade-in" ref={useFadeIn()}>
-            <div className="relative rounded-2xl overflow-hidden shadow-2xl h-[420px] lg:h-[520px]">
-              <img src={MISSION_IMG} alt="A child in a safe space" className="w-full h-full object-cover" />
-              </div>
-            {/* Badge */}
-            <div className="hw-badge-purple absolute mt-[-60px] ml-[20px] w-32 h-32 rounded-full flex items-center justify-center shadow-lg"
-              style={{ position: 'relative', top: '-60px', left: '20px', width: '128px', height: '128px', borderRadius: '50%' }}>
-              <span className="text-white font-extrabold text-xl text-center leading-tight hw-heading-font">
-                Since<br />2019
-              </span>
-            </div>
+          <div className="w-full h-[320px] md:h-[420px] lg:h-auto overflow-hidden">
+            <img 
+              src={MISSION_IMG} 
+              alt="A child in a safe space" 
+              className="w-full h-full object-cover transition-transform duration-[1500ms] ease-out group-hover:scale-105" 
+            />
           </div>
           {/* Text */}
-          <div className="hw-fade-in hw-delay-100" ref={useFadeIn()}>
+          <div className="p-8 md:p-12 lg:p-14 flex flex-col justify-center">
             <span className="hw-eyebrow">Our Mission</span>
             <h2 className="hw-heading mt-3 text-3xl md:text-4xl font-extrabold leading-snug">
               We believe every child deserves safety, healing, and a future.
             </h2>
             <div className="mt-6 space-y-4 text-stone-600 leading-relaxed text-base">
               <p>
-                Created to meet the needs of children-survivors of sexual abuse and sex trafficking in the world by providing a safe haven and professional rehabilitation services so children can successfully reintegrate back into family life and society.
-                There is a great need for residential shelters in different countries for children who are trapped in abuse or who are sexually trafficked. Lighthouse Sanctuary has stepped up to fill the need for female survivors between the ages of 8 to 18.
-
+                HealingWings provides safe homes and professional rehabilitation services for girl survivors of sexual abuse and trafficking, helping them successfully reintegrate into family life and society. With residential shelters serving girls aged 8 to 18, we work alongside local authorities and social welfare agencies to rescue, shelter, and restore.
               </p>
               <p>
-                Lighthouse Sanctuary has two residential style shelters, that caters to up to 20 children each. The children are rescued by the local police department or anti-trafficking agents who refer the children through the Department of Social Welfare and Development (DSWD) to Lighthouse Sanctuary. The social worker in the sanctuary will assist the child in transitioning into their new environment.
+                 The children are rescued by the local police department or anti-trafficking agents who refer the children through the Department of Social Welfare and Development (DSWD) to Lighthouse Sanctuary. The social worker in the sanctuary will assist the child in transitioning into their new environment.
 
               </p>
             </div>
@@ -191,7 +184,7 @@ function MissionSection() {
             </a>
           </div>
         </div>
-      </SectionContainer>
+      </div>
     </section>
   );
 }
