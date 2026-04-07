@@ -9,6 +9,8 @@ import {
 } from '../../lib/apiClient';
 import { useAuth } from '../../context/AuthContext';
 import DeleteConfirmModal from '../../components/DeleteConfirmModal';
+import AdminKpiStrip from '../../components/admin/AdminKpiStrip';
+import 'bootstrap-icons/font/bootstrap-icons.css';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -83,35 +85,23 @@ function Badge({ label, bg, text }: { label: string; bg: string; text: string })
 
 // ── KPI Strip ─────────────────────────────────────────────────────────────────
 
-function KPIStrip({ items }: { items: HomeVisitation[] }) {
+function VisitKpiStrip({ items }: { items: HomeVisitation[] }) {
   const total = items.length;
-  const safety = items.filter(v => v.safetyConcernsNoted).length;
-  const followUp = items.filter(v => v.followUpNeeded).length;
-  const emergency = items.filter(v => v.visitType === 'Emergency').length;
-  const cooperative = items.filter(v => v.familyCooperationLevel === 'Cooperative').length;
-
-  const kpis = [
-    { label: 'Visits on Page', value: String(total), icon: '🏠', color: '#1E3A5F' },
-    { label: 'Safety Concerns', value: String(safety), icon: '🚨', color: '#991B1B' },
-    { label: 'Follow-ups Needed', value: String(followUp), icon: '📌', color: '#854D0E' },
-    { label: 'Emergency Visits', value: String(emergency), icon: '🚑', color: '#DC2626' },
-    { label: 'Cooperative Families', value: String(cooperative), icon: '🤝', color: '#166534' },
-  ];
+  const safety = items.filter((v) => v.safetyConcernsNoted).length;
+  const followUp = items.filter((v) => v.followUpNeeded).length;
+  const emergency = items.filter((v) => v.visitType === 'Emergency').length;
+  const cooperative = items.filter((v) => v.familyCooperationLevel === 'Cooperative').length;
 
   return (
-    <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 24 }}>
-      {kpis.map(k => (
-        <div key={k.label} style={{
-          flex: '1 1 140px', background: '#fff', borderRadius: 12,
-          padding: '14px 16px', border: '1px solid #E2E8F0',
-          boxShadow: '0 2px 8px rgba(30,58,95,0.06)',
-        }}>
-          <div style={{ fontSize: 20, marginBottom: 4 }}>{k.icon}</div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: k.color }}>{k.value}</div>
-          <div style={{ fontSize: 12, color: '#64748B', fontWeight: 500 }}>{k.label}</div>
-        </div>
-      ))}
-    </div>
+    <AdminKpiStrip
+      items={[
+        { label: 'Visits on page', value: String(total), accent: '#1E3A5F', icon: 'house-door' },
+        { label: 'Safety concerns', value: String(safety), accent: '#991B1B', icon: 'exclamation-triangle' },
+        { label: 'Follow-ups needed', value: String(followUp), accent: '#854D0E', icon: 'pin-map' },
+        { label: 'Emergency visits', value: String(emergency), accent: '#DC2626', icon: 'lightning-charge' },
+        { label: 'Cooperative families', value: String(cooperative), accent: '#166534', icon: 'people' },
+      ]}
+    />
   );
 }
 
@@ -351,22 +341,31 @@ export default function ResidentVisitsAndConferencesPage() {
           <div>
             <span style={{ fontSize: 12, fontWeight: 700, color: '#0D9488', letterSpacing: 2, textTransform: 'uppercase' }}>Case Management</span>
             <h1 style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: 28, color: '#1E3A5F', marginBottom: 4 }}>
-              Home Visitations
+              <i className="bi bi-calendar-event me-2" style={{ color: '#0D9488' }} aria-hidden />
+              Visits &amp; conferences
             </h1>
             <p style={{ color: '#64748B', fontSize: 14, marginBottom: 0 }}>
               {visitData ? `${visitData.totalCount} visit${visitData.totalCount !== 1 ? 's' : ''} logged` : 'Loading visits…'}
             </p>
           </div>
           {canWrite && (
-            <button type="button" onClick={openCreate} style={{
-              background: '#1E3A5F', color: '#fff', border: 'none', borderRadius: 8,
-              padding: '10px 22px', fontWeight: 600, fontSize: 14, cursor: 'pointer',
-            }}>+ Log Visit</button>
+            <button
+              type="button"
+              onClick={openCreate}
+              style={{
+                background: '#1E3A5F', color: '#fff', border: 'none', borderRadius: 8,
+                padding: '10px 22px', fontWeight: 600, fontSize: 14, cursor: 'pointer',
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+              }}
+            >
+              <i className="bi bi-house-add" aria-hidden />
+              Record visit
+            </button>
           )}
         </div>
 
         {/* KPI Strip */}
-        {visitData && <KPIStrip items={visitData.items} />}
+        {visitData && <VisitKpiStrip items={visitData.items} />}
 
         {/* Visit type filter pills */}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
@@ -399,13 +398,17 @@ export default function ResidentVisitsAndConferencesPage() {
         }}>
           {visitLoading ? (
             <div style={{ textAlign: 'center', padding: '48px 0', color: '#94A3B8' }}>
-              <div style={{ fontSize: 32, marginBottom: 8 }}>⏳</div>
-              <p style={{ fontWeight: 600 }}>Loading visits…</p>
+              <div className="spinner-border text-secondary mb-3" role="status" aria-label="Loading">
+                <span className="visually-hidden">Loading…</span>
+              </div>
+              <p className="fw-semibold mb-0">Loading visits…</p>
             </div>
           ) : filteredVisits.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '48px 0', color: '#94A3B8' }}>
-              <div style={{ fontSize: 40, marginBottom: 8 }}>🔍</div>
-              <p style={{ fontWeight: 600 }}>No visits logged yet.</p>
+              <div className="mb-3" style={{ fontSize: 40 }}>
+                <i className="bi bi-search" style={{ color: '#CBD5E1' }} aria-hidden />
+              </div>
+              <p className="fw-semibold mb-0">No visits logged yet.</p>
             </div>
           ) : (
             <>
@@ -501,13 +504,17 @@ export default function ResidentVisitsAndConferencesPage() {
         }}>
           {confLoading ? (
             <div style={{ textAlign: 'center', padding: '40px 0', color: '#94A3B8' }}>
-              <div style={{ fontSize: 32, marginBottom: 8 }}>⏳</div>
-              <p style={{ fontWeight: 600 }}>Loading conferences…</p>
+              <div className="spinner-border text-secondary mb-3" role="status" aria-label="Loading">
+                <span className="visually-hidden">Loading…</span>
+              </div>
+              <p className="fw-semibold mb-0">Loading conferences…</p>
             </div>
           ) : sortedConfs.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '40px 0', color: '#94A3B8' }}>
-              <div style={{ fontSize: 40, marginBottom: 8 }}>📅</div>
-              <p style={{ fontWeight: 600 }}>No upcoming case conferences scheduled.</p>
+              <div className="mb-3" style={{ fontSize: 40 }}>
+                <i className="bi bi-calendar-event" style={{ color: '#CBD5E1' }} aria-hidden />
+              </div>
+              <p className="fw-semibold mb-0">No upcoming case conferences scheduled.</p>
             </div>
           ) : (
             <>
@@ -572,7 +579,7 @@ export default function ResidentVisitsAndConferencesPage() {
             <div className="modal-content">
               <div className="modal-header" style={{ background: 'var(--hw-bg-lavender2)', borderBottom: 'none' }}>
                 <h5 className="modal-title hw-heading mb-0" id="visitModal2Title">
-                  {isEditing ? `Edit Visit — ${fmtDate((editTarget as HomeVisitation).visitDate)}` : 'Log New Visit'}
+                  {isEditing ? `Edit visit — ${fmtDate((editTarget as HomeVisitation).visitDate)}` : 'Record visit'}
                 </h5>
                 <button type="button" className="btn-close" onClick={() => setEditTarget(null)} />
               </div>
@@ -644,7 +651,7 @@ export default function ResidentVisitsAndConferencesPage() {
               <div className="modal-footer" style={{ borderTop: '1px solid var(--hw-bg-lavender2)' }}>
                 <button type="button" className="btn btn-outline-secondary" onClick={() => setEditTarget(null)}>Cancel</button>
                 <button type="button" className="btn hw-btn-magenta px-4" onClick={() => void handleSave()} disabled={saving}>
-                  {saving ? 'Saving…' : isEditing ? 'Save Changes' : 'Log Visit'}
+                  {saving ? 'Saving…' : isEditing ? 'Save changes' : 'Record visit'}
                 </button>
               </div>
             </div>

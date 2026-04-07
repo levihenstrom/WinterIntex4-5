@@ -69,12 +69,12 @@ function socialKpiItems(items: SocialMediaPost[], totalInDb: number) {
     ? (items.reduce((s, p) => s + Number(p.engagementRate ?? 0), 0) / items.length * 100)
     : 0;
   return [
-    { label: 'Posts (this page)', value: String(items.length), accent: '#1E3A5F' },
-    { label: 'Total in database', value: String(totalInDb), sub: 'matching filters', accent: '#7C3AED' },
-    { label: 'Likes (page)', value: likes.toLocaleString(), accent: '#DC2626' },
-    { label: 'Reach (page)', value: reach.toLocaleString(), accent: '#0D9488' },
-    { label: 'Comments (page)', value: comments.toLocaleString(), accent: '#2563EB' },
-    { label: 'Avg engagement', value: `${avgEng.toFixed(2)}%`, sub: 'mean on this page', accent: '#059669' },
+    { label: 'Posts (this page)', value: String(items.length), accent: '#1E3A5F', icon: 'collection' },
+    { label: 'Total in database', value: String(totalInDb), sub: 'matching filters', accent: '#7C3AED', icon: 'database' },
+    { label: 'Likes (page)', value: likes.toLocaleString(), accent: '#DC2626', icon: 'heart' },
+    { label: 'Reach (page)', value: reach.toLocaleString(), accent: '#0D9488', icon: 'eye' },
+    { label: 'Comments (page)', value: comments.toLocaleString(), accent: '#2563EB', icon: 'chat-dots' },
+    { label: 'Avg engagement', value: `${avgEng.toFixed(2)}%`, sub: 'mean on this page', accent: '#059669', icon: 'graph-up-arrow' },
   ];
 }
 

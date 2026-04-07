@@ -11,6 +11,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import DeleteConfirmModal from '../../components/DeleteConfirmModal';
 import AdminKpiStrip from '../../components/admin/AdminKpiStrip';
+import 'bootstrap-icons/font/bootstrap-icons.css';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -452,7 +453,8 @@ export default function ResidentsListPage() {
           <div>
             <span style={{ fontSize: 12, fontWeight: 700, color: '#0D9488', letterSpacing: 2, textTransform: 'uppercase' }}>Case management</span>
             <h1 style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: 28, color: '#1E3A5F', marginBottom: 4 }}>
-              Resident caseload
+              <i className="bi bi-person-lines-fill me-2" style={{ color: '#0D9488' }} aria-hidden />
+              Residents
             </h1>
             <p style={{ color: '#64748B', fontSize: 14, marginBottom: 0, maxWidth: 720 }}>
               Track each girl through intake, counseling, education, health, and reintegration. Use the table for quick triage; open a row for the full
@@ -467,9 +469,11 @@ export default function ResidentsListPage() {
               style={{
                 background: '#1E3A5F', color: '#fff', border: 'none', borderRadius: 8,
                 padding: '10px 22px', fontWeight: 600, fontSize: 14, cursor: 'pointer',
+                display: 'inline-flex', alignItems: 'center', gap: 8,
               }}
             >
-              + New Resident
+              <i className="bi bi-person-plus" aria-hidden />
+              New resident
             </button>
           )}
         </div>
@@ -477,11 +481,12 @@ export default function ResidentsListPage() {
         {data && (
           <AdminKpiStrip
             items={[
-              { label: 'Residents on this page', value: String(data.items.length), accent: '#1E3A5F' },
+              { label: 'Residents on this page', value: String(data.items.length), accent: '#1E3A5F', icon: 'people' },
               {
                 label: 'Active on this page',
                 value: String(data.items.filter((r) => r.caseStatus === 'Active').length),
                 accent: '#0D9488',
+                icon: 'person-check',
               },
               {
                 label: 'High or critical risk (page)',
@@ -489,12 +494,14 @@ export default function ResidentsListPage() {
                   data.items.filter((r) => r.currentRiskLevel === 'High' || r.currentRiskLevel === 'Critical').length,
                 ),
                 accent: '#991B1B',
+                icon: 'exclamation-triangle',
               },
               {
                 label: 'Total in database (filtered)',
                 value: String(data.totalCount),
                 sub: `Page ${data.page} of ${data.totalPages || 1}`,
                 accent: '#6B21A8',
+                icon: 'database',
               },
             ]}
           />
@@ -637,24 +644,28 @@ export default function ResidentsListPage() {
                                     className="dropdown-item"
                                     onClick={() => void openProfile(r.residentId)}
                                   >
+                                    <i className="bi bi-person-vcard me-2 text-secondary" aria-hidden />
                                     Full profile
                                   </button>
                                 </li>
                                 {canWrite ? (
                                   <li>
                                     <button type="button" className="dropdown-item" onClick={() => openEdit(r)}>
+                                      <i className="bi bi-pencil me-2 text-secondary" aria-hidden />
                                       Edit
                                     </button>
                                   </li>
                                 ) : null}
                                 <li>
                                   <Link className="dropdown-item" to={`/admin/residents/${r.residentId}/process`}>
-                                    Process recordings
+                                    <i className="bi bi-journal-text me-2 text-secondary" aria-hidden />
+                                    Session notes
                                   </Link>
                                 </li>
                                 <li>
                                   <Link className="dropdown-item" to={`/admin/residents/${r.residentId}/visits`}>
-                                    Home visits
+                                    <i className="bi bi-house-door me-2 text-secondary" aria-hidden />
+                                    Field visits
                                   </Link>
                                 </li>
                                 {canWrite ? (
@@ -666,6 +677,7 @@ export default function ResidentsListPage() {
                                         className="dropdown-item text-danger"
                                         onClick={() => setDeleteTarget(r)}
                                       >
+                                        <i className="bi bi-trash me-2" aria-hidden />
                                         Delete
                                       </button>
                                     </li>
