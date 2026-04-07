@@ -20,6 +20,23 @@ import HealingWingsHome from './pages/HealingWingsHome';
 import NavBar from './components/hw/NavBar';
 import RequireAuth from './components/RequireAuth';
 
+// Scaffold layouts + pages (SCAF-1)
+import AdminLayout from './layouts/AdminLayout';
+import DonorLayout from './layouts/DonorLayout';
+import ImpactPage from './pages/scaffold/ImpactPage';
+import DonorDashboardPage from './pages/scaffold/DonorDashboardPage';
+import AdminHomePage from './pages/scaffold/AdminHomePage';
+import SupportersListPage from './pages/scaffold/SupportersListPage';
+import ContributionsPage from './pages/scaffold/ContributionsPage';
+import AllocationsPage from './pages/scaffold/AllocationsPage';
+import ResidentsListPage from './pages/scaffold/ResidentsListPage';
+import ProcessRecordingPage from './pages/scaffold/ProcessRecordingPage';
+import VisitsPage from './pages/scaffold/VisitsPage';
+import SocialMediaHistoryPage from './pages/scaffold/SocialMediaHistoryPage';
+import SocialMediaSuggestPage from './pages/scaffold/SocialMediaSuggestPage';
+import DonationsReportPage from './pages/scaffold/DonationsReportPage';
+import OutcomesReportPage from './pages/scaffold/OutcomesReportPage';
+
 // Auth pages — same fixed NavBar as the landing page (see NavBar.tsx)
 function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -86,9 +103,9 @@ function App() {
         <Router>
           <AuthTokenExchanger />
           <Routes>
-            {/* HealingWings landing page — has its own NavBar */}
+            {/* Public routes */}
             <Route path="/" element={<HealingWingsHome />} />
-            {/* Auth pages — use Bootstrap layout */}
+            <Route path="/impact" element={<ImpactPage />} />
             <Route path="/login" element={<AuthLayout><LoginPage /></AuthLayout>} />
             <Route path="/register" element={<AuthLayout><RegisterPage /></AuthLayout>} />
             <Route path="/logout" element={<AuthLayout><LogoutPage /></AuthLayout>} />
@@ -112,6 +129,42 @@ function App() {
                 </AuthLayout>
               }
             />
+
+            {/* Donor portal (SCAF-1) */}
+            <Route
+              path="/donor"
+              element={
+                <RequireAuth role={['Donor', 'LegacyCustomer', 'Admin']}>
+                  <DonorLayout />
+                </RequireAuth>
+              }
+            >
+              <Route index element={<DonorDashboardPage />} />
+              <Route path="dashboard" element={<DonorDashboardPage />} />
+            </Route>
+
+            {/* Admin / staff portal (SCAF-1) */}
+            <Route
+              path="/admin"
+              element={
+                <RequireAuth role={['Admin', 'Staff']}>
+                  <AdminLayout />
+                </RequireAuth>
+              }
+            >
+              <Route index element={<AdminHomePage />} />
+              <Route path="home" element={<AdminHomePage />} />
+              <Route path="donations" element={<SupportersListPage />} />
+              <Route path="donations/contributions" element={<ContributionsPage />} />
+              <Route path="donations/allocations" element={<AllocationsPage />} />
+              <Route path="residents" element={<ResidentsListPage />} />
+              <Route path="residents/:id/process" element={<ProcessRecordingPage />} />
+              <Route path="residents/:id/visits" element={<VisitsPage />} />
+              <Route path="social-media" element={<SocialMediaHistoryPage />} />
+              <Route path="social-media/suggest" element={<SocialMediaSuggestPage />} />
+              <Route path="reports/donations" element={<DonationsReportPage />} />
+              <Route path="reports/outcomes" element={<OutcomesReportPage />} />
+            </Route>
           </Routes>
           <CookieConsentBanner />
         </Router>

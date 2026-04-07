@@ -3,13 +3,14 @@ import { useAuth } from '../context/AuthContext';
 
 interface RequireAuthProps {
   children: React.ReactNode;
-  /** If provided, user must have this role or be redirected to /unauthorized */
-  role?: string;
+  /** If provided, user must have at least one of these roles or be redirected to /unauthorized */
+  role?: string | string[];
 }
 
 /**
  * Wraps a route so unauthenticated users are sent to /login.
  * If `role` is specified, users without that role see a 403 page instead.
+ * `role` accepts a single string or an array — the user needs ANY one of them.
  */
 export default function RequireAuth({ children, role }: RequireAuthProps) {
   const { isAuthenticated, isLoading, authSession } = useAuth();
@@ -29,8 +30,12 @@ export default function RequireAuth({ children, role }: RequireAuthProps) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (role && !authSession.roles.includes(role)) {
-    return <Navigate to="/unauthorized" replace />;
+  if (role) {
+    const allowed = Array.isArray(role) ? role : [role];
+    const hasRole = allowed.some((r) => authSession.roles.includes(r));
+    if (!hasRole) {
+      return <Navigate to="/unauthorized" replace />;
+    }
   }
 
   return <>{children}</>;
