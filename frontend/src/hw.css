@@ -24,16 +24,19 @@
   --hw-bg-lavender2:  #EDE9FE;
   --hw-bg-navy:       #1E3A5F;
 
+
+
   /* Hero overlay — change opacity here to lighten/darken the photo */
   --hw-hero-overlay: linear-gradient(
     135deg,
     rgba(99, 55, 210, 0.40),    /* lila tenue */
-    rgba(15, 23, 102, 0.65)
+    rgba(15, 23, 102, 0.65),    /* azul muy oscuro */
+    rgba(180, 83, 9, 0.20)      /* amber muy suave */
   );
 
   /* Pillar card overlays */
-  --hw-pillar-edu:    rgba(107, 33, 168, 0.68);
-  --hw-pillar-heal:   rgba(13, 148, 136, 0.68);
+  --hw-pillar-edu:    rgba(214, 196, 230, 0.68);
+  --hw-pillar-heal:   rgba(5, 143, 131, 0.68);
   --hw-pillar-reint:  rgba(30, 58, 95, 0.75);
 
   /* Gradients */
