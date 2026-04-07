@@ -1,0 +1,52 @@
+{
+  "pipeline": "resident_elevated_risk",
+  "observation_date": "2027-02-02",
+  "feature_window": [
+    "2026-01-03",
+    "2027-01-03"
+  ],
+  "gap_days_before_obs": 30,
+  "label": "elevated_risk = 1 if current_risk_level in High/Critical",
+  "numeric_features": [
+    "initial_risk_ord",
+    "stay_years_approx",
+    "pr_sessions_prior",
+    "pr_mean_duration",
+    "pr_concern_rate",
+    "pr_progress_rate",
+    "pr_referral_rate",
+    "pr_pct_group",
+    "hv_visits_prior",
+    "hv_unfavorable_rate",
+    "hv_safety_flag_rate",
+    "edu_rows_prior",
+    "edu_mean_attendance",
+    "edu_mean_progress",
+    "hw_rows_prior",
+    "hw_mean_general",
+    "hw_mean_energy",
+    "ip_plans_prior",
+    "ip_on_hold_rate",
+    "ip_open_rate",
+    "sub_cat_orphaned",
+    "sub_cat_trafficked",
+    "sub_cat_child_labor",
+    "sub_cat_physical_abuse",
+    "sub_cat_sexual_abuse",
+    "sub_cat_osaec",
+    "sub_cat_cicl",
+    "sub_cat_at_risk",
+    "sub_cat_street_child",
+    "sub_cat_child_with_hiv"
+  ],
+  "categorical_features": [
+    "case_category",
+    "case_status",
+    "region"
+  ],
+  "best_grid_params": {
+    "model__max_depth": 3,
+    "model__min_samples_leaf": 2,
+    "model__n_estimators": 200
+  }
+}
