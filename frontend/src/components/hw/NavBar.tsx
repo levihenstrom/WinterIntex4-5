@@ -6,8 +6,16 @@ const NAV_LINKS = [
   { label: 'Home', hash: '#hero' },
   { label: 'About', hash: '#mission' },
   { label: 'Donate', hash: '#donate' },
-  { label: 'Impact', hash: '#impact' },
+  { label: 'Impact', to: '/impact' },
+  { label: 'Stories', to: '/stories' },
+];
 
+const ADMIN_NAV_LINKS = [
+  { label: 'Home', to: '/admin/home' },
+  { label: 'Donations', to: '/admin/donations' },
+  { label: 'Residents', to: '/admin/residents' },
+  { label: 'Social Media', to: '/admin/social-media' },
+  { label: 'Reports', to: '/admin/reports/donations' },
 ];
 
 export default function NavBar() {
@@ -16,15 +24,7 @@ export default function NavBar() {
   const location = useLocation();
   const { isAuthenticated, authSession, isLoading } = useAuth();
   const isHome = location.pathname === '/';
-  const isAdmin = authSession.roles.includes('Admin');
   const isAdminPortalUser = authSession.roles.includes('Admin') || authSession.roles.includes('Staff');
-  const adminNavLinks = [
-    { label: 'Home', to: '/admin/home' },
-    { label: 'Donations', to: '/admin/donations' },
-    { label: 'Residents', to: '/admin/residents' },
-    ...(isAdmin ? [{ label: 'Social Media', to: '/admin/social-media' }] : []),
-    { label: 'Reports', to: '/admin/reports/donations' },
-  ];
   const portalPath = authSession.roles.includes('Admin') || authSession.roles.includes('Staff')
     ? '/admin/home'
     : (authSession.roles.includes('Donor') || authSession.roles.includes('LegacyCustomer')
@@ -54,7 +54,7 @@ export default function NavBar() {
         {/* Desktop nav links */}
         <nav className="hidden lg:flex items-center gap-7">
           {isAdminPortalUser ? (
-            adminNavLinks.map((link) => (
+            ADMIN_NAV_LINKS.map((link) => (
               <NavLink
                 key={link.label}
                 to={link.to}
@@ -68,13 +68,23 @@ export default function NavBar() {
             ))
           ) : (
             NAV_LINKS.map((link) => (
-              <a
-                key={link.label}
-                href={sectionHref(link.hash)}
-                className="text-sm font-medium text-white/75 hover:text-white transition-colors no-underline"
-              >
-                {link.label}
-              </a>
+              link.to ? (
+                <Link
+                  key={link.label}
+                  to={link.to}
+                  className="text-sm font-medium text-white/75 hover:text-white transition-colors no-underline"
+                >
+                  {link.label}
+                </Link>
+              ) : (
+                <a
+                  key={link.label}
+                  href={sectionHref(link.hash!)}
+                  className="text-sm font-medium text-white/75 hover:text-white transition-colors no-underline"
+                >
+                  {link.label}
+                </a>
+              )
             ))
           )}
         </nav>
@@ -155,7 +165,7 @@ export default function NavBar() {
       {menuOpen && (
         <div className="lg:hidden border-t border-white/20 px-6 py-4 bg-[#1E3A5F]/75 backdrop-blur-xl">
           {isAdminPortalUser ? (
-            adminNavLinks.map((link) => (
+            ADMIN_NAV_LINKS.map((link) => (
               <NavLink
                 key={link.label}
                 to={link.to}
@@ -170,14 +180,25 @@ export default function NavBar() {
             ))
           ) : (
             NAV_LINKS.map((link) => (
-              <a
-                key={link.label}
-                href={sectionHref(link.hash)}
-                onClick={() => setMenuOpen(false)}
-                className="block py-3 text-white/75 hover:text-white font-medium text-sm border-b border-white/10 no-underline transition-colors"
-              >
-                {link.label}
-              </a>
+              link.to ? (
+                <Link
+                  key={link.label}
+                  to={link.to}
+                  onClick={() => setMenuOpen(false)}
+                  className="block py-3 text-white/75 hover:text-white font-medium text-sm border-b border-white/10 no-underline transition-colors"
+                >
+                  {link.label}
+                </Link>
+              ) : (
+                <a
+                  key={link.label}
+                  href={sectionHref(link.hash!)}
+                  onClick={() => setMenuOpen(false)}
+                  className="block py-3 text-white/75 hover:text-white font-medium text-sm border-b border-white/10 no-underline transition-colors"
+                >
+                  {link.label}
+                </a>
+              )
             ))
           )}
           <div className="mt-5 flex flex-col gap-3">
