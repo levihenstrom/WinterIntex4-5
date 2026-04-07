@@ -1,284 +1,728 @@
-import { useState, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { deleteJson, fetchAllPaged, postJson, putJson } from '../../lib/apiClient';
 
-/* ── Types ───────────────────────────────────────────────────── */
-type SupporterType = 'Monetary Donor' | 'Volunteer' | 'Skills Contributor' | 'In-Kind Donor' | 'Social Media Supporter';
-type SupporterStatus = 'Active' | 'Inactive';
-
-interface Supporter {
+/* ── API shape (camelCase from ASP.NET) ─────────────────────── */
+interface SupporterApi {
   supporterId: number;
-  displayName: string;
-  organizationName?: string;
-  email: string;
-  phone: string;
-  city: string;
-  country: string;
-  type: SupporterType;
-  status: SupporterStatus;
-  joinedDate: string;
-  totalContributions: number;
-  lastContribution: string;
-  notes?: string;
+  supporterType?: string | null;
+  displayName?: string | null;
+  organizationName?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  region?: string | null;
+  country?: string | null;
+  status?: string | null;
+  createdAt?: string | null;
+  firstDonationDate?: string | null;
+  relationshipType?: string | null;
+  acquisitionChannel?: string | null;
 }
 
-/* ── Mock Data ───────────────────────────────────────────────── */
-const INITIAL_SUPPORTERS: Supporter[] = [
-  { supporterId: 1,  displayName: 'María López',      email: 'maria.lopez@gmail.com',             phone: '+502 5555-1234', city: 'Guatemala City', country: 'Guatemala', type: 'Monetary Donor',          status: 'Active',   joinedDate: '2022-03-15', totalContributions: 12500, lastContribution: '2025-02-10', notes: 'Monthly recurring donor since 2022.' },
-  { supporterId: 2,  displayName: 'Carlos Méndez',    organizationName: 'Fundación Solidaria',     email: 'carlos@fundacionsolidaria.org',  phone: '+502 2222-9876', city: 'Antigua',        country: 'Guatemala', type: 'Monetary Donor',          status: 'Active',   joinedDate: '2021-07-01', totalContributions: 45000, lastContribution: '2025-03-01' },
-  { supporterId: 3,  displayName: 'Ana Cifuentes',    email: 'ana.cifuentes@yahoo.com',            phone: '+502 5111-3344', city: 'Quetzaltenango', country: 'Guatemala', type: 'Volunteer',              status: 'Active',   joinedDate: '2023-01-20', totalContributions: 0,     lastContribution: '2025-03-15', notes: 'Provides legal counseling every Tuesday.' },
-  { supporterId: 4,  displayName: 'Roberto Palma',    organizationName: 'Tech for Good GT',        email: 'rpalma@techforgood.gt',          phone: '+502 4422-7890', city: 'Guatemala City', country: 'Guatemala', type: 'Skills Contributor',     status: 'Active',   joinedDate: '2023-06-10', totalContributions: 0,     lastContribution: '2025-01-22', notes: 'Website and IT support.' },
-  { supporterId: 5,  displayName: 'Laura Estrada',    email: 'laura.estrada@hotmail.com',          phone: '+502 5678-4321', city: 'Cobán',          country: 'Guatemala', type: 'In-Kind Donor',          status: 'Active',   joinedDate: '2022-11-05', totalContributions: 3200,  lastContribution: '2025-02-28', notes: 'Donates clothing, blankets and hygiene kits.' },
-  { supporterId: 6,  displayName: 'Miguel Torres',    email: 'miguel.t@gmail.com',                 phone: '+502 5990-2233', city: 'Escuintla',      country: 'Guatemala', type: 'Social Media Supporter',  status: 'Active',   joinedDate: '2024-01-12', totalContributions: 0,     lastContribution: '2025-03-20' },
-  { supporterId: 7,  displayName: 'Sofía Herrera',    organizationName: 'HR Consulting Plus',      email: 'sofia@hrconsultingplus.com',     phone: '+502 2345-6789', city: 'Guatemala City', country: 'Guatemala', type: 'Skills Contributor',     status: 'Inactive', joinedDate: '2021-04-18', totalContributions: 0,     lastContribution: '2024-06-10', notes: 'Provided HR training workshops in 2023.' },
-  { supporterId: 8,  displayName: 'José Ramírez',     email: 'jose.ramirez@outlook.com',           phone: '+502 5432-1122', city: 'Huehuetenango', country: 'Guatemala', type: 'Monetary Donor',          status: 'Inactive', joinedDate: '2020-08-30', totalContributions: 8700,  lastContribution: '2024-01-15' },
-  { supporterId: 9,  displayName: 'Patricia Vásquez', organizationName: 'Iglesia Comunidad de Fe', email: 'patricia@ifc.org',              phone: '+502 2299-4455', city: 'Villa Nueva',    country: 'Guatemala', type: 'In-Kind Donor',          status: 'Active',   joinedDate: '2023-09-01', totalContributions: 5100,  lastContribution: '2025-02-14', notes: 'Monthly food and supplies drive.' },
-  { supporterId: 10, displayName: 'Diego Fuentes',    email: 'dfuentes@gmail.com',                 phone: '+502 5767-8899', city: 'Petén',          country: 'Guatemala', type: 'Volunteer',              status: 'Active',   joinedDate: '2024-03-05', totalContributions: 0,     lastContribution: '2025-03-10', notes: 'Transportation volunteer, owns van.' },
-  { supporterId: 11, displayName: 'Claudia Morales',  organizationName: 'Morales & Asociados',     email: 'cmorales@moralesasoc.gt',        phone: '+502 2233-5566', city: 'Guatemala City', country: 'Guatemala', type: 'Monetary Donor',          status: 'Active',   joinedDate: '2022-06-22', totalContributions: 22000, lastContribution: '2025-01-30' },
-  { supporterId: 12, displayName: 'Fernando Ixcot',   email: 'f.ixcot@yahoo.com',                  phone: '+502 5880-1234', city: 'Chimaltenango', country: 'Guatemala', type: 'Social Media Supporter',  status: 'Active',   joinedDate: '2024-06-18', totalContributions: 0,     lastContribution: '2025-03-22' },
-];
+interface DonationLite {
+  supporterId: number;
+  donationType?: string | null;
+  amount?: number | null;
+  donationDate?: string | null;
+}
 
-const TYPE_COLORS: Record<SupporterType, { bg: string; text: string }> = {
-  'Monetary Donor':         { bg: '#DCFCE7', text: '#166534' },
-  'Volunteer':              { bg: '#DBEAFE', text: '#1E40AF' },
-  'Skills Contributor':     { bg: '#F3E8FF', text: '#6B21A8' },
-  'In-Kind Donor':          { bg: '#FEF9C3', text: '#854D0E' },
-  'Social Media Supporter': { bg: '#FFE4E6', text: '#9F1239' },
+const TYPE_LABEL: Record<string, string> = {
+  MonetaryDonor: 'Monetary Donor',
+  Volunteer: 'Volunteer',
+  InKindDonor: 'In-Kind Donor',
+  SocialMediaAdvocate: 'Social Media Supporter',
+  PartnerOrganization: 'Partner Organization',
 };
 
-const STATUS_COLORS: Record<SupporterStatus, { bg: string; text: string }> = {
-  Active:   { bg: '#DCFCE7', text: '#166534' },
+const TYPE_ORDER = ['MonetaryDonor', 'Volunteer', 'InKindDonor', 'SocialMediaAdvocate', 'PartnerOrganization'];
+
+/* ── Color helpers ───────────────────────────────────────────── */
+const TYPE_COLORS: Record<string, { bg: string; text: string }> = {
+  MonetaryDonor: { bg: '#DCFCE7', text: '#166534' },
+  Volunteer: { bg: '#DBEAFE', text: '#1E40AF' },
+  InKindDonor: { bg: '#FEF9C3', text: '#854D0E' },
+  SocialMediaAdvocate: { bg: '#FFE4E6', text: '#9F1239' },
+  PartnerOrganization: { bg: '#F3E8FF', text: '#6B21A8' },
+};
+
+const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
+  Active: { bg: '#DCFCE7', text: '#166534' },
   Inactive: { bg: '#F1F5F9', text: '#64748B' },
 };
 
-const ALL_TYPES: SupporterType[] = ['Monetary Donor', 'Volunteer', 'Skills Contributor', 'In-Kind Donor', 'Social Media Supporter'];
-const IC = '#1E3A5F';
+function labelForType(t: string | null | undefined): string {
+  if (!t) return 'Supporter';
+  return TYPE_LABEL[t] ?? t;
+}
 
-const ic = (name: string, size = 14) => (
-  <i className={`bi bi-${name}`} style={{ fontSize: size, color: IC }} />
-);
+function fmtMoneyPhp(n: number) {
+  try {
+    return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(n);
+  } catch {
+    return `PHP ${n.toFixed(0)}`;
+  }
+}
 
 function Badge({ label, bg, text }: { label: string; bg: string; text: string }) {
   return (
-    <span style={{ display: 'inline-block', background: bg, color: text, borderRadius: 20, padding: '2px 10px', fontSize: 11, fontWeight: 600, letterSpacing: 0.3 }}>
+    <span
+      style={{
+        display: 'inline-block',
+        background: bg,
+        color: text,
+        borderRadius: 20,
+        padding: '2px 10px',
+        fontSize: 11,
+        fontWeight: 600,
+        letterSpacing: 0.3,
+      }}
+    >
       {label}
     </span>
   );
 }
 
-function StatStrip({ supporters }: { supporters: Supporter[] }) {
-  const active     = supporters.filter(s => s.status === 'Active').length;
-  const monetary   = supporters.filter(s => s.type === 'Monetary Donor').length;
-  const volunteers = supporters.filter(s => s.type === 'Volunteer').length;
-  const totalGiven = supporters.reduce((sum, s) => sum + s.totalContributions, 0);
+/* ── Stat strip ──────────────────────────────────────────────── */
+function StatStrip({
+  supporters,
+  monetaryTotalPhp,
+}: {
+  supporters: SupporterApi[];
+  monetaryTotalPhp: number;
+}) {
+  const active = supporters.filter((s) => s.status === 'Active').length;
+  const monetary = supporters.filter((s) => s.supporterType === 'MonetaryDonor').length;
+  const volunteers = supporters.filter((s) => s.supporterType === 'Volunteer').length;
 
   const stats = [
-    { label: 'Total Supporters', value: String(supporters.length), icon: 'people' },
-    { label: 'Active',           value: String(active),            icon: 'person-check' },
-    { label: 'Monetary Donors',  value: String(monetary),          icon: 'currency-dollar' },
-    { label: 'Volunteers',       value: String(volunteers),        icon: 'heart' },
-    { label: 'Total Donated',    value: `$${totalGiven.toLocaleString()}`, icon: 'wallet2' },
+    { label: 'Total Supporters', value: supporters.length, icon: '👥' },
+    { label: 'Active', value: active, icon: '✅' },
+    { label: 'Monetary Donors', value: monetary, icon: '💵' },
+    { label: 'Volunteers', value: volunteers, icon: '🤝' },
+    { label: 'Monetary gifts (PHP)', value: fmtMoneyPhp(monetaryTotalPhp), icon: '💰', isText: true },
   ];
 
   return (
     <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 24 }}>
-      {stats.map(({ label, value, icon }) => (
-        <div key={label} style={{ flex: '1 1 140px', background: '#fff', borderRadius: 12, padding: '14px 16px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(30,58,95,0.06)' }}>
-          <i className={`bi bi-${icon}`} style={{ fontSize: 18, color: IC, display: 'block', marginBottom: 6 }} />
-          <div style={{ fontSize: 22, fontWeight: 700, color: '#1E3A5F' }}>{value}</div>
-          <div style={{ fontSize: 12, color: '#64748B', fontWeight: 500 }}>{label}</div>
+      {stats.map((s) => (
+        <div
+          key={s.label}
+          style={{
+            flex: '1 1 140px',
+            background: '#fff',
+            borderRadius: 12,
+            padding: '14px 16px',
+            border: '1px solid #E2E8F0',
+            boxShadow: '0 2px 8px rgba(30,58,95,0.06)',
+          }}
+        >
+          <div style={{ fontSize: 20, marginBottom: 4 }}>{s.icon}</div>
+          <div style={{ fontSize: 22, fontWeight: 700, color: '#1E3A5F' }}>{s.isText ? s.value : s.value}</div>
+          <div style={{ fontSize: 12, color: '#64748B', fontWeight: 500 }}>{s.label}</div>
         </div>
       ))}
     </div>
   );
 }
 
+type FormState = {
+  supporterId?: number;
+  displayName: string;
+  organizationName: string;
+  email: string;
+  phone: string;
+  region: string;
+  country: string;
+  supporterType: string;
+  status: string;
+};
+
+const emptyForm: FormState = {
+  displayName: '',
+  organizationName: '',
+  email: '',
+  phone: '',
+  region: '',
+  country: 'Philippines',
+  supporterType: 'MonetaryDonor',
+  status: 'Active',
+};
+
+/* ── Main Page ───────────────────────────────────────────────── */
 export default function SupportersListPage() {
-  const [supporters, setSupporters] = useState<Supporter[]>(INITIAL_SUPPORTERS);
-  const [typeFilter, setTypeFilter]     = useState<string>('All');
+  const [supporters, setSupporters] = useState<SupporterApi[]>([]);
+  const [monetaryTotalPhp, setMonetaryTotalPhp] = useState(0);
+  const [bySupporter, setBySupporter] = useState<Map<number, { totalPhp: number; lastGift: string | null }>>(
+    () => new Map(),
+  );
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [typeFilter, setTypeFilter] = useState<string>('All');
   const [statusFilter, setStatusFilter] = useState<string>('All');
-  const [search, setSearch]             = useState('');
-  const [showForm, setShowForm]         = useState(false);
-  const [form, setForm] = useState({
-    displayName: '', organizationName: '', email: '', phone: '',
-    city: '', country: 'Guatemala', type: 'Monetary Donor' as SupporterType, notes: '',
-  });
+  const [search, setSearch] = useState('');
+  const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState<FormState>(emptyForm);
+  /** Full row from API when editing — merged into PUT so we do not null optional columns. */
+  const [editSource, setEditSource] = useState<SupporterApi | null>(null);
 
-  const filtered = useMemo(() => supporters.filter(s => {
-    const matchType   = typeFilter === 'All' || s.type === typeFilter;
-    const matchStatus = statusFilter === 'All' || s.status === statusFilter;
-    const q = search.toLowerCase();
-    const matchSearch = !q || s.displayName.toLowerCase().includes(q)
-      || (s.organizationName ?? '').toLowerCase().includes(q)
-      || s.email.toLowerCase().includes(q);
-    return matchType && matchStatus && matchSearch;
-  }), [supporters, typeFilter, statusFilter, search]);
+  const reload = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [sups, dons] = await Promise.all([
+        fetchAllPaged<SupporterApi>('/api/supporters', 200),
+        fetchAllPaged<DonationLite>('/api/donations', 200),
+      ]);
+      setSupporters(sups);
 
-  function handleDelete(id: number) {
-    setSupporters(prev => prev.filter(s => s.supporterId !== id));
+      let sum = 0;
+      const agg = new Map<number, { totalPhp: number; lastGift: string | null }>();
+      for (const d of dons) {
+        if (d.donationType === 'Monetary' && d.amount != null) {
+          const a = Number(d.amount);
+          sum += a;
+          const cur = agg.get(d.supporterId) ?? { totalPhp: 0, lastGift: null };
+          cur.totalPhp += a;
+          const dt = d.donationDate;
+          if (dt && (!cur.lastGift || new Date(dt) > new Date(cur.lastGift))) cur.lastGift = dt;
+          agg.set(d.supporterId, cur);
+        }
+      }
+      setMonetaryTotalPhp(sum);
+      setBySupporter(agg);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load supporters');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void reload();
+  }, [reload]);
+
+  const filtered = useMemo(
+    () =>
+      supporters.filter((s) => {
+        const matchType = typeFilter === 'All' || (s.supporterType ?? '') === typeFilter;
+        const matchStatus = statusFilter === 'All' || (s.status ?? '') === statusFilter;
+        const q = search.toLowerCase();
+        const name = (s.displayName ?? '').toLowerCase();
+        const org = (s.organizationName ?? '').toLowerCase();
+        const em = (s.email ?? '').toLowerCase();
+        const matchSearch = !q || name.includes(q) || org.includes(q) || em.includes(q);
+        return matchType && matchStatus && matchSearch;
+      }),
+    [supporters, typeFilter, statusFilter, search],
+  );
+
+  async function handleDelete(id: number) {
+    if (!window.confirm('Delete this supporter? Linked donations may block this action.')) return;
+    try {
+      await deleteJson(`/api/supporters/${id}`);
+      await reload();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Delete failed');
+    }
   }
 
-  function handleAddSubmit(e: React.FormEvent) {
+  async function handleSaveSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const newId = Math.max(...supporters.map(s => s.supporterId)) + 1;
-    setSupporters(prev => [...prev, { ...form, supporterId: newId, status: 'Active', joinedDate: new Date().toISOString().slice(0, 10), totalContributions: 0, lastContribution: new Date().toISOString().slice(0, 10) }]);
-    setForm({ displayName: '', organizationName: '', email: '', phone: '', city: '', country: 'Guatemala', type: 'Monetary Donor', notes: '' });
+    setSaving(true);
+    setError(null);
+    try {
+      if (form.supporterId) {
+        const merged: SupporterApi = {
+          ...editSource,
+          supporterId: form.supporterId,
+          supporterType: form.supporterType,
+          displayName: form.displayName.trim() || null,
+          organizationName: form.organizationName.trim() || null,
+          email: form.email.trim() || null,
+          phone: form.phone.trim() || null,
+          region: form.region.trim() || null,
+          country: form.country.trim() || null,
+          status: form.status,
+        };
+        await putJson(`/api/supporters/${form.supporterId}`, merged);
+      } else {
+        await postJson<SupporterApi>('/api/supporters', {
+          supporterType: form.supporterType,
+          displayName: form.displayName.trim() || null,
+          organizationName: form.organizationName.trim() || null,
+          email: form.email.trim() || null,
+          phone: form.phone.trim() || null,
+          region: form.region.trim() || null,
+          country: form.country.trim() || null,
+          status: form.status,
+          relationshipType: 'Local',
+          acquisitionChannel: 'AdminPortal',
+        });
+      }
+      setShowForm(false);
+      setForm(emptyForm);
+      setEditSource(null);
+      await reload();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Save failed');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function handleEdit(s: SupporterApi) {
+    setEditSource({ ...s });
+    setForm({
+      supporterId: s.supporterId,
+      displayName: s.displayName ?? '',
+      organizationName: s.organizationName ?? '',
+      email: s.email ?? '',
+      phone: s.phone ?? '',
+      region: s.region ?? '',
+      country: s.country ?? 'Philippines',
+      supporterType: s.supporterType ?? 'MonetaryDonor',
+      status: s.status ?? 'Active',
+    });
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function resetForm() {
+    setForm(emptyForm);
+    setEditSource(null);
     setShowForm(false);
   }
 
   return (
     <div style={{ background: '#F8FAFC', minHeight: '100vh', padding: '32px 0' }}>
       <div className="container">
-
         <div style={{ marginBottom: 28 }}>
-          <span style={{ fontSize: 12, fontWeight: 700, color: '#0D9488', letterSpacing: 2, textTransform: 'uppercase' }}>Donors & Contributions</span>
-          <h1 style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: 28, color: '#1E3A5F', marginBottom: 4 }}>Supporter Profiles</h1>
-          <p style={{ color: '#64748B', fontSize: 14, marginBottom: 0 }}>Manage all supporter profiles, types, and statuses across the organization.</p>
+          <span
+            style={{
+              fontSize: 12,
+              fontWeight: 700,
+              color: '#0D9488',
+              letterSpacing: 2,
+              textTransform: 'uppercase',
+            }}
+          >
+            Donors &amp; Contributions
+          </span>
+          <h1 style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: 28, color: '#1E3A5F', marginBottom: 4 }}>
+            Supporter Profiles
+          </h1>
+          <p style={{ color: '#64748B', fontSize: 14, marginBottom: 0 }}>
+            Data from the database (same records used in donations and allocations).
+          </p>
         </div>
 
-        <StatStrip supporters={supporters} />
-
-        {/* Filters */}
-        <div style={{ background: '#fff', borderRadius: 12, padding: '14px 20px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(30,58,95,0.05)', marginBottom: 20, display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center' }}>
-          <div style={{ position: 'relative', flex: '1 1 220px' }}>
-            <i className="bi bi-search" style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 13, color: '#94A3B8', pointerEvents: 'none' }} />
-            <input type="text" placeholder="Search by name, org or email…" value={search} onChange={e => setSearch(e.target.value)}
-              style={{ width: '100%', padding: '8px 14px 8px 30px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, outline: 'none' }} />
-          </div>
-          <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}
-            style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, background: '#fff' }}>
-            <option value="All">All Types</option>
-            {ALL_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-          </select>
-          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-            style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, background: '#fff' }}>
-            <option value="All">All Statuses</option>
-            <option value="Active">Active</option>
-            <option value="Inactive">Inactive</option>
-          </select>
-          <button onClick={() => setShowForm(v => !v)} style={{ background: '#1E3A5F', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontWeight: 600, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <i className={`bi bi-${showForm ? 'x' : 'plus'}`} />
-            {showForm ? 'Cancel' : 'New Supporter'}
-          </button>
-          <span style={{ fontSize: 12, color: '#94A3B8', marginLeft: 'auto' }}>{filtered.length} of {supporters.length} supporters</span>
-        </div>
-
-        {/* Add form */}
-        {showForm && (
-          <div style={{ background: '#fff', borderRadius: 12, padding: 24, border: '1px solid #CBD5E1', marginBottom: 24, boxShadow: '0 4px 16px rgba(30,58,95,0.08)' }}>
-            <h5 style={{ fontFamily: 'Poppins,sans-serif', color: '#1E3A5F', fontWeight: 700, marginBottom: 16 }}>Add New Supporter</h5>
-            <form onSubmit={handleAddSubmit}>
-              <div className="row g-3">
-                <div className="col-md-4">
-                  <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 }}>Full Name *</label>
-                  <input required value={form.displayName} onChange={e => setForm(f => ({ ...f, displayName: e.target.value }))}
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13 }} />
-                </div>
-                <div className="col-md-4">
-                  <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 }}>Organization</label>
-                  <input value={form.organizationName} onChange={e => setForm(f => ({ ...f, organizationName: e.target.value }))}
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13 }} />
-                </div>
-                <div className="col-md-4">
-                  <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 }}>Email *</label>
-                  <input required type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13 }} />
-                </div>
-                <div className="col-md-3">
-                  <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 }}>Phone</label>
-                  <input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13 }} />
-                </div>
-                <div className="col-md-3">
-                  <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 }}>City</label>
-                  <input value={form.city} onChange={e => setForm(f => ({ ...f, city: e.target.value }))}
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13 }} />
-                </div>
-                <div className="col-md-3">
-                  <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 }}>Type *</label>
-                  <select required value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value as SupporterType }))}
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, background: '#fff' }}>
-                    {ALL_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                  </select>
-                </div>
-                <div className="col-md-3">
-                  <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 }}>Notes</label>
-                  <input value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13 }} />
-                </div>
-                <div className="col-12">
-                  <button type="submit" style={{ background: '#0D9488', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 24px', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
-                    Save Supporter
-                  </button>
-                </div>
-              </div>
-            </form>
+        {loading && <p className="text-muted">Loading supporters…</p>}
+        {error && (
+          <div className="alert alert-warning" role="alert">
+            {error}
           </div>
         )}
 
-        {/* Type pills */}
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
-          {['All', ...ALL_TYPES].map(t => (
-            <button key={t} onClick={() => setTypeFilter(t)} style={{ border: 'none', borderRadius: 20, padding: '5px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer', background: typeFilter === t ? '#1E3A5F' : '#E2E8F0', color: typeFilter === t ? '#fff' : '#475569' }}>{t}</button>
-          ))}
-        </div>
+        {!loading && (
+          <>
+            <StatStrip supporters={supporters} monetaryTotalPhp={monetaryTotalPhp} />
 
-        {/* Cards grid */}
-        {filtered.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '48px 0', color: '#94A3B8' }}>
-            <i className="bi bi-search" style={{ fontSize: 36, display: 'block', marginBottom: 10, color: '#CBD5E1' }} />
-            <p style={{ fontWeight: 600 }}>No supporters match your filters.</p>
-          </div>
-        ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
-            {filtered.map(s => {
-              const tc = TYPE_COLORS[s.type];
-              const sc = STATUS_COLORS[s.status];
-              const initials = s.displayName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-              return (
-                <div key={s.supporterId} style={{ background: '#fff', borderRadius: 14, padding: 20, border: '1px solid #E2E8F0', boxShadow: '0 2px 10px rgba(30,58,95,0.06)', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                    <div style={{ width: 44, height: 44, borderRadius: '50%', background: tc.bg, color: tc.text, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 15, flexShrink: 0 }}>{initials}</div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 700, color: '#1E3A5F', fontSize: 14, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.displayName}</div>
-                      {s.organizationName && (
-                        <div style={{ fontSize: 11, color: '#64748B', display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
-                          <i className="bi bi-building" style={{ fontSize: 11, color: '#94A3B8' }} />{s.organizationName}
-                        </div>
-                      )}
-                      <div style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
-                        <Badge label={s.type} bg={tc.bg} text={tc.text} />
-                        <Badge label={s.status} bg={sc.bg} text={sc.text} />
-                      </div>
+            <div
+              style={{
+                background: '#fff',
+                borderRadius: 12,
+                padding: '16px 20px',
+                border: '1px solid #E2E8F0',
+                boxShadow: '0 2px 8px rgba(30,58,95,0.05)',
+                marginBottom: 24,
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 12,
+                alignItems: 'center',
+              }}
+            >
+              <input
+                type="text"
+                placeholder="Search by name, org or email…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                style={{
+                  flex: '1 1 220px',
+                  padding: '8px 14px',
+                  borderRadius: 8,
+                  border: '1px solid #CBD5E1',
+                  fontSize: 13,
+                  outline: 'none',
+                }}
+              />
+              <select
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value)}
+                style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, background: '#fff' }}
+              >
+                <option value="All">All Types</option>
+                {TYPE_ORDER.map((t) => (
+                  <option key={t} value={t}>
+                    {labelForType(t)}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, background: '#fff' }}
+              >
+                <option value="All">All Statuses</option>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+              <button
+                type="button"
+                onClick={() => {
+                  if (showForm) resetForm();
+                  else setShowForm(true);
+                }}
+                style={{
+                  background: '#1E3A5F',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 8,
+                  padding: '8px 18px',
+                  fontWeight: 600,
+                  fontSize: 13,
+                  cursor: 'pointer',
+                }}
+              >
+                {showForm ? '✕ Cancel' : '+ New Supporter'}
+              </button>
+              <span style={{ fontSize: 12, color: '#94A3B8', marginLeft: 'auto' }}>
+                {filtered.length} of {supporters.length} supporters
+              </span>
+            </div>
+
+            {showForm && (
+              <div
+                style={{
+                  background: '#fff',
+                  borderRadius: 12,
+                  padding: 24,
+                  border: '1px solid #CBD5E1',
+                  marginBottom: 24,
+                  boxShadow: '0 4px 16px rgba(30,58,95,0.08)',
+                }}
+              >
+                <h5 style={{ fontFamily: 'Poppins,sans-serif', color: '#1E3A5F', fontWeight: 700, marginBottom: 16 }}>
+                  {form.supporterId ? 'Edit Supporter' : 'Add New Supporter'}
+                </h5>
+                <form onSubmit={(e) => void handleSaveSubmit(e)}>
+                  <div className="row g-3">
+                    <div className="col-md-4">
+                      <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 }}>
+                        Full name *
+                      </label>
+                      <input
+                        required
+                        value={form.displayName}
+                        onChange={(e) => setForm((f) => ({ ...f, displayName: e.target.value }))}
+                        style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13 }}
+                      />
+                    </div>
+                    <div className="col-md-4">
+                      <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 }}>
+                        Organization
+                      </label>
+                      <input
+                        value={form.organizationName}
+                        onChange={(e) => setForm((f) => ({ ...f, organizationName: e.target.value }))}
+                        style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13 }}
+                      />
+                    </div>
+                    <div className="col-md-4">
+                      <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 }}>
+                        Email
+                      </label>
+                      <input
+                        type="email"
+                        value={form.email}
+                        onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                        style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13 }}
+                      />
+                    </div>
+                    <div className="col-md-3">
+                      <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 }}>
+                        Phone
+                      </label>
+                      <input
+                        value={form.phone}
+                        onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+                        style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13 }}
+                      />
+                    </div>
+                    <div className="col-md-3">
+                      <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 }}>
+                        Region
+                      </label>
+                      <input
+                        value={form.region}
+                        onChange={(e) => setForm((f) => ({ ...f, region: e.target.value }))}
+                        style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13 }}
+                        placeholder="e.g. Luzon"
+                      />
+                    </div>
+                    <div className="col-md-3">
+                      <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 }}>
+                        Country
+                      </label>
+                      <input
+                        value={form.country}
+                        onChange={(e) => setForm((f) => ({ ...f, country: e.target.value }))}
+                        style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13 }}
+                      />
+                    </div>
+                    <div className="col-md-3">
+                      <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 }}>
+                        Type *
+                      </label>
+                      <select
+                        required
+                        value={form.supporterType}
+                        onChange={(e) => setForm((f) => ({ ...f, supporterType: e.target.value }))}
+                        style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, background: '#fff' }}
+                      >
+                        {TYPE_ORDER.map((t) => (
+                          <option key={t} value={t}>
+                            {labelForType(t)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="col-md-3">
+                      <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 }}>
+                        Status *
+                      </label>
+                      <select
+                        required
+                        value={form.status}
+                        onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
+                        style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, background: '#fff' }}
+                      >
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                      </select>
+                    </div>
+                    <div className="col-12">
+                      <button
+                        type="submit"
+                        disabled={saving}
+                        style={{
+                          background: '#0D9488',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: 8,
+                          padding: '9px 24px',
+                          fontWeight: 600,
+                          fontSize: 13,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {saving ? 'Saving…' : 'Save to database'}
+                      </button>
                     </div>
                   </div>
+                </form>
+              </div>
+            )}
 
-                  <div style={{ fontSize: 12, color: '#475569', display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>{ic('envelope')} {s.email}</span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>{ic('telephone')} {s.phone}</span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>{ic('geo-alt')} {s.city}, {s.country}</span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>{ic('calendar3')} Joined {new Date(s.joinedDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-                    {s.totalContributions > 0 && (
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#166534', fontWeight: 600 }}>
-                        <i className="bi bi-wallet2" style={{ fontSize: 14, color: '#166534' }} />${s.totalContributions.toLocaleString()} contributed
-                      </span>
-                    )}
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#94A3B8' }}>
-                      <i className="bi bi-clock-history" style={{ fontSize: 14, color: '#94A3B8' }} />Last active: {new Date(s.lastContribution).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                    </span>
-                  </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
+              {['All', ...TYPE_ORDER].map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setTypeFilter(t)}
+                  style={{
+                    border: 'none',
+                    borderRadius: 20,
+                    padding: '5px 14px',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    background: typeFilter === t ? '#1E3A5F' : '#E2E8F0',
+                    color: typeFilter === t ? '#fff' : '#475569',
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  {t === 'All' ? 'All' : labelForType(t)}
+                </button>
+              ))}
+            </div>
 
-                  {s.notes && (
-                    <p style={{ margin: 0, fontSize: 11, color: '#64748B', fontStyle: 'italic', borderTop: '1px solid #F1F5F9', paddingTop: 10 }}>{s.notes}</p>
-                  )}
+            {filtered.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '48px 0', color: '#94A3B8' }}>
+                <div style={{ fontSize: 40, marginBottom: 8 }}>🔍</div>
+                <p style={{ fontWeight: 600 }}>No supporters match your filters.</p>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
+                {filtered.map((s) => {
+                  const st = s.supporterType ?? '';
+                  const tc = TYPE_COLORS[st] ?? { bg: '#F1F5F9', text: '#475569' };
+                  const sc = STATUS_COLORS[s.status ?? ''] ?? STATUS_COLORS.Inactive;
+                  const display = (s.displayName ?? 'Unknown').trim();
+                  const initials = display
+                    .split(/\s+/)
+                    .map((w) => w[0])
+                    .join('')
+                    .slice(0, 2)
+                    .toUpperCase();
+                  const aggRow = bySupporter.get(s.supporterId);
+                  return (
+                    <div
+                      key={s.supporterId}
+                      style={{
+                        background: '#fff',
+                        borderRadius: 14,
+                        padding: 20,
+                        border: '1px solid #E2E8F0',
+                        boxShadow: '0 2px 10px rgba(30,58,95,0.06)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 12,
+                      }}
+                    >
+                      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                        <div
+                          style={{
+                            width: 44,
+                            height: 44,
+                            borderRadius: '50%',
+                            background: tc.bg,
+                            color: tc.text,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontWeight: 800,
+                            fontSize: 15,
+                            flexShrink: 0,
+                          }}
+                        >
+                          {initials}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div
+                            style={{
+                              fontWeight: 700,
+                              color: '#1E3A5F',
+                              fontSize: 14,
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                            }}
+                          >
+                            {display}
+                          </div>
+                          {s.organizationName && (
+                            <div
+                              style={{
+                                fontSize: 11,
+                                color: '#64748B',
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                              }}
+                            >
+                              {s.organizationName}
+                            </div>
+                          )}
+                          <div style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
+                            <Badge label={labelForType(s.supporterType)} bg={tc.bg} text={tc.text} />
+                            <Badge label={s.status ?? '—'} bg={sc.bg} text={sc.text} />
+                          </div>
+                        </div>
+                      </div>
 
-                  <div style={{ borderTop: '1px solid #F1F5F9', paddingTop: 10, display: 'flex', justifyContent: 'flex-end' }}>
-                    <button onClick={() => handleDelete(s.supporterId)} style={{ background: 'none', border: '1px solid #FCA5A5', borderRadius: 6, color: '#DC2626', fontSize: 12, fontWeight: 600, padding: '4px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
-                      <i className="bi bi-trash3" style={{ fontSize: 12 }} />Delete
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                      <div style={{ fontSize: 12, color: '#475569', display: 'flex', flexDirection: 'column', gap: 3 }}>
+                        {s.email && <span>✉️ {s.email}</span>}
+                        {s.phone && <span>📞 {s.phone}</span>}
+                        <span>
+                          📍 {[s.region, s.country].filter(Boolean).join(', ') || '—'}
+                        </span>
+                        {s.createdAt && (
+                          <span>
+                            📅 Joined{' '}
+                            {new Date(s.createdAt).toLocaleDateString('en-GB', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric',
+                            })}
+                          </span>
+                        )}
+                        {aggRow && aggRow.totalPhp > 0 && (
+                          <span style={{ color: '#166534', fontWeight: 600 }}>💵 {fmtMoneyPhp(aggRow.totalPhp)} monetary</span>
+                        )}
+                        {aggRow?.lastGift && (
+                          <span style={{ color: '#94A3B8' }}>
+                            Last gift:{' '}
+                            {new Date(aggRow.lastGift).toLocaleDateString('en-GB', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric',
+                            })}
+                          </span>
+                        )}
+                        {!aggRow?.lastGift && s.firstDonationDate && (
+                          <span style={{ color: '#94A3B8' }}>
+                            First donation:{' '}
+                            {new Date(s.firstDonationDate).toLocaleDateString('en-GB', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric',
+                            })}
+                          </span>
+                        )}
+                      </div>
+
+                      <div style={{ borderTop: '1px solid #F1F5F9', paddingTop: 10, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                        <button
+                          type="button"
+                          onClick={() => handleEdit(s)}
+                          style={{
+                            background: '#F1F5F9',
+                            border: 'none',
+                            borderRadius: 6,
+                            color: '#475569',
+                            fontSize: 12,
+                            fontWeight: 600,
+                            padding: '4px 12px',
+                            cursor: 'pointer',
+                            transition: 'background 0.2s',
+                          }}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void handleDelete(s.supporterId)}
+                          style={{
+                            background: '#FEF2F2',
+                            border: 'none',
+                            borderRadius: 6,
+                            color: '#DC2626',
+                            fontSize: 12,
+                            fontWeight: 600,
+                            padding: '4px 12px',
+                            cursor: 'pointer',
+                            transition: 'background 0.2s',
+                          }}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

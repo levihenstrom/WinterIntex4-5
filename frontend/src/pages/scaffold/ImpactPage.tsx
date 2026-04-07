@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { fetchJson } from '../../lib/apiClient';
 import NavBar from '../../components/hw/NavBar';
 import MetricCard from '../../components/hw/MetricCard';
 import {
@@ -29,15 +30,29 @@ interface ImpactSnapshot {
   published_at: string;
 }
 
-/* ── Mock data ───────────────────────────────────────────────── */
-const SNAPSHOTS: ImpactSnapshot[] = [
-  { snapshot_id: 6, snapshot_date: '2025-03-01', headline: 'Record Volunteer Engagement Fuels Expansion', summary_text: 'March 2025 saw the highest volunteer participation in HealingWings history, with over 1,400 active volunteers contributing nearly 11,000 hours. Three new safehouse chapters were onboarded, and the reintegration success rate climbed to 89% — our strongest month on record.', metric_payload_json: JSON.stringify({ residents_served: 512, new_admissions: 74, successful_reintegrations: 48, reintegration_rate_pct: 89, active_volunteers: 1418, volunteer_hours: 10940, programs_completed: 31, donations_received_usd: 87400, safehouses_active: 15 }), is_published: true, published_at: '2025-04-05' },
-  { snapshot_id: 5, snapshot_date: '2025-02-01', headline: 'Education Program Reaches 500 Residents', summary_text: 'February 2025 marked a milestone: the cumulative number of residents served through our education track crossed 500. With 28 programs completed and a steady volunteer pipeline, our community impact continues to deepen.', metric_payload_json: JSON.stringify({ residents_served: 489, new_admissions: 61, successful_reintegrations: 42, reintegration_rate_pct: 87, active_volunteers: 1285, volunteer_hours: 9820, programs_completed: 28, donations_received_usd: 72600, safehouses_active: 14 }), is_published: true, published_at: '2025-03-06' },
-  { snapshot_id: 4, snapshot_date: '2025-01-01', headline: 'New Year Brings New Chapters and Stronger Outcomes', summary_text: 'January 2025 opened with the launch of two new safehouse locations and a refreshed volunteer onboarding process. Donations exceeded $68K, enabling expanded mental health services and an additional cohort of the reintegration skills program.', metric_payload_json: JSON.stringify({ residents_served: 461, new_admissions: 58, successful_reintegrations: 39, reintegration_rate_pct: 85, active_volunteers: 1196, volunteer_hours: 9140, programs_completed: 25, donations_received_usd: 68350, safehouses_active: 14 }), is_published: true, published_at: '2025-02-08' },
-  { snapshot_id: 3, snapshot_date: '2024-12-01', headline: 'Year-End Giving Drive Surpasses Goal by 22%', summary_text: 'The December 2024 year-end campaign raised $94K — 22% above target — thanks to matched gifts from four corporate partners. Holiday programming served a record 530 residents.', metric_payload_json: JSON.stringify({ residents_served: 530, new_admissions: 65, successful_reintegrations: 45, reintegration_rate_pct: 88, active_volunteers: 1340, volunteer_hours: 10200, programs_completed: 29, donations_received_usd: 94000, safehouses_active: 13 }), is_published: true, published_at: '2025-01-10' },
-  { snapshot_id: 2, snapshot_date: '2024-11-01', headline: 'Community Partnerships Drive Skills Training Expansion', summary_text: 'November 2024 saw three new employer-partnership vocational tracks, placing 17 graduates directly into employment. Volunteer hours reached 9,600 — a 14% increase from the prior month.', metric_payload_json: JSON.stringify({ residents_served: 475, new_admissions: 59, successful_reintegrations: 40, reintegration_rate_pct: 86, active_volunteers: 1247, volunteer_hours: 9600, programs_completed: 26, donations_received_usd: 61800, safehouses_active: 13 }), is_published: true, published_at: '2024-12-07' },
-  { snapshot_id: 1, snapshot_date: '2024-10-01', headline: 'Trauma-Informed Care Pilot Launches in Three Locations', summary_text: 'October 2024 marked the formal rollout of our trauma-informed care pilot across three safehouses. Early outcomes show a 12-point improvement in resident well-being scores. Donations reached $58K.', metric_payload_json: JSON.stringify({ residents_served: 448, new_admissions: 54, successful_reintegrations: 37, reintegration_rate_pct: 84, active_volunteers: 1163, volunteer_hours: 8410, programs_completed: 22, donations_received_usd: 58200, safehouses_active: 12 }), is_published: true, published_at: '2024-11-05' },
-];
+interface ApiImpactSnapshot {
+  snapshotId: number;
+  snapshotDate?: string | null;
+  headline?: string | null;
+  summaryText?: string | null;
+  metricPayloadJson?: string | null;
+  isPublished?: boolean | null;
+  publishedAt?: string | null;
+}
+
+function normalizeSnapshot(s: ApiImpactSnapshot): ImpactSnapshot {
+  const sd = s.snapshotDate ? new Date(s.snapshotDate).toISOString().slice(0, 10) : '';
+  const pa = s.publishedAt ? new Date(s.publishedAt).toISOString().slice(0, 10) : '';
+  return {
+    snapshot_id: s.snapshotId,
+    snapshot_date: sd,
+    headline: s.headline ?? '',
+    summary_text: s.summaryText ?? '',
+    metric_payload_json: s.metricPayloadJson ?? '{}',
+    is_published: s.isPublished === true,
+    published_at: pa,
+  };
+}
 
 /* ── Helpers ─────────────────────────────────────────────────── */
 const parse = (j: string): MetricPayload => { try { return JSON.parse(j); } catch { return {} as MetricPayload; } };
@@ -145,27 +160,69 @@ type Tab = typeof TABS[number];
 /* ── Page ────────────────────────────────────────────────────── */
 export default function ImpactPage() {
   const [tab, setTab] = useState<Tab>('Overview');
+  const [snapshots, setSnapshots] = useState<ImpactSnapshot[]>([]);
+  const [impactLoadError, setImpactLoadError] = useState<string | null>(null);
 
-  const published = SNAPSHOTS.filter(s => s.is_published)
+  useEffect(() => {
+    let cancelled = false;
+    fetchJson<ApiImpactSnapshot[]>('/api/public-impact/snapshots')
+      .then((rows) => {
+        if (!cancelled) setSnapshots(rows.map(normalizeSnapshot));
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setImpactLoadError('Unable to load published impact data.');
+          setSnapshots([]);
+        }
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  const published = snapshots
+    .filter((s) => s.is_published)
     .sort((a, b) => new Date(b.snapshot_date).getTime() - new Date(a.snapshot_date).getTime());
-  const [featured, ...rest] = published;
+  const featured = published[0];
+  const rest = published.slice(1);
 
-  const chartData = [...published].reverse().map(s => {
+  const chartData = [...published].reverse().map((s) => {
     const p = parse(s.metric_payload_json);
-    return { month: fmtShort(s.snapshot_date), donations: p.donations_received_usd, residents: p.residents_served, reintegrationRate: p.reintegration_rate_pct, volunteerHours: p.volunteer_hours, programs: p.programs_completed, newAdmissions: p.new_admissions, reintegrations: p.successful_reintegrations, volunteers: p.active_volunteers };
+    return {
+      month: fmtShort(s.snapshot_date),
+      donations: p.donations_received_usd,
+      residents: p.residents_served,
+      reintegrationRate: p.reintegration_rate_pct,
+      volunteerHours: p.volunteer_hours,
+      programs: p.programs_completed,
+      newAdmissions: p.new_admissions,
+      reintegrations: p.successful_reintegrations,
+      volunteers: p.active_volunteers,
+    };
   });
 
   const radialColors = ['#6B21A8', '#7C3AED', '#0D9488', '#D97706', '#34d399', '#60a5fa'];
-  const radialData = [...published].reverse().map((s, i) => ({ name: fmtShort(s.snapshot_date), value: parse(s.metric_payload_json).successful_reintegrations, fill: radialColors[i % radialColors.length] }));
+  const radialData = [...published].reverse().map((s, i) => ({
+    name: fmtShort(s.snapshot_date),
+    value: parse(s.metric_payload_json).successful_reintegrations,
+    fill: radialColors[i % radialColors.length],
+  }));
 
-  const maxResidents   = Math.max(...published.map(s => parse(s.metric_payload_json).residents_served));
-  const totalReint     = published.reduce((n, s) => n + parse(s.metric_payload_json).successful_reintegrations, 0);
-  const totalHours     = published.reduce((n, s) => n + parse(s.metric_payload_json).volunteer_hours, 0);
-  const totalDonations = published.reduce((n, s) => n + parse(s.metric_payload_json).donations_received_usd, 0);
+  const maxResidents =
+    published.length > 0
+      ? Math.max(...published.map((s) => parse(s.metric_payload_json).residents_served ?? 0))
+      : 0;
+  const totalReint = published.reduce((n, s) => n + (parse(s.metric_payload_json).successful_reintegrations ?? 0), 0);
+  const totalHours = published.reduce((n, s) => n + (parse(s.metric_payload_json).volunteer_hours ?? 0), 0);
+  const totalDonations = published.reduce((n, s) => n + (parse(s.metric_payload_json).donations_received_usd ?? 0), 0);
 
   return (
     <div style={{ fontFamily: 'var(--hw-font-body)', minHeight: '100vh', background: '#f8fafc' }}>
       <NavBar />
+
+      {impactLoadError && (
+        <div className="container-xl py-3" style={{ maxWidth: 1100, margin: '0 auto' }}>
+          <div className="alert alert-warning mb-0 py-2 small" role="alert">{impactLoadError}</div>
+        </div>
+      )}
 
       {/* ── Hero ── */}
       <section style={{ background: 'linear-gradient(135deg, #1E3A5F 0%, #0f2744 100%)', paddingTop: '7rem', paddingBottom: '5rem', paddingLeft: '1.5rem', paddingRight: '1.5rem' }}>
@@ -295,7 +352,7 @@ export default function ImpactPage() {
             </Card>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
               <StatBox label="Total Raised (6 mo)" value={`$${(totalDonations/1000).toFixed(0)}K`} color="#D97706" bg="#fffbeb" border="#fde68a" />
-              <StatBox label="Monthly Average"     value={`$${(totalDonations/published.length/1000).toFixed(0)}K`} color="#6B21A8" bg="#f5f3ff" border="#e9d5ff" />
+              <StatBox label="Monthly Average"     value={`$${published.length > 0 ? (totalDonations / published.length / 1000).toFixed(0) : '0'}K`} color="#6B21A8" bg="#f5f3ff" border="#e9d5ff" />
               <StatBox label="Best Month"          value="$94K" color="#0D9488" bg="#f0fdf4" border="#bbf7d0" />
               <StatBox label="Reports Published"   value={String(published.length)} color="#1d4ed8" bg="#eff6ff" border="#bfdbfe" />
             </div>
@@ -386,12 +443,18 @@ export default function ImpactPage() {
             <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.16em', color: '#0D9488', marginBottom: '1.25rem' }}>
               Anonymized · Public · Monthly
             </p>
-            <ReportCard snap={featured} featured />
-            {rest.length > 0 && (
+            {featured ? (
               <>
-                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.14em', color: '#94a3b8', margin: '1.5rem 0 0.75rem' }}>Previous Reports</p>
-                {rest.map(s => <ReportCard key={s.snapshot_id} snap={s} />)}
+                <ReportCard snap={featured} featured />
+                {rest.length > 0 && (
+                  <>
+                    <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.14em', color: '#94a3b8', margin: '1.5rem 0 0.75rem' }}>Previous Reports</p>
+                    {rest.map((s) => <ReportCard key={s.snapshot_id} snap={s} />)}
+                  </>
+                )}
               </>
+            ) : (
+              <p style={{ color: '#64748b', fontFamily: 'Inter, sans-serif' }}>No published impact snapshots yet. Publish data from the admin pipeline to see reports here.</p>
             )}
           </div>
         )}

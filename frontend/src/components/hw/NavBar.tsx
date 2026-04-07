@@ -15,7 +15,7 @@ const ADMIN_NAV_LINKS = [
   { label: 'Donations', to: '/admin/donations' },
   { label: 'Residents', to: '/admin/residents' },
   { label: 'Social Media', to: '/admin/social-media' },
-  { label: 'Reports', to: '/admin/reports/donations' },
+  { label: 'Reports', to: '/admin/reports' },
 ];
 
 export default function NavBar() {

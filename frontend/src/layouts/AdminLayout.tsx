@@ -17,10 +17,7 @@ const sectionTabs = {
     { to: '/admin/social-media', label: 'History', end: true },
     { to: '/admin/social-media/suggest', label: 'Suggest Next Post', end: false },
   ],
-  reports: [
-    { to: '/admin/reports/donations', label: 'Donation Trends', end: true },
-    { to: '/admin/reports/outcomes', label: 'Resident Outcomes', end: false },
-  ],
+  reports: [],
 } as const;
 
 function getSectionKey(pathname: string): keyof typeof sectionTabs | null {

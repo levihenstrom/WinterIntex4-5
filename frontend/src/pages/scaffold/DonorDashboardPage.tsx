@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState, useRef } from 'react';
-import { fetchPaged } from '../../lib/apiClient';
+import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
+import { fetchPaged, postJson } from '../../lib/apiClient';
 import SectionContainer from '../../components/hw/SectionContainer';
 
 /* ── Types ───────────────────────────────────────────────────── */
@@ -17,6 +17,7 @@ interface DonationMine {
   campaignName?: string | null;
   impactUnit?: string | null;
   isRecurring?: boolean | null;
+  channelSource?: string | null;
   donationAllocations?: DonationAllocationApi[] | null;
 }
 
@@ -41,12 +42,13 @@ async function fetchAllDonationsMine(): Promise<DonationMine[]> {
   return items;
 }
 
-function formatMoney(amount: number | null | undefined): string {
+function formatMoney(amount: number | null | undefined, currencyCode = 'PHP'): string {
   if (amount == null) return '—';
+  const code = currencyCode && currencyCode.length === 3 ? currencyCode : 'PHP';
   try {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+    return new Intl.NumberFormat('en-PH', { style: 'currency', currency: code, maximumFractionDigits: 0 }).format(amount);
   } catch {
-    return `$${amount.toFixed(2)}`;
+    return `${code} ${amount.toFixed(0)}`;
   }
 }
 
@@ -174,17 +176,33 @@ export default function DonorDashboardPage() {
   const [donations, setDonations] = useState<DonationMine[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [demoAmount, setDemoAmount] = useState('');
+  const [demoCampaign, setDemoCampaign] = useState('');
+  const [demoNotes, setDemoNotes] = useState('');
+  const [demoSubmitting, setDemoSubmitting] = useState(false);
+  const [demoError, setDemoError] = useState<string | null>(null);
+  const [demoSuccess, setDemoSuccess] = useState<string | null>(null);
+
+  const loadDonations = useCallback((opts?: { silent?: boolean }) => {
+    if (!opts?.silent) {
+      setLoading(true);
+      setError(null);
+    }
+    return fetchAllDonationsMine()
+      .then((rows) => {
+        setDonations(rows);
+      })
+      .catch((err: Error) => {
+        setError(err.message);
+      })
+      .finally(() => {
+        if (!opts?.silent) setLoading(false);
+      });
+  }, []);
 
   useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
-    fetchAllDonationsMine()
-      .then((rows) => { if (!cancelled) setDonations(rows); })
-      .catch((err: Error) => { if (!cancelled) setError(err.message); })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
-  }, []);
+    void loadDonations();
+  }, [loadDonations]);
 
   const totals = useMemo(() => {
     if (!donations) return { count: 0, sum: 0 };
@@ -196,6 +214,36 @@ export default function DonorDashboardPage() {
   }, [donations]);
 
   const programImpact = useMemo(() => (donations ? buildProgramImpact(donations) : []), [donations]);
+
+  async function handleDemoGift(e: React.FormEvent) {
+    e.preventDefault();
+    const n = Number(demoAmount);
+    if (!Number.isFinite(n) || n <= 0) {
+      setDemoError('Enter a positive amount.');
+      return;
+    }
+    setDemoSubmitting(true);
+    setDemoError(null);
+    setDemoSuccess(null);
+    try {
+      await postJson<DonationMine>('/api/donations/demo-gift', {
+        amount: n,
+        currencyCode: 'PHP',
+        campaignName: demoCampaign.trim() || undefined,
+        notes: demoNotes.trim() || undefined,
+        donationType: 'Monetary',
+      });
+      setDemoAmount('');
+      setDemoCampaign('');
+      setDemoNotes('');
+      setDemoSuccess('Demo gift recorded. It will appear in your ledger below.');
+      await loadDonations({ silent: true });
+    } catch (err) {
+      setDemoError(err instanceof Error ? err.message : 'Could not record demo gift.');
+    } finally {
+      setDemoSubmitting(false);
+    }
+  }
 
   const heroRef = useFadeIn();
 
@@ -233,6 +281,60 @@ export default function DonorDashboardPage() {
             value={loading ? '—' : String(programImpact.length)}
             color="#D97706" bg="#fff" border="#fde68a" delay="hw-delay-300"
           />
+        </div>
+
+        <div className="mt-8 max-w-2xl mx-auto rounded-[2rem] border border-stone-200 bg-white p-8 shadow-sm">
+          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[#0D9488] mb-2">Classroom demo</p>
+          <h3 className="font-extrabold text-xl text-[#1E3A5F] mb-2 tracking-tight">Record a demo gift</h3>
+          <p className="text-stone-500 text-sm mb-6">
+            Simulates a donation without a payment processor. Saved to the database and listed in your history.
+          </p>
+          <form onSubmit={(e) => void handleDemoGift(e)} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-1.5">Amount (PHP) *</label>
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  required
+                  value={demoAmount}
+                  onChange={(e) => setDemoAmount(e.target.value)}
+                  className="w-full rounded-xl border border-stone-200 px-4 py-3 text-[#1E3A5F] font-semibold"
+                  placeholder="500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-1.5">Campaign (optional)</label>
+                <input
+                  type="text"
+                  value={demoCampaign}
+                  onChange={(e) => setDemoCampaign(e.target.value)}
+                  className="w-full rounded-xl border border-stone-200 px-4 py-3"
+                  placeholder="e.g. Safehouse fund"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-1.5">Note (optional)</label>
+              <input
+                type="text"
+                value={demoNotes}
+                onChange={(e) => setDemoNotes(e.target.value)}
+                className="w-full rounded-xl border border-stone-200 px-4 py-3"
+                placeholder="Shown on your receipt line"
+              />
+            </div>
+            {demoError && <p className="text-sm text-red-600 font-medium">{demoError}</p>}
+            {demoSuccess && <p className="text-sm text-[#0D9488] font-medium">{demoSuccess}</p>}
+            <button
+              type="submit"
+              disabled={demoSubmitting}
+              className="w-full sm:w-auto rounded-full bg-[#1E3A5F] text-white font-extrabold px-10 py-3.5 shadow-lg hover:opacity-95 disabled:opacity-50"
+            >
+              {demoSubmitting ? 'Saving…' : 'Submit demo gift'}
+            </button>
+          </form>
         </div>
       </SectionContainer>
 
@@ -296,7 +398,7 @@ export default function DonorDashboardPage() {
                       <thead>
                         <tr className="bg-stone-50/50 border-b border-stone-100">
                           <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.25em] text-stone-400">Date</th>
-                          <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.25em] text-stone-400">Amount (USD)</th>
+                          <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.25em] text-stone-400">Amount</th>
                           <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.25em] text-stone-400">Initiative</th>
                           <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.25em] text-stone-400 text-center">Plan</th>
                         </tr>
@@ -309,7 +411,7 @@ export default function DonorDashboardPage() {
                             </td>
                             <td className="px-8 py-7">
                               <span className="font-black text-[#1E3A5F] text-xl tabular-nums tracking-tighter">
-                                {formatMoney(d.amount)}
+                                {formatMoney(d.amount, d.currencyCode ?? 'PHP')}
                               </span>
                               <span className="block text-[10px] text-stone-400 uppercase font-black mt-1.5 tracking-widest">{d.donationType || 'Gift'}</span>
                             </td>
