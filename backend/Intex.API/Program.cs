@@ -179,14 +179,35 @@ using (var scope = app.Services.CreateScope())
 
     if (isDevelopment)
     {
-        await identityDb.Database.MigrateAsync();
-        await appDb.Database.MigrateAsync();
+        if (identityDb.Database.IsSqlite())
+            await identityDb.Database.EnsureCreatedAsync();
+        else
+            await identityDb.Database.MigrateAsync();
+
+        if (appDb.Database.IsSqlite())
+            await appDb.Database.EnsureCreatedAsync();
+        else
+            await appDb.Database.MigrateAsync();
+
         await AuthIdentityGenerator.GenerateDefaultIdentityAsync(sp, app.Configuration);
         await IntexDevSeedRunner.SeedAfterMigrateIfEmptyAsync(
             appDb,
             sp.GetRequiredService<IHostEnvironment>(),
             app.Configuration,
             seedLogger);
+    }
+
+    try
+    {
+        await CsvSeedRunner.SeedFromCsvIfConfiguredAsync(
+            appDb,
+            sp.GetRequiredService<IHostEnvironment>(),
+            app.Configuration,
+            seedLogger);
+    }
+    catch (Exception ex)
+    {
+        seedLogger.LogError(ex, "CSV seed failed. Application startup will continue.");
     }
 }
 
