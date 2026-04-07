@@ -29,7 +29,7 @@ public sealed class MlSocialController(MlSocialProxyService proxy) : ControllerB
             return StatusCode(StatusCodes.Status503ServiceUnavailable, new ProblemDetails
             {
                 Title = "Social ML inference service is not configured.",
-                Detail = "Set MlInferenceService:BaseUrl (e.g. in appsettings.Development.json) to the FastAPI base URL.",
+                Detail = "Set MlInferenceService:BaseUrl to the FastAPI base URL (see server documentation).",
                 Status = StatusCodes.Status503ServiceUnavailable,
             });
         }
@@ -37,32 +37,15 @@ public sealed class MlSocialController(MlSocialProxyService proxy) : ControllerB
         try
         {
             var result = await proxy.RecommendAsync(request, cancellationToken);
-            if (result is null)
-            {
-                return StatusCode(StatusCodes.Status503ServiceUnavailable, new ProblemDetails
-                {
-                    Title = "Social ML inference service is not configured.",
-                    Status = StatusCodes.Status503ServiceUnavailable,
-                });
-            }
-
             return Ok(result);
         }
-        catch (HttpRequestException ex)
+        catch (MlInferenceUpstreamException ex)
         {
-            return StatusCode(StatusCodes.Status502BadGateway, new ProblemDetails
+            return StatusCode(ex.StatusCode, new ProblemDetails
             {
-                Title = "Social ML service returned an error.",
-                Detail = ex.Message,
-                Status = StatusCodes.Status502BadGateway,
-            });
-        }
-        catch (TaskCanceledException)
-        {
-            return StatusCode(StatusCodes.Status504GatewayTimeout, new ProblemDetails
-            {
-                Title = "Social ML service request timed out.",
-                Status = StatusCodes.Status504GatewayTimeout,
+                Title = ex.PublicTitle,
+                Detail = ex.PublicDetail,
+                Status = ex.StatusCode,
             });
         }
     }

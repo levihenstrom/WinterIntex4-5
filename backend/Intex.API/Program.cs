@@ -73,18 +73,31 @@ if (!isDevelopment)
 }
 builder.Services.AddScoped<StaffScopeResolver>();
 
-builder.Services.Configure<MlInferenceServiceOptions>(
-    builder.Configuration.GetSection(MlInferenceServiceOptions.SectionName));
+builder.Services.AddOptions<MlInferenceServiceOptions>()
+    .Bind(builder.Configuration.GetSection(MlInferenceServiceOptions.SectionName))
+    .ValidateOnStart();
+builder.Services.AddSingleton<Microsoft.Extensions.Options.IValidateOptions<MlInferenceServiceOptions>, MlInferenceServiceOptionsValidator>();
+
 builder.Services.AddSingleton<MlArtifactService>();
 builder.Services.AddHttpClient<MlSocialProxyService>((sp, client) =>
 {
     var opt = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<MlInferenceServiceOptions>>().Value;
     var url = opt.BaseUrl?.Trim();
-    if (!string.IsNullOrEmpty(url))
+    if (string.IsNullOrEmpty(url))
+        return;
+
+    if (!Uri.TryCreate(url.EndsWith('/') ? url : url + "/", UriKind.Absolute, out var baseUri))
+        return;
+
+    client.BaseAddress = baseUri;
+    client.Timeout = TimeSpan.FromSeconds(Math.Clamp(opt.TimeoutSeconds, 1, 300));
+
+    if (!string.IsNullOrWhiteSpace(opt.ApiKey))
     {
-        var normalized = url.EndsWith('/') ? url : url + "/";
-        client.BaseAddress = new Uri(normalized);
-        client.Timeout = TimeSpan.FromSeconds(Math.Clamp(opt.TimeoutSeconds, 5, 300));
+        var headerName = string.IsNullOrWhiteSpace(opt.ApiKeyHeaderName)
+            ? "X-ML-Service-Key"
+            : opt.ApiKeyHeaderName.Trim();
+        client.DefaultRequestHeaders.TryAddWithoutValidation(headerName, opt.ApiKey);
     }
 });
 

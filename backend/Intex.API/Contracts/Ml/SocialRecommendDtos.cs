@@ -6,6 +6,7 @@ namespace Intex.API.Contracts.Ml;
 public sealed class SocialRecommendRequestDto
 {
     [Required]
+    [RegularExpression("^(?i)(donations|awareness|mixed)$", ErrorMessage = "Goal must be donations, awareness, or mixed.")]
     public string Goal { get; set; } = "";
 
     public SocialFixedInputsDto? FixedInputs { get; set; }
@@ -30,7 +31,11 @@ public sealed class SocialFixedInputsDto
 internal sealed class PythonSocialRecommendPayload
 {
     public string Goal { get; set; } = "";
+
+    /// <summary>Omitted when null so FastAPI applies its <c>fixed_inputs</c> default; when set, all keys are sent (including JSON nulls).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public Dictionary<string, object?>? FixedInputs { get; set; }
+
     public int TopK { get; set; }
 }
 
