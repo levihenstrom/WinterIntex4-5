@@ -66,6 +66,21 @@ export async function fetchPaged<T>(
   return response.json();
 }
 
+/** Loads every page of a paged list (for admin UIs that need full in-memory lists). */
+export async function fetchAllPaged<T>(
+  path: string,
+  pageSize = 200,
+  extraQuery: Record<string, string | number | undefined> = {},
+): Promise<T[]> {
+  const first = await fetchPaged<T>(path, 1, pageSize, extraQuery);
+  const items = [...first.items];
+  for (let p = 2; p <= first.totalPages; p += 1) {
+    const next = await fetchPaged<T>(path, p, pageSize, extraQuery);
+    items.push(...next.items);
+  }
+  return items;
+}
+
 /** Fetches a single JSON resource (no pagination). */
 export async function fetchJson<T>(path: string): Promise<T> {
   const response = await fetch(`${apiBaseUrl}${path}`, { credentials: 'include' });

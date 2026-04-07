@@ -7,6 +7,12 @@ import {
   putJson,
   type PagedResult,
 } from '../../lib/apiClient';
+import {
+  buildResidentMlMap,
+  getResidentCurrentScores,
+  normalizeResidentMlKey,
+  type ResidentMlScoreRow,
+} from '../../lib/mlApi';
 import { useAuth } from '../../context/AuthContext';
 import DeleteConfirmModal from '../../components/DeleteConfirmModal';
 
@@ -166,7 +172,18 @@ function KPIStrip({ items }: { items: Resident[] }) {
 
 // ── Sort helpers ──────────────────────────────────────────────────────────────
 
-type SortCol = 'caseControlNo' | 'internalCode' | 'dateOfBirth' | 'sex' | 'caseCategory' | 'caseStatus' | 'safehouseId' | 'assignedSocialWorker' | 'currentRiskLevel';
+type SortCol =
+  | 'caseControlNo'
+  | 'internalCode'
+  | 'dateOfBirth'
+  | 'sex'
+  | 'caseCategory'
+  | 'caseStatus'
+  | 'safehouseId'
+  | 'assignedSocialWorker'
+  | 'currentRiskLevel'
+  | 'mlReadinessPct'
+  | 'mlPriorityRank';
 
 function sortArrow(col: SortCol, sortCol: SortCol | null, sortDir: 'asc' | 'desc'): string {
   if (col !== sortCol) return ' ↕';
@@ -312,6 +329,15 @@ export default function ResidentsListPage() {
   const [sortCol, setSortCol] = useState<SortCol | null>(null);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
 
+  /**
+   * ML join: artifact `residentCode` matches caseload `internalCode` (e.g. LS-0006).
+   * Use normalizeResidentMlKey() for comparison.
+   */
+  const [mlByKey, setMlByKey] = useState<Map<string, ResidentMlScoreRow>>(() => new Map());
+  const [mlLoading, setMlLoading] = useState(true);
+  const [mlError, setMlError] = useState<string | null>(null);
+  const [mlFactorsFor, setMlFactorsFor] = useState<Resident | null>(null);
+
   // ── Fetch ────────────────────────────────────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
@@ -327,6 +353,26 @@ export default function ResidentsListPage() {
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [page, appliedStatus, appliedCategory, appliedSearch, reloadToken]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setMlLoading(true);
+    getResidentCurrentScores()
+      .then((rows) => {
+        if (!cancelled) {
+          setMlByKey(buildResidentMlMap(rows));
+          setMlError(null);
+        }
+      })
+      .catch((e: Error) => {
+        if (!cancelled) {
+          setMlError(e.message);
+          setMlByKey(new Map());
+        }
+      })
+      .finally(() => { if (!cancelled) setMlLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
 
   function applyFilters() {
     setPage(1);
@@ -351,13 +397,43 @@ export default function ResidentsListPage() {
   }
 
   const sortedItems = useMemo(() => {
-    if (!data?.items || !sortCol) return data?.items ?? [];
-    return [...data.items].sort((a, b) => compareValues(
-      a[sortCol] as string | number | null,
-      b[sortCol] as string | number | null,
-      sortDir,
-    ));
-  }, [data?.items, sortCol, sortDir]);
+    if (!data?.items) return [];
+    if (!sortCol) return data.items;
+
+    if (sortCol === 'mlReadinessPct') {
+      const pct = (r: Resident) =>
+        mlByKey.get(normalizeResidentMlKey(r.internalCode))?.readinessPercentileAmongCurrentResidents;
+      return [...data.items].sort((a, b) => {
+        const va = pct(a);
+        const vb = pct(b);
+        if (va == null && vb == null) return 0;
+        if (va == null) return 1;
+        if (vb == null) return -1;
+        return sortDir === 'asc' ? va - vb : vb - va;
+      });
+    }
+
+    if (sortCol === 'mlPriorityRank') {
+      const rank = (r: Resident) =>
+        mlByKey.get(normalizeResidentMlKey(r.internalCode))?.supportPriorityRank;
+      return [...data.items].sort((a, b) => {
+        const va = rank(a);
+        const vb = rank(b);
+        if (va == null && vb == null) return 0;
+        if (va == null) return 1;
+        if (vb == null) return -1;
+        return sortDir === 'asc' ? va - vb : vb - va;
+      });
+    }
+
+    return [...data.items].sort((a, b) =>
+      compareValues(
+        a[sortCol as keyof Resident] as string | number | null,
+        b[sortCol as keyof Resident] as string | number | null,
+        sortDir,
+      ),
+    );
+  }, [data?.items, sortCol, sortDir, mlByKey]);
 
   // ── Modal helpers ─────────────────────────────────────────────────────────────
   function openCreate() {
@@ -509,6 +585,21 @@ export default function ResidentsListPage() {
             {error}
           </div>
         )}
+        {mlError && (
+          <div
+            style={{
+              borderRadius: 8,
+              padding: '10px 16px',
+              background: '#FFFBEB',
+              border: '1px solid #FDE68A',
+              color: '#92400E',
+              fontSize: 13,
+              marginBottom: 16,
+            }}
+          >
+            ML readiness data unavailable: {mlError}. Table ML columns show N/A.
+          </div>
+        )}
 
         {/* Table */}
         <div style={{
@@ -540,6 +631,14 @@ export default function ResidentsListPage() {
                       <th style={thStyle} onClick={() => handleSort('safehouseId')}>Safehouse{sortArrow('safehouseId', sortCol, sortDir)}</th>
                       <th style={thStyle} onClick={() => handleSort('assignedSocialWorker')}>Worker{sortArrow('assignedSocialWorker', sortCol, sortDir)}</th>
                       <th style={thStyle} onClick={() => handleSort('currentRiskLevel')}>Risk{sortArrow('currentRiskLevel', sortCol, sortDir)}</th>
+                      <th style={thStyle} onClick={() => handleSort('mlReadinessPct')}>
+                        ML %ile{sortArrow('mlReadinessPct', sortCol, sortDir)}
+                      </th>
+                      <th style={{ ...thStyle, cursor: 'default' }}>ML band</th>
+                      <th style={thStyle} onClick={() => handleSort('mlPriorityRank')}>
+                        ML pri.{sortArrow('mlPriorityRank', sortCol, sortDir)}
+                      </th>
+                      <th style={{ ...thStyle, cursor: 'default' }}>ML factors</th>
                       <th style={{ ...thStyle, cursor: 'default' }}>Actions</th>
                     </tr>
                   </thead>
@@ -547,6 +646,7 @@ export default function ResidentsListPage() {
                     {sortedItems.map((r, i) => {
                       const sCfg = STATUS_COLORS[r.caseStatus ?? ''] ?? { bg: '#F1F5F9', text: '#64748B' };
                       const rCfg = RISK_COLORS[r.currentRiskLevel ?? ''];
+                      const mlRow = mlByKey.get(normalizeResidentMlKey(r.internalCode));
                       return (
                         <tr key={r.residentId} style={{ background: i % 2 === 0 ? '#fff' : '#FAFAFA', borderBottom: '1px solid #F1F5F9' }}>
                           <td style={{ ...tdStyle, fontWeight: 700, color: '#6B21A8' }}>{r.caseControlNo || '—'}</td>
@@ -563,6 +663,35 @@ export default function ResidentsListPage() {
                             {rCfg
                               ? <Badge label={r.currentRiskLevel!} bg={rCfg.bg} text={rCfg.text} />
                               : <span style={{ color: '#94A3B8' }}>—</span>}
+                          </td>
+                          <td style={{ ...tdStyle, color: '#475569', whiteSpace: 'nowrap' }}>
+                            {mlLoading ? (
+                              <span style={{ color: '#94A3B8' }}>…</span>
+                            ) : mlRow?.readinessPercentileAmongCurrentResidents != null ? (
+                              `${Number(mlRow.readinessPercentileAmongCurrentResidents).toFixed(1)}%`
+                            ) : (
+                              'N/A'
+                            )}
+                          </td>
+                          <td style={{ ...tdStyle, color: '#475569', maxWidth: 140 }} title={mlRow?.operationalBand}>
+                            {mlLoading ? '…' : mlRow?.operationalBand ?? 'N/A'}
+                          </td>
+                          <td style={{ ...tdStyle, color: '#475569' }}>
+                            {mlLoading ? '…' : mlRow != null ? mlRow.supportPriorityRank : 'N/A'}
+                          </td>
+                          <td style={tdStyle}>
+                            <button
+                              type="button"
+                              style={{
+                                ...actionBtn('#6B21A8', '#D8B4FE'),
+                                opacity: mlRow ? 1 : 0.45,
+                                cursor: mlRow ? 'pointer' : 'not-allowed',
+                              }}
+                              disabled={!mlRow}
+                              onClick={() => mlRow && setMlFactorsFor(r)}
+                            >
+                              View
+                            </button>
                           </td>
                           <td style={tdStyle}>
                             <div style={{ display: 'flex', gap: 4, flexWrap: 'nowrap' }}>
@@ -843,6 +972,65 @@ export default function ResidentsListPage() {
                 <button type="button" className="btn btn-outline-secondary" onClick={() => setEditTarget(null)}>Cancel</button>
                 <button type="button" className="btn hw-btn-magenta px-4" onClick={() => void handleSave()} disabled={saving}>
                   {saving ? 'Saving…' : isEditing ? 'Save Changes' : 'Create Resident'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {mlFactorsFor && (
+        <div
+          className="modal d-block"
+          style={{ backgroundColor: 'rgba(0,0,0,0.55)' }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="mlFactorsTitle"
+        >
+          <div className="modal-dialog modal-dialog-centered modal-lg">
+            <div className="modal-content">
+              <div className="modal-header" style={{ background: '#F5F3FF', borderBottom: '1px solid #E9D5FF' }}>
+                <h5 className="modal-title fw-bold" id="mlFactorsTitle" style={{ color: '#1E3A5F' }}>
+                  ML readiness — {mlFactorsFor.internalCode || mlFactorsFor.caseControlNo || `#${mlFactorsFor.residentId}`}
+                </h5>
+                <button type="button" className="btn-close" onClick={() => setMlFactorsFor(null)} aria-label="Close" />
+              </div>
+              <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+                {(() => {
+                  const row = mlByKey.get(normalizeResidentMlKey(mlFactorsFor.internalCode));
+                  if (!row) {
+                    return <p className="text-muted mb-0">No ML row for this resident&apos;s internal code.</p>;
+                  }
+                  return (
+                    <>
+                      {row.rawScoreNote && (
+                        <p className="small text-muted border rounded p-2 bg-light mb-3">{row.rawScoreNote}</p>
+                      )}
+                      <p className="fw-semibold small text-success mb-2">Top positive factors</p>
+                      <ul className="small mb-4">
+                        {(row.topPositiveFactors ?? []).slice(0, 8).map((t, j) => (
+                          <li key={`pos-${j}`}>{t}</li>
+                        ))}
+                        {(!row.topPositiveFactors || row.topPositiveFactors.length === 0) && (
+                          <li className="text-muted">None listed</li>
+                        )}
+                      </ul>
+                      <p className="fw-semibold small text-danger mb-2">Top risk factors</p>
+                      <ul className="small mb-0">
+                        {(row.topRiskFactors ?? []).slice(0, 8).map((t, j) => (
+                          <li key={`risk-${j}`}>{t}</li>
+                        ))}
+                        {(!row.topRiskFactors || row.topRiskFactors.length === 0) && (
+                          <li className="text-muted">None listed</li>
+                        )}
+                      </ul>
+                    </>
+                  );
+                })()}
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-outline-secondary" onClick={() => setMlFactorsFor(null)}>
+                  Close
                 </button>
               </div>
             </div>

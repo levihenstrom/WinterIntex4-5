@@ -53,12 +53,6 @@ const ALL_TYPES: ContribType[] = ['Monetary', 'In-Kind', 'Time', 'Skills', 'Soci
 const ALL_PROGRAMS = ['All', 'Medical Care', 'Education', 'Resident Welfare', 'Legal Aid', 'Operations', 'Outreach', 'Food & Nutrition', 'Emergency Fund', 'Staff Training', 'Psychosocial Care'];
 const IC = '#1E3A5F';
 
-function Badge({ label, bg, text }: { label: string; bg: string; text: string }) {
-  return (
-    <span style={{ display: 'inline-block', background: bg, color: text, borderRadius: 20, padding: '2px 10px', fontSize: 11, fontWeight: 600 }}>{label}</span>
-  );
-}
-
 function formatValue(c: Contribution): string {
   if (c.type === 'Monetary') return `$${c.amount.toLocaleString()}`;
   if (c.type === 'Time' || c.type === 'Skills') return `${c.hours ?? 0} hrs`;
