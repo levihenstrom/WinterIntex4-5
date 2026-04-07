@@ -341,17 +341,26 @@ export default function ResidentVisitsAndConferencesPage() {
           <div>
             <span style={{ fontSize: 12, fontWeight: 700, color: '#0D9488', letterSpacing: 2, textTransform: 'uppercase' }}>Case Management</span>
             <h1 style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: 28, color: '#1E3A5F', marginBottom: 4 }}>
-              Home Visitations
+              <i className="bi bi-calendar-event me-2" style={{ color: '#0D9488' }} aria-hidden />
+              Visits &amp; conferences
             </h1>
             <p style={{ color: '#64748B', fontSize: 14, marginBottom: 0 }}>
               {visitData ? `${visitData.totalCount} visit${visitData.totalCount !== 1 ? 's' : ''} logged` : 'Loading visits…'}
             </p>
           </div>
           {canWrite && (
-            <button type="button" onClick={openCreate} style={{
-              background: '#1E3A5F', color: '#fff', border: 'none', borderRadius: 8,
-              padding: '10px 22px', fontWeight: 600, fontSize: 14, cursor: 'pointer',
-            }}>+ Log Visit</button>
+            <button
+              type="button"
+              onClick={openCreate}
+              style={{
+                background: '#1E3A5F', color: '#fff', border: 'none', borderRadius: 8,
+                padding: '10px 22px', fontWeight: 600, fontSize: 14, cursor: 'pointer',
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+              }}
+            >
+              <i className="bi bi-house-add" aria-hidden />
+              Record visit
+            </button>
           )}
         </div>
 
@@ -570,7 +579,7 @@ export default function ResidentVisitsAndConferencesPage() {
             <div className="modal-content">
               <div className="modal-header" style={{ background: 'var(--hw-bg-lavender2)', borderBottom: 'none' }}>
                 <h5 className="modal-title hw-heading mb-0" id="visitModal2Title">
-                  {isEditing ? `Edit Visit — ${fmtDate((editTarget as HomeVisitation).visitDate)}` : 'Log New Visit'}
+                  {isEditing ? `Edit visit — ${fmtDate((editTarget as HomeVisitation).visitDate)}` : 'Record visit'}
                 </h5>
                 <button type="button" className="btn-close" onClick={() => setEditTarget(null)} />
               </div>
@@ -642,7 +651,7 @@ export default function ResidentVisitsAndConferencesPage() {
               <div className="modal-footer" style={{ borderTop: '1px solid var(--hw-bg-lavender2)' }}>
                 <button type="button" className="btn btn-outline-secondary" onClick={() => setEditTarget(null)}>Cancel</button>
                 <button type="button" className="btn hw-btn-magenta px-4" onClick={() => void handleSave()} disabled={saving}>
-                  {saving ? 'Saving…' : isEditing ? 'Save Changes' : 'Log Visit'}
+                  {saving ? 'Saving…' : isEditing ? 'Save changes' : 'Record visit'}
                 </button>
               </div>
             </div>

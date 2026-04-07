@@ -9,6 +9,7 @@ import {
 } from '../../lib/apiClient';
 import { useAuth } from '../../context/AuthContext';
 import DeleteConfirmModal from '../../components/DeleteConfirmModal';
+import 'bootstrap-icons/font/bootstrap-icons.css';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -212,10 +213,10 @@ export default function VisitsPage() {
           <nav aria-label="breadcrumb" className="mb-3">
             <ol className="breadcrumb small">
               <li className="breadcrumb-item">
-                <Link to="/admin/residents" className="hw-link">Caseload Inventory</Link>
+                <Link to="/admin/residents" className="hw-link">Residents</Link>
               </li>
               <li className="breadcrumb-item active">
-                Home Visits — Resident {residentId}
+                Field visits — Resident {residentId}
               </li>
             </ol>
           </nav>
@@ -224,11 +225,33 @@ export default function VisitsPage() {
         {/* Header */}
         <div className="d-flex align-items-start justify-content-between mb-4 flex-wrap gap-3">
           <div>
-            <p className="hw-eyebrow mb-1">Case Management</p>
-            <h1 className="hw-heading mb-0" style={{ fontSize: '1.75rem' }}>
-              Home Visitations
+            <span
+              style={{
+                fontSize: 12,
+                fontWeight: 700,
+                color: '#0D9488',
+                letterSpacing: 2,
+                textTransform: 'uppercase',
+                display: 'block',
+                marginBottom: 6,
+              }}
+            >
+              Case management
+            </span>
+            <h1
+              className="mb-0"
+              style={{
+                fontFamily: 'Poppins, sans-serif',
+                fontWeight: 700,
+                fontSize: 28,
+                color: '#1E3A5F',
+                lineHeight: 1.2,
+              }}
+            >
+              <i className="bi bi-house-door me-2" style={{ color: '#0D9488' }} aria-hidden />
+              Field visits
               {residentId && (
-                <span className="small text-muted ms-2 fw-normal">
+                <span style={{ fontSize: 16, color: '#64748B', fontWeight: 400, marginLeft: 8 }}>
                   — Resident {residentId}
                 </span>
               )}
@@ -242,10 +265,11 @@ export default function VisitsPage() {
           {canWrite && (
             <button
               type="button"
-              className="btn hw-btn-magenta px-4 py-2 rounded-3 fw-semibold"
+              className="btn hw-btn-magenta px-4 py-2 rounded-3 fw-semibold d-inline-flex align-items-center gap-2"
               onClick={openCreate}
             >
-              + Log Visit
+              <i className="bi bi-house-add" aria-hidden />
+              Record visit
             </button>
           )}
         </div>
@@ -265,7 +289,7 @@ export default function VisitsPage() {
                   className="btn btn-link p-0 hw-link"
                   onClick={openCreate}
                 >
-                  Log the first visit.
+                  Record the first visit.
                 </button>
               )}
             </div>
@@ -399,8 +423,8 @@ export default function VisitsPage() {
               >
                 <h5 className="modal-title hw-heading mb-0" id="visitModalTitle">
                   {isEditing
-                    ? `Edit Visit — ${fmtDate((editTarget as HomeVisitation).visitDate)}`
-                    : 'Log New Visit'}
+                    ? `Edit visit — ${fmtDate((editTarget as HomeVisitation).visitDate)}`
+                    : 'Record visit'}
                 </h5>
                 <button
                   type="button"
@@ -565,7 +589,7 @@ export default function VisitsPage() {
                   onClick={() => void handleSave()}
                   disabled={saving}
                 >
-                  {saving ? 'Saving…' : isEditing ? 'Save Changes' : 'Log Visit'}
+                  {saving ? 'Saving…' : isEditing ? 'Save changes' : 'Record visit'}
                 </button>
               </div>
             </div>

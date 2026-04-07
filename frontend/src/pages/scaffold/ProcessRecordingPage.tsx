@@ -306,9 +306,9 @@ export default function ProcessRecordingPage() {
         {residentId && (
           <nav style={{ marginBottom: 16 }}>
             <span style={{ fontSize: 13, color: '#64748B' }}>
-              <Link to="/admin/residents" style={{ color: '#6B21A8', fontWeight: 600, textDecoration: 'none' }}>Caseload Inventory</Link>
+              <Link to="/admin/residents" style={{ color: '#6B21A8', fontWeight: 600, textDecoration: 'none' }}>Residents</Link>
               <span style={{ margin: '0 6px' }}>/</span>
-              <span>Process Recordings — Resident {residentId}</span>
+              <span>Session notes — Resident {residentId}</span>
             </span>
           </nav>
         )}
@@ -318,7 +318,8 @@ export default function ProcessRecordingPage() {
           <div>
             <span style={{ fontSize: 12, fontWeight: 700, color: '#0D9488', letterSpacing: 2, textTransform: 'uppercase' }}>Case Management</span>
             <h1 style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: 28, color: '#1E3A5F', marginBottom: 4 }}>
-              Process Recordings
+              <i className="bi bi-journal-text me-2" style={{ color: '#0D9488' }} aria-hidden />
+              Session notes
               {residentId && <span style={{ fontSize: 16, color: '#64748B', fontWeight: 400, marginLeft: 8 }}>— Resident {residentId}</span>}
             </h1>
             <p style={{ color: '#64748B', fontSize: 14, marginBottom: 0 }}>
@@ -329,7 +330,11 @@ export default function ProcessRecordingPage() {
             <button type="button" onClick={openCreate} style={{
               background: '#1E3A5F', color: '#fff', border: 'none', borderRadius: 8,
               padding: '10px 22px', fontWeight: 600, fontSize: 14, cursor: 'pointer',
-            }}>+ New Session</button>
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+            }}>
+              <i className="bi bi-journal-plus" aria-hidden />
+              Record session
+            </button>
           )}
         </div>
 
@@ -476,7 +481,7 @@ export default function ProcessRecordingPage() {
             <div className="modal-content">
               <div className="modal-header" style={{ background: 'var(--hw-bg-lavender2)', borderBottom: 'none' }}>
                 <h5 className="modal-title hw-heading mb-0" id="sessionModalTitle">
-                  {isEditing ? `Edit Session — ${fmtDate((editTarget as ProcessRecording).sessionDate)}` : 'New Session'}
+                  {isEditing ? `Edit session — ${fmtDate((editTarget as ProcessRecording).sessionDate)}` : 'Record session'}
                 </h5>
                 <button type="button" className="btn-close" onClick={() => setEditTarget(null)} />
               </div>
@@ -552,7 +557,7 @@ export default function ProcessRecordingPage() {
               <div className="modal-footer" style={{ borderTop: '1px solid var(--hw-bg-lavender2)' }}>
                 <button type="button" className="btn btn-outline-secondary" onClick={() => setEditTarget(null)}>Cancel</button>
                 <button type="button" className="btn hw-btn-magenta px-4" onClick={() => void handleSave()} disabled={saving}>
-                  {saving ? 'Saving…' : isEditing ? 'Save Changes' : 'Create Session'}
+                  {saving ? 'Saving…' : isEditing ? 'Save changes' : 'Save session'}
                 </button>
               </div>
             </div>

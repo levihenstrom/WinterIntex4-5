@@ -10,9 +10,9 @@ const sectionTabs: Record<'donations' | 'residents' | 'socialMedia' | 'reports',
     { to: '/admin/donations/allocations', label: 'Allocations', end: false, icon: 'bi-diagram-3' },
   ],
   residents: [
-    { to: '/admin/residents', label: 'Caseload Inventory', end: true, icon: 'bi-person-lines-fill' },
-    { to: '/admin/residents/process-recordings', label: 'Process Recordings', end: false, icon: 'bi-journal-text' },
-    { to: '/admin/residents/visits-conferences', label: 'Home Visits & Conferences', end: false, icon: 'bi-calendar-event' },
+    { to: '/admin/residents', label: 'Residents', end: true, icon: 'bi-person-lines-fill' },
+    { to: '/admin/residents/process-recordings', label: 'Session notes', end: false, icon: 'bi-journal-text' },
+    { to: '/admin/residents/visits-conferences', label: 'Visits & conferences', end: false, icon: 'bi-calendar-event' },
   ],
   socialMedia: [
     { to: '/admin/social-media', label: 'History', end: true, icon: 'bi-clock-history' },

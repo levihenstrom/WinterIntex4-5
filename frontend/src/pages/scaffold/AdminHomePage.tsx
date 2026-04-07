@@ -182,11 +182,34 @@ export default function AdminHomePage() {
     <div className="py-4" style={{ background: 'var(--hw-bg-gray)', minHeight: '100%' }}>
       <div className="container-xl">
 
-        {/* Header */}
+        {/* Header — match other admin pages (Poppins, bold navy title) */}
         <div className="mb-5">
-          <p className="hw-eyebrow mb-1">Admin Portal</p>
-          <h1 className="hw-heading mb-1" style={{ fontSize: '2rem' }}>Dashboard</h1>
-          <p className="text-muted mb-0">
+          <span
+            style={{
+              display: 'block',
+              fontSize: 12,
+              fontWeight: 700,
+              color: '#0D9488',
+              letterSpacing: 2,
+              textTransform: 'uppercase',
+              marginBottom: 8,
+            }}
+          >
+            Administration
+          </span>
+          <h1
+            style={{
+              fontFamily: 'Poppins, sans-serif',
+              fontWeight: 700,
+              fontSize: 28,
+              color: '#1E3A5F',
+              marginBottom: 8,
+              lineHeight: 1.2,
+            }}
+          >
+            Dashboard
+          </h1>
+          <p className="text-muted mb-0" style={{ fontSize: 14 }}>
             Welcome back, <strong>{authSession.email}</strong>
             {authSession.roles.length > 0 && (
               <span className="ms-2">
@@ -224,7 +247,7 @@ export default function AdminHomePage() {
           />
           <MetricCard
             label="Counseling sessions logged"
-            sublabel="Process Recordings"
+            sublabel="Session notes"
             metric={totalSessions}
             accentColor="var(--hw-purple-light)"
             icon="file-earmark-text"
@@ -232,7 +255,7 @@ export default function AdminHomePage() {
           />
           <MetricCard
             label="Home visits conducted"
-            sublabel="Home Visitations"
+            sublabel="Visits & conferences"
             metric={totalVisits}
             accentColor="var(--hw-amber)"
             icon="house-door"
@@ -321,7 +344,7 @@ export default function AdminHomePage() {
                 {upcomingConfs.count} upcoming case conference{upcomingConfs.count !== 1 ? 's' : ''}
               </p>
               <p className="small mb-0" style={{ opacity: 0.85 }}>
-                Review scheduled conferences in the Home Visits &amp; Conferences tab.
+                Review scheduled conferences in the Visits &amp; conferences tab.
               </p>
             </div>
             <Link
@@ -347,20 +370,20 @@ export default function AdminHomePage() {
           <QuickLink
             to="/admin/residents"
             icon="people"
-            title="Caseload Inventory"
+            title="Residents"
             description="View, search, and manage all resident profiles."
           />
           <QuickLink
             to="/admin/residents/process-recordings"
             icon="file-earmark-text"
-            title="Process Recordings"
-            description="Log and review counseling session notes."
+            title="Session notes"
+            description="Record and review counseling session documentation."
           />
           <QuickLink
             to="/admin/residents/visits-conferences"
             icon="house-door"
-            title="Home Visits &amp; Conferences"
-            description="Record field visits and view upcoming conferences."
+            title="Visits &amp; conferences"
+            description="Log home visits and see upcoming case conferences."
           />
           <QuickLink
             to="/admin/donations"
