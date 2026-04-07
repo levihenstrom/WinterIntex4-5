@@ -210,35 +210,35 @@ export default function ContributionsPage() {
           <>
             <AdminKpiStrip
               items={[
-                { label: 'Monetary total (PHP)', value: fmtMoney(kpis.monetarySum), sub: 'Monetary gift rows only', accent: '#059669' },
-                { label: 'All gift records', value: String(kpis.count), sub: 'loaded page', accent: '#1E3A5F' },
-                { label: 'Monetary rows', value: String(kpis.monetaryCount), accent: '#D97706' },
-                { label: 'Gift types in data', value: String(kpis.distinctTypes), sub: 'distinct type values', accent: '#7C3AED' },
+                {
+                  label: 'Monetary total (PHP)',
+                  value: fmtMoney(kpis.monetarySum),
+                  sub: 'Monetary gift rows only',
+                  accent: '#059669',
+                  icon: 'cash-stack',
+                },
+                {
+                  label: 'All gift records',
+                  value: String(kpis.count),
+                  sub: 'loaded page',
+                  accent: '#1E3A5F',
+                  icon: 'clipboard2-data',
+                },
+                {
+                  label: 'Monetary rows',
+                  value: String(kpis.monetaryCount),
+                  accent: '#D97706',
+                  icon: 'wallet2',
+                },
+                {
+                  label: 'Gift types in data',
+                  value: String(kpis.distinctTypes),
+                  sub: 'distinct type values',
+                  accent: '#7C3AED',
+                  icon: 'tags',
+                },
               ]}
             />
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 24 }}>
-              {[
-                { label: 'Monetary (PHP)', value: fmtMoney(kpis.monetarySum), icon: 'cash-stack', color: '#166534' },
-                { label: 'All gifts', value: String(kpis.count), icon: 'clipboard2-data', color: '#1E3A5F' },
-                { label: 'Monetary rows', value: String(kpis.monetaryCount), icon: 'wallet2', color: '#854D0E' },
-              ].map((k) => (
-                <div
-                  key={k.label}
-                  style={{
-                    flex: '1 1 140px',
-                    background: '#fff',
-                    borderRadius: 12,
-                    padding: '14px 16px',
-                    border: '1px solid #E2E8F0',
-                    boxShadow: '0 2px 8px rgba(30,58,95,0.06)',
-                  }}
-                >
-                  <div style={{ fontSize: 20, marginBottom: 4 }}><i className={`bi bi-${k.icon}`} /></div>
-                  <div style={{ fontSize: 20, fontWeight: 700, color: k.color }}>{k.value}</div>
-                  <div style={{ fontSize: 12, color: '#64748B', fontWeight: 500 }}>{k.label}</div>
-                </div>
-              ))}
-            </div>
 
             <div
               style={{

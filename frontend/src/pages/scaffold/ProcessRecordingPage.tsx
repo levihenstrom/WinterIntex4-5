@@ -9,6 +9,8 @@ import {
 } from '../../lib/apiClient';
 import { useAuth } from '../../context/AuthContext';
 import DeleteConfirmModal from '../../components/DeleteConfirmModal';
+import AdminKpiStrip from '../../components/admin/AdminKpiStrip';
+import 'bootstrap-icons/font/bootstrap-icons.css';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -70,37 +72,25 @@ function Badge({ label, bg, text }: { label: string; bg: string; text: string })
 
 // ── KPI Strip ─────────────────────────────────────────────────────────────────
 
-function KPIStrip({ items }: { items: ProcessRecording[] }) {
+function SessionKpiStrip({ items }: { items: ProcessRecording[] }) {
   const total = items.length;
   const avgDur = total > 0
     ? Math.round(items.reduce((s, r) => s + (r.sessionDurationMinutes ?? 0), 0) / total)
     : 0;
-  const progressCount = items.filter(r => r.progressNoted).length;
-  const concernsCount = items.filter(r => r.concernsFlagged).length;
-  const referralCount = items.filter(r => r.referralMade).length;
-
-  const kpis = [
-    { label: 'Sessions on Page', value: String(total), icon: '📋', color: '#1E3A5F' },
-    { label: 'Avg Duration',     value: `${avgDur} min`, icon: '⏱️', color: '#1E40AF' },
-    { label: 'Progress Noted',   value: String(progressCount), icon: '✅', color: '#166534' },
-    { label: 'Concerns Flagged', value: String(concernsCount), icon: '⚠️', color: '#991B1B' },
-    { label: 'Referrals Made',   value: String(referralCount), icon: '🔗', color: '#6B21A8' },
-  ];
+  const progressCount = items.filter((r) => r.progressNoted).length;
+  const concernsCount = items.filter((r) => r.concernsFlagged).length;
+  const referralCount = items.filter((r) => r.referralMade).length;
 
   return (
-    <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 24 }}>
-      {kpis.map(k => (
-        <div key={k.label} style={{
-          flex: '1 1 140px', background: '#fff', borderRadius: 12,
-          padding: '14px 16px', border: '1px solid #E2E8F0',
-          boxShadow: '0 2px 8px rgba(30,58,95,0.06)',
-        }}>
-          <div style={{ fontSize: 20, marginBottom: 4 }}>{k.icon}</div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: k.color }}>{k.value}</div>
-          <div style={{ fontSize: 12, color: '#64748B', fontWeight: 500 }}>{k.label}</div>
-        </div>
-      ))}
-    </div>
+    <AdminKpiStrip
+      items={[
+        { label: 'Sessions on page', value: String(total), accent: '#1E3A5F', icon: 'clipboard2-data' },
+        { label: 'Avg duration', value: `${avgDur} min`, accent: '#1E40AF', icon: 'stopwatch' },
+        { label: 'Progress noted', value: String(progressCount), accent: '#166534', icon: 'check-circle' },
+        { label: 'Concerns flagged', value: String(concernsCount), accent: '#991B1B', icon: 'exclamation-triangle' },
+        { label: 'Referrals made', value: String(referralCount), accent: '#6B21A8', icon: 'link-45deg' },
+      ]}
+    />
   );
 }
 
@@ -344,7 +334,7 @@ export default function ProcessRecordingPage() {
         </div>
 
         {/* KPI Strip */}
-        {data && <KPIStrip items={data.items} />}
+        {data && <SessionKpiStrip items={data.items} />}
 
         {/* Session type filter pills */}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
@@ -378,13 +368,17 @@ export default function ProcessRecordingPage() {
         }}>
           {loading ? (
             <div style={{ textAlign: 'center', padding: '48px 0', color: '#94A3B8' }}>
-              <div style={{ fontSize: 32, marginBottom: 8 }}>⏳</div>
-              <p style={{ fontWeight: 600 }}>Loading sessions…</p>
+              <div className="spinner-border text-secondary mb-3" role="status" aria-label="Loading">
+                <span className="visually-hidden">Loading…</span>
+              </div>
+              <p className="fw-semibold mb-0">Loading sessions…</p>
             </div>
           ) : filteredAndSorted.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '48px 0', color: '#94A3B8' }}>
-              <div style={{ fontSize: 40, marginBottom: 8 }}>🔍</div>
-              <p style={{ fontWeight: 600 }}>
+              <div className="mb-3" style={{ fontSize: 40 }}>
+                <i className="bi bi-search" style={{ color: '#CBD5E1' }} aria-hidden />
+              </div>
+              <p className="fw-semibold">
                 No sessions recorded yet.{' '}
                 {canWrite && <button type="button" onClick={openCreate} style={{ background: 'none', border: 'none', color: '#6B21A8', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline', fontSize: 14 }}>Log the first session.</button>}
               </p>
