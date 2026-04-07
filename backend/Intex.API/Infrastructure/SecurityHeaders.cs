@@ -13,7 +13,8 @@ public static class SecurityHeaders
             context.Response.OnStarting(() =>
             {
                 if (!(environment.IsDevelopment() &&
-                      context.Request.Path.StartsWithSegments("/swagger")))
+                      (context.Request.Path.StartsWithSegments("/swagger")
+                       || context.Request.Path.StartsWithSegments("/scalar"))))
                 {
                     context.Response.Headers["Content-Security-Policy"] = ContentSecurityPolicy;
                     context.Response.Headers["X-Content-Type-Options"] = "nosniff";

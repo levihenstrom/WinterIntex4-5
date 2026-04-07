@@ -19,7 +19,7 @@ function LoginPage() {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const fromPathname = (location.state as { from?: Location })?.from?.pathname;
-  const { refreshAuthState } = useAuth();
+  const { refreshAuthState, isAuthenticated, isLoading, authSession } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [twoFactorCode, setTwoFactorCode] = useState('');
@@ -37,6 +37,21 @@ function LoginPage() {
   useEffect(() => {
     void loadExternalProviders();
   }, []);
+
+  useEffect(() => {
+    if (isLoading || !isAuthenticated) return;
+    if (searchParams.get('externalError')) return;
+    navigate(resolvePostLoginPath(fromPathname, authSession.roles), {
+      replace: true,
+    });
+  }, [
+    isLoading,
+    isAuthenticated,
+    authSession.roles,
+    fromPathname,
+    navigate,
+    searchParams,
+  ]);
 
   async function loadExternalProviders() {
     try {
