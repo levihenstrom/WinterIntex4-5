@@ -229,7 +229,7 @@ export default function ImpactPage() {
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                     <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
                     <YAxis tickFormatter={v => `$${v/1000}K`} tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={46} />
-                    <Tooltip {...TT} itemStyle={{ color: '#D97706' }} formatter={(v: number) => [`$${v.toLocaleString()}`, 'Donations']} />
+                    <Tooltip {...TT} itemStyle={{ color: '#D97706' }} formatter={(v: any) => [`$${v.toLocaleString()}`, 'Donations']} />
                     <Area type="monotone" dataKey="donations" stroke="#D97706" strokeWidth={2.5} fill="url(#gDon)" dot={{ r: 4, fill: '#D97706', strokeWidth: 0 }} activeDot={{ r: 6 }} />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -240,7 +240,7 @@ export default function ImpactPage() {
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                     <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
                     <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={34} />
-                    <Tooltip {...TT} itemStyle={{ color: '#6B21A8' }} formatter={(v: number) => [v, 'Residents']} />
+                    <Tooltip {...TT} itemStyle={{ color: '#6B21A8' }} formatter={(v: any) => [v, 'Residents']} />
                     <Bar dataKey="residents" fill="#6B21A8" radius={[5, 5, 0, 0]} opacity={0.85} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -253,7 +253,7 @@ export default function ImpactPage() {
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                     <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
                     <YAxis domain={[80, 92]} tickFormatter={v => `${v}%`} tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={40} />
-                    <Tooltip {...TT} itemStyle={{ color: '#0D9488' }} formatter={(v: number) => [`${v}%`, 'Rate']} />
+                    <Tooltip {...TT} itemStyle={{ color: '#0D9488' }} formatter={(v: any) => [`${v}%`, 'Rate']} />
                     <Line type="monotone" dataKey="reintegrationRate" stroke="#0D9488" strokeWidth={2.5} dot={{ r: 5, fill: '#0D9488', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 7 }} />
                   </LineChart>
                 </ResponsiveContainer>
@@ -288,7 +288,7 @@ export default function ImpactPage() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                   <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={false} tickLine={false} />
                   <YAxis tickFormatter={v => `$${v/1000}K`} tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={false} tickLine={false} width={50} />
-                  <Tooltip {...TT} itemStyle={{ color: '#D97706' }} formatter={(v: number) => [`$${v.toLocaleString()}`, 'Donations']} />
+                  <Tooltip {...TT} itemStyle={{ color: '#D97706' }} formatter={(v: any) => [`$${v.toLocaleString()}`, 'Donations']} />
                   <Area type="monotone" dataKey="donations" stroke="#D97706" strokeWidth={3} fill="url(#gDon2)" dot={{ r: 5, fill: '#D97706', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 7 }} />
                 </AreaChart>
               </ResponsiveContainer>
@@ -311,7 +311,7 @@ export default function ImpactPage() {
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                     <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
                     <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={34} />
-                    <Tooltip {...TT} itemStyle={{ color: '#6B21A8' }} formatter={(v: number) => [v, 'Residents']} />
+                    <Tooltip {...TT} itemStyle={{ color: '#6B21A8' }} formatter={(v: any) => [v, 'Residents']} />
                     <Bar dataKey="residents" fill="#6B21A8" radius={[5, 5, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -322,7 +322,7 @@ export default function ImpactPage() {
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                     <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
                     <YAxis domain={[80, 92]} tickFormatter={v => `${v}%`} tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={40} />
-                    <Tooltip {...TT} itemStyle={{ color: '#0D9488' }} formatter={(v: number) => [`${v}%`, 'Rate']} />
+                    <Tooltip {...TT} itemStyle={{ color: '#0D9488' }} formatter={(v: any) => [`${v}%`, 'Rate']} />
                     <Line type="monotone" dataKey="reintegrationRate" stroke="#0D9488" strokeWidth={3} dot={{ r: 5, fill: '#0D9488', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 7 }} />
                   </LineChart>
                 </ResponsiveContainer>
@@ -332,7 +332,7 @@ export default function ImpactPage() {
               <ResponsiveContainer width="100%" height={250}>
                 <RadialBarChart cx="50%" cy="50%" innerRadius="18%" outerRadius="88%" data={radialData} startAngle={180} endAngle={-180}>
                   <RadialBar dataKey="value" cornerRadius={6} label={false} />
-                  <Tooltip contentStyle={TT.contentStyle} formatter={(v: number) => [v, 'Reintegrations']} />
+                  <Tooltip contentStyle={TT.contentStyle} formatter={(v: any) => [v, 'Reintegrations']} />
                   <Legend iconSize={8} layout="vertical" verticalAlign="middle" align="right" wrapperStyle={{ fontSize: '0.75rem', color: '#64748b', lineHeight: '1.9' }} />
                 </RadialBarChart>
               </ResponsiveContainer>
@@ -349,7 +349,7 @@ export default function ImpactPage() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                   <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={false} tickLine={false} />
                   <YAxis tickFormatter={v => `${(v/1000).toFixed(0)}K`} tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={false} tickLine={false} width={38} />
-                  <Tooltip {...TT} itemStyle={{ color: '#7C3AED' }} formatter={(v: number) => [v.toLocaleString(), 'Hours']} />
+                  <Tooltip {...TT} itemStyle={{ color: '#7C3AED' }} formatter={(v: any) => [v.toLocaleString(), 'Hours']} />
                   <Area type="monotone" dataKey="volunteerHours" stroke="#7C3AED" strokeWidth={3} fill="url(#gVol)" dot={{ r: 5, fill: '#7C3AED', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 7 }} />
                 </AreaChart>
               </ResponsiveContainer>
@@ -361,7 +361,7 @@ export default function ImpactPage() {
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                     <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
                     <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={42} />
-                    <Tooltip {...TT} itemStyle={{ color: '#0D9488' }} formatter={(v: number) => [v.toLocaleString(), 'Volunteers']} />
+                    <Tooltip {...TT} itemStyle={{ color: '#0D9488' }} formatter={(v: any) => [v.toLocaleString(), 'Volunteers']} />
                     <Bar dataKey="volunteers" fill="#0D9488" radius={[5, 5, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -372,7 +372,7 @@ export default function ImpactPage() {
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                     <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
                     <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={30} />
-                    <Tooltip {...TT} itemStyle={{ color: '#D97706' }} formatter={(v: number) => [v, 'Programs']} />
+                    <Tooltip {...TT} itemStyle={{ color: '#D97706' }} formatter={(v: any) => [v, 'Programs']} />
                     <Bar dataKey="programs" fill="#D97706" radius={[5, 5, 0, 0]} opacity={0.85} />
                   </BarChart>
                 </ResponsiveContainer>
