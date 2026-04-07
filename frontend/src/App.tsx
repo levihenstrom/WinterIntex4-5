@@ -34,6 +34,7 @@ import AllocationsPage from './pages/scaffold/AllocationsPage';
 import ResidentsListPage from './pages/scaffold/ResidentsListPage';
 import ProcessRecordingPage from './pages/scaffold/ProcessRecordingPage';
 import VisitsPage from './pages/scaffold/VisitsPage';
+import ResidentVisitsAndConferencesPage from './pages/scaffold/ResidentVisitsAndConferencesPage';
 import SocialMediaHistoryPage from './pages/scaffold/SocialMediaHistoryPage';
 import SocialMediaSuggestPage from './pages/scaffold/SocialMediaSuggestPage';
 import DonationsReportPage from './pages/scaffold/DonationsReportPage';
@@ -163,6 +164,8 @@ function App() {
               <Route path="donations/contributions" element={<ContributionsPage />} />
               <Route path="donations/allocations" element={<AllocationsPage />} />
               <Route path="residents" element={<ResidentsListPage />} />
+              <Route path="residents/process-recordings" element={<ProcessRecordingPage />} />
+              <Route path="residents/visits-conferences" element={<ResidentVisitsAndConferencesPage />} />
               <Route path="residents/:id/process" element={<ProcessRecordingPage />} />
               <Route path="residents/:id/visits" element={<VisitsPage />} />
               <Route path="social-media" element={<SocialMediaHistoryPage />} />
