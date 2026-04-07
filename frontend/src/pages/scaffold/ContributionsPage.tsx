@@ -1,4 +1,8 @@
 import { useState, useMemo } from 'react';
+import {
+  DollarSign, Package, Clock, Wrench, Megaphone,
+  BarChart2, Layers, Search, Plus, X, Trash2,
+} from 'lucide-react';
 
 /* ── Types ───────────────────────────────────────────────────── */
 type ContribType = 'Monetary' | 'In-Kind' | 'Time' | 'Skills' | 'Social Media';
@@ -7,10 +11,10 @@ interface Contribution {
   donationId: number;
   supporterName: string;
   type: ContribType;
-  amount: number;          // USD for monetary; 0 for others
+  amount: number;
   inKindDescription?: string;
-  hours?: number;          // for Time/Skills
-  platform?: string;       // for Social Media
+  hours?: number;
+  platform?: string;
   date: string;
   safehouse: string;
   programArea: string;
@@ -19,41 +23,39 @@ interface Contribution {
 
 /* ── Mock Data ───────────────────────────────────────────────── */
 const INITIAL_CONTRIBUTIONS: Contribution[] = [
-  { donationId: 1,  supporterName: 'Carlos Méndez',    type: 'Monetary',     amount: 5000,  date: '2025-03-01', safehouse: 'Safehouse A', programArea: 'Medical Care',     notes: 'Annual pledge installment.' },
+  { donationId: 1,  supporterName: 'Carlos Méndez',    type: 'Monetary',     amount: 5000,  date: '2025-03-01', safehouse: 'Safehouse A', programArea: 'Medical Care',      notes: 'Annual pledge installment.' },
   { donationId: 2,  supporterName: 'María López',      type: 'Monetary',     amount: 500,   date: '2025-02-10', safehouse: 'Safehouse B', programArea: 'Education' },
-  { donationId: 3,  supporterName: 'Laura Estrada',    type: 'In-Kind',      amount: 0,     date: '2025-02-28', safehouse: 'Safehouse A', programArea: 'Resident Welfare', inKindDescription: '40 hygiene kits, 20 blankets' },
-  { donationId: 4,  supporterName: 'Ana Cifuentes',    type: 'Time',         amount: 0,     date: '2025-03-15', safehouse: 'Safehouse C', programArea: 'Legal Aid',        hours: 8,  notes: 'Legal orientation session.' },
-  { donationId: 5,  supporterName: 'Roberto Palma',    type: 'Skills',       amount: 0,     date: '2025-01-22', safehouse: 'General',     programArea: 'Operations',       hours: 12, notes: 'IT infrastructure setup.' },
-  { donationId: 6,  supporterName: 'Miguel Torres',    type: 'Social Media', amount: 0,     date: '2025-03-20', safehouse: 'General',     programArea: 'Outreach',         platform: 'Instagram', notes: 'Fundraising campaign post. Reached 4,200 users.' },
+  { donationId: 3,  supporterName: 'Laura Estrada',    type: 'In-Kind',      amount: 0,     date: '2025-02-28', safehouse: 'Safehouse A', programArea: 'Resident Welfare',  inKindDescription: '40 hygiene kits, 20 blankets' },
+  { donationId: 4,  supporterName: 'Ana Cifuentes',    type: 'Time',         amount: 0,     date: '2025-03-15', safehouse: 'Safehouse C', programArea: 'Legal Aid',         hours: 8,  notes: 'Legal orientation session.' },
+  { donationId: 5,  supporterName: 'Roberto Palma',    type: 'Skills',       amount: 0,     date: '2025-01-22', safehouse: 'General',     programArea: 'Operations',        hours: 12, notes: 'IT infrastructure setup.' },
+  { donationId: 6,  supporterName: 'Miguel Torres',    type: 'Social Media', amount: 0,     date: '2025-03-20', safehouse: 'General',     programArea: 'Outreach',          platform: 'Instagram', notes: 'Fundraising campaign post. Reached 4,200 users.' },
   { donationId: 7,  supporterName: 'Claudia Morales',  type: 'Monetary',     amount: 3000,  date: '2025-01-30', safehouse: 'Safehouse B', programArea: 'Food & Nutrition' },
-  { donationId: 8,  supporterName: 'Patricia Vásquez', type: 'In-Kind',      amount: 0,     date: '2025-02-14', safehouse: 'Safehouse A', programArea: 'Resident Welfare', inKindDescription: 'Monthly grocery drive — 60 food boxes' },
-  { donationId: 9,  supporterName: 'Diego Fuentes',    type: 'Time',         amount: 0,     date: '2025-03-10', safehouse: 'Safehouse C', programArea: 'Operations',       hours: 6,  notes: 'Transportation for medical appointments.' },
-  { donationId: 10, supporterName: 'Carlos Méndez',    type: 'Monetary',     amount: 10000, date: '2024-12-15', safehouse: 'General',     programArea: 'Emergency Fund',   notes: 'Year-end major gift.' },
+  { donationId: 8,  supporterName: 'Patricia Vásquez', type: 'In-Kind',      amount: 0,     date: '2025-02-14', safehouse: 'Safehouse A', programArea: 'Resident Welfare',  inKindDescription: 'Monthly grocery drive — 60 food boxes' },
+  { donationId: 9,  supporterName: 'Diego Fuentes',    type: 'Time',         amount: 0,     date: '2025-03-10', safehouse: 'Safehouse C', programArea: 'Operations',        hours: 6,  notes: 'Transportation for medical appointments.' },
+  { donationId: 10, supporterName: 'Carlos Méndez',    type: 'Monetary',     amount: 10000, date: '2024-12-15', safehouse: 'General',     programArea: 'Emergency Fund',    notes: 'Year-end major gift.' },
   { donationId: 11, supporterName: 'María López',      type: 'Monetary',     amount: 500,   date: '2025-01-10', safehouse: 'Safehouse B', programArea: 'Education' },
-  { donationId: 12, supporterName: 'Sofía Herrera',    type: 'Skills',       amount: 0,     date: '2024-06-10', safehouse: 'General',     programArea: 'Staff Training',   hours: 16, notes: 'HR policy workshop for staff.' },
-  { donationId: 13, supporterName: 'Fernando Ixcot',   type: 'Social Media', amount: 0,     date: '2025-03-22', safehouse: 'General',     programArea: 'Outreach',         platform: 'Facebook', notes: 'Shared campaign video — 1,800 views.' },
-  { donationId: 14, supporterName: 'Laura Estrada',    type: 'In-Kind',      amount: 0,     date: '2024-12-05', safehouse: 'Safehouse A', programArea: 'Resident Welfare', inKindDescription: '30 winter jackets, 15 backpacks' },
+  { donationId: 12, supporterName: 'Sofía Herrera',    type: 'Skills',       amount: 0,     date: '2024-06-10', safehouse: 'General',     programArea: 'Staff Training',    hours: 16, notes: 'HR policy workshop for staff.' },
+  { donationId: 13, supporterName: 'Fernando Ixcot',   type: 'Social Media', amount: 0,     date: '2025-03-22', safehouse: 'General',     programArea: 'Outreach',          platform: 'Facebook', notes: 'Shared campaign video — 1,800 views.' },
+  { donationId: 14, supporterName: 'Laura Estrada',    type: 'In-Kind',      amount: 0,     date: '2024-12-05', safehouse: 'Safehouse A', programArea: 'Resident Welfare',  inKindDescription: '30 winter jackets, 15 backpacks' },
   { donationId: 15, supporterName: 'Claudia Morales',  type: 'Monetary',     amount: 2500,  date: '2025-03-05', safehouse: 'Safehouse C', programArea: 'Psychosocial Care' },
 ];
 
-/* ── Helpers ─────────────────────────────────────────────────── */
-const TYPE_CONFIG: Record<ContribType, { bg: string; text: string; icon: string }> = {
-  'Monetary':     { bg: '#DCFCE7', text: '#166534', icon: '💵' },
-  'In-Kind':      { bg: '#FEF9C3', text: '#854D0E', icon: '📦' },
-  'Time':         { bg: '#DBEAFE', text: '#1E40AF', icon: '⏱️' },
-  'Skills':       { bg: '#F3E8FF', text: '#6B21A8', icon: '🛠️' },
-  'Social Media': { bg: '#FFE4E6', text: '#9F1239', icon: '📣' },
+/* ── Config ──────────────────────────────────────────────────── */
+const TYPE_CONFIG: Record<ContribType, { bg: string; text: string; Icon: React.ElementType }> = {
+  'Monetary':     { bg: '#DCFCE7', text: '#166534', Icon: DollarSign },
+  'In-Kind':      { bg: '#FEF9C3', text: '#854D0E', Icon: Package },
+  'Time':         { bg: '#DBEAFE', text: '#1E40AF', Icon: Clock },
+  'Skills':       { bg: '#F3E8FF', text: '#6B21A8', Icon: Wrench },
+  'Social Media': { bg: '#FFE4E6', text: '#9F1239', Icon: Megaphone },
 };
 
 const ALL_TYPES: ContribType[] = ['Monetary', 'In-Kind', 'Time', 'Skills', 'Social Media'];
 const ALL_PROGRAMS = ['All', 'Medical Care', 'Education', 'Resident Welfare', 'Legal Aid', 'Operations', 'Outreach', 'Food & Nutrition', 'Emergency Fund', 'Staff Training', 'Psychosocial Care'];
+const IC = '#1E3A5F';
 
 function Badge({ label, bg, text }: { label: string; bg: string; text: string }) {
   return (
-    <span style={{
-      display: 'inline-block', background: bg, color: text,
-      borderRadius: 20, padding: '2px 10px', fontSize: 11, fontWeight: 600,
-    }}>{label}</span>
+    <span style={{ display: 'inline-block', background: bg, color: text, borderRadius: 20, padding: '2px 10px', fontSize: 11, fontWeight: 600 }}>{label}</span>
   );
 }
 
@@ -65,37 +67,37 @@ function formatValue(c: Contribution): string {
   return '—';
 }
 
-/* ── KPI Strip ───────────────────────────────────────────────── */
 function KPIStrip({ data }: { data: Contribution[] }) {
   const monetary = data.filter(c => c.type === 'Monetary').reduce((s, c) => s + c.amount, 0);
   const inKind   = data.filter(c => c.type === 'In-Kind').length;
   const hours    = data.filter(c => c.type === 'Time' || c.type === 'Skills').reduce((s, c) => s + (c.hours ?? 0), 0);
   const social   = data.filter(c => c.type === 'Social Media').length;
+
   const kpis = [
-    { label: 'Monetary Received',  value: `$${monetary.toLocaleString()}`, icon: '💵', color: '#166534' },
-    { label: 'In-Kind Donations',  value: `${inKind} donations`,           icon: '📦', color: '#854D0E' },
-    { label: 'Volunteer Hours',    value: `${hours} hrs`,                  icon: '⏱️', color: '#1E40AF' },
-    { label: 'Social Media Posts', value: `${social} posts`,              icon: '📣', color: '#9F1239' },
-    { label: 'Total Records',      value: String(data.length),             icon: '📋', color: '#1E3A5F' },
+    { label: 'Monetary Received',  value: `$${monetary.toLocaleString()}`, Icon: DollarSign },
+    { label: 'In-Kind Donations',  value: `${inKind} donations`,           Icon: Package },
+    { label: 'Volunteer Hours',    value: `${hours} hrs`,                  Icon: Clock },
+    { label: 'Social Media Posts', value: `${social} posts`,              Icon: Megaphone },
+    { label: 'Total Records',      value: String(data.length),             Icon: BarChart2 },
   ];
+
   return (
     <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 24 }}>
-      {kpis.map(k => (
-        <div key={k.label} style={{
+      {kpis.map(({ label, value, Icon }) => (
+        <div key={label} style={{
           flex: '1 1 140px', background: '#fff', borderRadius: 12,
           padding: '14px 16px', border: '1px solid #E2E8F0',
           boxShadow: '0 2px 8px rgba(30,58,95,0.06)',
         }}>
-          <div style={{ fontSize: 20, marginBottom: 4 }}>{k.icon}</div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: k.color }}>{k.value}</div>
-          <div style={{ fontSize: 12, color: '#64748B', fontWeight: 500 }}>{k.label}</div>
+          <Icon size={18} color={IC} style={{ marginBottom: 6 }} />
+          <div style={{ fontSize: 20, fontWeight: 700, color: '#1E3A5F' }}>{value}</div>
+          <div style={{ fontSize: 12, color: '#64748B', fontWeight: 500 }}>{label}</div>
         </div>
       ))}
     </div>
   );
 }
 
-/* ── Main Page ───────────────────────────────────────────────── */
 export default function ContributionsPage() {
   const [contributions, setContributions] = useState<Contribution[]>(INITIAL_CONTRIBUTIONS);
   const [typeFilter, setTypeFilter]       = useState<string>('All');
@@ -145,65 +147,62 @@ export default function ContributionsPage() {
     <div style={{ background: '#F8FAFC', minHeight: '100vh', padding: '32px 0' }}>
       <div className="container">
 
-        {/* ── Header ── */}
         <div style={{ marginBottom: 28 }}>
           <span style={{ fontSize: 12, fontWeight: 700, color: '#0D9488', letterSpacing: 2, textTransform: 'uppercase' }}>Donors & Contributions</span>
-          <h1 style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: 28, color: '#1E3A5F', marginBottom: 4 }}>
-            Donation & Contribution Activity
-          </h1>
-          <p style={{ color: '#64748B', fontSize: 14, marginBottom: 0 }}>
-            All monetary, in-kind, time, skills, and social media contributions recorded for the organization.
-          </p>
+          <h1 style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: 28, color: '#1E3A5F', marginBottom: 4 }}>Donation & Contribution Activity</h1>
+          <p style={{ color: '#64748B', fontSize: 14, marginBottom: 0 }}>All monetary, in-kind, time, skills, and social media contributions recorded for the organization.</p>
         </div>
 
         <KPIStrip data={contributions} />
 
-        {/* ── Filters + Actions ── */}
+        {/* Filters */}
         <div style={{
-          background: '#fff', borderRadius: 12, padding: '16px 20px',
+          background: '#fff', borderRadius: 12, padding: '14px 20px',
           border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(30,58,95,0.05)',
           marginBottom: 20, display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center',
         }}>
-          <input
-            type="text" placeholder="Search by supporter or program…"
-            value={search} onChange={e => setSearch(e.target.value)}
-            style={{ flex: '1 1 200px', padding: '8px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13 }}
-          />
+          <div style={{ position: 'relative', flex: '1 1 200px' }}>
+            <Search size={14} color="#94A3B8" style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+            <input type="text" placeholder="Search by supporter or program…" value={search} onChange={e => setSearch(e.target.value)}
+              style={{ width: '100%', padding: '8px 14px 8px 30px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, outline: 'none' }} />
+          </div>
           <select value={programFilter} onChange={e => setProgramFilter(e.target.value)}
             style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, background: '#fff' }}>
             {ALL_PROGRAMS.map(p => <option key={p} value={p}>{p === 'All' ? 'All Programs' : p}</option>)}
           </select>
           <button onClick={() => setShowForm(v => !v)} style={{
             background: '#1E3A5F', color: '#fff', border: 'none', borderRadius: 8,
-            padding: '8px 18px', fontWeight: 600, fontSize: 13, cursor: 'pointer',
-          }}>{showForm ? '✕ Cancel' : '+ Record Contribution'}</button>
+            padding: '8px 16px', fontWeight: 600, fontSize: 13, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', gap: 6,
+          }}>
+            {showForm ? <X size={14} /> : <Plus size={14} />}
+            {showForm ? 'Cancel' : 'Record Contribution'}
+          </button>
           <span style={{ fontSize: 12, color: '#94A3B8', marginLeft: 'auto' }}>{filtered.length} records</span>
         </div>
 
-        {/* ── Type filter pills ── */}
+        {/* Type pills */}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
-          {['All', ...ALL_TYPES].map(t => {
+          {(['All', ...ALL_TYPES] as string[]).map(t => {
             const cfg = t !== 'All' ? TYPE_CONFIG[t as ContribType] : null;
+            const TypeIcon = cfg?.Icon;
             return (
               <button key={t} onClick={() => setTypeFilter(t)} style={{
                 border: 'none', borderRadius: 20, padding: '5px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
                 background: typeFilter === t ? (cfg?.bg ?? '#1E3A5F') : '#E2E8F0',
                 color: typeFilter === t ? (cfg?.text ?? '#fff') : '#475569',
-                transition: 'all 0.15s',
+                display: 'flex', alignItems: 'center', gap: 5,
               }}>
-                {t !== 'All' && cfg ? `${cfg.icon} ${t}` : 'All Types'}
+                {TypeIcon && typeFilter === t && <TypeIcon size={11} />}
+                {t === 'All' ? 'All Types' : t}
               </button>
             );
           })}
         </div>
 
-        {/* ── Add form ── */}
+        {/* Add form */}
         {showForm && (
-          <div style={{
-            background: '#fff', borderRadius: 12, padding: 24,
-            border: '1px solid #CBD5E1', marginBottom: 24,
-            boxShadow: '0 4px 16px rgba(30,58,95,0.08)',
-          }}>
+          <div style={{ background: '#fff', borderRadius: 12, padding: 24, border: '1px solid #CBD5E1', marginBottom: 24, boxShadow: '0 4px 16px rgba(30,58,95,0.08)' }}>
             <h5 style={{ fontFamily: 'Poppins,sans-serif', color: '#1E3A5F', fontWeight: 700, marginBottom: 16 }}>Record New Contribution</h5>
             <form onSubmit={handleAddSubmit}>
               <div className="row g-3">
@@ -272,24 +271,20 @@ export default function ContributionsPage() {
                     style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13 }} />
                 </div>
                 <div className="col-12">
-                  <button type="submit" style={{
-                    background: '#0D9488', color: '#fff', border: 'none',
-                    borderRadius: 8, padding: '9px 24px', fontWeight: 600, fontSize: 13, cursor: 'pointer',
-                  }}>Save Contribution</button>
+                  <button type="submit" style={{ background: '#0D9488', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 24px', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
+                    Save Contribution
+                  </button>
                 </div>
               </div>
             </form>
           </div>
         )}
 
-        {/* ── Table ── */}
-        <div style={{
-          background: '#fff', borderRadius: 14, border: '1px solid #E2E8F0',
-          boxShadow: '0 2px 12px rgba(30,58,95,0.06)', overflow: 'hidden',
-        }}>
+        {/* Table */}
+        <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #E2E8F0', boxShadow: '0 2px 12px rgba(30,58,95,0.06)', overflow: 'hidden' }}>
           {filtered.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '48px 0', color: '#94A3B8' }}>
-              <div style={{ fontSize: 40, marginBottom: 8 }}>🔍</div>
+              <Search size={36} color="#CBD5E1" style={{ marginBottom: 10 }} />
               <p style={{ fontWeight: 600 }}>No contributions match your filters.</p>
             </div>
           ) : (
@@ -305,11 +300,18 @@ export default function ContributionsPage() {
                 <tbody>
                   {filtered.map((c, i) => {
                     const cfg = TYPE_CONFIG[c.type];
+                    const CIcon = cfg.Icon;
                     return (
                       <tr key={c.donationId} style={{ background: i % 2 === 0 ? '#fff' : '#FAFAFA', borderBottom: '1px solid #F1F5F9' }}>
                         <td style={{ padding: '12px 16px', fontWeight: 600, color: '#1E3A5F', whiteSpace: 'nowrap' }}>{c.supporterName}</td>
                         <td style={{ padding: '12px 16px' }}>
-                          <Badge label={`${cfg.icon} ${c.type}`} bg={cfg.bg} text={cfg.text} />
+                          <span style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 5,
+                            background: cfg.bg, color: cfg.text,
+                            borderRadius: 20, padding: '2px 10px', fontSize: 11, fontWeight: 600,
+                          }}>
+                            <CIcon size={11} />{c.type}
+                          </span>
                         </td>
                         <td style={{ padding: '12px 16px', color: '#166534', fontWeight: 600 }}>{formatValue(c)}</td>
                         <td style={{ padding: '12px 16px', color: '#475569' }}>{c.programArea}</td>
@@ -323,9 +325,11 @@ export default function ContributionsPage() {
                         <td style={{ padding: '12px 16px' }}>
                           <button onClick={() => handleDelete(c.donationId)} style={{
                             background: 'none', border: '1px solid #FCA5A5', borderRadius: 6,
-                            color: '#DC2626', fontSize: 11, fontWeight: 600,
-                            padding: '3px 10px', cursor: 'pointer', whiteSpace: 'nowrap',
-                          }}>Delete</button>
+                            color: '#DC2626', fontSize: 11, fontWeight: 600, padding: '3px 10px', cursor: 'pointer',
+                            display: 'inline-flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap',
+                          }}>
+                            <Trash2 size={11} />Delete
+                          </button>
                         </td>
                       </tr>
                     );
@@ -336,8 +340,8 @@ export default function ContributionsPage() {
           )}
         </div>
 
-        <div style={{ marginTop: 12, fontSize: 12, color: '#94A3B8', textAlign: 'right' }}>
-          Showing {filtered.length} of {contributions.length} contributions
+        <div style={{ marginTop: 12, fontSize: 12, color: '#94A3B8', textAlign: 'right', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
+          <Layers size={12} color="#CBD5E1" />Showing {filtered.length} of {contributions.length} contributions
         </div>
       </div>
     </div>
