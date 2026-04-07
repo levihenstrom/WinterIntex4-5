@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { fetchPaged, type PagedResult } from '../../lib/apiClient';
+import DeleteConfirmModal from '../DeleteConfirmModal';
+import { deleteJson, fetchPaged, type PagedResult } from '../../lib/apiClient';
 import { useAuth } from '../../context/AuthContext';
 
 interface PagedTableProps {
@@ -9,6 +10,8 @@ interface PagedTableProps {
   heading: string;
   /** Rows per page. Defaults to 20. */
   pageSize?: number;
+  /** Enables per-row delete action using DELETE `${endpoint}/{id}`. */
+  allowDelete?: boolean;
 }
 
 /**
@@ -16,12 +19,20 @@ interface PagedTableProps {
  * and renders each item as a JSON row. No filters, no sorting, no styling —
  * the individual page cards own the real UX.
  */
-export default function PagedTable({ endpoint, heading, pageSize = 20 }: PagedTableProps) {
+export default function PagedTable({
+  endpoint,
+  heading,
+  pageSize = 20,
+  allowDelete = false,
+}: PagedTableProps) {
   const { authSession } = useAuth();
   const [page, setPage] = useState(1);
   const [data, setData] = useState<PagedResult<Record<string, unknown>> | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [reloadToken, setReloadToken] = useState(0);
+  const [deleteTarget, setDeleteTarget] = useState<Record<string, unknown> | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -40,11 +51,37 @@ export default function PagedTable({ endpoint, heading, pageSize = 20 }: PagedTa
     return () => {
       cancelled = true;
     };
-  }, [endpoint, page, pageSize]);
+  }, [endpoint, page, pageSize, reloadToken]);
 
   const columns = data && data.items.length > 0 ? Object.keys(data.items[0]) : [];
   const isAdmin = authSession.roles.includes('Admin');
   const isStaff = authSession.roles.includes('Staff');
+  const canDelete = allowDelete && (isAdmin || isStaff);
+  const deleteBaseEndpoint = endpoint.split('?')[0];
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+
+    const idField = inferIdField(deleteTarget);
+    const idValue = idField ? deleteTarget[idField] : null;
+    if (!idField || idValue === null || idValue === undefined || idValue === '') {
+      setError('Unable to delete this row because no id field was found.');
+      setDeleteTarget(null);
+      return;
+    }
+
+    try {
+      setDeleteBusy(true);
+      setError(null);
+      await deleteJson(`${deleteBaseEndpoint}/${idValue}`);
+      setDeleteTarget(null);
+      setReloadToken((value) => value + 1);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to delete this row.');
+    } finally {
+      setDeleteBusy(false);
+    }
+  }
 
   return (
     <section className="container my-4">
@@ -83,6 +120,7 @@ export default function PagedTable({ endpoint, heading, pageSize = 20 }: PagedTa
                     {columns.map((c) => (
                       <th key={c}>{c}</th>
                     ))}
+                    {canDelete && <th>Actions</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -93,6 +131,17 @@ export default function PagedTable({ endpoint, heading, pageSize = 20 }: PagedTa
                           {formatCell(row[c])}
                         </td>
                       ))}
+                      {canDelete && (
+                        <td>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-danger"
+                            onClick={() => setDeleteTarget(row)}
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
@@ -120,6 +169,17 @@ export default function PagedTable({ endpoint, heading, pageSize = 20 }: PagedTa
           </div>
         </>
       )}
+
+      <DeleteConfirmModal
+        show={deleteTarget !== null}
+        itemLabel={deleteTarget ? describeRow(deleteTarget) : 'this item'}
+        onCancel={() => {
+          if (!deleteBusy) setDeleteTarget(null);
+        }}
+        onConfirm={() => {
+          if (!deleteBusy) void confirmDelete();
+        }}
+      />
     </section>
   );
 }
@@ -128,4 +188,46 @@ function formatCell(value: unknown): string {
   if (value === null || value === undefined) return '';
   if (typeof value === 'object') return JSON.stringify(value);
   return String(value);
+}
+
+function inferIdField(row: Record<string, unknown>): string | null {
+  const exactPriority = [
+    'supporterId',
+    'donationId',
+    'allocationId',
+    'residentId',
+    'recordingId',
+    'visitationId',
+    'planId',
+    'postId',
+  ];
+
+  for (const key of exactPriority) {
+    if (key in row) return key;
+  }
+
+  const generic = Object.keys(row).find((key) => /id$/i.test(key));
+  return generic ?? null;
+}
+
+function describeRow(row: Record<string, unknown>): string {
+  const labelFields = [
+    'displayName',
+    'organizationName',
+    'firstName',
+    'lastName',
+    'caseControlNo',
+    'internalCode',
+    'campaignName',
+    'platformPostId',
+  ];
+
+  for (const key of labelFields) {
+    const value = row[key];
+    if (typeof value === 'string' && value.trim() !== '') return value;
+  }
+
+  const idField = inferIdField(row);
+  if (idField) return `${idField}: ${formatCell(row[idField])}`;
+  return 'this item';
 }

@@ -9,7 +9,7 @@ export default function SocialMediaHistoryPage() {
           Suggest next post →
         </Link>
       </div>
-      <PagedTable endpoint="/api/social-media-posts" heading="SOC-1 — Post history (scaffold)" />
+      <PagedTable endpoint="/api/social-media-posts" heading="SOC-1 — Post history (scaffold)" allowDelete />
     </div>
   );
 }
