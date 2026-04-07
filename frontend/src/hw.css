@@ -97,6 +97,15 @@
   transform: translateY(0);
 }
 
+/* ── Heavy Text Shadows for High Contrast ──────────────────────── */
+.hw-text-shadow-heavy {
+  text-shadow: 
+    0px 0px 4px rgba(0, 0, 0, 1),
+    0px 0px 12px rgba(0, 0, 0, 1),
+    0px 0px 24px rgba(0, 0, 0, 1),
+    0px 5px 40px rgba(0, 0, 0, 0.8);
+}
+
 /* ── Stagger delays ───────────────────────────────────────────── */
 .hw-delay-100 { transition-delay: 100ms; }
 .hw-delay-200 { transition-delay: 200ms; }
@@ -515,4 +524,73 @@
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   EDITORIAL POP-OUT EFFECT
+   ───────────────────────────────────────────────────────────────────────────── */
+.hw-popout-container {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+/* The "purple box" behind her */
+.hw-popout-box {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 85%; /* Shorter than the image to let her head pop out */
+  background: #6B21A8;
+  border-radius: 40px;
+  box-shadow: 0 40px 100px -20px rgba(107, 33, 168, 0.25);
+}
+
+.hw-popout-image {
+  position: relative;
+  width: 110%; /* Makes her wider than the box */
+  margin-left: -5%; /* Centers her */
+  height: auto;
+  z-index: 10;
+  display: block;
+  /* Filter to subtly blend edges if needed, but not required for this effect */
+  filter: drop-shadow(0 20px 30px rgba(0,0,0,0.15));
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hw-popout-container:hover .hw-popout-image {
+  transform: translateY(-10px) scale(1.02);
+}
+
+.hw-popout-accent {
+  position: absolute;
+  top: 40%;
+  left: -20px;
+  width: 100px;
+  height: 100px;
+  background: #0D9488;
+  border-radius: 20px;
+  z-index: -1;
+  opacity: 0.15;
+  filter: blur(2px);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   DONOR WALL FLOATING ANIMATION
+   ───────────────────────────────────────────────────────────────────────────── */
+@keyframes hw-float-slow {
+  0% { transform: translate(0px, 0px) scale(1); }
+  25% { transform: translate(60px, -40px) scale(1.05); }
+  50% { transform: translate(20px, -80px) scale(1); }
+  75% { transform: translate(-40px, -20px) scale(0.95); }
+  100% { transform: translate(0px, 0px) scale(1); }
+}
+
+.hw-animate-float {
+  /* Dynamic timing powered by React inline style variables */
+  animation: hw-float-slow var(--float-duration, 25s) ease-in-out infinite;
+  animation-delay: var(--float-delay, 0s);
+  will-change: transform;
 }
