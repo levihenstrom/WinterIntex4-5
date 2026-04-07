@@ -72,6 +72,77 @@ public class AuthController(
         return Ok(providers);
     }
 
+    [HttpPost("password-login")]
+    public async Task<IActionResult> PasswordLogin([FromBody] PasswordLoginRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
+            return BadRequest(new { message = "Email and password are required." });
+
+        var result = await signInManager.PasswordSignInAsync(
+            request.Email,
+            request.Password,
+            request.RememberMe,
+            lockoutOnFailure: false);
+
+        if (result.RequiresTwoFactor)
+            return Ok(new { requiresTwoFactor = true });
+
+        if (result.Succeeded)
+        {
+            var user = await userManager.FindByEmailAsync(request.Email)
+                ?? await userManager.FindByNameAsync(request.Email);
+
+            if (user is null)
+                return Unauthorized(new { message = "User account not found." });
+
+            return Ok(await BuildSessionResponseAsync(user, requiresTwoFactor: false));
+        }
+
+        if (result.IsLockedOut)
+            return Unauthorized(new { message = "This account is locked. Try again later." });
+
+        if (result.IsNotAllowed)
+            return Unauthorized(new { message = "This account is not allowed to sign in." });
+
+        return Unauthorized(new { message = "Invalid email or password." });
+    }
+
+    [HttpPost("password-login/2fa")]
+    public async Task<IActionResult> CompleteTwoFactorLogin([FromBody] TwoFactorLoginRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.TwoFactorCode)
+            && string.IsNullOrWhiteSpace(request.RecoveryCode))
+        {
+            return BadRequest(new { message = "Enter an authenticator code or a recovery code." });
+        }
+
+        var twoFactorUser = await signInManager.GetTwoFactorAuthenticationUserAsync();
+        if (twoFactorUser is null)
+            return Unauthorized(new { message = "The two-factor sign-in session expired. Start sign-in again." });
+
+        Microsoft.AspNetCore.Identity.SignInResult result;
+        if (!string.IsNullOrWhiteSpace(request.RecoveryCode))
+        {
+            result = await signInManager.TwoFactorRecoveryCodeSignInAsync(request.RecoveryCode);
+        }
+        else
+        {
+            var sanitizedCode = request.TwoFactorCode!.Replace(" ", string.Empty).Replace("-", string.Empty);
+            result = await signInManager.TwoFactorAuthenticatorSignInAsync(
+                sanitizedCode,
+                request.RememberMe,
+                rememberClient: false);
+        }
+
+        if (result.Succeeded)
+            return Ok(await BuildSessionResponseAsync(twoFactorUser, requiresTwoFactor: false));
+
+        if (result.IsLockedOut)
+            return Unauthorized(new { message = "This account is locked. Try again later." });
+
+        return Unauthorized(new { message = "Invalid authenticator or recovery code." });
+    }
+
     [HttpGet("external-login")]
     public IActionResult ExternalLogin(
         [FromQuery] string provider,
@@ -258,6 +329,8 @@ public class AuthController(
 
     public record ExchangeTokenRequest(string Token);
     public record RefreshSessionRequest(string RefreshToken);
+    public record PasswordLoginRequest(string Email, string Password, bool RememberMe);
+    public record TwoFactorLoginRequest(string? TwoFactorCode, string? RecoveryCode, bool RememberMe);
 
     [HttpPost("logout")]
     public async Task<IActionResult> Logout([FromBody] LogoutRequest? request = null)
@@ -309,5 +382,21 @@ public class AuthController(
             if (_pendingTokens.TryGetValue(key, out var val) && now > val.Expiry)
                 _pendingTokens.TryRemove(key, out _);
         }
+    }
+
+    private async Task<object> BuildSessionResponseAsync(ApplicationUser user, bool requiresTwoFactor)
+    {
+        var roles = (await userManager.GetRolesAsync(user))
+            .OrderBy(r => r)
+            .ToArray();
+
+        return new
+        {
+            requiresTwoFactor,
+            isAuthenticated = !requiresTwoFactor,
+            userName = user.UserName,
+            email = user.Email,
+            roles
+        };
     }
 }
