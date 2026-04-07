@@ -10,7 +10,7 @@ public class AuthIdentityGenerator
         var userManager = serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
         var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
 
-        foreach (var roleName in new[] { AuthRoles.Admin, AuthRoles.Customer })
+        foreach (var roleName in new[] { AuthRoles.Admin, AuthRoles.Staff, AuthRoles.Donor, AuthRoles.LegacyCustomer })
         {
             if (!await roleManager.RoleExistsAsync(roleName))
             {

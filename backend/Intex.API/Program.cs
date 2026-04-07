@@ -39,6 +39,7 @@ var googleClientSecret = builder.Configuration["Authentication:Google:ClientSecr
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
+builder.Services.AddHostedService<IdentityBootstrapHostedService>();
 
 static bool IsSqliteConnectionString(string? connectionString) =>
     !string.IsNullOrWhiteSpace(connectionString)
@@ -111,7 +112,16 @@ if (!string.IsNullOrEmpty(googleClientId) && !string.IsNullOrEmpty(googleClientS
 // Authorization policies
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy(AuthPolicies.ManageCatalog, policy => policy.RequireRole(AuthRoles.Admin));
+    options.AddPolicy(AuthPolicies.AdminOnly, policy => policy.RequireRole(AuthRoles.Admin));
+    options.AddPolicy(
+        AuthPolicies.StaffWrite,
+        policy => policy.RequireRole(AuthRoles.Admin, AuthRoles.Staff));
+    options.AddPolicy(
+        AuthPolicies.StaffRead,
+        policy => policy.RequireRole(AuthRoles.Admin, AuthRoles.Staff));
+    options.AddPolicy(
+        AuthPolicies.DonorSelfService,
+        policy => policy.RequireRole(AuthRoles.Admin, AuthRoles.Donor, AuthRoles.LegacyCustomer));
 });
 
 // Password policy
@@ -204,5 +214,13 @@ app.UseAuthorization();
 app.MapControllers().RequireCors(FrontendCorsPolicy);
 app.MapGroup("/api/auth")
     .RequireCors(FrontendCorsPolicy)
-    .MapIdentityApi<ApplicationUser>();
+    .MapIdentityApi<ApplicationUser>()
+    .Add(endpointBuilder =>
+    {
+        if (endpointBuilder is RouteEndpointBuilder routeEndpointBuilder
+            && routeEndpointBuilder.RoutePattern.RawText == "/register")
+        {
+            routeEndpointBuilder.Order = int.MaxValue;
+        }
+    });
 app.Run();

@@ -10,10 +10,10 @@ namespace Intex.API.Controllers;
 
 [ApiController]
 [Route("api/donations")]
-[Authorize(Policy = AuthPolicies.ManageCatalog)]
 public class DonationsController(AppDbContext db) : ControllerBase
 {
     [HttpGet]
+    [Authorize(Policy = AuthPolicies.StaffRead)]
     [ProducesResponseType(typeof(PagedResult<Donation>), StatusCodes.Status200OK)]
     public async Task<ActionResult<PagedResult<Donation>>> GetPage(
         [FromQuery] int page = 1,
@@ -34,6 +34,7 @@ public class DonationsController(AppDbContext db) : ControllerBase
     }
 
     [HttpGet("{id:int}")]
+    [Authorize(Policy = AuthPolicies.StaffRead)]
     [ProducesResponseType(typeof(Donation), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Donation>> GetById(int id, CancellationToken cancellationToken)
@@ -45,6 +46,7 @@ public class DonationsController(AppDbContext db) : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Policy = AuthPolicies.StaffWrite)]
     [ProducesResponseType(typeof(Donation), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<Donation>> Create([FromBody] Donation donation, CancellationToken cancellationToken)
@@ -58,6 +60,7 @@ public class DonationsController(AppDbContext db) : ControllerBase
     }
 
     [HttpPut("{id:int}")]
+    [Authorize(Policy = AuthPolicies.StaffWrite)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -74,6 +77,7 @@ public class DonationsController(AppDbContext db) : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
+    [Authorize(Policy = AuthPolicies.StaffWrite)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
