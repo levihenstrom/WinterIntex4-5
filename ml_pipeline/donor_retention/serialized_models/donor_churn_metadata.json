@@ -1,0 +1,48 @@
+{
+  "observation_date": "2026-03-01",
+  "prior_feature_window": [
+    "2024-03-01",
+    "2025-03-01"
+  ],
+  "outcome_window": [
+    "2025-03-01",
+    "2026-03-01"
+  ],
+  "label": "churned=1 if no Monetary gift in outcome window among supporters with Monetary gift in prior window",
+  "numeric_features": [
+    "tenure_days_at_prior_end",
+    "monetary_count_prior",
+    "monetary_sum_prior",
+    "monetary_mean_prior",
+    "days_since_last_monetary_at_prior_end",
+    "n_distinct_channels",
+    "n_distinct_campaigns",
+    "n_referral_gifts_prior",
+    "allocation_rows_prior",
+    "distinct_safehouses_prior",
+    "distinct_program_areas_prior",
+    "amount_allocated_sum_prior",
+    "distinct_safehouse_regions_prior",
+    "social_referred_gifts_prior",
+    "mean_post_engagement_prior",
+    "mean_post_impressions_prior",
+    "count_InKind_prior",
+    "count_Monetary_prior",
+    "count_Skills_prior",
+    "count_SocialMedia_prior",
+    "count_Time_prior"
+  ],
+  "categorical_features": [
+    "supporter_type",
+    "relationship_type",
+    "region",
+    "country",
+    "acquisition_channel"
+  ],
+  "best_grid_params": {
+    "model__max_depth": null,
+    "model__min_samples_leaf": 1,
+    "model__n_estimators": 400
+  },
+  "deployment_model": "Tuned RandomForestClassifier Pipeline (predictive). Logistic pipeline in notebook for explanatory coefficients only."
+}
