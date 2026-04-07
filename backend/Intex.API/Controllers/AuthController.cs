@@ -463,32 +463,32 @@ public class AuthController(
         });
     }
 
-    public record ExchangeTokenRequest([property: Required(ErrorMessage = "Token is required.")] string Token);
-    public record RefreshSessionRequest([property: Required(ErrorMessage = "Refresh token is required.")] string RefreshToken);
+    public record ExchangeTokenRequest([Required(ErrorMessage = "Token is required.")] string Token);
+    public record RefreshSessionRequest([Required(ErrorMessage = "Refresh token is required.")] string RefreshToken);
     public record RegisterRequest(
-        [property: Required(ErrorMessage = "Email is required.")]
-        [property: EmailAddress(ErrorMessage = "Enter a valid email address.")]
+        [Required(ErrorMessage = "Email is required.")]
+        [EmailAddress(ErrorMessage = "Enter a valid email address.")]
         string Email,
-        [property: Required(ErrorMessage = "Password is required.")]
-        [property: MinLength(14, ErrorMessage = "Password must be at least 14 characters.")]
+        [Required(ErrorMessage = "Password is required.")]
+        [MinLength(14, ErrorMessage = "Password must be at least 14 characters.")]
         string Password);
     public record AssignRoleRequest(
-        [property: Required(ErrorMessage = "Email is required.")]
-        [property: EmailAddress(ErrorMessage = "Enter a valid email address.")]
+        [Required(ErrorMessage = "Email is required.")]
+        [EmailAddress(ErrorMessage = "Enter a valid email address.")]
         string Email,
-        [property: Required(ErrorMessage = "Role is required.")]
+        [Required(ErrorMessage = "Role is required.")]
         string Role);
     public record AssignStaffPartnerRequest(
-        [property: Required(ErrorMessage = "Email is required.")]
-        [property: EmailAddress(ErrorMessage = "Enter a valid email address.")]
+        [Required(ErrorMessage = "Email is required.")]
+        [EmailAddress(ErrorMessage = "Enter a valid email address.")]
         string Email,
-        [property: Range(1, int.MaxValue, ErrorMessage = "Partner is required.")]
+        [Range(1, int.MaxValue, ErrorMessage = "Partner is required.")]
         int PartnerId);
     public record PasswordLoginRequest(
-        [property: Required(ErrorMessage = "Email is required.")]
-        [property: EmailAddress(ErrorMessage = "Enter a valid email address.")]
+        [Required(ErrorMessage = "Email is required.")]
+        [EmailAddress(ErrorMessage = "Enter a valid email address.")]
         string Email,
-        [property: Required(ErrorMessage = "Password is required.")]
+        [Required(ErrorMessage = "Password is required.")]
         string Password,
         bool RememberMe);
     public record TwoFactorLoginRequest(

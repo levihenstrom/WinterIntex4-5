@@ -21,6 +21,8 @@ public class ResidentsController(AppDbContext db, StaffScopeResolver scopeResolv
         [FromQuery] int pageSize = Pagination.DefaultPageSize,
         [FromQuery] int? safehouseId = null,
         [FromQuery] string? caseStatus = null,
+        [FromQuery] string? caseCategory = null,
+        [FromQuery] string? search = null,
         CancellationToken cancellationToken = default)
     {
         var scope = await scopeResolver.GetForUserAsync(User, cancellationToken);
@@ -29,6 +31,13 @@ public class ResidentsController(AppDbContext db, StaffScopeResolver scopeResolv
             query = query.Where(r => r.SafehouseId == sid);
         if (!string.IsNullOrWhiteSpace(caseStatus))
             query = query.Where(r => r.CaseStatus == caseStatus);
+        if (!string.IsNullOrWhiteSpace(caseCategory))
+            query = query.Where(r => r.CaseCategory == caseCategory);
+        if (!string.IsNullOrWhiteSpace(search))
+            query = query.Where(r =>
+                (r.CaseControlNo != null && r.CaseControlNo.Contains(search)) ||
+                (r.InternalCode != null && r.InternalCode.Contains(search)) ||
+                (r.AssignedSocialWorker != null && r.AssignedSocialWorker.Contains(search)));
 
         query = query.OrderBy(r => r.ResidentId);
         var result = await query.ToPagedResultAsync(page, pageSize, cancellationToken);
