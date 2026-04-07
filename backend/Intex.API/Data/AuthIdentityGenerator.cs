@@ -11,6 +11,7 @@ public class AuthIdentityGenerator
     {
         var userManager = serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
         var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+        var env = serviceProvider.GetRequiredService<IHostEnvironment>();
 
         foreach (var roleName in new[] { AuthRoles.Admin, AuthRoles.Staff, AuthRoles.Donor, AuthRoles.LegacyCustomer })
         {
@@ -24,18 +25,18 @@ public class AuthIdentityGenerator
         }
 
         await EnsureSeedUserAsync(userManager, configuration,
-            "GenerateDefaultIdentityAdmin", "admin@intex.local", "Intex2026!Admin", AuthRoles.Admin);
+            "GenerateDefaultIdentityAdmin", "admin@intex.local", "Intex2026!Admin", AuthRoles.Admin, env.IsDevelopment());
 
         // Staff seed user is linked to Partner #1 (Ana Reyes — SafehouseOps, safehouses 8 & 9)
         // via a "partnerId" claim. StaffScopeResolver uses this to scope visibility.
         var staffUser = await EnsureSeedUserAsync(userManager, configuration,
-            "GenerateDefaultIdentityStaff", "staff@intex.local", "Intex2026!Staff", AuthRoles.Staff);
+            "GenerateDefaultIdentityStaff", "staff@intex.local", "Intex2026!Staff", AuthRoles.Staff, env.IsDevelopment());
         await EnsurePartnerClaimAsync(userManager, staffUser, partnerId: 1);
 
         // Donor seed user is linked to Supporter #1 via a "supporterId" claim.
         // Used by /api/donations/mine and other donor self-service endpoints.
         var donorUser = await EnsureSeedUserAsync(userManager, configuration,
-            "GenerateDefaultIdentityDonor", "donor@intex.local", "Intex2026!Donor", AuthRoles.Donor);
+            "GenerateDefaultIdentityDonor", "donor@intex.local", "Intex2026!Donor", AuthRoles.Donor, env.IsDevelopment());
         await EnsureClaimAsync(userManager, donorUser,
             StaffScopeResolver.SupporterIdClaimType, "1");
     }
@@ -66,7 +67,8 @@ public class AuthIdentityGenerator
         string configSection,
         string defaultEmail,
         string defaultPassword,
-        string role)
+        string role,
+        bool resetPasswordIfExisting)
     {
         var section = configuration.GetSection(configSection);
         var email = section["Email"] ?? defaultEmail;
@@ -87,6 +89,10 @@ public class AuthIdentityGenerator
                 throw new Exception($"Failed to create seed user '{email}': "
                     + string.Join(", ", createResult.Errors.Select(e => e.Description)));
         }
+        else if (resetPasswordIfExisting)
+        {
+            await ResetPasswordAsync(userManager, user, email, password);
+        }
 
         if (!await userManager.IsInRoleAsync(user, role))
         {
@@ -97,5 +103,25 @@ public class AuthIdentityGenerator
         }
 
         return user;
+    }
+
+    private static async Task ResetPasswordAsync(
+        UserManager<ApplicationUser> userManager,
+        ApplicationUser user,
+        string email,
+        string password)
+    {
+        if (await userManager.HasPasswordAsync(user))
+        {
+            var removeResult = await userManager.RemovePasswordAsync(user);
+            if (!removeResult.Succeeded)
+                throw new Exception($"Failed to remove existing password for '{email}': "
+                    + string.Join(", ", removeResult.Errors.Select(e => e.Description)));
+        }
+
+        var addResult = await userManager.AddPasswordAsync(user, password);
+        if (!addResult.Succeeded)
+            throw new Exception($"Failed to set seed password for '{email}': "
+                + string.Join(", ", addResult.Errors.Select(e => e.Description)));
     }
 }

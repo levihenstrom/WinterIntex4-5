@@ -11,6 +11,7 @@ public class SocialMediaPost
     public int PostId { get; set; }
 
     [Column("platform")]
+    [Required(ErrorMessage = "Platform is required.")]
     public string? Platform { get; set; }
 
     [Column("platform_post_id")]
@@ -20,6 +21,7 @@ public class SocialMediaPost
     public string? PostUrl { get; set; }
 
     [Column("created_at")]
+    [Required(ErrorMessage = "Created date is required.")]
     public DateTime? CreatedAt { get; set; }
 
     [Column("day_of_week")]
@@ -29,6 +31,7 @@ public class SocialMediaPost
     public int? PostHour { get; set; }
 
     [Column("post_type")]
+    [Required(ErrorMessage = "Post type is required.")]
     public string? PostType { get; set; }
 
     [Column("media_type")]

@@ -6,6 +6,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
+using Intex.API.Authorization;
 using Intex.API.Data;
 
 namespace Intex.API.Controllers;
@@ -15,7 +18,8 @@ namespace Intex.API.Controllers;
 public class AuthController(
     UserManager<ApplicationUser> userManager,
     SignInManager<ApplicationUser> signInManager,
-    IConfiguration configuration) : ControllerBase
+    IConfiguration configuration,
+    AppDbContext appDb) : ControllerBase
 {
     private const string DefaultFrontendUrl = "http://localhost:3000";
     private const string DefaultExternalReturnPath = "/";
@@ -145,6 +149,59 @@ public class AuthController(
         }
 
         return Ok(new { message = "Role assigned successfully.", email = user.Email, role = canonicalRole });
+    }
+
+    [Authorize(Policy = AuthPolicies.AdminOnly)]
+    [HttpPost("assign-staff-partner")]
+    public async Task<IActionResult> AssignStaffPartner([FromBody] AssignStaffPartnerRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Email))
+            return BadRequest(new { message = "Email is required." });
+
+        var user = await userManager.FindByEmailAsync(request.Email);
+        if (user is null)
+            return NotFound(new { message = "User not found." });
+
+        var partner = await appDb.Partners.AsNoTracking()
+            .FirstOrDefaultAsync(p => p.PartnerId == request.PartnerId);
+        if (partner is null)
+            return NotFound(new { message = "Partner not found." });
+
+        if (!await userManager.IsInRoleAsync(user, AuthRoles.Staff)
+            && !await userManager.IsInRoleAsync(user, AuthRoles.Admin))
+        {
+            return BadRequest(new { message = "User must have Staff or Admin role before assigning a partner." });
+        }
+
+        var existingClaims = await userManager.GetClaimsAsync(user);
+        foreach (var claim in existingClaims.Where(c => c.Type == StaffScopeResolver.PartnerIdClaimType).ToList())
+        {
+            var removeResult = await userManager.RemoveClaimAsync(user, claim);
+            if (!removeResult.Succeeded)
+            {
+                foreach (var error in removeResult.Errors)
+                    ModelState.AddModelError(error.Code, error.Description);
+                return ValidationProblem(ModelState);
+            }
+        }
+
+        var addResult = await userManager.AddClaimAsync(
+            user,
+            new Claim(StaffScopeResolver.PartnerIdClaimType, request.PartnerId.ToString()));
+        if (!addResult.Succeeded)
+        {
+            foreach (var error in addResult.Errors)
+                ModelState.AddModelError(error.Code, error.Description);
+            return ValidationProblem(ModelState);
+        }
+
+        return Ok(new
+        {
+            message = "Staff partner assignment updated successfully. User must sign out and sign back in to refresh claims.",
+            email = user.Email,
+            partnerId = partner.PartnerId,
+            partnerName = partner.PartnerName
+        });
     }
 
     [HttpPost("password-login")]
@@ -406,12 +463,38 @@ public class AuthController(
         });
     }
 
-    public record ExchangeTokenRequest(string Token);
-    public record RefreshSessionRequest(string RefreshToken);
-    public record RegisterRequest(string Email, string Password);
-    public record AssignRoleRequest(string Email, string Role);
-    public record PasswordLoginRequest(string Email, string Password, bool RememberMe);
-    public record TwoFactorLoginRequest(string? TwoFactorCode, string? RecoveryCode, bool RememberMe);
+    public record ExchangeTokenRequest([property: Required(ErrorMessage = "Token is required.")] string Token);
+    public record RefreshSessionRequest([property: Required(ErrorMessage = "Refresh token is required.")] string RefreshToken);
+    public record RegisterRequest(
+        [property: Required(ErrorMessage = "Email is required.")]
+        [property: EmailAddress(ErrorMessage = "Enter a valid email address.")]
+        string Email,
+        [property: Required(ErrorMessage = "Password is required.")]
+        [property: MinLength(14, ErrorMessage = "Password must be at least 14 characters.")]
+        string Password);
+    public record AssignRoleRequest(
+        [property: Required(ErrorMessage = "Email is required.")]
+        [property: EmailAddress(ErrorMessage = "Enter a valid email address.")]
+        string Email,
+        [property: Required(ErrorMessage = "Role is required.")]
+        string Role);
+    public record AssignStaffPartnerRequest(
+        [property: Required(ErrorMessage = "Email is required.")]
+        [property: EmailAddress(ErrorMessage = "Enter a valid email address.")]
+        string Email,
+        [property: Range(1, int.MaxValue, ErrorMessage = "Partner is required.")]
+        int PartnerId);
+    public record PasswordLoginRequest(
+        [property: Required(ErrorMessage = "Email is required.")]
+        [property: EmailAddress(ErrorMessage = "Enter a valid email address.")]
+        string Email,
+        [property: Required(ErrorMessage = "Password is required.")]
+        string Password,
+        bool RememberMe);
+    public record TwoFactorLoginRequest(
+        string? TwoFactorCode,
+        string? RecoveryCode,
+        bool RememberMe);
 
     [HttpPost("logout")]
     public async Task<IActionResult> Logout([FromBody] LogoutRequest? request = null)

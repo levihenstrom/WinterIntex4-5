@@ -11,6 +11,7 @@ public class Supporter
     public int SupporterId { get; set; }
 
     [Column("supporter_type")]
+    [Required(ErrorMessage = "Supporter type is required.")]
     public string? SupporterType { get; set; }
 
     [Column("display_name")]
@@ -41,6 +42,7 @@ public class Supporter
     public string? Phone { get; set; }
 
     [Column("status")]
+    [Required(ErrorMessage = "Supporter status is required.")]
     public string? Status { get; set; }
 
     [Column("created_at")]

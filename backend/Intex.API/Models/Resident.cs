@@ -17,11 +17,13 @@ public class Resident
     public string? InternalCode { get; set; }
 
     [Column("safehouse_id")]
+    [Range(1, int.MaxValue, ErrorMessage = "Safehouse is required.")]
     public int SafehouseId { get; set; }
 
     public Safehouse Safehouse { get; set; } = null!;
 
     [Column("case_status")]
+    [Required(ErrorMessage = "Case status is required.")]
     public string? CaseStatus { get; set; }
 
     [Column("sex")]
@@ -40,6 +42,7 @@ public class Resident
     public string? Religion { get; set; }
 
     [Column("case_category")]
+    [Required(ErrorMessage = "Case category is required.")]
     public string? CaseCategory { get; set; }
 
     [Column("sub_cat_orphaned")]

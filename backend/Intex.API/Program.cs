@@ -6,6 +6,7 @@ using Intex.API.Infrastructure;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Mvc;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -41,7 +42,33 @@ var useSqliteInDevelopment = builder.Configuration.GetValue("Intex:UseSqliteInDe
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
-builder.Services.AddHostedService<IdentityBootstrapHostedService>();
+builder.Services.AddProblemDetails();
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        var errors = context.ModelState
+            .Where(kvp => kvp.Value?.Errors.Count > 0)
+            .ToDictionary(
+                kvp => kvp.Key,
+                kvp => kvp.Value!.Errors
+                    .Select(error => string.IsNullOrWhiteSpace(error.ErrorMessage)
+                        ? "The value is invalid."
+                        : error.ErrorMessage)
+                    .ToArray());
+
+        return new BadRequestObjectResult(new ValidationProblemDetails(errors)
+        {
+            Title = "Request validation failed.",
+            Status = StatusCodes.Status400BadRequest,
+            Detail = "One or more request fields failed validation."
+        });
+    };
+});
+if (!isDevelopment)
+{
+    builder.Services.AddHostedService<IdentityBootstrapHostedService>();
+}
 builder.Services.AddScoped<StaffScopeResolver>();
 
 static bool IsSqliteConnectionString(string? connectionString) =>
@@ -222,6 +249,32 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseForwardedHeaders();
+app.UseExceptionHandler(errorApp =>
+{
+    errorApp.Run(async context =>
+    {
+        var exceptionFeature = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
+        var logger = context.RequestServices.GetRequiredService<ILoggerFactory>()
+            .CreateLogger("Intex.GlobalExceptionHandler");
+
+        if (exceptionFeature?.Error is not null)
+        {
+            logger.LogError(
+                exceptionFeature.Error,
+                "Unhandled exception for {Method} {Path}",
+                context.Request.Method,
+                context.Request.Path);
+        }
+
+        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+
+        await Results.Problem(
+            title: "An unexpected server error occurred.",
+            detail: "The request could not be completed. Try again, and contact support if the problem persists.",
+            statusCode: StatusCodes.Status500InternalServerError)
+            .ExecuteAsync(context);
+    });
+});
 
 if (!app.Environment.IsDevelopment())
 {

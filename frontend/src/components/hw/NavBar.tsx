@@ -10,21 +10,21 @@ const NAV_LINKS = [
 
 ];
 
-const ADMIN_NAV_LINKS = [
-  { label: 'Home', to: '/admin/home' },
-  { label: 'Donations', to: '/admin/donations' },
-  { label: 'Residents', to: '/admin/residents' },
-  { label: 'Social Media', to: '/admin/social-media' },
-  { label: 'Reports', to: '/admin/reports/donations' },
-];
-
 export default function NavBar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated, authSession, isLoading } = useAuth();
   const isHome = location.pathname === '/';
+  const isAdmin = authSession.roles.includes('Admin');
   const isAdminPortalUser = authSession.roles.includes('Admin') || authSession.roles.includes('Staff');
+  const adminNavLinks = [
+    { label: 'Home', to: '/admin/home' },
+    { label: 'Donations', to: '/admin/donations' },
+    { label: 'Residents', to: '/admin/residents' },
+    ...(isAdmin ? [{ label: 'Social Media', to: '/admin/social-media' }] : []),
+    { label: 'Reports', to: '/admin/reports/donations' },
+  ];
   const portalPath = authSession.roles.includes('Admin') || authSession.roles.includes('Staff')
     ? '/admin/home'
     : (authSession.roles.includes('Donor') || authSession.roles.includes('LegacyCustomer')
@@ -54,7 +54,7 @@ export default function NavBar() {
         {/* Desktop nav links */}
         <nav className="hidden lg:flex items-center gap-7">
           {isAdminPortalUser ? (
-            ADMIN_NAV_LINKS.map((link) => (
+            adminNavLinks.map((link) => (
               <NavLink
                 key={link.label}
                 to={link.to}
@@ -155,7 +155,7 @@ export default function NavBar() {
       {menuOpen && (
         <div className="lg:hidden border-t border-white/20 px-6 py-4 bg-[#1E3A5F]/75 backdrop-blur-xl">
           {isAdminPortalUser ? (
-            ADMIN_NAV_LINKS.map((link) => (
+            adminNavLinks.map((link) => (
               <NavLink
                 key={link.label}
                 to={link.to}

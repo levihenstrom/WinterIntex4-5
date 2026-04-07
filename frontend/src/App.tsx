@@ -168,8 +168,22 @@ function App() {
               <Route path="residents/visits-conferences" element={<ResidentVisitsAndConferencesPage />} />
               <Route path="residents/:id/process" element={<ProcessRecordingPage />} />
               <Route path="residents/:id/visits" element={<VisitsPage />} />
-              <Route path="social-media" element={<SocialMediaHistoryPage />} />
-              <Route path="social-media/suggest" element={<SocialMediaSuggestPage />} />
+              <Route
+                path="social-media"
+                element={
+                  <RequireAuth role="Admin">
+                    <SocialMediaHistoryPage />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="social-media/suggest"
+                element={
+                  <RequireAuth role="Admin">
+                    <SocialMediaSuggestPage />
+                  </RequireAuth>
+                }
+              />
               <Route path="reports/donations" element={<DonationsReportPage />} />
               <Route path="reports/outcomes" element={<OutcomesReportPage />} />
             </Route>

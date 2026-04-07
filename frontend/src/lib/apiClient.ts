@@ -20,6 +20,33 @@ export interface PagedResult<T> {
   items: T[];
 }
 
+async function readApiError(response: Response): Promise<string> {
+  const fallback = `Request failed (${response.status}).`;
+  const text = await response.text().catch(() => '');
+  if (text.trim() === '') return fallback;
+
+  try {
+    const parsed = JSON.parse(text) as {
+      message?: string;
+      detail?: string;
+      title?: string;
+      errors?: Record<string, string[]>;
+    };
+
+    if (parsed.message) return parsed.message;
+    if (parsed.detail) return parsed.detail;
+    if (parsed.errors) {
+      const firstFieldErrors = Object.values(parsed.errors).find((messages) => messages.length > 0);
+      if (firstFieldErrors?.[0]) return firstFieldErrors[0];
+    }
+    if (parsed.title) return parsed.title;
+  } catch {
+    return text;
+  }
+
+  return text;
+}
+
 /** Fetches a paged resource. Throws on non-2xx with the API error detail. */
 export async function fetchPaged<T>(
   path: string,
@@ -34,8 +61,7 @@ export async function fetchPaged<T>(
   const url = `${apiBaseUrl}${path}?${params}`;
   const response = await fetch(url, { credentials: 'include' });
   if (!response.ok) {
-    const text = await response.text().catch(() => '');
-    throw new Error(`Request failed (${response.status}): ${text || response.statusText}`);
+    throw new Error(await readApiError(response));
   }
   return response.json();
 }
@@ -44,8 +70,7 @@ export async function fetchPaged<T>(
 export async function fetchJson<T>(path: string): Promise<T> {
   const response = await fetch(`${apiBaseUrl}${path}`, { credentials: 'include' });
   if (!response.ok) {
-    const text = await response.text().catch(() => '');
-    throw new Error(`Request failed (${response.status}): ${text || response.statusText}`);
+    throw new Error(await readApiError(response));
   }
   return response.json();
 }
