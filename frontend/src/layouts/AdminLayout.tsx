@@ -9,7 +9,9 @@ const sectionTabs = {
     { to: '/admin/donations/allocations', label: 'Allocations', end: false },
   ],
   residents: [
-    { to: '/admin/residents', label: 'Residents', end: true },
+    { to: '/admin/residents', label: 'Caseload Inventory', end: true },
+    { to: '/admin/residents/process-recordings', label: 'Process Recordings', end: false },
+    { to: '/admin/residents/visits-conferences', label: 'Home Visits & Conferences', end: false },
   ],
   socialMedia: [
     { to: '/admin/social-media', label: 'History', end: true },

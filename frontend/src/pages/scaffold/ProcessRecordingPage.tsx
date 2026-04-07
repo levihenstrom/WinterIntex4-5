@@ -9,7 +9,7 @@ export default function ProcessRecordingPage() {
   return (
     <PagedTable
       endpoint={endpoint}
-      heading={`CASE-2 — Process Recordings${id ? ` (resident ${id})` : ''} (scaffold)`}
+      heading={`CASE-2 — Process Recordings${id ? ` (resident ${id})` : ''}`}
     />
   );
 }

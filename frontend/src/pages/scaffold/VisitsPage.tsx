@@ -9,7 +9,7 @@ export default function VisitsPage() {
   return (
     <PagedTable
       endpoint={endpoint}
-      heading={`CASE-3 — Home Visitations${id ? ` (resident ${id})` : ''} (scaffold)`}
+      heading={`CASE-3 — Home Visitations${id ? ` (resident ${id})` : ''}`}
     />
   );
 }
