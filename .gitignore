@@ -55,4 +55,17 @@ CodeCoverage/
 # NUnit
 *.VisualState.xml
 TestResult.xml
-nunit-*.xml**/.DS_Store
+nunit-*.xml
+
+sqlite/
+*.sqlite
+*.db
+*.db-*
+*.zip
+publish/
+dist/
+node_modules/
+.env
+.env.*
+
+convo.md
