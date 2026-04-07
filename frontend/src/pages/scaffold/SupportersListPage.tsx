@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { deleteJson, fetchAllPaged, postJson, putJson } from '../../lib/apiClient';
+import 'bootstrap-icons/font/bootstrap-icons.css';
 
 /* ── API shape (camelCase from ASP.NET) ─────────────────────── */
 interface SupporterApi {
