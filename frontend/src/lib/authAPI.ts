@@ -7,6 +7,14 @@ export interface ExternalAuthProvider {
   displayName: string;
 }
 
+export interface PasswordLoginResult {
+  requiresTwoFactor: boolean;
+  isAuthenticated: boolean;
+  userName: string | null;
+  email: string | null;
+  roles: string[];
+}
+
 /** Dev: empty → Vite proxy. Prod: VITE_API_BASE_URL, or API_URL so deploys work even if env is missing at build. */
 const apiBaseUrl: string = (() => {
   const fromEnv = import.meta.env.VITE_API_BASE_URL;
@@ -215,6 +223,53 @@ export async function registerUser(
 }
 
 export async function loginUser(
+  email: string,
+  password: string,
+  rememberMe: boolean
+): Promise<PasswordLoginResult> {
+  const response = await fetch(`${apiBaseUrl}/api/auth/password-login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ email, password, rememberMe }),
+  });
+
+  if (!response.ok) {
+    throw new Error(await readApiError(response, 'Unable to log in.'));
+  }
+
+  return response.json();
+}
+
+export async function completeTwoFactorLogin(
+  rememberMe: boolean,
+  twoFactorCode?: string,
+  recoveryCode?: string
+): Promise<PasswordLoginResult> {
+  const response = await fetch(`${apiBaseUrl}/api/auth/password-login/2fa`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({
+      twoFactorCode: twoFactorCode || null,
+      recoveryCode: recoveryCode || null,
+      rememberMe,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      await readApiError(
+        response,
+        'Unable to verify the authenticator or recovery code.'
+      )
+    );
+  }
+
+  return response.json();
+}
+
+export async function loginUserLegacy(
   email: string,
   password: string,
   rememberMe: boolean,
