@@ -119,6 +119,21 @@
 
 ---
 
+**[SOC-1] Social Media Hub — Post History & Next Post Suggestion**
+
+- **Points:** 4
+- **Description:** Two-page social media management section for admins. The main page (`/admin/social-media`) shows a paginated, filterable history of all social media posts from the database (platform, date, content, engagement metrics). A sub-page (`/admin/social-media/suggest`) uses the ML-3 Social Media Engagement Analyzer pipeline to recommend the next best post — surfacing the optimal platform, content type, and timing based on historical engagement patterns.
+- **Acceptance Criteria:**
+  - History page lists all posts from `social_media_posts` table with pagination (≤ 20 rows)
+  - History page is filterable by platform and date range
+  - Engagement metrics (likes, shares, comments) visible per post row
+  - "Suggest Next Post" sub-page calls the ML-3 API endpoint and displays recommendations
+  - Recommendations show: recommended platform, content type, suggested posting time, and confidence/explanation
+  - Both pages require Admin auth
+  - Links back and forth between history and suggestion pages
+
+---
+
 ### Donor Management
 
 ---
@@ -402,7 +417,7 @@
 | ------------------- | ------ | ------------ |
 | Data / Backend      | 2      | 10           |
 | Public Pages        | 4      | 10           |
-| Admin Portal        | 1      | 3            |
+| Admin Portal        | 2      | 7            |
 | Donor Management    | 4      | 13           |
 | Case Management     | 3      | 13           |
 | Reports & Analytics | 2      | 6            |
@@ -410,6 +425,6 @@
 | Security            | 4      | 8            |
 | Deployment          | 1      | 4            |
 | Polish / QA         | 2      | 4            |
-| **Total**           | **27** | **88**       |
+| **Total**           | **28** | **92**       |
 
 
