@@ -2,10 +2,10 @@ import { useEffect, useRef } from 'react';
 import NavBar from '../components/hw/NavBar';
 import SectionContainer from '../components/hw/SectionContainer';
 import MetricCard from '../components/hw/MetricCard';
-import PillarCard from '../components/hw/PillarCard';
 import QuoteBlock from '../components/hw/QuoteBlock';
 import DonationWidget from '../components/hw/DonationWidget';
 import Footer from '../components/hw/Footer';
+import CarouselPillarsSection from '../components/hw/CarouselPillarsSection';
 
 // ── Scroll fade-in hook ───────────────────────────────────────────────────────
 function useFadeIn() {
@@ -24,11 +24,8 @@ function useFadeIn() {
 }
 
 // ── Image URLs ────────────────────────────────────────────────────────────────
-const HERO_IMG = 'https://images.unsplash.com/photo-1594708767771-a7502209ff51?w=1800&auto=format&fit=crop&q=80';
-const MISSION_IMG = 'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=900&auto=format&fit=crop&q=80';
-const PILLAR_EDU_IMG = 'https://images.unsplash.com/photo-1513258496099-48168024aec0?w=800&auto=format&fit=crop&q=80';
-const PILLAR_HEAL_IMG = 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800&auto=format&fit=crop&q=80';
-const PILLAR_REINT_IMG = 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=800&auto=format&fit=crop&q=80';
+const HERO_IMG = '/girls.avif';
+const MISSION_IMG = '/free.avif';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Section 1 — Hero
@@ -103,50 +100,75 @@ function ImpactBar() {
 // ─────────────────────────────────────────────────────────────────────────────
 function MissionSection() {
   return (
-    <section id="mission" className="py-24 lg:py-32 overflow-hidden hw-bg-offwhite">
-      <SectionContainer>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
+    <section id="mission" className="py-10 overflow-hidden hw-bg-offwhite">
+      <div className="w-[95%] max-w-[1600px] mx-auto">
+        <div className="hw-fade-in hw-mission-card grid grid-cols-1 lg:grid-cols-2 p-0 group cursor-default" ref={useFadeIn()}>
           {/* Photo */}
-          <div className="hw-fade-in" ref={useFadeIn()}>
-            <div className="relative rounded-2xl overflow-hidden shadow-2xl h-[420px] lg:h-[520px]">
-              <img src={MISSION_IMG} alt="A child in a safe space" className="w-full h-full object-cover" />
-              {/* Purple corner overlay */}
-              <div className="absolute top-0 left-0 w-1/2 h-full hw-photo-overlay" />
-            </div>
-            {/* Badge */}
-            <div className="hw-badge-purple absolute mt-[-60px] ml-[20px] w-32 h-32 rounded-full flex items-center justify-center shadow-lg"
-              style={{ position: 'relative', top: '-60px', left: '20px', width: '128px', height: '128px', borderRadius: '50%' }}>
-              <span className="text-white font-extrabold text-xl text-center leading-tight hw-heading-font">
-                Since<br />2019
-              </span>
-            </div>
+          <div className="w-full h-[320px] md:h-[420px] lg:h-auto overflow-hidden">
+            <img 
+              src={MISSION_IMG} 
+              alt="A child in a safe space" 
+              className="w-full h-full object-cover transition-transform duration-[1500ms] ease-out group-hover:scale-105" 
+            />
           </div>
           {/* Text */}
-          <div className="hw-fade-in hw-delay-100" ref={useFadeIn()}>
+          <div className="p-8 md:p-12 lg:p-14 flex flex-col justify-center">
             <span className="hw-eyebrow">Our Mission</span>
             <h2 className="hw-heading mt-3 text-3xl md:text-4xl font-extrabold leading-snug">
               We believe every child deserves safety, healing, and a future.
             </h2>
             <div className="mt-6 space-y-4 text-stone-600 leading-relaxed text-base">
               <p>
-                HealingWings operates residential safe homes in the Philippines, providing a full circle of care
-                for children who have experienced the unimaginable. Each resident receives a private, nurturing space
-                to begin her journey of healing.
+                HealingWings provides safe homes and professional rehabilitation services for girl survivors of sexual abuse and trafficking, helping them successfully reintegrate into family life and society. With residential shelters serving girls aged 8 to 18, we work alongside local authorities and social welfare agencies to rescue, shelter, and restore.
               </p>
               <p>
-                Our trauma-informed counselors, educators, and social workers walk alongside each child —
-                from her first day of safety through full reintegration with her family and community.
+                 The children are rescued by the local police department or anti-trafficking agents who refer the children through the Department of Social Welfare and Development (DSWD) to Lighthouse Sanctuary. The social worker in the sanctuary will assist the child in transitioning into their new environment.
+
               </p>
             </div>
             <div className="mt-7 grid grid-cols-2 gap-3">
               {[
-                { icon: '🏠', label: 'Safe Residential Homes' },
-                { icon: '🧠', label: 'Trauma Counseling' },
-                { icon: '📚', label: 'Education Programs' },
-                { icon: '💞', label: 'Family Reintegration' },
+                {
+                  icon: (
+                    <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                      <path d="M3 12L12 3l9 9" /><path d="M9 21V12h6v9" /><path d="M3 12v9h18v-9" />
+                    </svg>
+                  ),
+                  label: 'Safe Residential Homes',
+                },
+                {
+                  icon: (
+                    <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                      <path d="M12 21C12 21 4 14.5 4 9a8 8 0 0 1 16 0c0 5.5-8 12-8 12z" />
+                      <path d="M12 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2z" fill="currentColor" />
+                      <path d="M12 11v3" />
+                    </svg>
+                  ),
+                  label: 'Trauma Counseling',
+                },
+                {
+                  icon: (
+                    <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+                    </svg>
+                  ),
+                  label: 'Education Programs',
+                },
+                {
+                  icon: (
+                    <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                      <circle cx="9" cy="7" r="4" />
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                    </svg>
+                  ),
+                  label: 'Family Reintegration',
+                },
               ].map((item) => (
-                <div key={item.label} className="flex items-center gap-2 text-stone-700 text-sm font-medium">
-                  <span className="text-lg">{item.icon}</span>
+                <div key={item.label} className="flex items-center gap-2.5 text-stone-700 text-sm font-medium">
+                  <span className="hw-text-teal flex-shrink-0">{item.icon}</span>
                   <span>{item.label}</span>
                 </div>
               ))}
@@ -159,7 +181,7 @@ function MissionSection() {
             </a>
           </div>
         </div>
-      </SectionContainer>
+      </div>
     </section>
   );
 }
@@ -167,30 +189,8 @@ function MissionSection() {
 // ─────────────────────────────────────────────────────────────────────────────
 // Section 4 — Three Pillars
 // ─────────────────────────────────────────────────────────────────────────────
-function PillarsSection() {
-  const ref = useFadeIn();
-  return (
-    <section id="pillars" className="py-24 lg:py-32 hw-bg-gray">
-      <SectionContainer>
-        <div className="text-center mb-14 hw-fade-in" ref={ref}>
-          <span className="hw-eyebrow">Our Approach</span>
-          <h2 className="hw-heading mt-3 text-3xl md:text-4xl font-extrabold">
-            How we restore lives
-          </h2>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Purple overlay */}
-          <PillarCard imageUrl={PILLAR_EDU_IMG} title="Education" subtitle="Giving every child the tools to build her own future." overlayColor="var(--hw-pillar-edu)" />
-          {/* Teal overlay */}
-          <PillarCard imageUrl={PILLAR_HEAL_IMG} title="Healing" subtitle="Trauma-informed care for every resident, at her own pace." overlayColor="var(--hw-pillar-heal)" />
-          <PillarCard imageUrl={PILLAR_REINT_IMG} title="Reintegration" subtitle="Restoring family bonds, community, and the will to thrive." overlayColor="var(--hw-pillar-reint)" />
-        </div>
-      </SectionContainer>
-    </section>
-  );
-}
+// Legacy static Pillars Section removed — now using CarouselPillarsSection
 
-// ─────────────────────────────────────────────────────────────────────────────
 // Section 5 — Story Spotlight
 // ─────────────────────────────────────────────────────────────────────────────
 function StorySpotlight() {
@@ -416,7 +416,7 @@ export default function HealingWingsHome() {
       <HeroSection />
       <ImpactBar />
       <MissionSection />
-      <PillarsSection />
+      <CarouselPillarsSection />
       <StorySpotlight />
       <ColorMeaningSection />
       <HowToHelpSection />

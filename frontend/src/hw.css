@@ -24,17 +24,18 @@
   --hw-bg-lavender2:  #EDE9FE;
   --hw-bg-navy:       #1E3A5F;
 
-  /* Hero overlay — change opacity here to lighten/darken the photo */
+
+
+  /* Hero overlay — neutral dark gradient to ensure text readability without coloring the photo */
   --hw-hero-overlay: linear-gradient(
-    135deg,
-    rgba(99, 55, 210, 0.40),    /* lila tenue */
-    rgba(15, 23, 102, 0.65)
+    to bottom,
+    rgba(0, 0, 0, 0.2),
+    rgba(0, 0, 0, 0.5)
   );
 
   /* Pillar card overlays */
-  --hw-pillar-edu:    rgba(107, 33, 168, 0.68);
-  --hw-pillar-heal:   rgba(13, 148, 136, 0.68);
-  --hw-pillar-reint:  rgba(30, 58, 95, 0.75);
+  --hw-pillar-edu:    rgba(214, 196, 230, 0.68);
+  --hw-pillar-reint:  rgba(138, 145, 155, 0.75);
 
   /* Gradients */
   --hw-gradient-donate: linear-gradient(135deg, var(--hw-purple) 0%, var(--hw-teal) 100%);
@@ -150,14 +151,15 @@
 
 /* ── Nav ghost Log In button ─────────────────────────────────── */
 .hw-nav-login {
-  background: transparent;
-  border: 1.5px solid rgba(255,255,255,0.55);
+  background: rgba(255, 255, 255, 0.2);
+  border: 1.5px solid rgba(255, 255, 255, 0.8);
   color: white;
   transition: background 0.2s, border-color 0.2s;
+  backdrop-filter: blur(4px);
 }
 .hw-nav-login:hover {
-  background: rgba(255,255,255,0.1);
-  border-color: rgba(255,255,255,0.85);
+  background: rgba(255, 255, 255, 0.35);
+  border-color: rgba(255, 255, 255, 1);
 }
 
 /* ── Nav Sign Up (amber-gold) ───────────────────────────────────── */
@@ -442,4 +444,75 @@
     max-width: 34rem;
     grid-template-columns: 1fr auto;
   }
+}
+
+/* ── Mission Custom Styles (Editorial Layout) ───────────────── */
+.hw-slide-in-left {
+  opacity: 0;
+  transform: translateX(-50px);
+  transition: opacity 700ms cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 700ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.hw-slide-in-left.hw-visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.hw-slide-in-right {
+  opacity: 0;
+  transform: translateX(50px);
+  transition: opacity 700ms cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 700ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.hw-slide-in-right.hw-visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.hw-mission-card {
+  background: var(--hw-bg-white);
+  border: 2px solid var(--hw-amber);
+  border-radius: 0; /* Sharp corners */
+  transition: box-shadow 300ms ease;
+}
+.hw-mission-card:hover {
+  /* Subtle glow using the amber CTA border color (per requested rgba) */
+  box-shadow: 0 0 24px rgba(225, 29, 116, 0.15);
+}
+
+/* ── Carousel Animation ─────────────────────────────────────────── */
+@keyframes hw-marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.hw-carousel-track {
+  display: flex;
+  width: max-content;
+  gap: 1.5rem;
+  padding: 0 1.5rem;
+  animation: hw-marquee 40s linear infinite;
+}
+
+.hw-carousel-track:hover {
+  animation-play-state: paused;
+}
+
+/* Bulletproof Carousel Hover States */
+.hw-carousel-card:hover .hw-hover-overlay {
+  opacity: 1 !important;
+}
+
+.hw-carousel-card:hover .hw-default-overlay {
+  opacity: 0 !important;
+}
+
+.hw-carousel-card:hover .hw-card-img {
+  transform: scale(1.04) !important;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
