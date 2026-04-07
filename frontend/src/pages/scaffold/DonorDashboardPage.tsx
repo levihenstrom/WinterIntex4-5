@@ -144,27 +144,27 @@ function Card({ title, className = "", children }: { title: string; className?: 
 function ProgramImpactCard({ row, delay }: { row: ProgramImpactRow; delay: string }) {
   const ref = useFadeIn();
   return (
-    <div 
+    <div
       ref={ref}
-      className={`hw-fade-in ${delay} group rounded-3xl border border-stone-100 bg-white p-10 shadow-sm transition-all duration-700 hover:shadow-2xl hover:-translate-y-2 flex flex-col items-center text-center justify-center`}
-      style={{ minHeight: '320px', boxShadow: '0 10px 40px rgba(30,58,95,0.02)' }}
+      className={`hw-fade-in ${delay} group rounded-3xl border border-stone-100 bg-white p-8 shadow-sm transition-all duration-700 hover:shadow-2xl hover:-translate-y-2 flex flex-col items-center text-center justify-center`}
+      style={{ minHeight: '260px', boxShadow: '0 10px 40px rgba(30,58,95,0.02)' }}
     >
-       <span className="inline-block px-4 py-1.5 bg-stone-50 text-[#6B21A8] rounded-full text-[10px] font-black uppercase tracking-[0.25em] mb-8">
-         Program Funding
-       </span>
-       
-       <h3 className="font-extrabold text-3xl text-[#1E3A5F] mb-4 group-hover:text-[#6B21A8] transition-colors leading-tight tracking-tight">
-         {row.label}
-       </h3>
-       
-       <div className="flex flex-col items-center gap-2">
-         <span className="text-5xl font-black text-[#0D9488] tabular-nums tracking-tighter">
-           {formatMoney(row.totalAmount)}
-         </span>
-         <span className="text-stone-400 text-sm font-bold uppercase tracking-widest mt-2">
-           from {row.giftCount} gift{row.giftCount === 1 ? '' : 's'}
-         </span>
-       </div>
+      <span className="inline-block px-4 py-1.5 bg-stone-50 text-[#6B21A8] rounded-full text-[10px] font-black uppercase tracking-[0.25em] mb-6">
+        Program Funding
+      </span>
+
+      <h3 className="font-extrabold text-2xl text-[#1E3A5F] mb-3 group-hover:text-[#6B21A8] transition-colors leading-tight tracking-tight">
+        {row.label}
+      </h3>
+
+      <div className="flex flex-col items-center gap-1">
+        <span className="text-4xl font-black text-[#0D9488] tabular-nums tracking-tighter">
+          {formatMoney(row.totalAmount)}
+        </span>
+        <span className="text-stone-400 text-[11px] font-bold uppercase tracking-widest mt-1">
+          from {row.giftCount} gift{row.giftCount === 1 ? '' : 's'}
+        </span>
+      </div>
     </div>
   );
 }
@@ -209,7 +209,7 @@ export default function DonorDashboardPage() {
             Your Giving & Impact
           </h1>
           <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '1.25rem', maxWidth: 700, lineHeight: 1.6, margin: '0 auto' }}>
-            Because of your generosity, we are able to provide safe housing and restorative care to those who need it most. 
+            Because of your generosity, we are able to provide safe housing and restorative care to those who need it most.
             Thank you for being part of the HealingWings mission.
           </p>
         </div>
@@ -218,20 +218,20 @@ export default function DonorDashboardPage() {
       {/* ── KPI Grid (overlapping) ── */}
       <SectionContainer style={{ marginTop: '-4rem', position: 'relative', zIndex: 10 }}>
         <div className="grid grid-cols-3 gap-4">
-          <StatBox 
-            label="Gifts" 
-            value={loading ? '—' : String(totals.count)} 
-            color="#6B21A8" bg="#fff" border="#e9d5ff" delay="hw-delay-100" 
+          <StatBox
+            label="Gifts"
+            value={loading ? '—' : String(totals.count)}
+            color="#6B21A8" bg="#fff" border="#e9d5ff" delay="hw-delay-100"
           />
-          <StatBox 
-            label="Total Impact" 
-            value={loading ? '—' : formatMoney(totals.sum)} 
-            color="#0D9488" bg="#fff" border="#bbf7d0" delay="hw-delay-200" 
+          <StatBox
+            label="Total Impact"
+            value={loading ? '—' : formatMoney(totals.sum)}
+            color="#0D9488" bg="#fff" border="#bbf7d0" delay="hw-delay-200"
           />
-          <StatBox 
-            label="Areas Funded" 
-            value={loading ? '—' : String(programImpact.length)} 
-            color="#D97706" bg="#fff" border="#fde68a" delay="hw-delay-300" 
+          <StatBox
+            label="Areas Funded"
+            value={loading ? '—' : String(programImpact.length)}
+            color="#D97706" bg="#fff" border="#fde68a" delay="hw-delay-300"
           />
         </div>
       </SectionContainer>
@@ -246,9 +246,9 @@ export default function DonorDashboardPage() {
 
         {error && (
           <div className="hw-alert-error max-w-2xl mx-auto shadow-xl p-10 text-center" role="alert" style={{ borderRadius: '2rem' }}>
-             <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10" /><path d="m15 9-6 6M9 9l6 6" /></svg>
-             </div>
+            <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10" /><path d="m15 9-6 6M9 9l6 6" /></svg>
+            </div>
             <h3 className="font-extrabold text-xl mb-2 text-[#991B1B]">Unable to load dashboard</h3>
             <p className="text-red-700/70">{error}</p>
           </div>
@@ -259,7 +259,6 @@ export default function DonorDashboardPage() {
             {/* ── Program Area Impact ── */}
             <section>
               <div className="mb-12 text-left">
-                <span className="hw-eyebrow" style={{ color: '#0D9488', fontSize: '0.75rem' }}>Social Impact</span>
                 <h2 className="hw-heading-font mt-2 text-3xl font-black md:text-4xl text-[#6B21A8] tracking-tight">Impact by Category</h2>
               </div>
 
@@ -270,10 +269,10 @@ export default function DonorDashboardPage() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                   {programImpact.map((row, idx) => (
-                    <ProgramImpactCard 
-                      key={row.label} 
-                      row={row} 
-                      delay={`hw-delay-${(idx % 3 + 1) * 100}`} 
+                    <ProgramImpactCard
+                      key={row.label}
+                      row={row}
+                      delay={`hw-delay-${(idx % 3 + 1) * 100}`}
                     />
                   ))}
                 </div>
@@ -283,13 +282,12 @@ export default function DonorDashboardPage() {
             {/* ── History Table ── */}
             <section>
               <div className="mb-10 text-left">
-                <span className="hw-eyebrow" style={{ color: '#0D9488', fontSize: '0.75rem' }}>Financial History</span>
                 <h2 className="hw-heading-font mt-2 text-3xl font-black md:text-4xl text-[#6B21A8] tracking-tight">Stewardship Record</h2>
               </div>
 
               {donations.length === 0 ? (
                 <div className="bg-white rounded-[2rem] border border-stone-200 p-12 text-center">
-                   <p className="text-stone-400 font-medium text-lg italic">No financial transactions found on your account.</p>
+                  <p className="text-stone-400 font-medium text-lg italic">No financial transactions found on your account.</p>
                 </div>
               ) : (
                 <Card title="Donation Ledger" className="overflow-hidden p-0 lg:p-0 border-none">
@@ -342,21 +340,23 @@ export default function DonorDashboardPage() {
           </div>
         )}
       </SectionContainer>
-      
+
       {/* ── Footer / CTA ── */}
       <section className="py-28 bg-[#1E3A5F] relative overflow-hidden">
         <div className="absolute inset-0 opacity-10 pointer-events-none">
-           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white rounded-full blur-[120px]" />
-           <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#5eead4] rounded-full blur-[100px]" />
+          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white rounded-full blur-[120px]" />
+          <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#5eead4] rounded-full blur-[100px]" />
         </div>
         <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
-           <h3 className="hw-heading-font text-4xl font-black text-white mb-6 tracking-tight italic">Continue your legacy of giving.</h3>
-           <p className="text-white/60 text-xl mb-12 max-w-2xl mx-auto leading-relaxed font-medium">Your continued support allows us to expand our outreach and bring hope to even more individuals.</p>
-           <div className="flex justify-center">
-              <a href="/#donate" className="hw-btn-magenta h-16 px-16 flex items-center justify-center rounded-full text-xl font-extrabold shadow-2xl hover:scale-105 transition-transform" style={{ minWidth: '280px' }}>
-                Give Again Now →
-              </a>
-           </div>
+          <h3 className="hw-heading-font text-4xl font-black mb-6 tracking-tight italic" style={{ color: '#5eead4' }}>
+            Continue your legacy of giving.
+          </h3>
+          <p className="text-white/60 text-xl mb-12 max-w-2xl mx-auto leading-relaxed font-medium">Your continued support allows us to expand our outreach and bring hope to even more individuals.</p>
+          <div className="flex justify-center">
+            <a href="/#donate" className="hw-btn-magenta h-16 px-16 flex items-center justify-center rounded-full text-xl font-extrabold shadow-2xl hover:scale-105 transition-transform" style={{ minWidth: '280px' }}>
+              Give Again Now →
+            </a>
+          </div>
         </div>
       </section>
     </div>
