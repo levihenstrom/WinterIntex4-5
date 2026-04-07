@@ -69,3 +69,7 @@ node_modules/
 .env.*
 
 convo.md
+
+# Large local artifacts (do not commit)
+Chapters/
+*.pre-ef-migration.bak
