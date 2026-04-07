@@ -350,7 +350,9 @@ export default function DonorDashboardPage() {
            <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#5eead4] rounded-full blur-[100px]" />
         </div>
         <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
-           <h3 className="hw-heading-font text-4xl font-black text-white mb-6 tracking-tight italic">Continue your legacy of giving.</h3>
+           <h3 className="hw-heading-font text-4xl font-black mb-6 tracking-tight italic" style={{ background: 'linear-gradient(to right, #5eead4, #bbf7d0)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+             Continue your legacy of giving.
+           </h3>
            <p className="text-white/60 text-xl mb-12 max-w-2xl mx-auto leading-relaxed font-medium">Your continued support allows us to expand our outreach and bring hope to even more individuals.</p>
            <div className="flex justify-center">
               <a href="/#donate" className="hw-btn-magenta h-16 px-16 flex items-center justify-center rounded-full text-xl font-extrabold shadow-2xl hover:scale-105 transition-transform" style={{ minWidth: '280px' }}>
