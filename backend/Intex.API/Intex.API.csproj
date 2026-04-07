@@ -33,4 +33,16 @@
     </Content>
   </ItemGroup>
 
+  <!-- ML exports: JSON/metadata are default Content; force copy. .joblib is not in default globs — include explicitly. -->
+  <ItemGroup>
+    <Content Update="App_Data\ml\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Include="App_Data\ml\**\*.joblib">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

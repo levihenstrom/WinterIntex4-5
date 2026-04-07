@@ -58,6 +58,7 @@ Open **`social_media_engagement.ipynb`** (set working directory to `ml_pipeline`
 | Metrics + feature lists | `serialized_models/social_media_engagement_metadata.json` |
 | Sample API I/O | `sample_payload_input.json`, `sample_prediction_output.json` |
 | Post planner recommendations | `outputs/sample_recommendations_*.csv/.json` |
+| **Backend / service bundle** | `backend/Intex.API/App_Data/ml/social/` — after `run_all`, refresh from repo root: `python3 refresh_ml_artifacts.py --social-only`, or from `ml_pipeline`: `PYTHONPATH=. python3 -m ml_backend_export.run_all_backend_exports --social-only`. See `ml_backend_export/README.md`. |
 
 ## Web app integration (ideas)
 

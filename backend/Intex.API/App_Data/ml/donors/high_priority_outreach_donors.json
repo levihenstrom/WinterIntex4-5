@@ -1,0 +1,35 @@
+[
+  {
+    "churn_risk_score": 1.0,
+    "display_name": "Faye Yu",
+    "outreach_note": "High modeled lapse risk; limited or no monetary history in this extract \u2014 still worth a light-touch re-engagement check.",
+    "outreach_priority_rank": 1,
+    "risk_band": "Critical",
+    "supporter_id": 49,
+    "top_drivers": [
+      "No monetary gift in over 12 months (or never on file)"
+    ]
+  },
+  {
+    "churn_risk_score": 1.0,
+    "display_name": "Owen Nguyen",
+    "outreach_note": "High modeled lapse risk; limited or no monetary history in this extract \u2014 still worth a light-touch re-engagement check.",
+    "outreach_priority_rank": 2,
+    "risk_band": "Critical",
+    "supporter_id": 14,
+    "top_drivers": [
+      "No monetary gift in over 12 months (or never on file)"
+    ]
+  },
+  {
+    "churn_risk_score": 1.0,
+    "display_name": "Pia Baker",
+    "outreach_note": "High modeled lapse risk; limited or no monetary history in this extract \u2014 still worth a light-touch re-engagement check.",
+    "outreach_priority_rank": 3,
+    "risk_band": "Critical",
+    "supporter_id": 28,
+    "top_drivers": [
+      "No monetary gift in over 12 months (or never on file)"
+    ]
+  }
+]

@@ -3,6 +3,8 @@ using Intex.API.Authorization;
 using Intex.API.Data;
 using Microsoft.AspNetCore.Identity;
 using Intex.API.Infrastructure;
+using Intex.API.Options;
+using Intex.API.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -70,6 +72,21 @@ if (!isDevelopment)
     builder.Services.AddHostedService<IdentityBootstrapHostedService>();
 }
 builder.Services.AddScoped<StaffScopeResolver>();
+
+builder.Services.Configure<MlInferenceServiceOptions>(
+    builder.Configuration.GetSection(MlInferenceServiceOptions.SectionName));
+builder.Services.AddSingleton<MlArtifactService>();
+builder.Services.AddHttpClient<MlSocialProxyService>((sp, client) =>
+{
+    var opt = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<MlInferenceServiceOptions>>().Value;
+    var url = opt.BaseUrl?.Trim();
+    if (!string.IsNullOrEmpty(url))
+    {
+        var normalized = url.EndsWith('/') ? url : url + "/";
+        client.BaseAddress = new Uri(normalized);
+        client.Timeout = TimeSpan.FromSeconds(Math.Clamp(opt.TimeoutSeconds, 5, 300));
+    }
+});
 
 static bool IsSqliteConnectionString(string? connectionString) =>
     !string.IsNullOrWhiteSpace(connectionString)
