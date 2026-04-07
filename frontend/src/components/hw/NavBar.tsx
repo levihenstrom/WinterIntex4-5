@@ -53,20 +53,42 @@ export default function NavBar() {
 
         {/* Desktop: account or auth CTAs */}
         <div className="hidden lg:flex items-center gap-3 min-w-0">
-          <button
-            type="button"
-            onClick={() => navigate('/login')}
-            className="hw-nav-login px-4 py-2 rounded-full text-sm font-semibold cursor-pointer"
-          >
-            Log In
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate('/register')}
-            className="hw-nav-signup px-4 py-2 rounded-full text-sm font-semibold cursor-pointer"
-          >
-            Sign Up
-          </button>
+          {isLoading ? null : isAuthenticated ? (
+            <>
+              <span className="text-sm text-white/70 truncate max-w-[180px]">
+                {authSession.email}
+              </span>
+              {authSession.roles[0] && (
+                <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-teal-500/20 text-teal-300 border border-teal-400/30">
+                  {authSession.roles[0]}
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => navigate('/logout')}
+                className="hw-nav-login px-4 py-2 rounded-full text-sm font-semibold cursor-pointer"
+              >
+                Sign Out
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => navigate('/login')}
+                className="hw-nav-login px-4 py-2 rounded-full text-sm font-semibold cursor-pointer"
+              >
+                Log In
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('/register')}
+                className="hw-nav-signup px-4 py-2 rounded-full text-sm font-semibold cursor-pointer"
+              >
+                Sign Up
+              </button>
+            </>
+          )}
         </div>
 
         {/* Mobile hamburger */}
@@ -108,9 +130,14 @@ export default function NavBar() {
           <div className="mt-5 flex flex-col gap-3">
             {isLoading ? null : isAuthenticated ? (
               <>
-                <p className="text-sm text-white/70 mb-1 px-1 truncate">
-                  {authSession.email}
-                </p>
+                <div className="flex items-center gap-2 mb-1 px-1">
+                  <p className="text-sm text-white/70 truncate">{authSession.email}</p>
+                  {authSession.roles[0] && (
+                    <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-teal-500/20 text-teal-300 border border-teal-400/30 flex-shrink-0">
+                      {authSession.roles[0]}
+                    </span>
+                  )}
+                </div>
                 <Link
                   to="/mfa"
                   onClick={() => setMenuOpen(false)}
