@@ -24,7 +24,7 @@ function useFadeIn() {
 }
 
 // ── Image URLs ────────────────────────────────────────────────────────────────
-const HERO_IMG = 'https://images.unsplash.com/photo-1594708767771-a7502209ff51?w=1800&auto=format&fit=crop&q=80';
+const HERO_IMG = '/girls.avif';
 const MISSION_IMG = 'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=900&auto=format&fit=crop&q=80';
 const PILLAR_EDU_IMG = 'https://images.unsplash.com/photo-1513258496099-48168024aec0?w=800&auto=format&fit=crop&q=80';
 const PILLAR_HEAL_IMG = 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800&auto=format&fit=crop&q=80';
