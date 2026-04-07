@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { fetchPaged, postJson } from '../../lib/apiClient';
 import SectionContainer from '../../components/hw/SectionContainer';
+import 'bootstrap-icons/font/bootstrap-icons.css';
 
 /* ── Types ───────────────────────────────────────────────────── */
 interface DonationAllocationApi {

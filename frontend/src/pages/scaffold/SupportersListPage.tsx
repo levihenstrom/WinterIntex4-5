@@ -103,6 +103,35 @@ function SupporterKpiStrip({
         { label: 'Monetary gifts (PHP)', value: fmtMoneyPhp(monetaryTotalPhp), sub: 'loaded gifts total', accent: '#7C3AED' },
       ]}
     />
+
+  const stats = [
+    { label: 'Total Supporters', value: supporters.length, icon: 'people' },
+    { label: 'Active', value: active, icon: 'person-check' },
+    { label: 'Monetary Donors', value: monetary, icon: 'currency-dollar' },
+    { label: 'Volunteers', value: volunteers, icon: 'heart' },
+    { label: 'Monetary gifts (PHP)', value: fmtMoneyPhp(monetaryTotalPhp), icon: 'wallet2', isText: true },
+  ];
+
+  return (
+    <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 24 }}>
+      {stats.map((s) => (
+        <div
+          key={s.label}
+          style={{
+            flex: '1 1 140px',
+            background: '#fff',
+            borderRadius: 12,
+            padding: '14px 16px',
+            border: '1px solid #E2E8F0',
+            boxShadow: '0 2px 8px rgba(30,58,95,0.06)',
+          }}
+        >
+          <div style={{ fontSize: 20, marginBottom: 4 }}><i className={`bi bi-${s.icon}`} /></div>
+          <div style={{ fontSize: 22, fontWeight: 700, color: '#1E3A5F' }}>{s.isText ? s.value : s.value}</div>
+          <div style={{ fontSize: 12, color: '#64748B', fontWeight: 500 }}>{s.label}</div>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -542,6 +571,8 @@ export default function SupportersListPage() {
               <div style={{ textAlign: 'center', padding: '48px 0', color: '#94A3B8' }}>
                 <p className="fw-semibold mb-1">No supporters match your filters.</p>
                 <p className="small mb-0">Try clearing search or type filters.</p>
+                <div style={{ fontSize: 40, marginBottom: 8 }}><i className="bi bi-search" style={{ color: '#CBD5E1' }} /></div>
+                <p style={{ fontWeight: 600 }}>No supporters match your filters.</p>
               </div>
             ) : (
               <>
@@ -659,12 +690,19 @@ export default function SupportersListPage() {
                         <span>
                           <i className="bi bi-geo-alt me-1 text-secondary" aria-hidden />
                           {[s.region, s.country].filter(Boolean).join(', ') || '—'}
+                      <div style={{ fontSize: 12, color: '#475569', display: 'flex', flexDirection: 'column', gap: 3 }}>
+                        {s.email && <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><i className="bi bi-envelope" style={{ fontSize: 13 }} /> {s.email}</span>}
+                        {s.phone && <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><i className="bi bi-telephone" style={{ fontSize: 13 }} /> {s.phone}</span>}
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <i className="bi bi-geo-alt" style={{ fontSize: 13 }} /> {[s.region, s.country].filter(Boolean).join(', ') || '—'}
                         </span>
                         <span className="text-muted small">ID {s.supporterId}</span>
                         {s.createdAt && (
                           <span>
                             <i className="bi bi-calendar3 me-1 text-secondary" aria-hidden />
                             Joined{' '}
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <i className="bi bi-calendar3" style={{ fontSize: 13 }} /> Joined{' '}
                             {new Date(s.createdAt).toLocaleDateString('en-GB', {
                               day: 'numeric',
                               month: 'short',
@@ -675,6 +713,8 @@ export default function SupportersListPage() {
                         {aggRow && aggRow.totalPhp > 0 && (
                           <span style={{ color: '#166534', fontWeight: 600 }}>
                             {fmtMoneyPhp(aggRow.totalPhp)} monetary (tracked)
+                          <span style={{ color: '#166534', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <i className="bi bi-wallet2" style={{ fontSize: 14 }} /> {fmtMoneyPhp(aggRow.totalPhp)} monetary
                           </span>
                         )}
                         {aggRow?.lastGift && (

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { fetchAllPaged } from '../../lib/apiClient';
 import AdminKpiStrip from '../../components/admin/AdminKpiStrip';
+import 'bootstrap-icons/font/bootstrap-icons.css';
 
 interface DonationAllocationRow {
   allocationId: number;

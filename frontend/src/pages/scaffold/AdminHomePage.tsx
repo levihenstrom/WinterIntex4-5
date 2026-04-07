@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchPaged, type PagedResult } from '../../lib/apiClient';
 import { useAuth } from '../../context/AuthContext';
+import 'bootstrap-icons/font/bootstrap-icons.css';
 
 interface MetricState {
   count: number | null;
@@ -64,7 +65,7 @@ function MetricCard({ label, sublabel, metric, accentColor, icon, linkTo }: Metr
                 fontSize: '1.5rem',
               }}
             >
-              {icon}
+              {icon.includes('bi-') ? <i className={icon} /> : <i className={`bi bi-${icon}`} />}
             </div>
             <div>
               <p className="hw-eyebrow mb-1" style={{ color: accentColor }}>
@@ -120,7 +121,7 @@ function QuickLink({ to, icon, title, description }: QuickLinkProps) {
           (e.currentTarget as HTMLElement).style.background = 'var(--hw-bg-white)';
         }}
       >
-        <span style={{ fontSize: '1.4rem', lineHeight: 1, marginTop: 2 }}>{icon}</span>
+        <i className={icon.includes('bi-') ? icon : `bi bi-${icon}`} style={{ fontSize: '1.4rem', lineHeight: 1, marginTop: 2 }} />
         <div>
           <p className="fw-semibold mb-1" style={{ color: 'var(--hw-purple)' }}>{title}</p>
           <p className="small text-muted mb-0">{description}</p>
@@ -210,7 +211,7 @@ export default function AdminHomePage() {
             sublabel="All Residents"
             metric={totalResidents}
             accentColor="var(--hw-purple)"
-            icon="👥"
+            icon="people"
             linkTo="/admin/residents"
           />
           <MetricCard
@@ -218,7 +219,7 @@ export default function AdminHomePage() {
             sublabel="Active Cases"
             metric={activeResidents}
             accentColor="var(--hw-teal)"
-            icon="📋"
+            icon="clipboard-data"
             linkTo="/admin/residents"
           />
           <MetricCard
@@ -226,7 +227,7 @@ export default function AdminHomePage() {
             sublabel="Process Recordings"
             metric={totalSessions}
             accentColor="var(--hw-purple-light)"
-            icon="📝"
+            icon="file-earmark-text"
             linkTo="/admin/residents/process-recordings"
           />
           <MetricCard
@@ -234,7 +235,7 @@ export default function AdminHomePage() {
             sublabel="Home Visitations"
             metric={totalVisits}
             accentColor="var(--hw-amber)"
-            icon="🏠"
+            icon="house-door"
             linkTo="/admin/residents/visits-conferences"
           />
         </div>
@@ -314,7 +315,7 @@ export default function AdminHomePage() {
               color: 'white',
             }}
           >
-            <span style={{ fontSize: '1.5rem' }}>📅</span>
+            <i className="bi bi-calendar-event" style={{ fontSize: '1.5rem' }} />
             <div>
               <p className="fw-semibold mb-0">
                 {upcomingConfs.count} upcoming case conference{upcomingConfs.count !== 1 ? 's' : ''}
@@ -345,31 +346,31 @@ export default function AdminHomePage() {
         <div className="row g-3">
           <QuickLink
             to="/admin/residents"
-            icon="👥"
+            icon="people"
             title="Caseload Inventory"
             description="View, search, and manage all resident profiles."
           />
           <QuickLink
             to="/admin/residents/process-recordings"
-            icon="📝"
+            icon="file-earmark-text"
             title="Process Recordings"
             description="Log and review counseling session notes."
           />
           <QuickLink
             to="/admin/residents/visits-conferences"
-            icon="🏠"
+            icon="house-door"
             title="Home Visits &amp; Conferences"
             description="Record field visits and view upcoming conferences."
           />
           <QuickLink
             to="/admin/donations"
-            icon="💛"
+            icon="heart"
             title="Supporters"
             description="Manage donor profiles and contribution history."
           />
           <QuickLink
             to="/admin/reports"
-            icon="📊"
+            icon="bar-chart-fill"
             title="Reports &amp; Analytics"
             description="Giving trends, outcomes, site performance, and annual service summaries."
           />
