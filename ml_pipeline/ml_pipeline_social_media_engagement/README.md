@@ -57,12 +57,38 @@ Open **`social_media_engagement.ipynb`** (set working directory to `ml_pipeline`
 | Serialized pipelines | `serialized_models/*.joblib` |
 | Metrics + feature lists | `serialized_models/social_media_engagement_metadata.json` |
 | Sample API I/O | `sample_payload_input.json`, `sample_prediction_output.json` |
+| Post planner recommendations | `outputs/sample_recommendations_*.csv/.json` |
 
 ## Web app integration (ideas)
 
 - **Planning dashboard:** show predicted **engagement_rate**, **P(any referral)**, and optional **expected referrals** / **donation value** for a draft post (platform, type, hour, topic, CTA, boost fields).
 - **Timing:** surface **median engagement by hour bucket / platform** from EDA and model-derived associations.
 - **Content strategy:** tables of **strongest platforms / post types / topics** from grouped summaries + coefficient direction (with uncertainty / small-*n* caveat).
+- **Post Planner recommendation engine:** call `recommend_next_post(goal, fixed_inputs, top_k)` to suggest next-post configurations based on:
+  - `goal="donations"`: prioritizes referral probability + referral count
+  - `goal="awareness"`: prioritizes engagement rate
+  - `goal="mixed"`: balances both
+  - Candidates vary **platform**, **post_type**, **media_type**, **post hour**, **CTA**, **CTA type**, **resident story**, **content topic** (or lock any via `fixed_inputs`, e.g. `media_type="Video"`)
+
+## Why `predicted_p_any_referral` can look very high (and what we did about it)
+
+**Causes (no bug required):**
+
+1. **Uncalibrated classifiers** — Random forests and gradient boosting often output `predict_proba` values pushed toward 0 or 1 even when ranking (AUC) is good. That is a known **calibration** issue, not necessarily leakage.
+
+2. **Base rate** — In the bundled extract, most posts have **at least one** donation referral (~64% positive). So “high” probabilities are partly consistent with the label distribution (still, **0.99** on many rows was often **overconfident**).
+
+3. **Recommendation grid = favorable synthetic rows** — `recommend_posts.py` explores combinations that include **CTA on**, **resident story on**, **evening** hours, etc. Those settings **co-occur with positives in training** more often, so the model assigns a **high** \(P(\text{referral})\). That is **distribution shift**: you are scoring “idealized” drafts, not a random post from history.
+
+4. **Single random train/test split** — Reported ROC-AUC on one holdout can look strong on ~800 rows; **probabilities** should still be interpreted cautiously.
+
+**Fix without collecting new data (implemented):**
+
+- The exported **`any_referral_classifier_pipeline.joblib`** is wrapped in **`CalibratedClassifierCV`** (Platt **sigmoid** scaling, stratified folds). See `any_referral_probability_calibration` in `social_media_engagement_metadata.json`. This **pulls extreme probabilities toward more realistic levels** while preserving ranking reasonably well.
+
+**Optional toggles:** set `CALIBRATE_ANY_REFERRAL_CLASSIFIER = False` in `config.py` to compare raw vs calibrated behavior.
+
+**Still worth doing later (needs process, not only rows):** time-based validation, reporting **Brier score** / reliability curves, and constraining the recommender to **observed** (platform, type, media) tuples from history.
 
 ## Ethics
 
@@ -79,6 +105,7 @@ Forecasts and associations **do not** prove that changing copy or timing **cause
 - `evaluate.py` — RMSE / MAE / R² and classification metrics  
 - `export_artifacts.py` — train all, save joblibs + JSON + charts  
 - `inference_example.py` — score sample payload  
+- `recommend_posts.py` — candidate generation + ranking for post planning  
 - `run_all.py` — CLI entry  
 
 ---
