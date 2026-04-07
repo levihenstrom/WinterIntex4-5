@@ -5,10 +5,13 @@ import { useAuth } from '../context/AuthContext';
 import GoogleIcon from '../components/hw/GoogleIcon';
 import {
   buildExternalLoginUrl,
+  completeTwoFactorLogin,
   getExternalProviders,
   loginUser,
   type ExternalAuthProvider,
 } from '../lib/authAPI';
+
+type LoginStep = 'credentials' | 'twoFactor';
 
 function LoginPage() {
   const navigate = useNavigate();
@@ -19,6 +22,7 @@ function LoginPage() {
   const [twoFactorCode, setTwoFactorCode] = useState('');
   const [recoveryCode, setRecoveryCode] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
+  const [loginStep, setLoginStep] = useState<LoginStep>('credentials');
   const [externalProviders, setExternalProviders] = useState<
     ExternalAuthProvider[]
   >([]);
@@ -46,13 +50,15 @@ function LoginPage() {
     setIsSubmitting(true);
 
     try {
-      await loginUser(
-        email,
-        password,
-        rememberMe,
-        twoFactorCode || undefined,
-        recoveryCode || undefined
-      );
+      const result = await loginUser(email, password, rememberMe);
+
+      if (result.requiresTwoFactor) {
+        setLoginStep('twoFactor');
+        setTwoFactorCode('');
+        setRecoveryCode('');
+        return;
+      }
+
       await refreshAuthState();
       navigate('/');
     } catch (error) {
@@ -62,6 +68,35 @@ function LoginPage() {
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  async function handleTwoFactorSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setErrorMessage('');
+    setIsSubmitting(true);
+
+    try {
+      await completeTwoFactorLogin(
+        rememberMe,
+        twoFactorCode || undefined,
+        recoveryCode || undefined
+      );
+      await refreshAuthState();
+      navigate('/');
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : 'Unable to verify MFA.'
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  function handleBackToCredentials() {
+    setLoginStep('credentials');
+    setTwoFactorCode('');
+    setRecoveryCode('');
+    setErrorMessage('');
   }
 
   function handleExternalLogin(providerName: string) {
@@ -77,108 +112,137 @@ function LoginPage() {
               <p className="hw-eyebrow mb-2">Account</p>
               <h1 className="hw-heading hw-heading-font h3 mb-2">Sign in</h1>
               <p className="text-secondary small mb-4">
-                Email and password. Expand below if you use MFA.
+                {loginStep === 'credentials'
+                  ? 'Enter your email and password.'
+                  : 'Enter your authenticator code or a recovery code to finish signing in.'}
               </p>
-              <form onSubmit={handleSubmit}>
-                <div className="mb-3">
-                  <label className="hw-label" htmlFor="email">
-                    Email
-                  </label>
-                  <input
-                    id="email"
-                    type="email"
-                    className="hw-input"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    autoComplete="email"
-                  />
-                </div>
-                <div className="mb-3">
-                  <label className="hw-label" htmlFor="password">
-                    Password
-                  </label>
-                  <input
-                    id="password"
-                    type="password"
-                    className="hw-input"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    autoComplete="current-password"
-                  />
-                </div>
-
-                <details className="hw-auth-details">
-                  <summary>Authenticator or recovery code</summary>
-                  <div className="hw-auth-details-body">
-                    <div className="mb-3">
-                      <label className="hw-label" htmlFor="twoFactorCode">
-                        Authenticator code
-                      </label>
-                      <input
-                        id="twoFactorCode"
-                        type="text"
-                        className="hw-input"
-                        inputMode="numeric"
-                        value={twoFactorCode}
-                        onChange={(e) => setTwoFactorCode(e.target.value)}
-                        autoComplete="one-time-code"
-                      />
-                      <div className="hw-form-hint">
-                        Leave blank unless MFA is enabled.
-                      </div>
-                    </div>
-                    <div className="mb-0">
-                      <label className="hw-label" htmlFor="recoveryCode">
-                        Recovery code
-                      </label>
-                      <input
-                        id="recoveryCode"
-                        type="text"
-                        className="hw-input"
-                        value={recoveryCode}
-                        onChange={(e) => setRecoveryCode(e.target.value)}
-                        autoComplete="off"
-                      />
-                      <div className="hw-form-hint">
-                        If you cannot use your authenticator app.
-                      </div>
-                    </div>
+              {loginStep === 'credentials' ? (
+                <form onSubmit={handleSubmit}>
+                  <div className="mb-3">
+                    <label className="hw-label" htmlFor="email">
+                      Email
+                    </label>
+                    <input
+                      id="email"
+                      type="email"
+                      className="hw-input"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      autoComplete="email"
+                    />
                   </div>
-                </details>
+                  <div className="mb-3">
+                    <label className="hw-label" htmlFor="password">
+                      Password
+                    </label>
+                    <input
+                      id="password"
+                      type="password"
+                      className="hw-input"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      autoComplete="current-password"
+                    />
+                  </div>
 
-                <div className="form-check mb-4">
-                  <input
-                    id="rememberMe"
-                    type="checkbox"
-                    className="form-check-input hw-check"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                  />
-                  <label
-                    className="form-check-label small"
-                    style={{ color: 'var(--hw-navy)' }}
-                    htmlFor="rememberMe"
+                  <div className="form-check mb-4">
+                    <input
+                      id="rememberMe"
+                      type="checkbox"
+                      className="form-check-input hw-check"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                    />
+                    <label
+                      className="form-check-label small"
+                      style={{ color: 'var(--hw-navy)' }}
+                      htmlFor="rememberMe"
+                    >
+                      Keep me signed in on this device
+                    </label>
+                  </div>
+                  {errorMessage ? (
+                    <div className="hw-alert-error mb-3" role="alert">
+                      {errorMessage}
+                    </div>
+                  ) : null}
+                  <button
+                    type="submit"
+                    className="hw-btn-magenta w-100 py-2 rounded-3 fw-semibold"
+                    disabled={isSubmitting}
                   >
-                    Keep me signed in on this device
-                  </label>
-                </div>
-                {errorMessage ? (
-                  <div className="hw-alert-error mb-3" role="alert">
-                    {errorMessage}
+                    {isSubmitting ? 'Signing in...' : 'Continue'}
+                  </button>
+                </form>
+              ) : (
+                <form onSubmit={handleTwoFactorSubmit}>
+                  <div
+                    className="rounded-3 border px-3 py-2 mb-3 small"
+                    style={{ borderColor: 'rgba(30, 58, 95, 0.18)', color: 'var(--hw-navy)' }}
+                  >
+                    Second factor required for <strong>{email}</strong>
                   </div>
-                ) : null}
-                <button
-                  type="submit"
-                  className="hw-btn-magenta w-100 py-2 rounded-3 fw-semibold"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Signing in...' : 'Sign in'}
-                </button>
-              </form>
+                  <div className="mb-3">
+                    <label className="hw-label" htmlFor="twoFactorCode">
+                      Authenticator code
+                    </label>
+                    <input
+                      id="twoFactorCode"
+                      type="text"
+                      className="hw-input"
+                      inputMode="numeric"
+                      value={twoFactorCode}
+                      onChange={(e) => setTwoFactorCode(e.target.value)}
+                      autoComplete="one-time-code"
+                    />
+                    <div className="hw-form-hint">
+                      Use the 6-digit code from your authenticator app.
+                    </div>
+                  </div>
+                  <div className="mb-4">
+                    <label className="hw-label" htmlFor="recoveryCode">
+                      Recovery code
+                    </label>
+                    <input
+                      id="recoveryCode"
+                      type="text"
+                      className="hw-input"
+                      value={recoveryCode}
+                      onChange={(e) => setRecoveryCode(e.target.value)}
+                      autoComplete="off"
+                    />
+                    <div className="hw-form-hint">
+                      Use this only if you cannot access your authenticator app.
+                    </div>
+                  </div>
+                  {errorMessage ? (
+                    <div className="hw-alert-error mb-3" role="alert">
+                      {errorMessage}
+                    </div>
+                  ) : null}
+                  <div className="d-grid gap-2">
+                    <button
+                      type="submit"
+                      className="hw-btn-magenta w-100 py-2 rounded-3 fw-semibold"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? 'Verifying...' : 'Verify and sign in'}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-outline-secondary"
+                      onClick={handleBackToCredentials}
+                      disabled={isSubmitting}
+                    >
+                      Back
+                    </button>
+                  </div>
+                </form>
+              )}
 
-              {externalProviders.length > 0 ? (
+              {loginStep === 'credentials' && externalProviders.length > 0 ? (
                 <>
                   <div className="hw-divider-or">or continue with</div>
                   <div className="d-grid gap-2">
@@ -199,12 +263,22 @@ function LoginPage() {
                 </>
               ) : null}
 
-              <p className="hw-auth-footer-hint mb-0">
-                Need an account?{' '}
-                <Link className="hw-link" to="/register">
-                  Sign up
-                </Link>
-              </p>
+              {loginStep === 'credentials' ? (
+                <p className="hw-auth-footer-hint mb-0">
+                  Need an account?{' '}
+                  <Link className="hw-link" to="/register">
+                    Sign up
+                  </Link>
+                </p>
+              ) : (
+                <p className="hw-auth-footer-hint mb-0">
+                  MFA is only required for accounts that have it enabled in{' '}
+                  <Link className="hw-link" to="/mfa">
+                    account settings
+                  </Link>
+                  .
+                </p>
+              )}
             </div>
           </div>
         </div>
