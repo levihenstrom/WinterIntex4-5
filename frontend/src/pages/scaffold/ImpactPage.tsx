@@ -9,7 +9,7 @@ export default function ImpactPage() {
       <NavBar />
       <section className="container my-5">
         <h1>Our Impact</h1>
-        <p className="text-muted">PUB-2 — public impact dashboard (scaffold)</p>
+        <p className="text-muted">PUB-2 — public impact   SDFGHJKKJHGFDSSDFGHJHRFGHJK dashboard (scaffold)</p>
 
         <div className="row mt-4 g-3">
           <div className="col-md-3">
