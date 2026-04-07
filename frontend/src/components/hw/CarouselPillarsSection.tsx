@@ -59,7 +59,7 @@ export default function CarouselPillarsSection() {
 // ... existing imports and array ...
 
   return (
-    <section id="programs" className="py-10" style={{ background: '#D97706' }}>
+    <section id="programs" className="pt-16 pb-0" style={{ background: '#D97706' }}>
       <div className="max-w-7xl mx-auto px-6 lg:px-10 mb-14 text-center">
         <span className="hw-eyebrow text-white/80" style={{ color: 'rgba(255,255,255,0.85)' }}>Our Approach</span>
         <h2 className="text-3xl md:text-4xl font-extrabold mt-3 text-white" style={{ fontFamily: 'Poppins, sans-serif' }}>
@@ -67,18 +67,18 @@ export default function CarouselPillarsSection() {
         </h2>
       </div>
 
-      <div className="relative w-full overflow-hidden pb-4 hw-carousel-section">
+      <div className="relative w-full overflow-hidden hw-carousel-section">
         {/* Scroll Wrapper */}
         <div ref={wrapperRef} className="w-full overflow-x-hidden no-scrollbar">
           {/* Carousel Track */}
           <div 
             ref={trackRef}
-            className="flex hw-carousel-track items-center"
+            className="flex hw-carousel-track items-end"
           >
             {items.map((pillar, idx) => (
               <div 
                 key={`${pillar.title}-${idx}`} 
-                className="hw-carousel-card relative w-[180px] md:w-[220px] lg:w-[280px] shrink-0 rounded-[12px] border-[4px] border-white overflow-hidden shadow-xl bg-black"
+                className="hw-carousel-card relative w-[180px] md:w-[220px] lg:w-[280px] shrink-0 rounded-t-[9999px] border-[4px] border-white border-b-0 overflow-hidden shadow-xl bg-black"
                 style={{ aspectRatio: '3/4' }}
               >
                 {/* Background Image */}
