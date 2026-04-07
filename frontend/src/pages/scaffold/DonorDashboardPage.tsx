@@ -146,19 +146,24 @@ function ProgramImpactCard({ row, delay }: { row: ProgramImpactRow; delay: strin
   return (
     <div 
       ref={ref}
-      className={`hw-fade-in ${delay} group rounded-[1.5rem] border border-stone-200 bg-white p-9 shadow-sm transition-all duration-500 hover:shadow-xl hover:-translate-y-1.5 flex flex-col`}
+      className={`hw-fade-in ${delay} group rounded-3xl border border-stone-100 bg-white p-10 shadow-sm transition-all duration-700 hover:shadow-2xl hover:-translate-y-2 flex flex-col items-center text-center justify-center`}
+      style={{ minHeight: '320px', boxShadow: '0 10px 40px rgba(30,58,95,0.02)' }}
     >
-       <div className="flex justify-between items-start mb-6">
-         <span className="inline-block px-3 py-1.5 bg-violet-50 text-[#6B21A8] rounded-full text-[10px] font-bold uppercase tracking-widest">
-           Program Funding
-         </span>
-       </div>
-       <h3 className="font-extrabold text-2xl text-[#1E3A5F] mb-3 group-hover:text-[#6B21A8] transition-colors leading-tight">{row.label}</h3>
-       <div className="flex items-baseline gap-2">
-         <span className="text-4xl font-black text-[#0D9488] tabular-nums tracking-tighter">
+       <span className="inline-block px-4 py-1.5 bg-stone-50 text-[#6B21A8] rounded-full text-[10px] font-black uppercase tracking-[0.25em] mb-8">
+         Program Funding
+       </span>
+       
+       <h3 className="font-extrabold text-3xl text-[#1E3A5F] mb-4 group-hover:text-[#6B21A8] transition-colors leading-tight tracking-tight">
+         {row.label}
+       </h3>
+       
+       <div className="flex flex-col items-center gap-2">
+         <span className="text-5xl font-black text-[#0D9488] tabular-nums tracking-tighter">
            {formatMoney(row.totalAmount)}
          </span>
-         <span className="text-stone-400 text-sm font-semibold">from {row.giftCount} gift{row.giftCount === 1 ? '' : 's'}</span>
+         <span className="text-stone-400 text-sm font-bold uppercase tracking-widest mt-2">
+           from {row.giftCount} gift{row.giftCount === 1 ? '' : 's'}
+         </span>
        </div>
     </div>
   );
@@ -253,7 +258,7 @@ export default function DonorDashboardPage() {
           <div className="space-y-32">
             {/* ── Program Area Impact ── */}
             <section>
-              <div className="mb-10 text-left">
+              <div className="mb-12 text-left">
                 <span className="hw-eyebrow" style={{ color: '#0D9488', fontSize: '0.75rem' }}>Social Impact</span>
                 <h2 className="hw-heading-font mt-2 text-3xl font-black md:text-4xl text-[#6B21A8] tracking-tight">Impact by Category</h2>
               </div>
@@ -263,12 +268,12 @@ export default function DonorDashboardPage() {
                   <p className="text-stone-400 font-medium italic m-0 text-lg">Your generosity will fuel measurable change across our programs.</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   {programImpact.map((row, idx) => (
                     <ProgramImpactCard 
                       key={row.label} 
                       row={row} 
-                      delay={`hw-delay-${(idx % 3 + 1) * 100}`} 
+                      delay={`hw-delay-${(idx % 2 + 1) * 100}`} 
                     />
                   ))}
                 </div>
