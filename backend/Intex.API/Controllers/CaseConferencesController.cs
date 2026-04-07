@@ -14,10 +14,10 @@ namespace Intex.API.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/case-conferences")]
-[Authorize(Policy = AuthPolicies.ManageCatalog)]
 public class CaseConferencesController(AppDbContext db) : ControllerBase
 {
     [HttpGet]
+    [Authorize(Policy = AuthPolicies.StaffRead)]
     [ProducesResponseType(typeof(PagedResult<InterventionPlan>), StatusCodes.Status200OK)]
     public async Task<ActionResult<PagedResult<InterventionPlan>>> GetPage(
         [FromQuery] int page = 1,
@@ -49,6 +49,7 @@ public class CaseConferencesController(AppDbContext db) : ControllerBase
     }
 
     [HttpGet("{id:int}")]
+    [Authorize(Policy = AuthPolicies.StaffRead)]
     [ProducesResponseType(typeof(InterventionPlan), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<InterventionPlan>> GetById(int id, CancellationToken cancellationToken)
@@ -60,6 +61,7 @@ public class CaseConferencesController(AppDbContext db) : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Policy = AuthPolicies.StaffWrite)]
     [ProducesResponseType(typeof(InterventionPlan), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<InterventionPlan>> Create([FromBody] InterventionPlan plan, CancellationToken cancellationToken)
@@ -73,6 +75,7 @@ public class CaseConferencesController(AppDbContext db) : ControllerBase
     }
 
     [HttpPut("{id:int}")]
+    [Authorize(Policy = AuthPolicies.StaffWrite)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -89,6 +92,7 @@ public class CaseConferencesController(AppDbContext db) : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
+    [Authorize(Policy = AuthPolicies.StaffWrite)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
