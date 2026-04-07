@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { deleteJson, fetchPaged, type PagedResult } from '../../lib/apiClient';
 import { useAuth } from '../../context/AuthContext';
 import DeleteConfirmModal from '../../components/DeleteConfirmModal';
+import AdminKpiStrip from '../../components/admin/AdminKpiStrip';
 
 // ── Types (camelCase JSON from ASP.NET Core) ─────────────────────────────────
 
@@ -60,38 +61,21 @@ function fmtDateTime(iso: string | null | undefined): string {
   return d.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
 }
 
-function KPIStrip({ items, totalInDb }: { items: SocialMediaPost[]; totalInDb: number }) {
+function socialKpiItems(items: SocialMediaPost[], totalInDb: number) {
   const likes = items.reduce((s, p) => s + (p.likes ?? 0), 0);
   const reach = items.reduce((s, p) => s + (p.reach ?? 0), 0);
   const comments = items.reduce((s, p) => s + (p.comments ?? 0), 0);
   const avgEng = items.length
     ? (items.reduce((s, p) => s + Number(p.engagementRate ?? 0), 0) / items.length * 100)
     : 0;
-
-  const kpis = [
-    { label: 'Posts (this page)', value: String(items.length), icon: '📱', color: '#1E3A5F' },
-    { label: 'Total in database', value: String(totalInDb), icon: '📊', color: '#6B21A8' },
-    { label: 'Likes (page)', value: likes.toLocaleString(), icon: '❤️', color: '#DC2626' },
-    { label: 'Reach (page)', value: reach.toLocaleString(), icon: '👁️', color: '#0D9488' },
-    { label: 'Comments (page)', value: comments.toLocaleString(), icon: '💬', color: '#1E40AF' },
-    { label: 'Avg engagement %', value: `${avgEng.toFixed(2)}%`, icon: '📈', color: '#166534' },
+  return [
+    { label: 'Posts (this page)', value: String(items.length), accent: '#1E3A5F' },
+    { label: 'Total in database', value: String(totalInDb), sub: 'matching filters', accent: '#7C3AED' },
+    { label: 'Likes (page)', value: likes.toLocaleString(), accent: '#DC2626' },
+    { label: 'Reach (page)', value: reach.toLocaleString(), accent: '#0D9488' },
+    { label: 'Comments (page)', value: comments.toLocaleString(), accent: '#2563EB' },
+    { label: 'Avg engagement', value: `${avgEng.toFixed(2)}%`, sub: 'mean on this page', accent: '#059669' },
   ];
-
-  return (
-    <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 24 }}>
-      {kpis.map(k => (
-        <div key={k.label} style={{
-          flex: '1 1 130px', background: '#fff', borderRadius: 12,
-          padding: '14px 16px', border: '1px solid #E2E8F0',
-          boxShadow: '0 2px 8px rgba(30,58,95,0.06)',
-        }}>
-          <div style={{ fontSize: 18, marginBottom: 4 }}>{k.icon}</div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: k.color }}>{k.value}</div>
-          <div style={{ fontSize: 11, color: '#64748B', fontWeight: 500 }}>{k.label}</div>
-        </div>
-      ))}
-    </div>
-  );
 }
 
 type SortCol = 'createdAt' | 'platform' | 'postType' | 'likes' | 'reach' | 'comments' | 'engagementRate';
@@ -144,6 +128,7 @@ export default function SocialMediaHistoryPage() {
 
   const [deleteTarget, setDeleteTarget] = useState<SocialMediaPost | null>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
+  const [detailPost, setDetailPost] = useState<SocialMediaPost | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -209,6 +194,7 @@ export default function SocialMediaHistoryPage() {
     try {
       await deleteJson(`/api/social-media-posts/${deleteTarget.postId}`);
       setDeleteTarget(null);
+      setDetailPost((p) => (p && p.postId === deleteTarget.postId ? null : p));
       setReloadToken((t) => t + 1);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Delete failed.');
@@ -216,6 +202,15 @@ export default function SocialMediaHistoryPage() {
       setDeleteBusy(false);
     }
   }
+
+  useEffect(() => {
+    if (!detailPost) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setDetailPost(null);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [detailPost]);
 
   return (
     <div style={{ background: '#F8FAFC', minHeight: '100vh', padding: '32px 0' }}>
@@ -242,7 +237,7 @@ export default function SocialMediaHistoryPage() {
           </Link>
         </div>
 
-        {data && <KPIStrip items={data.items} totalInDb={data.totalCount} />}
+        {data && <AdminKpiStrip items={socialKpiItems(data.items, data.totalCount)} />}
 
         <div style={{
           background: '#fff', borderRadius: 12, padding: '16px 20px',
@@ -331,18 +326,20 @@ export default function SocialMediaHistoryPage() {
         }}>
           {loading ? (
             <div style={{ textAlign: 'center', padding: '48px 0', color: '#94A3B8' }}>
-              <div style={{ fontSize: 32, marginBottom: 8 }}>⏳</div>
-              <p style={{ fontWeight: 600 }}>Loading posts…</p>
+              <div className="spinner-border text-secondary mb-3" role="status" aria-label="Loading">
+                <span className="visually-hidden">Loading…</span>
+              </div>
+              <p className="fw-semibold mb-0">Loading posts…</p>
             </div>
           ) : !data || data.items.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '48px 0', color: '#94A3B8' }}>
-              <div style={{ fontSize: 40, marginBottom: 8 }}>📭</div>
-              <p style={{ fontWeight: 600 }}>No posts match your filters.</p>
+              <p className="fw-semibold mb-1">No posts match your filters.</p>
+              <p className="small mb-0">Try another platform or clear the campaign filter.</p>
             </div>
           ) : displayItems.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '48px 0', color: '#94A3B8' }}>
-              <div style={{ fontSize: 40, marginBottom: 8 }}>🔍</div>
-              <p style={{ fontWeight: 600 }}>No rows match your search on this page.</p>
+              <p className="fw-semibold mb-1">No rows match your search on this page.</p>
+              <p className="small mb-0">Clear search or move to another results page.</p>
             </div>
           ) : (
             <>
@@ -371,13 +368,30 @@ export default function SocialMediaHistoryPage() {
                       const cap = row.caption ?? '';
                       const capShort = cap.length > 120 ? `${cap.slice(0, 120)}…` : cap;
                       return (
-                        <tr key={row.postId} style={{ background: i % 2 === 0 ? '#fff' : '#FAFAFA', borderBottom: '1px solid #F1F5F9' }}>
+                        <tr
+                          key={row.postId}
+                          role="button"
+                          tabIndex={0}
+                          title="View full post details"
+                          style={{
+                            background: i % 2 === 0 ? '#fff' : '#FAFAFA',
+                            borderBottom: '1px solid #F1F5F9',
+                            cursor: 'pointer',
+                          }}
+                          onClick={() => setDetailPost(row)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              setDetailPost(row);
+                            }
+                          }}
+                        >
                           <td style={tdStyle}>
                             <Badge label={row.platform ?? '—'} bg={ps.bg} text={ps.text} />
                           </td>
                           <td style={{ ...tdStyle, color: '#64748B', whiteSpace: 'nowrap' }}>{fmtDateTime(row.createdAt)}</td>
                           <td style={{ ...tdStyle, color: '#475569' }}>{row.postType ?? '—'}</td>
-                          <td style={{ ...tdStyle, color: '#475569', maxWidth: 280 }}>
+                          <td style={{ ...tdStyle, color: '#475569', maxWidth: 280 }} onClick={(e) => e.stopPropagation()}>
                             {row.postUrl ? (
                               <a href={row.postUrl} target="_blank" rel="noreferrer" style={{ color: '#6B21A8', fontWeight: 600 }}>
                                 {capShort || '(link)'}
@@ -391,7 +405,7 @@ export default function SocialMediaHistoryPage() {
                           <td style={{ ...tdStyle, fontVariantNumeric: 'tabular-nums' }}>{row.comments?.toLocaleString() ?? '—'}</td>
                           <td style={{ ...tdStyle, fontVariantNumeric: 'tabular-nums' }}>{eng}</td>
                           {canDelete && (
-                            <td style={tdStyle}>
+                            <td style={tdStyle} onClick={(e) => e.stopPropagation()}>
                               <button type="button" style={delBtn} onClick={() => setDeleteTarget(row)}>Delete</button>
                             </td>
                           )}
@@ -427,6 +441,79 @@ export default function SocialMediaHistoryPage() {
         onCancel={() => { if (!deleteBusy) setDeleteTarget(null); }}
         onConfirm={() => { if (!deleteBusy) void confirmDelete(); }}
       />
+
+      {detailPost && (
+        <div className="modal d-block" style={{ backgroundColor: 'rgba(0,0,0,0.55)' }} role="dialog" aria-modal="true" aria-labelledby="postDetailTitle">
+          <div className="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+            <div className="modal-content">
+              <div className="modal-header border-bottom">
+                <div>
+                  <h5 className="modal-title fw-bold text-dark mb-0" id="postDetailTitle">
+                    Post details
+                  </h5>
+                  <p className="small text-muted mb-0">ID {detailPost.postId} · {detailPost.platform ?? '—'}</p>
+                </div>
+                <button type="button" className="btn-close" aria-label="Close" onClick={() => setDetailPost(null)} />
+              </div>
+              <div className="modal-body small">
+                <dl className="row mb-0">
+                  {[
+                    ['Posted', fmtDateTime(detailPost.createdAt)],
+                    ['Post type', detailPost.postType ?? '—'],
+                    ['Media type', detailPost.mediaType ?? '—'],
+                    ['Content topic', detailPost.contentTopic ?? '—'],
+                    ['Sentiment / tone', detailPost.sentimentTone ?? '—'],
+                    ['Campaign', detailPost.campaignName ?? '—'],
+                    ['Day of week', detailPost.dayOfWeek ?? '—'],
+                    ['Hour (local)', detailPost.postHour != null ? String(detailPost.postHour) : '—'],
+                    ['Platform post ID', detailPost.platformPostId ?? '—'],
+                    ['Reach', detailPost.reach?.toLocaleString() ?? '—'],
+                    ['Impressions', detailPost.impressions?.toLocaleString() ?? '—'],
+                    ['Likes', detailPost.likes?.toLocaleString() ?? '—'],
+                    ['Comments', detailPost.comments?.toLocaleString() ?? '—'],
+                    ['Shares', detailPost.shares?.toLocaleString() ?? '—'],
+                    ['Engagement rate', detailPost.engagementRate != null ? String(detailPost.engagementRate) : '—'],
+                    ['Donation referrals', detailPost.donationReferrals != null ? String(detailPost.donationReferrals) : '—'],
+                  ].map(([label, val]) => (
+                    <div key={label} className="col-sm-6 py-2 border-bottom">
+                      <dt className="text-uppercase fw-semibold text-muted" style={{ fontSize: 10, letterSpacing: '0.04em' }}>{label}</dt>
+                      <dd className="mb-0 mt-1">{val}</dd>
+                    </div>
+                  ))}
+                  <div className="col-12 py-2 border-bottom">
+                    <dt className="text-uppercase fw-semibold text-muted" style={{ fontSize: 10, letterSpacing: '0.04em' }}>Caption</dt>
+                    <dd className="mb-0 mt-1 text-break">{detailPost.caption?.trim() || '—'}</dd>
+                  </div>
+                  <div className="col-12 py-2 border-bottom">
+                    <dt className="text-uppercase fw-semibold text-muted" style={{ fontSize: 10, letterSpacing: '0.04em' }}>Hashtags</dt>
+                    <dd className="mb-0 mt-1 text-break">{detailPost.hashtags?.trim() || '—'}</dd>
+                  </div>
+                  <div className="col-12 py-2">
+                    <dt className="text-uppercase fw-semibold text-muted" style={{ fontSize: 10, letterSpacing: '0.04em' }}>URL</dt>
+                    <dd className="mb-0 mt-1">
+                      {detailPost.postUrl ? (
+                        <a href={detailPost.postUrl} target="_blank" rel="noreferrer">{detailPost.postUrl}</a>
+                      ) : (
+                        '—'
+                      )}
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+              <div className="modal-footer border-top">
+                {canDelete ? (
+                  <button type="button" className="btn btn-outline-danger me-auto" onClick={() => { setDeleteTarget(detailPost); }}>
+                    Delete post
+                  </button>
+                ) : null}
+                <button type="button" className="btn btn-primary" onClick={() => setDetailPost(null)}>
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

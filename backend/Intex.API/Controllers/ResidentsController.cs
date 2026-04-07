@@ -102,4 +102,63 @@ public class ResidentsController(AppDbContext db, StaffScopeResolver scopeResolv
         await db.SaveChangesAsync(cancellationToken);
         return NoContent();
     }
+
+    /// <summary>
+    /// Full resident record (with safehouse) plus incident reports for admin review / drill-down.
+    /// </summary>
+    [HttpGet("{id:int}/detail")]
+    [Authorize(Policy = AuthPolicies.StaffRead)]
+    [ProducesResponseType(typeof(ResidentDetailResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ResidentDetailResponse>> GetDetail(int id, CancellationToken cancellationToken)
+    {
+        var scope = await scopeResolver.GetForUserAsync(User, cancellationToken);
+        var resident = await scope.Apply(db.Residents.AsNoTracking().AsQueryable())
+            .Include(r => r.Safehouse)
+            .FirstOrDefaultAsync(r => r.ResidentId == id, cancellationToken);
+        if (resident is null)
+            return NotFound();
+
+        var incidents = await db.IncidentReports.AsNoTracking()
+            .Where(i => i.ResidentId == id)
+            .OrderByDescending(i => i.IncidentDate)
+            .Select(i => new IncidentReportListItemDto
+            {
+                IncidentId = i.IncidentId,
+                SafehouseId = i.SafehouseId,
+                IncidentDate = i.IncidentDate,
+                IncidentType = i.IncidentType,
+                Severity = i.Severity,
+                Description = i.Description,
+                ResponseTaken = i.ResponseTaken,
+                Resolved = i.Resolved,
+                ResolutionDate = i.ResolutionDate,
+                ReportedBy = i.ReportedBy,
+                FollowUpRequired = i.FollowUpRequired,
+            })
+            .ToListAsync(cancellationToken);
+
+        return Ok(new ResidentDetailResponse { Resident = resident, Incidents = incidents });
+    }
+}
+
+public sealed class ResidentDetailResponse
+{
+    public Resident Resident { get; set; } = null!;
+    public List<IncidentReportListItemDto> Incidents { get; set; } = new();
+}
+
+public sealed class IncidentReportListItemDto
+{
+    public int IncidentId { get; set; }
+    public int SafehouseId { get; set; }
+    public DateTime? IncidentDate { get; set; }
+    public string? IncidentType { get; set; }
+    public string? Severity { get; set; }
+    public string? Description { get; set; }
+    public string? ResponseTaken { get; set; }
+    public bool? Resolved { get; set; }
+    public DateTime? ResolutionDate { get; set; }
+    public string? ReportedBy { get; set; }
+    public bool? FollowUpRequired { get; set; }
 }

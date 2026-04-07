@@ -1,24 +1,25 @@
-import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import NavBar from '../components/hw/NavBar';
+import AdminSectionTabs, { type AdminSectionTabItem } from '../components/admin/AdminSectionTabs';
 
-const sectionTabs = {
+const sectionTabs: Record<'donations' | 'residents' | 'socialMedia' | 'reports', AdminSectionTabItem[]> = {
   donations: [
-    { to: '/admin/donations', label: 'Supporters', end: true },
-    { to: '/admin/donations/contributions', label: 'Donations', end: false },
-    { to: '/admin/donations/allocations', label: 'Allocations', end: false },
+    { to: '/admin/donations', label: 'Supporters', end: true, icon: 'bi-people' },
+    { to: '/admin/donations/contributions', label: 'Donations', end: false, icon: 'bi-heart' },
+    { to: '/admin/donations/allocations', label: 'Allocations', end: false, icon: 'bi-diagram-3' },
   ],
   residents: [
-    { to: '/admin/residents', label: 'Caseload Inventory', end: true },
-    { to: '/admin/residents/process-recordings', label: 'Process Recordings', end: false },
-    { to: '/admin/residents/visits-conferences', label: 'Home Visits & Conferences', end: false },
+    { to: '/admin/residents', label: 'Caseload Inventory', end: true, icon: 'bi-person-lines-fill' },
+    { to: '/admin/residents/process-recordings', label: 'Process Recordings', end: false, icon: 'bi-journal-text' },
+    { to: '/admin/residents/visits-conferences', label: 'Home Visits & Conferences', end: false, icon: 'bi-calendar-event' },
   ],
   socialMedia: [
-    { to: '/admin/social-media', label: 'History', end: true },
-    { to: '/admin/social-media/suggest', label: 'Suggest Next Post', end: false },
+    { to: '/admin/social-media', label: 'History', end: true, icon: 'bi-clock-history' },
+    { to: '/admin/social-media/suggest', label: 'Suggest Next Post', end: false, icon: 'bi-lightbulb' },
   ],
   reports: [],
-} as const;
+};
 
 function getSectionKey(pathname: string): keyof typeof sectionTabs | null {
   if (pathname.startsWith('/admin/donations')) return 'donations';
@@ -28,11 +29,6 @@ function getSectionKey(pathname: string): keyof typeof sectionTabs | null {
   return null;
 }
 
-/**
- * Scaffold layout for /admin/*. Plain tab strip, no design.
- * Real admin shell design is the responsibility of ADM-1 and the individual
- * page cards; SCAF-1 only needs the navigation and routing to work.
- */
 export default function AdminLayout() {
   const { authSession } = useAuth();
   const location = useLocation();
@@ -43,27 +39,7 @@ export default function AdminLayout() {
     <div className="d-flex flex-column min-vh-100">
       <NavBar />
       <div className="hw-auth-page-content flex-grow-1">
-        {tabs.length > 0 ? (
-          <nav className="bg-light border-bottom">
-            <div className="container">
-              <ul className="nav nav-tabs border-0 pt-2">
-                {tabs.map((tab) => (
-                  <li key={tab.to} className="nav-item">
-                    <NavLink
-                      to={tab.to}
-                      end={tab.end}
-                      className={({ isActive }) =>
-                        'nav-link' + (isActive ? ' active' : '')
-                      }
-                    >
-                      {tab.label}
-                    </NavLink>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </nav>
-        ) : null}
+        <AdminSectionTabs tabs={tabs} />
         <main className="flex-grow-1">
           <Outlet />
         </main>
