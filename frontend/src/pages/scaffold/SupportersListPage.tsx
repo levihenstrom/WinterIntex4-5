@@ -104,7 +104,7 @@ export default function SupportersListPage() {
   const [statusFilter, setStatusFilter] = useState<string>('All');
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ displayName: '', organizationName: '', email: '', phone: '', city: '', country: 'Guatemala', type: 'Monetary Donor' as SupporterType, notes: '' });
+  const [form, setForm] = useState<{supporterId?: number; displayName: string; organizationName: string; email: string; phone: string; city: string; country: string; type: SupporterType; notes: string}>({ displayName: '', organizationName: '', email: '', phone: '', city: '', country: 'Guatemala', type: 'Monetary Donor', notes: '' });
 
   const filtered = useMemo(() => supporters.filter(s => {
     const matchType   = typeFilter === 'All' || s.type === typeFilter;
@@ -120,17 +120,41 @@ export default function SupportersListPage() {
     setSupporters(prev => prev.filter(s => s.supporterId !== id));
   }
 
-  function handleAddSubmit(e: React.FormEvent) {
+  function handleSaveSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const newId = Math.max(...supporters.map(s => s.supporterId)) + 1;
-    setSupporters(prev => [...prev, {
-      ...form,
-      supporterId: newId,
-      status: 'Active',
-      joinedDate: new Date().toISOString().slice(0, 10),
-      totalContributions: 0,
-      lastContribution: new Date().toISOString().slice(0, 10),
-    }]);
+    if (form.supporterId) {
+      setSupporters(prev => prev.map(s => s.supporterId === form.supporterId ? { ...s, ...form } : s));
+    } else {
+      const newId = supporters.length ? Math.max(...supporters.map(s => s.supporterId)) + 1 : 1;
+      setSupporters(prev => [...prev, {
+        ...(form as Required<typeof form>),
+        supporterId: newId,
+        status: 'Active',
+        joinedDate: new Date().toISOString().slice(0, 10),
+        totalContributions: 0,
+        lastContribution: new Date().toISOString().slice(0, 10),
+      }]);
+    }
+    resetForm();
+  }
+
+  function handleEdit(s: Supporter) {
+    setForm({
+      supporterId: s.supporterId,
+      displayName: s.displayName,
+      organizationName: s.organizationName || '',
+      email: s.email,
+      phone: s.phone,
+      city: s.city,
+      country: s.country,
+      type: s.type,
+      notes: s.notes || ''
+    });
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function resetForm() {
     setForm({ displayName: '', organizationName: '', email: '', phone: '', city: '', country: 'Guatemala', type: 'Monetary Donor', notes: '' });
     setShowForm(false);
   }
@@ -186,7 +210,7 @@ export default function SupportersListPage() {
             <option value="Inactive">Inactive</option>
           </select>
           <button
-            onClick={() => setShowForm(v => !v)}
+            onClick={() => { if (showForm) resetForm(); else setShowForm(true); }}
             style={{
               background: '#1E3A5F', color: '#fff', border: 'none', borderRadius: 8,
               padding: '8px 18px', fontWeight: 600, fontSize: 13, cursor: 'pointer',
@@ -206,8 +230,10 @@ export default function SupportersListPage() {
             border: '1px solid #CBD5E1', marginBottom: 24,
             boxShadow: '0 4px 16px rgba(30,58,95,0.08)',
           }}>
-            <h5 style={{ fontFamily: 'Poppins,sans-serif', color: '#1E3A5F', fontWeight: 700, marginBottom: 16 }}>Add New Supporter</h5>
-            <form onSubmit={handleAddSubmit}>
+            <h5 style={{ fontFamily: 'Poppins,sans-serif', color: '#1E3A5F', fontWeight: 700, marginBottom: 16 }}>
+              {form.supporterId ? 'Edit Supporter' : 'Add New Supporter'}
+            </h5>
+            <form onSubmit={handleSaveSubmit}>
               <div className="row g-3">
                 <div className="col-md-4">
                   <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 }}>Full Name *</label>
@@ -329,13 +355,21 @@ export default function SupportersListPage() {
                   )}
 
                   {/* actions */}
-                  <div style={{ borderTop: '1px solid #F1F5F9', paddingTop: 10, display: 'flex', justifyContent: 'flex-end' }}>
+                  <div style={{ borderTop: '1px solid #F1F5F9', paddingTop: 10, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                    <button
+                      onClick={() => handleEdit(s)}
+                      style={{
+                        background: '#F1F5F9', border: 'none', borderRadius: 6,
+                        color: '#475569', fontSize: 12, fontWeight: 600,
+                        padding: '4px 12px', cursor: 'pointer', transition: 'background 0.2s'
+                      }}
+                    >Edit</button>
                     <button
                       onClick={() => handleDelete(s.supporterId)}
                       style={{
-                        background: 'none', border: '1px solid #FCA5A5', borderRadius: 6,
+                        background: '#FEF2F2', border: 'none', borderRadius: 6,
                         color: '#DC2626', fontSize: 12, fontWeight: 600,
-                        padding: '4px 12px', cursor: 'pointer',
+                        padding: '4px 12px', cursor: 'pointer', transition: 'background 0.2s'
                       }}
                     >Delete</button>
                   </div>
