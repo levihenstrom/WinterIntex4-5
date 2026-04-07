@@ -2,10 +2,10 @@ import { useEffect, useRef } from 'react';
 import NavBar from '../components/hw/NavBar';
 import SectionContainer from '../components/hw/SectionContainer';
 import MetricCard from '../components/hw/MetricCard';
-import PillarCard from '../components/hw/PillarCard';
 import QuoteBlock from '../components/hw/QuoteBlock';
 import DonationWidget from '../components/hw/DonationWidget';
 import Footer from '../components/hw/Footer';
+import CarouselPillarsSection from '../components/hw/CarouselPillarsSection';
 
 // ── Scroll fade-in hook ───────────────────────────────────────────────────────
 function useFadeIn() {
@@ -26,9 +26,6 @@ function useFadeIn() {
 // ── Image URLs ────────────────────────────────────────────────────────────────
 const HERO_IMG = '/girls.avif';
 const MISSION_IMG = '/free.avif';
-const PILLAR_EDU_IMG = 'https://images.unsplash.com/photo-1513258496099-48168024aec0?w=800&auto=format&fit=crop&q=80';
-const PILLAR_HEAL_IMG = 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800&auto=format&fit=crop&q=80';
-const PILLAR_REINT_IMG = 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=800&auto=format&fit=crop&q=80';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Section 1 — Hero
@@ -192,30 +189,8 @@ function MissionSection() {
 // ─────────────────────────────────────────────────────────────────────────────
 // Section 4 — Three Pillars
 // ─────────────────────────────────────────────────────────────────────────────
-function PillarsSection() {
-  const ref = useFadeIn();
-  return (
-    <section id="pillars" className="py-24 lg:py-32 hw-bg-gray">
-      <SectionContainer>
-        <div className="text-center mb-14 hw-fade-in" ref={ref}>
-          <span className="hw-eyebrow">Our Approach</span>
-          <h2 className="hw-heading mt-3 text-3xl md:text-4xl font-extrabold">
-            How we restore lives
-          </h2>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Purple overlay */}
-          <PillarCard imageUrl={PILLAR_EDU_IMG} title="Education" subtitle="Giving every child the tools to build her own future." overlayColor="var(--hw-pillar-edu)" />
-          {/* Teal overlay */}
-          <PillarCard imageUrl={PILLAR_HEAL_IMG} title="Healing" subtitle="Trauma-informed care for every resident, at her own pace." overlayColor="var(--hw-pillar-heal)" />
-          <PillarCard imageUrl={PILLAR_REINT_IMG} title="Reintegration" subtitle="Restoring family bonds, community, and the will to thrive." overlayColor="var(--hw-pillar-reint)" />
-        </div>
-      </SectionContainer>
-    </section>
-  );
-}
+// Legacy static Pillars Section removed — now using CarouselPillarsSection
 
-// ─────────────────────────────────────────────────────────────────────────────
 // Section 5 — Story Spotlight
 // ─────────────────────────────────────────────────────────────────────────────
 function StorySpotlight() {
@@ -441,7 +416,7 @@ export default function HealingWingsHome() {
       <HeroSection />
       <ImpactBar />
       <MissionSection />
-      <PillarsSection />
+      <CarouselPillarsSection />
       <StorySpotlight />
       <ColorMeaningSection />
       <HowToHelpSection />
