@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using Intex.API.Authorization;
 using Microsoft.AspNetCore.Identity;
 
 namespace Intex.API.Data;
@@ -24,14 +26,41 @@ public class AuthIdentityGenerator
         await EnsureSeedUserAsync(userManager, configuration,
             "GenerateDefaultIdentityAdmin", "admin@intex.local", "Intex2026!Admin", AuthRoles.Admin);
 
-        await EnsureSeedUserAsync(userManager, configuration,
+        // Staff seed user is linked to Partner #1 (Ana Reyes — SafehouseOps, safehouses 8 & 9)
+        // via a "partnerId" claim. StaffScopeResolver uses this to scope visibility.
+        var staffUser = await EnsureSeedUserAsync(userManager, configuration,
             "GenerateDefaultIdentityStaff", "staff@intex.local", "Intex2026!Staff", AuthRoles.Staff);
+        await EnsurePartnerClaimAsync(userManager, staffUser, partnerId: 1);
 
-        await EnsureSeedUserAsync(userManager, configuration,
+        // Donor seed user is linked to Supporter #1 via a "supporterId" claim.
+        // Used by /api/donations/mine and other donor self-service endpoints.
+        var donorUser = await EnsureSeedUserAsync(userManager, configuration,
             "GenerateDefaultIdentityDonor", "donor@intex.local", "Intex2026!Donor", AuthRoles.Donor);
+        await EnsureClaimAsync(userManager, donorUser,
+            StaffScopeResolver.SupporterIdClaimType, "1");
     }
 
-    private static async Task EnsureSeedUserAsync(
+    private static Task EnsurePartnerClaimAsync(
+        UserManager<ApplicationUser> userManager,
+        ApplicationUser user,
+        int partnerId) =>
+        EnsureClaimAsync(userManager, user, StaffScopeResolver.PartnerIdClaimType, partnerId.ToString());
+
+    private static async Task EnsureClaimAsync(
+        UserManager<ApplicationUser> userManager,
+        ApplicationUser user,
+        string claimType,
+        string claimValue)
+    {
+        var existing = await userManager.GetClaimsAsync(user);
+        foreach (var stale in existing.Where(c => c.Type == claimType).ToList())
+        {
+            await userManager.RemoveClaimAsync(user, stale);
+        }
+        await userManager.AddClaimAsync(user, new Claim(claimType, claimValue));
+    }
+
+    private static async Task<ApplicationUser> EnsureSeedUserAsync(
         UserManager<ApplicationUser> userManager,
         IConfiguration configuration,
         string configSection,
@@ -66,5 +95,7 @@ public class AuthIdentityGenerator
                 throw new Exception($"Failed to assign role '{role}' to '{email}': "
                     + string.Join(", ", roleResult.Errors.Select(e => e.Description)));
         }
+
+        return user;
     }
 }

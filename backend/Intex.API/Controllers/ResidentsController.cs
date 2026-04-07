@@ -1,3 +1,4 @@
+using Intex.API.Authorization;
 using Intex.API.Contracts;
 using Intex.API.Data;
 using Intex.API.Extensions;
@@ -10,7 +11,7 @@ namespace Intex.API.Controllers;
 
 [ApiController]
 [Route("api/residents")]
-public class ResidentsController(AppDbContext db) : ControllerBase
+public class ResidentsController(AppDbContext db, StaffScopeResolver scopeResolver) : ControllerBase
 {
     [HttpGet]
     [Authorize(Policy = AuthPolicies.StaffRead)]
@@ -22,7 +23,8 @@ public class ResidentsController(AppDbContext db) : ControllerBase
         [FromQuery] string? caseStatus = null,
         CancellationToken cancellationToken = default)
     {
-        var query = db.Residents.AsNoTracking().AsQueryable();
+        var scope = await scopeResolver.GetForUserAsync(User, cancellationToken);
+        var query = scope.Apply(db.Residents.AsNoTracking().AsQueryable());
         if (safehouseId is { } sid)
             query = query.Where(r => r.SafehouseId == sid);
         if (!string.IsNullOrWhiteSpace(caseStatus))
@@ -39,7 +41,9 @@ public class ResidentsController(AppDbContext db) : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Resident>> GetById(int id, CancellationToken cancellationToken)
     {
-        var entity = await db.Residents.AsNoTracking().FirstOrDefaultAsync(r => r.ResidentId == id, cancellationToken);
+        var scope = await scopeResolver.GetForUserAsync(User, cancellationToken);
+        var entity = await scope.Apply(db.Residents.AsNoTracking().AsQueryable())
+            .FirstOrDefaultAsync(r => r.ResidentId == id, cancellationToken);
         if (entity is null)
             return NotFound();
         return Ok(entity);

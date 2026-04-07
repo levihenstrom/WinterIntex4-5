@@ -1,3 +1,4 @@
+using Intex.API.Authorization;
 using Intex.API.Contracts;
 using Intex.API.Data;
 using Intex.API.Extensions;
@@ -10,7 +11,7 @@ namespace Intex.API.Controllers;
 
 [ApiController]
 [Route("api/supporters")]
-public class SupportersController(AppDbContext db) : ControllerBase
+public class SupportersController(AppDbContext db, StaffScopeResolver scopeResolver) : ControllerBase
 {
     [HttpGet]
     [Authorize(Policy = AuthPolicies.StaffRead)]
@@ -22,7 +23,8 @@ public class SupportersController(AppDbContext db) : ControllerBase
         [FromQuery] string? status = null,
         CancellationToken cancellationToken = default)
     {
-        var query = db.Supporters.AsNoTracking().AsQueryable();
+        var scope = await scopeResolver.GetForUserAsync(User, cancellationToken);
+        var query = scope.Apply(db.Supporters.AsNoTracking().AsQueryable());
         if (!string.IsNullOrWhiteSpace(supporterType))
             query = query.Where(s => s.SupporterType == supporterType);
         if (!string.IsNullOrWhiteSpace(status))
@@ -39,7 +41,9 @@ public class SupportersController(AppDbContext db) : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Supporter>> GetById(int id, CancellationToken cancellationToken)
     {
-        var entity = await db.Supporters.AsNoTracking().FirstOrDefaultAsync(s => s.SupporterId == id, cancellationToken);
+        var scope = await scopeResolver.GetForUserAsync(User, cancellationToken);
+        var entity = await scope.Apply(db.Supporters.AsNoTracking().AsQueryable())
+            .FirstOrDefaultAsync(s => s.SupporterId == id, cancellationToken);
         if (entity is null)
             return NotFound();
         return Ok(entity);
