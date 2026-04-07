@@ -1,5 +1,4 @@
 import { useEffect, useRef } from 'react';
-import '../hw.css';
 import NavBar from '../components/hw/NavBar';
 import SectionContainer from '../components/hw/SectionContainer';
 import MetricCard from '../components/hw/MetricCard';

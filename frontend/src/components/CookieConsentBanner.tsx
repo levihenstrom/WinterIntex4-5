@@ -10,12 +10,12 @@ function CookieConsentBanner() {
 
   return (
     <aside
-      className="cookie-consent-banner shadow-lg"
+      className="hw-cookie-banner"
       role="dialog"
       aria-live="polite"
     >
-      <div className="cookie-consent-copy">
-        <p className="cookie-consent-eyebrow mb-2">Cookie notice</p>
+      <div className="hw-cookie-copy">
+        <p className="hw-cookie-eyebrow mb-2">Cookie notice</p>
         <p className="mb-2">
           This site uses essential cookies for sign-in and security features.
           Google sign-in may also set provider cookies during the external login
@@ -28,7 +28,7 @@ function CookieConsentBanner() {
       </div>
       <button
         type="button"
-        className="btn btn-warning fw-semibold"
+        className="hw-btn-magenta px-4 py-2 rounded-3 fw-semibold text-nowrap"
         onClick={acknowledgeConsent}
       >
         Acknowledge essential cookies
