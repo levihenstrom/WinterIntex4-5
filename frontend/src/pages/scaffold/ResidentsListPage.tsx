@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   deleteJson,
@@ -105,26 +105,80 @@ function dateOrNull(s: string | null | undefined): string | null {
   return s?.trim() ? s : null;
 }
 
-function statusBadgeClass(status: string | null): string {
-  const map: Record<string, string> = {
-    Active: 'badge rounded-pill text-bg-success',
-    Closed: 'badge rounded-pill text-bg-secondary',
-    Transferred: 'badge rounded-pill text-bg-info',
-    Referred: 'badge rounded-pill text-bg-primary',
-    Discharged: 'badge rounded-pill text-bg-warning',
-    Pending: 'badge rounded-pill bg-light text-dark border',
-  };
-  return map[status ?? ''] ?? 'badge rounded-pill bg-light text-dark border';
+const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
+  Active:      { bg: '#DCFCE7', text: '#166534' },
+  Closed:      { bg: '#F1F5F9', text: '#64748B' },
+  Transferred: { bg: '#DBEAFE', text: '#1E40AF' },
+  Referred:    { bg: '#E0E7FF', text: '#3730A3' },
+  Discharged:  { bg: '#FEF9C3', text: '#854D0E' },
+  Pending:     { bg: '#FFF7ED', text: '#9A3412' },
+};
+
+const RISK_COLORS: Record<string, { bg: string; text: string }> = {
+  Low:      { bg: '#DCFCE7', text: '#166534' },
+  Medium:   { bg: '#FEF9C3', text: '#854D0E' },
+  High:     { bg: '#FEE2E2', text: '#991B1B' },
+  Critical: { bg: '#1E293B', text: '#F8FAFC' },
+};
+
+function Badge({ label, bg, text }: { label: string; bg: string; text: string }) {
+  return (
+    <span style={{
+      display: 'inline-block', background: bg, color: text,
+      borderRadius: 20, padding: '2px 10px', fontSize: 11, fontWeight: 600,
+    }}>{label}</span>
+  );
 }
 
-function riskBadgeClass(risk: string | null): string {
-  const map: Record<string, string> = {
-    Low: 'badge rounded-pill text-bg-success',
-    Medium: 'badge rounded-pill text-bg-warning',
-    High: 'badge rounded-pill text-bg-danger',
-    Critical: 'badge rounded-pill bg-dark text-white',
-  };
-  return map[risk ?? ''] ?? 'badge rounded-pill bg-light text-dark border';
+// ── KPI Strip ─────────────────────────────────────────────────────────────────
+
+function KPIStrip({ items }: { items: Resident[] }) {
+  const total = items.length;
+  const active = items.filter(r => r.caseStatus === 'Active').length;
+  const highRisk = items.filter(r => r.currentRiskLevel === 'High' || r.currentRiskLevel === 'Critical').length;
+  const female = items.filter(r => r.sex === 'Female').length;
+  const pwd = items.filter(r => r.isPwd).length;
+
+  const kpis = [
+    { label: 'Total on Page', value: String(total), icon: '👥', color: '#1E3A5F' },
+    { label: 'Active Cases',  value: String(active), icon: '✅', color: '#166534' },
+    { label: 'High / Critical Risk', value: String(highRisk), icon: '⚠️', color: '#991B1B' },
+    { label: 'Female',        value: String(female), icon: '👧', color: '#6B21A8' },
+    { label: 'PWD',           value: String(pwd), icon: '♿', color: '#1E40AF' },
+  ];
+
+  return (
+    <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 24 }}>
+      {kpis.map(k => (
+        <div key={k.label} style={{
+          flex: '1 1 140px', background: '#fff', borderRadius: 12,
+          padding: '14px 16px', border: '1px solid #E2E8F0',
+          boxShadow: '0 2px 8px rgba(30,58,95,0.06)',
+        }}>
+          <div style={{ fontSize: 20, marginBottom: 4 }}>{k.icon}</div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: k.color }}>{k.value}</div>
+          <div style={{ fontSize: 12, color: '#64748B', fontWeight: 500 }}>{k.label}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Sort helpers ──────────────────────────────────────────────────────────────
+
+type SortCol = 'caseControlNo' | 'internalCode' | 'dateOfBirth' | 'sex' | 'caseCategory' | 'caseStatus' | 'safehouseId' | 'assignedSocialWorker' | 'currentRiskLevel';
+
+function sortArrow(col: SortCol, sortCol: SortCol | null, sortDir: 'asc' | 'desc'): string {
+  if (col !== sortCol) return ' ↕';
+  return sortDir === 'asc' ? ' ▲' : ' ▼';
+}
+
+function compareValues(a: string | number | null | undefined, b: string | number | null | undefined, dir: 'asc' | 'desc'): number {
+  const av = a ?? '';
+  const bv = b ?? '';
+  if (av < bv) return dir === 'asc' ? -1 : 1;
+  if (av > bv) return dir === 'asc' ? 1 : -1;
+  return 0;
 }
 
 // ── Blank form ────────────────────────────────────────────────────────────────
@@ -202,37 +256,61 @@ function residentToForm(r: Resident): FormData {
   };
 }
 
+// ── Shared inline styles ──────────────────────────────────────────────────────
+
+const inputStyle: React.CSSProperties = {
+  padding: '8px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, outline: 'none', width: '100%',
+};
+const selectStyle: React.CSSProperties = {
+  ...inputStyle, background: '#fff',
+};
+const thStyle: React.CSSProperties = {
+  padding: '12px 16px', textAlign: 'left' as const, fontWeight: 700, color: '#475569',
+  fontSize: 12, whiteSpace: 'nowrap' as const, cursor: 'pointer', userSelect: 'none' as const,
+};
+const tdStyle: React.CSSProperties = {
+  padding: '12px 16px', fontSize: 13,
+};
+const actionBtn = (color: string, border: string): React.CSSProperties => ({
+  background: 'none', border: `1px solid ${border}`, borderRadius: 6,
+  color, fontSize: 11, fontWeight: 600, padding: '3px 10px', cursor: 'pointer', whiteSpace: 'nowrap' as const,
+});
+const navBtn = (disabled: boolean): React.CSSProperties => ({
+  background: disabled ? '#F1F5F9' : '#fff',
+  border: '1px solid #CBD5E1', borderRadius: 8, padding: '6px 16px',
+  fontSize: 13, fontWeight: 600, cursor: disabled ? 'default' : 'pointer',
+  color: disabled ? '#94A3B8' : '#1E3A5F', transition: 'all 0.15s',
+});
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function ResidentsListPage() {
   const { authSession } = useAuth();
   const canWrite = authSession.roles.includes('Admin') || authSession.roles.includes('Staff');
 
-  // Filter inputs (uncommitted)
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
-  // Applied filters (trigger fetch)
   const [appliedSearch, setAppliedSearch] = useState('');
   const [appliedStatus, setAppliedStatus] = useState('');
   const [appliedCategory, setAppliedCategory] = useState('');
 
-  // Pagination & data
   const [page, setPage] = useState(1);
   const [data, setData] = useState<PagedResult<Resident> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
 
-  // Create/edit modal
   const [editTarget, setEditTarget] = useState<Resident | 'new' | null>(null);
   const [form, setForm] = useState<FormData>(emptyForm());
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  // Delete modal
   const [deleteTarget, setDeleteTarget] = useState<Resident | null>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
+
+  const [sortCol, setSortCol] = useState<SortCol | null>(null);
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
 
   // ── Fetch ────────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -250,7 +328,6 @@ export default function ResidentsListPage() {
     return () => { cancelled = true; };
   }, [page, appliedStatus, appliedCategory, appliedSearch, reloadToken]);
 
-  // ── Filter actions ────────────────────────────────────────────────────────────
   function applyFilters() {
     setPage(1);
     setAppliedSearch(search);
@@ -263,6 +340,24 @@ export default function ResidentsListPage() {
     setPage(1);
     setAppliedSearch(''); setAppliedStatus(''); setAppliedCategory('');
   }
+
+  function handleSort(col: SortCol) {
+    if (sortCol === col) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortCol(col);
+      setSortDir('asc');
+    }
+  }
+
+  const sortedItems = useMemo(() => {
+    if (!data?.items || !sortCol) return data?.items ?? [];
+    return [...data.items].sort((a, b) => compareValues(
+      a[sortCol] as string | number | null,
+      b[sortCol] as string | number | null,
+      sortDir,
+    ));
+  }, [data?.items, sortCol, sortDir]);
 
   // ── Modal helpers ─────────────────────────────────────────────────────────────
   function openCreate() {
@@ -328,198 +423,187 @@ export default function ResidentsListPage() {
 
   // ── Render ────────────────────────────────────────────────────────────────────
   return (
-    <div className="py-4" style={{ background: 'var(--hw-bg-gray)', minHeight: '100%' }}>
-      <div className="container-xl">
+    <div style={{ background: '#F8FAFC', minHeight: '100vh', padding: '32px 0' }}>
+      <div className="container">
 
-        {/* Page header */}
-        <div className="d-flex align-items-start justify-content-between mb-4 flex-wrap gap-3">
+        {/* Header */}
+        <div style={{ marginBottom: 28, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
           <div>
-            <p className="hw-eyebrow mb-1">Case Management</p>
-            <h1 className="hw-heading mb-0" style={{ fontSize: '1.75rem' }}>Caseload Inventory</h1>
-            {data && (
-              <p className="text-muted small mb-0 mt-1">
-                {data.totalCount} resident{data.totalCount !== 1 ? 's' : ''} found
-              </p>
-            )}
+            <span style={{ fontSize: 12, fontWeight: 700, color: '#0D9488', letterSpacing: 2, textTransform: 'uppercase' }}>Case Management</span>
+            <h1 style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: 28, color: '#1E3A5F', marginBottom: 4 }}>
+              Caseload Inventory
+            </h1>
+            <p style={{ color: '#64748B', fontSize: 14, marginBottom: 0 }}>
+              {data ? `${data.totalCount} resident${data.totalCount !== 1 ? 's' : ''} found` : 'Loading residents…'}
+            </p>
           </div>
           {canWrite && (
             <button
               type="button"
-              className="btn hw-btn-magenta px-4 py-2 rounded-3 fw-semibold"
               onClick={openCreate}
+              style={{
+                background: '#1E3A5F', color: '#fff', border: 'none', borderRadius: 8,
+                padding: '10px 22px', fontWeight: 600, fontSize: 14, cursor: 'pointer',
+              }}
             >
               + New Resident
             </button>
           )}
         </div>
 
+        {/* KPI Strip */}
+        {data && <KPIStrip items={data.items} />}
+
         {/* Filter bar */}
-        <div className="card border-0 shadow-sm mb-4 rounded-3">
-          <div className="card-body py-3">
-            <div className="row g-2 align-items-end">
-              <div className="col-12 col-md-4">
-                <label className="hw-label">Search</label>
-                <input
-                  type="text"
-                  className="hw-input"
-                  placeholder="Case no, internal code, social worker…"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && applyFilters()}
-                />
-              </div>
-              <div className="col-6 col-md-3">
-                <label className="hw-label">Case Status</label>
-                <select
-                  className="hw-input"
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                >
-                  <option value="">All statuses</option>
-                  {CASE_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-                </select>
-              </div>
-              <div className="col-6 col-md-3">
-                <label className="hw-label">Case Category</label>
-                <select
-                  className="hw-input"
-                  value={categoryFilter}
-                  onChange={(e) => setCategoryFilter(e.target.value)}
-                >
-                  <option value="">All categories</option>
-                  {CASE_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </div>
-              <div className="col-12 col-md-2 d-flex gap-2">
-                <button type="button" className="btn hw-btn-magenta flex-grow-1" onClick={applyFilters}>
-                  Search
-                </button>
-                <button
-                  type="button"
-                  className="btn hw-btn-ghost-purple"
-                  onClick={resetFilters}
-                  title="Reset filters"
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-          </div>
+        <div style={{
+          background: '#fff', borderRadius: 12, padding: '16px 20px',
+          border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(30,58,95,0.05)',
+          marginBottom: 20, display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center',
+        }}>
+          <input
+            type="text"
+            placeholder="Search by case no, code, worker…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && applyFilters()}
+            style={{ ...inputStyle, flex: '1 1 200px' }}
+          />
+          <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} style={{ ...selectStyle, flex: '0 0 auto', width: 'auto' }}>
+            <option value="">All Categories</option>
+            {CASE_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+          <button onClick={applyFilters} style={{
+            background: '#1E3A5F', color: '#fff', border: 'none', borderRadius: 8,
+            padding: '8px 18px', fontWeight: 600, fontSize: 13, cursor: 'pointer',
+          }}>Search</button>
+          <button onClick={resetFilters} style={{
+            background: 'none', border: '1px solid #CBD5E1', borderRadius: 8,
+            padding: '8px 14px', fontWeight: 600, fontSize: 13, cursor: 'pointer', color: '#64748B',
+          }}>Reset</button>
+          <span style={{ fontSize: 12, color: '#94A3B8', marginLeft: 'auto' }}>
+            {data ? `${data.totalCount} records` : ''}
+          </span>
+        </div>
+
+        {/* Status filter pills */}
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
+          {['', ...CASE_STATUSES].map(s => {
+            const isActive = statusFilter === s;
+            const cfg = s ? STATUS_COLORS[s] : null;
+            return (
+              <button key={s || 'all'} onClick={() => { setStatusFilter(s); setPage(1); setAppliedStatus(s); }} style={{
+                border: 'none', borderRadius: 20, padding: '5px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                background: isActive ? (cfg?.bg ?? '#1E3A5F') : '#E2E8F0',
+                color: isActive ? (cfg?.text ?? '#fff') : '#475569',
+                transition: 'all 0.15s',
+              }}>
+                {s || 'All Statuses'}
+              </button>
+            );
+          })}
         </div>
 
         {/* Error */}
-        {error && <div className="hw-alert-error mb-3">{error}</div>}
+        {error && (
+          <div style={{ borderRadius: 8, padding: '10px 16px', background: '#FEF2F2', border: '1px solid #FECACA', color: '#991B1B', fontSize: 13, marginBottom: 16 }}>
+            {error}
+          </div>
+        )}
 
-        {/* Table card */}
-        <div className="card border-0 shadow-sm rounded-3">
+        {/* Table */}
+        <div style={{
+          background: '#fff', borderRadius: 14, border: '1px solid #E2E8F0',
+          boxShadow: '0 2px 12px rgba(30,58,95,0.06)', overflow: 'hidden',
+        }}>
           {loading ? (
-            <div className="card-body text-center py-5 text-muted">Loading…</div>
+            <div style={{ textAlign: 'center', padding: '48px 0', color: '#94A3B8' }}>
+              <div style={{ fontSize: 32, marginBottom: 8 }}>⏳</div>
+              <p style={{ fontWeight: 600 }}>Loading residents…</p>
+            </div>
           ) : data && data.items.length === 0 ? (
-            <div className="card-body text-center py-5 text-muted">
-              No residents found matching the current filters.
+            <div style={{ textAlign: 'center', padding: '48px 0', color: '#94A3B8' }}>
+              <div style={{ fontSize: 40, marginBottom: 8 }}>🔍</div>
+              <p style={{ fontWeight: 600 }}>No residents match your filters.</p>
             </div>
           ) : data ? (
             <>
-              <div className="table-responsive">
-                <table className="table table-hover table-sm align-middle mb-0">
-                  <thead style={{ background: 'var(--hw-bg-lavender2)', color: 'var(--hw-navy)' }}>
-                    <tr>
-                      <th className="ps-3 py-3">Case No</th>
-                      <th>Internal Code</th>
-                      <th>DOB</th>
-                      <th>Sex</th>
-                      <th>Category</th>
-                      <th>Status</th>
-                      <th>Safehouse</th>
-                      <th>Social Worker</th>
-                      <th>Risk</th>
-                      <th className="pe-3">Actions</th>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ background: '#F8FAFC', borderBottom: '2px solid #E2E8F0' }}>
+                      <th style={thStyle} onClick={() => handleSort('caseControlNo')}>Case No{sortArrow('caseControlNo', sortCol, sortDir)}</th>
+                      <th style={thStyle} onClick={() => handleSort('internalCode')}>Code{sortArrow('internalCode', sortCol, sortDir)}</th>
+                      <th style={thStyle} onClick={() => handleSort('dateOfBirth')}>DOB{sortArrow('dateOfBirth', sortCol, sortDir)}</th>
+                      <th style={thStyle} onClick={() => handleSort('sex')}>Sex{sortArrow('sex', sortCol, sortDir)}</th>
+                      <th style={thStyle} onClick={() => handleSort('caseCategory')}>Category{sortArrow('caseCategory', sortCol, sortDir)}</th>
+                      <th style={thStyle} onClick={() => handleSort('caseStatus')}>Status{sortArrow('caseStatus', sortCol, sortDir)}</th>
+                      <th style={thStyle} onClick={() => handleSort('safehouseId')}>Safehouse{sortArrow('safehouseId', sortCol, sortDir)}</th>
+                      <th style={thStyle} onClick={() => handleSort('assignedSocialWorker')}>Worker{sortArrow('assignedSocialWorker', sortCol, sortDir)}</th>
+                      <th style={thStyle} onClick={() => handleSort('currentRiskLevel')}>Risk{sortArrow('currentRiskLevel', sortCol, sortDir)}</th>
+                      <th style={{ ...thStyle, cursor: 'default' }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {data.items.map((r) => (
-                      <tr key={r.residentId}>
-                        <td className="ps-3 fw-semibold" style={{ color: 'var(--hw-purple)' }}>
-                          {r.caseControlNo || '—'}
-                        </td>
-                        <td className="text-muted small">{r.internalCode || '—'}</td>
-                        <td className="small">{fmtDate(r.dateOfBirth)}</td>
-                        <td>{r.sex || '—'}</td>
-                        <td className="small">{r.caseCategory || '—'}</td>
-                        <td>
-                          <span className={statusBadgeClass(r.caseStatus)}>
-                            {r.caseStatus || '—'}
-                          </span>
-                        </td>
-                        <td>{r.safehouseId}</td>
-                        <td className="small">{r.assignedSocialWorker || '—'}</td>
-                        <td>
-                          {r.currentRiskLevel
-                            ? <span className={riskBadgeClass(r.currentRiskLevel)}>{r.currentRiskLevel}</span>
-                            : <span className="text-muted small">—</span>}
-                        </td>
-                        <td className="pe-3">
-                          <div className="d-flex gap-1 flex-nowrap">
-                            {canWrite && (
-                              <button
-                                type="button"
-                                className="btn btn-sm btn-outline-primary"
-                                onClick={() => openEdit(r)}
-                              >
-                                Edit
-                              </button>
-                            )}
-                            <Link
-                              to={`/admin/residents/${r.residentId}/process`}
-                              className="btn btn-sm btn-outline-secondary"
-                              title="Process recordings"
-                            >
-                              Sessions
-                            </Link>
-                            <Link
-                              to={`/admin/residents/${r.residentId}/visits`}
-                              className="btn btn-sm btn-outline-secondary"
-                              title="Home visits"
-                            >
-                              Visits
-                            </Link>
-                            {canWrite && (
-                              <button
-                                type="button"
-                                className="btn btn-sm btn-outline-danger"
-                                onClick={() => setDeleteTarget(r)}
-                              >
-                                Delete
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                    {sortedItems.map((r, i) => {
+                      const sCfg = STATUS_COLORS[r.caseStatus ?? ''] ?? { bg: '#F1F5F9', text: '#64748B' };
+                      const rCfg = RISK_COLORS[r.currentRiskLevel ?? ''];
+                      return (
+                        <tr key={r.residentId} style={{ background: i % 2 === 0 ? '#fff' : '#FAFAFA', borderBottom: '1px solid #F1F5F9' }}>
+                          <td style={{ ...tdStyle, fontWeight: 700, color: '#6B21A8' }}>{r.caseControlNo || '—'}</td>
+                          <td style={{ ...tdStyle, color: '#64748B' }}>{r.internalCode || '—'}</td>
+                          <td style={{ ...tdStyle, color: '#64748B', whiteSpace: 'nowrap' }}>{fmtDate(r.dateOfBirth)}</td>
+                          <td style={tdStyle}>{r.sex || '—'}</td>
+                          <td style={{ ...tdStyle, color: '#475569' }}>{r.caseCategory || '—'}</td>
+                          <td style={tdStyle}>
+                            <Badge label={r.caseStatus || '—'} bg={sCfg.bg} text={sCfg.text} />
+                          </td>
+                          <td style={tdStyle}>{r.safehouseId}</td>
+                          <td style={{ ...tdStyle, color: '#475569' }}>{r.assignedSocialWorker || '—'}</td>
+                          <td style={tdStyle}>
+                            {rCfg
+                              ? <Badge label={r.currentRiskLevel!} bg={rCfg.bg} text={rCfg.text} />
+                              : <span style={{ color: '#94A3B8' }}>—</span>}
+                          </td>
+                          <td style={tdStyle}>
+                            <div style={{ display: 'flex', gap: 4, flexWrap: 'nowrap' }}>
+                              {canWrite && (
+                                <button type="button" style={actionBtn('#1E40AF', '#93C5FD')} onClick={() => openEdit(r)}>Edit</button>
+                              )}
+                              <Link to={`/admin/residents/${r.residentId}/process`} style={{ ...actionBtn('#0D9488', '#99F6E4'), textDecoration: 'none' }}>Sessions</Link>
+                              <Link to={`/admin/residents/${r.residentId}/visits`} style={{ ...actionBtn('#6B21A8', '#D8B4FE'), textDecoration: 'none' }}>Visits</Link>
+                              {canWrite && (
+                                <button type="button" style={actionBtn('#DC2626', '#FCA5A5')} onClick={() => setDeleteTarget(r)}>Delete</button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
-              <div className="card-footer bg-transparent d-flex align-items-center justify-content-between py-3">
-                <span className="small text-muted">
+
+              {/* Pagination */}
+              <div style={{
+                padding: '14px 20px', borderTop: '1px solid #E2E8F0',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              }}>
+                <span style={{ fontSize: 12, color: '#64748B' }}>
                   Page {data.page} of {data.totalPages || 1} · {data.totalCount} total
                 </span>
-                <div className="d-flex gap-2">
+                <div style={{ display: 'flex', gap: 8 }}>
                   <button
                     type="button"
-                    className="btn btn-sm btn-outline-secondary"
                     disabled={page <= 1 || loading}
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  >
-                    ← Prev
-                  </button>
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    style={navBtn(page <= 1 || loading)}
+                  >← Prev</button>
                   <button
                     type="button"
-                    className="btn btn-sm btn-outline-secondary"
                     disabled={loading || page >= (data.totalPages || 1)}
-                    onClick={() => setPage((p) => p + 1)}
-                  >
-                    Next →
-                  </button>
+                    onClick={() => setPage(p => p + 1)}
+                    style={navBtn(loading || page >= (data.totalPages || 1))}
+                  >Next →</button>
                 </div>
               </div>
             </>
@@ -557,77 +641,43 @@ export default function ResidentsListPage() {
               <div className="modal-body">
                 {formError && <div className="hw-alert-error mb-3">{formError}</div>}
 
-                {/* Case Identification */}
                 <fieldset className="mb-4">
                   <legend className="hw-eyebrow mb-3">Case Identification</legend>
                   <div className="row g-3">
                     <div className="col-md-4">
                       <label className="hw-label">Case Control No</label>
-                      <input
-                        className="hw-input"
-                        value={form.caseControlNo ?? ''}
-                        onChange={(e) => setField('caseControlNo', e.target.value)}
-                      />
+                      <input className="hw-input" value={form.caseControlNo ?? ''} onChange={(e) => setField('caseControlNo', e.target.value)} />
                     </div>
                     <div className="col-md-4">
                       <label className="hw-label">Internal Code</label>
-                      <input
-                        className="hw-input"
-                        value={form.internalCode ?? ''}
-                        onChange={(e) => setField('internalCode', e.target.value)}
-                      />
+                      <input className="hw-input" value={form.internalCode ?? ''} onChange={(e) => setField('internalCode', e.target.value)} />
                     </div>
                     <div className="col-md-4">
-                      <label className="hw-label">
-                        Safehouse ID <span className="text-danger">*</span>
-                      </label>
-                      <input
-                        type="number"
-                        min="1"
-                        className="hw-input"
-                        value={form.safehouseId}
-                        onChange={(e) => setField('safehouseId', Number(e.target.value))}
-                      />
+                      <label className="hw-label">Safehouse ID <span className="text-danger">*</span></label>
+                      <input type="number" min="1" className="hw-input" value={form.safehouseId} onChange={(e) => setField('safehouseId', Number(e.target.value))} />
                     </div>
                   </div>
                 </fieldset>
 
-                {/* Case Classification */}
                 <fieldset className="mb-4">
                   <legend className="hw-eyebrow mb-3">Case Classification</legend>
                   <div className="row g-3">
                     <div className="col-md-4">
-                      <label className="hw-label">
-                        Case Status <span className="text-danger">*</span>
-                      </label>
-                      <select
-                        className="hw-input"
-                        value={form.caseStatus ?? ''}
-                        onChange={(e) => setField('caseStatus', e.target.value)}
-                      >
+                      <label className="hw-label">Case Status <span className="text-danger">*</span></label>
+                      <select className="hw-input" value={form.caseStatus ?? ''} onChange={(e) => setField('caseStatus', e.target.value)}>
                         {CASE_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
                       </select>
                     </div>
                     <div className="col-md-4">
-                      <label className="hw-label">
-                        Case Category <span className="text-danger">*</span>
-                      </label>
-                      <select
-                        className="hw-input"
-                        value={form.caseCategory ?? ''}
-                        onChange={(e) => setField('caseCategory', e.target.value)}
-                      >
+                      <label className="hw-label">Case Category <span className="text-danger">*</span></label>
+                      <select className="hw-input" value={form.caseCategory ?? ''} onChange={(e) => setField('caseCategory', e.target.value)}>
                         <option value="">Select…</option>
                         {CASE_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
                       </select>
                     </div>
                     <div className="col-md-4">
                       <label className="hw-label">Assigned Social Worker</label>
-                      <input
-                        className="hw-input"
-                        value={form.assignedSocialWorker ?? ''}
-                        onChange={(e) => setField('assignedSocialWorker', e.target.value)}
-                      />
+                      <input className="hw-input" value={form.assignedSocialWorker ?? ''} onChange={(e) => setField('assignedSocialWorker', e.target.value)} />
                     </div>
                   </div>
                   <div className="mt-3">
@@ -635,301 +685,163 @@ export default function ResidentsListPage() {
                     <div className="d-flex flex-wrap gap-3">
                       {SUB_CATS.map(({ key, label }) => (
                         <div key={String(key)} className="form-check">
-                          <input
-                            type="checkbox"
-                            className="form-check-input hw-check"
-                            id={`sc-${String(key)}`}
-                            checked={!!(form[key as keyof FormData])}
-                            onChange={(e) =>
-                              setField(key as keyof FormData, e.target.checked as never)
-                            }
-                          />
-                          <label className="form-check-label small" htmlFor={`sc-${String(key)}`}>
-                            {label}
-                          </label>
+                          <input type="checkbox" className="form-check-input hw-check" id={`sc-${String(key)}`} checked={!!(form[key as keyof FormData])} onChange={(e) => setField(key as keyof FormData, e.target.checked as never)} />
+                          <label className="form-check-label small" htmlFor={`sc-${String(key)}`}>{label}</label>
                         </div>
                       ))}
                     </div>
                   </div>
                 </fieldset>
 
-                {/* Personal Information */}
                 <fieldset className="mb-4">
                   <legend className="hw-eyebrow mb-3">Personal Information</legend>
                   <div className="row g-3">
                     <div className="col-md-3">
                       <label className="hw-label">Sex</label>
-                      <select
-                        className="hw-input"
-                        value={form.sex ?? ''}
-                        onChange={(e) => setField('sex', e.target.value)}
-                      >
+                      <select className="hw-input" value={form.sex ?? ''} onChange={(e) => setField('sex', e.target.value)}>
                         <option value="">Select…</option>
                         {SEXES.map((s) => <option key={s} value={s}>{s}</option>)}
                       </select>
                     </div>
                     <div className="col-md-3">
                       <label className="hw-label">Date of Birth</label>
-                      <input
-                        type="date"
-                        className="hw-input"
-                        value={form.dateOfBirth ?? ''}
-                        onChange={(e) => setField('dateOfBirth', e.target.value)}
-                      />
+                      <input type="date" className="hw-input" value={form.dateOfBirth ?? ''} onChange={(e) => setField('dateOfBirth', e.target.value)} />
                     </div>
                     <div className="col-md-3">
                       <label className="hw-label">Birth Status</label>
-                      <input
-                        className="hw-input"
-                        value={form.birthStatus ?? ''}
-                        onChange={(e) => setField('birthStatus', e.target.value)}
-                      />
+                      <input className="hw-input" value={form.birthStatus ?? ''} onChange={(e) => setField('birthStatus', e.target.value)} />
                     </div>
                     <div className="col-md-3">
                       <label className="hw-label">Religion</label>
-                      <input
-                        className="hw-input"
-                        value={form.religion ?? ''}
-                        onChange={(e) => setField('religion', e.target.value)}
-                      />
+                      <input className="hw-input" value={form.religion ?? ''} onChange={(e) => setField('religion', e.target.value)} />
                     </div>
                     <div className="col-md-6">
                       <label className="hw-label">Place of Birth</label>
-                      <input
-                        className="hw-input"
-                        value={form.placeOfBirth ?? ''}
-                        onChange={(e) => setField('placeOfBirth', e.target.value)}
-                      />
+                      <input className="hw-input" value={form.placeOfBirth ?? ''} onChange={(e) => setField('placeOfBirth', e.target.value)} />
                     </div>
                   </div>
                 </fieldset>
 
-                {/* Disability & Special Needs */}
                 <fieldset className="mb-4">
                   <legend className="hw-eyebrow mb-3">Disability &amp; Special Needs</legend>
                   <div className="row g-3 align-items-start">
                     <div className="col-md-3 pt-4">
                       <div className="form-check">
-                        <input
-                          type="checkbox"
-                          className="form-check-input hw-check"
-                          id="isPwd"
-                          checked={!!form.isPwd}
-                          onChange={(e) => setField('isPwd', e.target.checked)}
-                        />
-                        <label className="form-check-label hw-label mb-0" htmlFor="isPwd">
-                          PWD
-                        </label>
+                        <input type="checkbox" className="form-check-input hw-check" id="isPwd" checked={!!form.isPwd} onChange={(e) => setField('isPwd', e.target.checked)} />
+                        <label className="form-check-label hw-label mb-0" htmlFor="isPwd">PWD</label>
                       </div>
                     </div>
                     <div className="col-md-9">
                       <label className="hw-label">PWD Type</label>
-                      <input
-                        className="hw-input"
-                        value={form.pwdType ?? ''}
-                        onChange={(e) => setField('pwdType', e.target.value)}
-                        disabled={!form.isPwd}
-                      />
+                      <input className="hw-input" value={form.pwdType ?? ''} onChange={(e) => setField('pwdType', e.target.value)} disabled={!form.isPwd} />
                     </div>
                     <div className="col-md-3 pt-2">
                       <div className="form-check">
-                        <input
-                          type="checkbox"
-                          className="form-check-input hw-check"
-                          id="hasSpecialNeeds"
-                          checked={!!form.hasSpecialNeeds}
-                          onChange={(e) => setField('hasSpecialNeeds', e.target.checked)}
-                        />
-                        <label className="form-check-label hw-label mb-0" htmlFor="hasSpecialNeeds">
-                          Special Needs
-                        </label>
+                        <input type="checkbox" className="form-check-input hw-check" id="hasSpecialNeeds" checked={!!form.hasSpecialNeeds} onChange={(e) => setField('hasSpecialNeeds', e.target.checked)} />
+                        <label className="form-check-label hw-label mb-0" htmlFor="hasSpecialNeeds">Special Needs</label>
                       </div>
                     </div>
                     <div className="col-md-9">
                       <label className="hw-label">Diagnosis</label>
-                      <input
-                        className="hw-input"
-                        value={form.specialNeedsDiagnosis ?? ''}
-                        onChange={(e) => setField('specialNeedsDiagnosis', e.target.value)}
-                        disabled={!form.hasSpecialNeeds}
-                      />
+                      <input className="hw-input" value={form.specialNeedsDiagnosis ?? ''} onChange={(e) => setField('specialNeedsDiagnosis', e.target.value)} disabled={!form.hasSpecialNeeds} />
                     </div>
                   </div>
                 </fieldset>
 
-                {/* Family Profile */}
                 <fieldset className="mb-4">
                   <legend className="hw-eyebrow mb-3">Family Socio-Demographic Profile</legend>
                   <div className="d-flex flex-wrap gap-4">
-                    {(
-                      [
-                        { key: 'familyIs4ps' as const, label: '4Ps Beneficiary' },
-                        { key: 'familySoloParent' as const, label: 'Solo Parent' },
-                        { key: 'familyIndigenous' as const, label: 'Indigenous Group' },
-                        { key: 'familyParentPwd' as const, label: 'Parent with Disability' },
-                        { key: 'familyInformalSettler' as const, label: 'Informal Settler' },
-                      ] as const
-                    ).map(({ key, label }) => (
+                    {([
+                      { key: 'familyIs4ps' as const, label: '4Ps Beneficiary' },
+                      { key: 'familySoloParent' as const, label: 'Solo Parent' },
+                      { key: 'familyIndigenous' as const, label: 'Indigenous Group' },
+                      { key: 'familyParentPwd' as const, label: 'Parent with Disability' },
+                      { key: 'familyInformalSettler' as const, label: 'Informal Settler' },
+                    ] as const).map(({ key, label }) => (
                       <div key={key} className="form-check">
-                        <input
-                          type="checkbox"
-                          className="form-check-input hw-check"
-                          id={`fam-${key}`}
-                          checked={!!form[key]}
-                          onChange={(e) => setField(key, e.target.checked)}
-                        />
-                        <label className="form-check-label small" htmlFor={`fam-${key}`}>
-                          {label}
-                        </label>
+                        <input type="checkbox" className="form-check-input hw-check" id={`fam-${key}`} checked={!!form[key]} onChange={(e) => setField(key, e.target.checked)} />
+                        <label className="form-check-label small" htmlFor={`fam-${key}`}>{label}</label>
                       </div>
                     ))}
                   </div>
                 </fieldset>
 
-                {/* Admission & Referral */}
                 <fieldset className="mb-4">
                   <legend className="hw-eyebrow mb-3">Admission &amp; Referral</legend>
                   <div className="row g-3">
                     <div className="col-md-4">
                       <label className="hw-label">Date of Admission</label>
-                      <input
-                        type="date"
-                        className="hw-input"
-                        value={form.dateOfAdmission ?? ''}
-                        onChange={(e) => setField('dateOfAdmission', e.target.value)}
-                      />
+                      <input type="date" className="hw-input" value={form.dateOfAdmission ?? ''} onChange={(e) => setField('dateOfAdmission', e.target.value)} />
                     </div>
                     <div className="col-md-4">
                       <label className="hw-label">Age Upon Admission</label>
-                      <input
-                        className="hw-input"
-                        value={form.ageUponAdmission ?? ''}
-                        onChange={(e) => setField('ageUponAdmission', e.target.value)}
-                      />
+                      <input className="hw-input" value={form.ageUponAdmission ?? ''} onChange={(e) => setField('ageUponAdmission', e.target.value)} />
                     </div>
                     <div className="col-md-4">
                       <label className="hw-label">Present Age</label>
-                      <input
-                        className="hw-input"
-                        value={form.presentAge ?? ''}
-                        onChange={(e) => setField('presentAge', e.target.value)}
-                      />
+                      <input className="hw-input" value={form.presentAge ?? ''} onChange={(e) => setField('presentAge', e.target.value)} />
                     </div>
                     <div className="col-md-6">
                       <label className="hw-label">Referral Source</label>
-                      <input
-                        className="hw-input"
-                        value={form.referralSource ?? ''}
-                        onChange={(e) => setField('referralSource', e.target.value)}
-                      />
+                      <input className="hw-input" value={form.referralSource ?? ''} onChange={(e) => setField('referralSource', e.target.value)} />
                     </div>
                     <div className="col-md-6">
                       <label className="hw-label">Referring Agency / Person</label>
-                      <input
-                        className="hw-input"
-                        value={form.referringAgencyPerson ?? ''}
-                        onChange={(e) => setField('referringAgencyPerson', e.target.value)}
-                      />
+                      <input className="hw-input" value={form.referringAgencyPerson ?? ''} onChange={(e) => setField('referringAgencyPerson', e.target.value)} />
                     </div>
                     <div className="col-12">
                       <label className="hw-label">Initial Case Assessment</label>
-                      <textarea
-                        className="hw-input"
-                        rows={2}
-                        value={form.initialCaseAssessment ?? ''}
-                        onChange={(e) => setField('initialCaseAssessment', e.target.value)}
-                      />
+                      <textarea className="hw-input" rows={2} value={form.initialCaseAssessment ?? ''} onChange={(e) => setField('initialCaseAssessment', e.target.value)} />
                     </div>
                   </div>
                 </fieldset>
 
-                {/* Risk & Reintegration */}
                 <fieldset className="mb-2">
                   <legend className="hw-eyebrow mb-3">Risk &amp; Reintegration</legend>
                   <div className="row g-3">
                     <div className="col-md-3">
                       <label className="hw-label">Initial Risk Level</label>
-                      <select
-                        className="hw-input"
-                        value={form.initialRiskLevel ?? ''}
-                        onChange={(e) => setField('initialRiskLevel', e.target.value)}
-                      >
+                      <select className="hw-input" value={form.initialRiskLevel ?? ''} onChange={(e) => setField('initialRiskLevel', e.target.value)}>
                         <option value="">Select…</option>
                         {RISK_LEVELS.map((r) => <option key={r} value={r}>{r}</option>)}
                       </select>
                     </div>
                     <div className="col-md-3">
                       <label className="hw-label">Current Risk Level</label>
-                      <select
-                        className="hw-input"
-                        value={form.currentRiskLevel ?? ''}
-                        onChange={(e) => setField('currentRiskLevel', e.target.value)}
-                      >
+                      <select className="hw-input" value={form.currentRiskLevel ?? ''} onChange={(e) => setField('currentRiskLevel', e.target.value)}>
                         <option value="">Select…</option>
                         {RISK_LEVELS.map((r) => <option key={r} value={r}>{r}</option>)}
                       </select>
                     </div>
                     <div className="col-md-3">
                       <label className="hw-label">Reintegration Type</label>
-                      <select
-                        className="hw-input"
-                        value={form.reintegrationType ?? ''}
-                        onChange={(e) => setField('reintegrationType', e.target.value)}
-                      >
+                      <select className="hw-input" value={form.reintegrationType ?? ''} onChange={(e) => setField('reintegrationType', e.target.value)}>
                         <option value="">Select…</option>
                         {REINTEGRATION_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
                       </select>
                     </div>
                     <div className="col-md-3">
                       <label className="hw-label">Reintegration Status</label>
-                      <select
-                        className="hw-input"
-                        value={form.reintegrationStatus ?? ''}
-                        onChange={(e) => setField('reintegrationStatus', e.target.value)}
-                      >
+                      <select className="hw-input" value={form.reintegrationStatus ?? ''} onChange={(e) => setField('reintegrationStatus', e.target.value)}>
                         <option value="">Select…</option>
                         {REINTEGRATION_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
                       </select>
                     </div>
                     <div className="col-md-4">
                       <label className="hw-label">Date Enrolled</label>
-                      <input
-                        type="date"
-                        className="hw-input"
-                        value={form.dateEnrolled ?? ''}
-                        onChange={(e) => setField('dateEnrolled', e.target.value)}
-                      />
+                      <input type="date" className="hw-input" value={form.dateEnrolled ?? ''} onChange={(e) => setField('dateEnrolled', e.target.value)} />
                     </div>
                     <div className="col-md-4">
                       <label className="hw-label">Date Closed</label>
-                      <input
-                        type="date"
-                        className="hw-input"
-                        value={form.dateClosed ?? ''}
-                        onChange={(e) => setField('dateClosed', e.target.value)}
-                      />
+                      <input type="date" className="hw-input" value={form.dateClosed ?? ''} onChange={(e) => setField('dateClosed', e.target.value)} />
                     </div>
                   </div>
                 </fieldset>
               </div>
 
-              <div
-                className="modal-footer"
-                style={{ borderTop: '1px solid var(--hw-bg-lavender2)' }}
-              >
-                <button
-                  type="button"
-                  className="btn btn-outline-secondary"
-                  onClick={() => setEditTarget(null)}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className="btn hw-btn-magenta px-4"
-                  onClick={() => void handleSave()}
-                  disabled={saving}
-                >
+              <div className="modal-footer" style={{ borderTop: '1px solid var(--hw-bg-lavender2)' }}>
+                <button type="button" className="btn btn-outline-secondary" onClick={() => setEditTarget(null)}>Cancel</button>
+                <button type="button" className="btn hw-btn-magenta px-4" onClick={() => void handleSave()} disabled={saving}>
                   {saving ? 'Saving…' : isEditing ? 'Save Changes' : 'Create Resident'}
                 </button>
               </div>
@@ -938,14 +850,9 @@ export default function ResidentsListPage() {
         </div>
       )}
 
-      {/* ── Delete Modal ──────────────────────────────────────────────────────── */}
       <DeleteConfirmModal
         show={deleteTarget !== null}
-        itemLabel={
-          deleteTarget
-            ? `resident ${deleteTarget.caseControlNo || '#' + deleteTarget.residentId}`
-            : ''
-        }
+        itemLabel={deleteTarget ? `resident ${deleteTarget.caseControlNo || '#' + deleteTarget.residentId}` : ''}
         onCancel={() => { if (!deleteBusy) setDeleteTarget(null); }}
         onConfirm={() => { if (!deleteBusy) void confirmDelete(); }}
       />

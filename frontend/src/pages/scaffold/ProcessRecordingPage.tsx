@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   deleteJson,
@@ -38,6 +38,13 @@ const EMOTIONAL_STATES = [
   'Hopeful', 'Angry', 'Tearful', 'Neutral', 'Cooperative',
 ];
 
+const TYPE_COLORS: Record<string, { bg: string; text: string }> = {
+  Individual:           { bg: '#DBEAFE', text: '#1E40AF' },
+  Group:                { bg: '#F3E8FF', text: '#6B21A8' },
+  Family:               { bg: '#DCFCE7', text: '#166534' },
+  'Crisis Intervention': { bg: '#FEE2E2', text: '#991B1B' },
+};
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function fmtDate(iso: string | null | undefined): string {
@@ -50,6 +57,68 @@ function fmtDate(iso: string | null | undefined): string {
 function toDateInput(iso: string | null | undefined): string {
   if (!iso) return '';
   return iso.split('T')[0];
+}
+
+function Badge({ label, bg, text }: { label: string; bg: string; text: string }) {
+  return (
+    <span style={{
+      display: 'inline-block', background: bg, color: text,
+      borderRadius: 20, padding: '2px 10px', fontSize: 11, fontWeight: 600,
+    }}>{label}</span>
+  );
+}
+
+// ── KPI Strip ─────────────────────────────────────────────────────────────────
+
+function KPIStrip({ items }: { items: ProcessRecording[] }) {
+  const total = items.length;
+  const avgDur = total > 0
+    ? Math.round(items.reduce((s, r) => s + (r.sessionDurationMinutes ?? 0), 0) / total)
+    : 0;
+  const progressCount = items.filter(r => r.progressNoted).length;
+  const concernsCount = items.filter(r => r.concernsFlagged).length;
+  const referralCount = items.filter(r => r.referralMade).length;
+
+  const kpis = [
+    { label: 'Sessions on Page', value: String(total), icon: '📋', color: '#1E3A5F' },
+    { label: 'Avg Duration',     value: `${avgDur} min`, icon: '⏱️', color: '#1E40AF' },
+    { label: 'Progress Noted',   value: String(progressCount), icon: '✅', color: '#166534' },
+    { label: 'Concerns Flagged', value: String(concernsCount), icon: '⚠️', color: '#991B1B' },
+    { label: 'Referrals Made',   value: String(referralCount), icon: '🔗', color: '#6B21A8' },
+  ];
+
+  return (
+    <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 24 }}>
+      {kpis.map(k => (
+        <div key={k.label} style={{
+          flex: '1 1 140px', background: '#fff', borderRadius: 12,
+          padding: '14px 16px', border: '1px solid #E2E8F0',
+          boxShadow: '0 2px 8px rgba(30,58,95,0.06)',
+        }}>
+          <div style={{ fontSize: 20, marginBottom: 4 }}>{k.icon}</div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: k.color }}>{k.value}</div>
+          <div style={{ fontSize: 12, color: '#64748B', fontWeight: 500 }}>{k.label}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Sort helpers ──────────────────────────────────────────────────────────────
+
+type SortCol = 'sessionDate' | 'socialWorker' | 'sessionType' | 'sessionDurationMinutes' | 'emotionalStateObserved' | 'progressNoted' | 'concernsFlagged' | 'residentId';
+
+function sortArrow(col: SortCol, sortCol: SortCol | null, sortDir: 'asc' | 'desc'): string {
+  if (col !== sortCol) return ' ↕';
+  return sortDir === 'asc' ? ' ▲' : ' ▼';
+}
+
+function compareValues(a: string | number | boolean | null | undefined, b: string | number | boolean | null | undefined, dir: 'asc' | 'desc'): number {
+  const av = a ?? '';
+  const bv = b ?? '';
+  if (av < bv) return dir === 'asc' ? -1 : 1;
+  if (av > bv) return dir === 'asc' ? 1 : -1;
+  return 0;
 }
 
 // ── Blank form ────────────────────────────────────────────────────────────────
@@ -94,6 +163,24 @@ function recordingToForm(r: ProcessRecording): FormData {
   };
 }
 
+// ── Shared inline styles ──────────────────────────────────────────────────────
+
+const thStyle: React.CSSProperties = {
+  padding: '12px 16px', textAlign: 'left', fontWeight: 700, color: '#475569',
+  fontSize: 12, whiteSpace: 'nowrap', cursor: 'pointer', userSelect: 'none',
+};
+const tdStyle: React.CSSProperties = { padding: '12px 16px', fontSize: 13 };
+const actionBtn = (color: string, border: string): React.CSSProperties => ({
+  background: 'none', border: `1px solid ${border}`, borderRadius: 6,
+  color, fontSize: 11, fontWeight: 600, padding: '3px 10px', cursor: 'pointer', whiteSpace: 'nowrap',
+});
+const navBtn = (disabled: boolean): React.CSSProperties => ({
+  background: disabled ? '#F1F5F9' : '#fff',
+  border: '1px solid #CBD5E1', borderRadius: 8, padding: '6px 16px',
+  fontSize: 13, fontWeight: 600, cursor: disabled ? 'default' : 'pointer',
+  color: disabled ? '#94A3B8' : '#1E3A5F', transition: 'all 0.15s',
+});
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function ProcessRecordingPage() {
@@ -116,6 +203,10 @@ export default function ProcessRecordingPage() {
   const [deleteTarget, setDeleteTarget] = useState<ProcessRecording | null>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
 
+  const [typeFilter, setTypeFilter] = useState('');
+  const [sortCol, setSortCol] = useState<SortCol | null>(null);
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+
   // ── Fetch ─────────────────────────────────────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
@@ -132,6 +223,28 @@ export default function ProcessRecordingPage() {
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [page, residentId, reloadToken]);
+
+  function handleSort(col: SortCol) {
+    if (sortCol === col) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortCol(col);
+      setSortDir('asc');
+    }
+  }
+
+  const filteredAndSorted = useMemo(() => {
+    let items = data?.items ?? [];
+    if (typeFilter) items = items.filter(r => r.sessionType === typeFilter);
+    if (sortCol) {
+      items = [...items].sort((a, b) => compareValues(
+        a[sortCol] as string | number | boolean | null,
+        b[sortCol] as string | number | boolean | null,
+        sortDir,
+      ));
+    }
+    return items;
+  }, [data?.items, typeFilter, sortCol, sortDir]);
 
   // ── Modal helpers ─────────────────────────────────────────────────────────────
   function openCreate() {
@@ -196,200 +309,163 @@ export default function ProcessRecordingPage() {
 
   // ── Render ────────────────────────────────────────────────────────────────────
   return (
-    <div className="py-4" style={{ background: 'var(--hw-bg-gray)', minHeight: '100%' }}>
-      <div className="container-xl">
+    <div style={{ background: '#F8FAFC', minHeight: '100vh', padding: '32px 0' }}>
+      <div className="container">
 
-        {/* Breadcrumb when viewing per-resident */}
+        {/* Breadcrumb */}
         {residentId && (
-          <nav aria-label="breadcrumb" className="mb-3">
-            <ol className="breadcrumb small">
-              <li className="breadcrumb-item">
-                <Link to="/admin/residents" className="hw-link">Caseload Inventory</Link>
-              </li>
-              <li className="breadcrumb-item active">
-                Process Recordings — Resident {residentId}
-              </li>
-            </ol>
+          <nav style={{ marginBottom: 16 }}>
+            <span style={{ fontSize: 13, color: '#64748B' }}>
+              <Link to="/admin/residents" style={{ color: '#6B21A8', fontWeight: 600, textDecoration: 'none' }}>Caseload Inventory</Link>
+              <span style={{ margin: '0 6px' }}>/</span>
+              <span>Process Recordings — Resident {residentId}</span>
+            </span>
           </nav>
         )}
 
         {/* Header */}
-        <div className="d-flex align-items-start justify-content-between mb-4 flex-wrap gap-3">
+        <div style={{ marginBottom: 28, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
           <div>
-            <p className="hw-eyebrow mb-1">Case Management</p>
-            <h1 className="hw-heading mb-0" style={{ fontSize: '1.75rem' }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: '#0D9488', letterSpacing: 2, textTransform: 'uppercase' }}>Case Management</span>
+            <h1 style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: 28, color: '#1E3A5F', marginBottom: 4 }}>
               Process Recordings
-              {residentId && (
-                <span className="small text-muted ms-2 fw-normal">
-                  — Resident {residentId}
-                </span>
-              )}
+              {residentId && <span style={{ fontSize: 16, color: '#64748B', fontWeight: 400, marginLeft: 8 }}>— Resident {residentId}</span>}
             </h1>
-            {data && (
-              <p className="text-muted small mb-0 mt-1">
-                {data.totalCount} session{data.totalCount !== 1 ? 's' : ''} recorded
-              </p>
-            )}
+            <p style={{ color: '#64748B', fontSize: 14, marginBottom: 0 }}>
+              {data ? `${data.totalCount} session${data.totalCount !== 1 ? 's' : ''} recorded` : 'Loading sessions…'}
+            </p>
           </div>
           {canWrite && (
-            <button
-              type="button"
-              className="btn hw-btn-magenta px-4 py-2 rounded-3 fw-semibold"
-              onClick={openCreate}
-            >
-              + New Session
-            </button>
+            <button type="button" onClick={openCreate} style={{
+              background: '#1E3A5F', color: '#fff', border: 'none', borderRadius: 8,
+              padding: '10px 22px', fontWeight: 600, fontSize: 14, cursor: 'pointer',
+            }}>+ New Session</button>
           )}
         </div>
 
-        {error && <div className="hw-alert-error mb-3">{error}</div>}
+        {/* KPI Strip */}
+        {data && <KPIStrip items={data.items} />}
 
-        {/* Table card */}
-        <div className="card border-0 shadow-sm rounded-3">
+        {/* Session type filter pills */}
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
+          {['', ...SESSION_TYPES].map(t => {
+            const isActive = typeFilter === t;
+            const cfg = t ? TYPE_COLORS[t] : null;
+            return (
+              <button key={t || 'all'} onClick={() => setTypeFilter(t)} style={{
+                border: 'none', borderRadius: 20, padding: '5px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                background: isActive ? (cfg?.bg ?? '#1E3A5F') : '#E2E8F0',
+                color: isActive ? (cfg?.text ?? '#fff') : '#475569',
+                transition: 'all 0.15s',
+              }}>
+                {t || 'All Types'}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Error */}
+        {error && (
+          <div style={{ borderRadius: 8, padding: '10px 16px', background: '#FEF2F2', border: '1px solid #FECACA', color: '#991B1B', fontSize: 13, marginBottom: 16 }}>
+            {error}
+          </div>
+        )}
+
+        {/* Table */}
+        <div style={{
+          background: '#fff', borderRadius: 14, border: '1px solid #E2E8F0',
+          boxShadow: '0 2px 12px rgba(30,58,95,0.06)', overflow: 'hidden',
+        }}>
           {loading ? (
-            <div className="card-body text-center py-5 text-muted">Loading…</div>
-          ) : data && data.items.length === 0 ? (
-            <div className="card-body text-center py-5 text-muted">
-              No sessions recorded yet.{' '}
-              {canWrite && (
-                <button
-                  type="button"
-                  className="btn btn-link p-0 hw-link"
-                  onClick={openCreate}
-                >
-                  Log the first session.
-                </button>
-              )}
+            <div style={{ textAlign: 'center', padding: '48px 0', color: '#94A3B8' }}>
+              <div style={{ fontSize: 32, marginBottom: 8 }}>⏳</div>
+              <p style={{ fontWeight: 600 }}>Loading sessions…</p>
             </div>
-          ) : data ? (
+          ) : filteredAndSorted.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '48px 0', color: '#94A3B8' }}>
+              <div style={{ fontSize: 40, marginBottom: 8 }}>🔍</div>
+              <p style={{ fontWeight: 600 }}>
+                No sessions recorded yet.{' '}
+                {canWrite && <button type="button" onClick={openCreate} style={{ background: 'none', border: 'none', color: '#6B21A8', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline', fontSize: 14 }}>Log the first session.</button>}
+              </p>
+            </div>
+          ) : (
             <>
-              <div className="table-responsive">
-                <table className="table table-hover table-sm align-middle mb-0">
-                  <thead style={{ background: 'var(--hw-bg-lavender2)', color: 'var(--hw-navy)' }}>
-                    <tr>
-                      {!residentId && <th className="ps-3 py-3">Resident</th>}
-                      <th className="ps-3 py-3">Date</th>
-                      <th>Social Worker</th>
-                      <th>Type</th>
-                      <th>Duration</th>
-                      <th>Emotional State</th>
-                      <th>Progress</th>
-                      <th>Concerns</th>
-                      <th className="pe-3">Actions</th>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ background: '#F8FAFC', borderBottom: '2px solid #E2E8F0' }}>
+                      {!residentId && <th style={thStyle} onClick={() => handleSort('residentId')}>Resident{sortArrow('residentId', sortCol, sortDir)}</th>}
+                      <th style={thStyle} onClick={() => handleSort('sessionDate')}>Date{sortArrow('sessionDate', sortCol, sortDir)}</th>
+                      <th style={thStyle} onClick={() => handleSort('socialWorker')}>Social Worker{sortArrow('socialWorker', sortCol, sortDir)}</th>
+                      <th style={thStyle} onClick={() => handleSort('sessionType')}>Type{sortArrow('sessionType', sortCol, sortDir)}</th>
+                      <th style={thStyle} onClick={() => handleSort('sessionDurationMinutes')}>Duration{sortArrow('sessionDurationMinutes', sortCol, sortDir)}</th>
+                      <th style={thStyle} onClick={() => handleSort('emotionalStateObserved')}>Emotional State{sortArrow('emotionalStateObserved', sortCol, sortDir)}</th>
+                      <th style={thStyle} onClick={() => handleSort('progressNoted')}>Progress{sortArrow('progressNoted', sortCol, sortDir)}</th>
+                      <th style={thStyle} onClick={() => handleSort('concernsFlagged')}>Concerns{sortArrow('concernsFlagged', sortCol, sortDir)}</th>
+                      <th style={{ ...thStyle, cursor: 'default' }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {data.items.map((r) => (
-                      <tr key={r.recordingId}>
-                        {!residentId && (
-                          <td className="ps-3">
-                            <Link
-                              to={`/admin/residents/${r.residentId}/process`}
-                              className="hw-link"
-                            >
-                              {r.residentId}
-                            </Link>
+                    {filteredAndSorted.map((r, i) => {
+                      const tCfg = TYPE_COLORS[r.sessionType ?? ''] ?? { bg: '#F1F5F9', text: '#64748B' };
+                      return (
+                        <tr key={r.recordingId} style={{ background: i % 2 === 0 ? '#fff' : '#FAFAFA', borderBottom: '1px solid #F1F5F9' }}>
+                          {!residentId && (
+                            <td style={tdStyle}>
+                              <Link to={`/admin/residents/${r.residentId}/process`} style={{ color: '#6B21A8', fontWeight: 600, textDecoration: 'none' }}>{r.residentId}</Link>
+                            </td>
+                          )}
+                          <td style={{ ...tdStyle, fontWeight: 600, color: '#1E3A5F', whiteSpace: 'nowrap' }}>{fmtDate(r.sessionDate)}</td>
+                          <td style={{ ...tdStyle, color: '#475569' }}>{r.socialWorker || '—'}</td>
+                          <td style={tdStyle}><Badge label={r.sessionType || '—'} bg={tCfg.bg} text={tCfg.text} /></td>
+                          <td style={{ ...tdStyle, color: '#64748B' }}>{r.sessionDurationMinutes != null ? `${r.sessionDurationMinutes} min` : '—'}</td>
+                          <td style={{ ...tdStyle, color: '#475569' }}>
+                            {r.emotionalStateObserved || '—'}
+                            {r.emotionalStateEnd && r.emotionalStateObserved && r.emotionalStateEnd !== r.emotionalStateObserved && (
+                              <span style={{ color: '#94A3B8' }}> → {r.emotionalStateEnd}</span>
+                            )}
                           </td>
-                        )}
-                        <td
-                          className="ps-3 fw-semibold"
-                          style={{ color: 'var(--hw-purple)' }}
-                        >
-                          {fmtDate(r.sessionDate)}
-                        </td>
-                        <td className="small">{r.socialWorker || '—'}</td>
-                        <td>
-                          <span
-                            className={`badge rounded-pill ${
-                              r.sessionType === 'Individual'
-                                ? 'text-bg-primary'
-                                : r.sessionType === 'Group'
-                                ? 'text-bg-info'
-                                : 'text-bg-secondary'
-                            }`}
-                          >
-                            {r.sessionType || '—'}
-                          </span>
-                        </td>
-                        <td className="small text-muted">
-                          {r.sessionDurationMinutes != null
-                            ? `${r.sessionDurationMinutes} min`
-                            : '—'}
-                        </td>
-                        <td className="small">
-                          {r.emotionalStateObserved || '—'}
-                          {r.emotionalStateEnd &&
-                            r.emotionalStateObserved &&
-                            r.emotionalStateEnd !== r.emotionalStateObserved && (
-                              <span className="text-muted"> → {r.emotionalStateEnd}</span>
-                            )}
-                        </td>
-                        <td>
-                          {r.progressNoted ? (
-                            <span className="badge rounded-pill text-bg-success">Yes</span>
-                          ) : (
-                            <span className="badge rounded-pill bg-light text-dark border">No</span>
-                          )}
-                        </td>
-                        <td>
-                          {r.concernsFlagged ? (
-                            <span className="badge rounded-pill text-bg-warning">Flagged</span>
-                          ) : (
-                            <span className="badge rounded-pill bg-light text-dark border">None</span>
-                          )}
-                        </td>
-                        <td className="pe-3">
-                          <div className="d-flex gap-1">
-                            {canWrite && (
-                              <button
-                                type="button"
-                                className="btn btn-sm btn-outline-primary"
-                                onClick={() => openEdit(r)}
-                              >
-                                Edit
-                              </button>
-                            )}
-                            {canWrite && (
-                              <button
-                                type="button"
-                                className="btn btn-sm btn-outline-danger"
-                                onClick={() => setDeleteTarget(r)}
-                              >
-                                Delete
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                          <td style={tdStyle}>
+                            {r.progressNoted
+                              ? <Badge label="Yes" bg="#DCFCE7" text="#166534" />
+                              : <Badge label="No" bg="#F1F5F9" text="#64748B" />}
+                          </td>
+                          <td style={tdStyle}>
+                            {r.concernsFlagged
+                              ? <Badge label="Flagged" bg="#FEF9C3" text="#854D0E" />
+                              : <Badge label="None" bg="#F1F5F9" text="#64748B" />}
+                          </td>
+                          <td style={tdStyle}>
+                            <div style={{ display: 'flex', gap: 4 }}>
+                              {canWrite && <button type="button" style={actionBtn('#1E40AF', '#93C5FD')} onClick={() => openEdit(r)}>Edit</button>}
+                              {canWrite && <button type="button" style={actionBtn('#DC2626', '#FCA5A5')} onClick={() => setDeleteTarget(r)}>Delete</button>}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
-              <div className="card-footer bg-transparent d-flex align-items-center justify-content-between py-3">
-                <span className="small text-muted">
-                  Page {data.page} of {data.totalPages || 1} · {data.totalCount} total
-                </span>
-                <div className="d-flex gap-2">
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-outline-secondary"
-                    disabled={page <= 1 || loading}
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  >
-                    ← Prev
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-outline-secondary"
-                    disabled={loading || page >= (data.totalPages || 1)}
-                    onClick={() => setPage((p) => p + 1)}
-                  >
-                    Next →
-                  </button>
+
+              {/* Pagination */}
+              {data && (
+                <div style={{
+                  padding: '14px 20px', borderTop: '1px solid #E2E8F0',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                }}>
+                  <span style={{ fontSize: 12, color: '#64748B' }}>
+                    Page {data.page} of {data.totalPages || 1} · {data.totalCount} total
+                  </span>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button type="button" disabled={page <= 1 || loading} onClick={() => setPage(p => Math.max(1, p - 1))} style={navBtn(page <= 1 || loading)}>← Prev</button>
+                    <button type="button" disabled={loading || page >= (data.totalPages || 1)} onClick={() => setPage(p => p + 1)} style={navBtn(loading || page >= (data.totalPages || 1))}>Next →</button>
+                  </div>
                 </div>
-              </div>
+              )}
             </>
-          ) : null}
+          )}
         </div>
       </div>
 
@@ -404,184 +480,84 @@ export default function ProcessRecordingPage() {
         >
           <div className="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
             <div className="modal-content">
-              <div
-                className="modal-header"
-                style={{ background: 'var(--hw-bg-lavender2)', borderBottom: 'none' }}
-              >
+              <div className="modal-header" style={{ background: 'var(--hw-bg-lavender2)', borderBottom: 'none' }}>
                 <h5 className="modal-title hw-heading mb-0" id="sessionModalTitle">
-                  {isEditing
-                    ? `Edit Session — ${fmtDate((editTarget as ProcessRecording).sessionDate)}`
-                    : 'New Session'}
+                  {isEditing ? `Edit Session — ${fmtDate((editTarget as ProcessRecording).sessionDate)}` : 'New Session'}
                 </h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={() => setEditTarget(null)}
-                />
+                <button type="button" className="btn-close" onClick={() => setEditTarget(null)} />
               </div>
 
               <div className="modal-body">
                 {formError && <div className="hw-alert-error mb-3">{formError}</div>}
-
                 <div className="row g-3">
-                  {/* Resident ID — only editable when not filtering by resident */}
                   {!residentId && (
                     <div className="col-md-4">
-                      <label className="hw-label">
-                        Resident ID <span className="text-danger">*</span>
-                      </label>
-                      <input
-                        type="number"
-                        min="1"
-                        className="hw-input"
-                        value={form.residentId || ''}
-                        onChange={(e) => setField('residentId', Number(e.target.value))}
-                      />
+                      <label className="hw-label">Resident ID <span className="text-danger">*</span></label>
+                      <input type="number" min="1" className="hw-input" value={form.residentId || ''} onChange={(e) => setField('residentId', Number(e.target.value))} />
                     </div>
                   )}
-
                   <div className="col-md-4">
-                    <label className="hw-label">
-                      Session Date <span className="text-danger">*</span>
-                    </label>
-                    <input
-                      type="date"
-                      className="hw-input"
-                      value={form.sessionDate ?? ''}
-                      onChange={(e) => setField('sessionDate', e.target.value)}
-                    />
+                    <label className="hw-label">Session Date <span className="text-danger">*</span></label>
+                    <input type="date" className="hw-input" value={form.sessionDate ?? ''} onChange={(e) => setField('sessionDate', e.target.value)} />
                   </div>
                   <div className="col-md-4">
-                    <label className="hw-label">
-                      Social Worker <span className="text-danger">*</span>
-                    </label>
-                    <input
-                      className="hw-input"
-                      value={form.socialWorker ?? ''}
-                      onChange={(e) => setField('socialWorker', e.target.value)}
-                    />
+                    <label className="hw-label">Social Worker <span className="text-danger">*</span></label>
+                    <input className="hw-input" value={form.socialWorker ?? ''} onChange={(e) => setField('socialWorker', e.target.value)} />
                   </div>
                   <div className="col-md-4">
-                    <label className="hw-label">
-                      Session Type <span className="text-danger">*</span>
-                    </label>
-                    <select
-                      className="hw-input"
-                      value={form.sessionType ?? 'Individual'}
-                      onChange={(e) => setField('sessionType', e.target.value)}
-                    >
+                    <label className="hw-label">Session Type <span className="text-danger">*</span></label>
+                    <select className="hw-input" value={form.sessionType ?? 'Individual'} onChange={(e) => setField('sessionType', e.target.value)}>
                       {SESSION_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
                     </select>
                   </div>
                   <div className="col-md-4">
                     <label className="hw-label">Duration (minutes)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      className="hw-input"
-                      value={form.sessionDurationMinutes ?? ''}
-                      onChange={(e) =>
-                        setField(
-                          'sessionDurationMinutes',
-                          e.target.value ? Number(e.target.value) : null,
-                        )
-                      }
-                    />
+                    <input type="number" min="0" className="hw-input" value={form.sessionDurationMinutes ?? ''} onChange={(e) => setField('sessionDurationMinutes', e.target.value ? Number(e.target.value) : null)} />
                   </div>
                   <div className="col-md-4">
                     <label className="hw-label">Emotional State (Start)</label>
-                    <select
-                      className="hw-input"
-                      value={form.emotionalStateObserved ?? ''}
-                      onChange={(e) => setField('emotionalStateObserved', e.target.value)}
-                    >
+                    <select className="hw-input" value={form.emotionalStateObserved ?? ''} onChange={(e) => setField('emotionalStateObserved', e.target.value)}>
                       <option value="">Select…</option>
                       {EMOTIONAL_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
                     </select>
                   </div>
                   <div className="col-md-4">
                     <label className="hw-label">Emotional State (End)</label>
-                    <select
-                      className="hw-input"
-                      value={form.emotionalStateEnd ?? ''}
-                      onChange={(e) => setField('emotionalStateEnd', e.target.value)}
-                    >
+                    <select className="hw-input" value={form.emotionalStateEnd ?? ''} onChange={(e) => setField('emotionalStateEnd', e.target.value)}>
                       <option value="">Select…</option>
                       {EMOTIONAL_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
                     </select>
                   </div>
-
                   <div className="col-12">
                     <label className="hw-label">Session Narrative</label>
-                    <textarea
-                      className="hw-input"
-                      rows={4}
-                      placeholder="Describe what happened during the session…"
-                      value={form.sessionNarrative ?? ''}
-                      onChange={(e) => setField('sessionNarrative', e.target.value)}
-                    />
+                    <textarea className="hw-input" rows={4} placeholder="Describe what happened during the session…" value={form.sessionNarrative ?? ''} onChange={(e) => setField('sessionNarrative', e.target.value)} />
                   </div>
                   <div className="col-md-6">
                     <label className="hw-label">Interventions Applied</label>
-                    <textarea
-                      className="hw-input"
-                      rows={3}
-                      value={form.interventionsApplied ?? ''}
-                      onChange={(e) => setField('interventionsApplied', e.target.value)}
-                    />
+                    <textarea className="hw-input" rows={3} value={form.interventionsApplied ?? ''} onChange={(e) => setField('interventionsApplied', e.target.value)} />
                   </div>
                   <div className="col-md-6">
                     <label className="hw-label">Follow-up Actions</label>
-                    <textarea
-                      className="hw-input"
-                      rows={3}
-                      value={form.followUpActions ?? ''}
-                      onChange={(e) => setField('followUpActions', e.target.value)}
-                    />
+                    <textarea className="hw-input" rows={3} value={form.followUpActions ?? ''} onChange={(e) => setField('followUpActions', e.target.value)} />
                   </div>
-
                   <div className="col-12 d-flex gap-4 flex-wrap">
-                    {(
-                      [
-                        { key: 'progressNoted' as const, label: 'Progress Noted' },
-                        { key: 'concernsFlagged' as const, label: 'Concerns Flagged' },
-                        { key: 'referralMade' as const, label: 'Referral Made' },
-                      ] as const
-                    ).map(({ key, label }) => (
+                    {([
+                      { key: 'progressNoted' as const, label: 'Progress Noted' },
+                      { key: 'concernsFlagged' as const, label: 'Concerns Flagged' },
+                      { key: 'referralMade' as const, label: 'Referral Made' },
+                    ] as const).map(({ key, label }) => (
                       <div key={key} className="form-check">
-                        <input
-                          type="checkbox"
-                          className="form-check-input hw-check"
-                          id={`pr-${key}`}
-                          checked={!!form[key]}
-                          onChange={(e) => setField(key, e.target.checked)}
-                        />
-                        <label className="form-check-label" htmlFor={`pr-${key}`}>
-                          {label}
-                        </label>
+                        <input type="checkbox" className="form-check-input hw-check" id={`pr-${key}`} checked={!!form[key]} onChange={(e) => setField(key, e.target.checked)} />
+                        <label className="form-check-label" htmlFor={`pr-${key}`}>{label}</label>
                       </div>
                     ))}
                   </div>
                 </div>
               </div>
 
-              <div
-                className="modal-footer"
-                style={{ borderTop: '1px solid var(--hw-bg-lavender2)' }}
-              >
-                <button
-                  type="button"
-                  className="btn btn-outline-secondary"
-                  onClick={() => setEditTarget(null)}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className="btn hw-btn-magenta px-4"
-                  onClick={() => void handleSave()}
-                  disabled={saving}
-                >
+              <div className="modal-footer" style={{ borderTop: '1px solid var(--hw-bg-lavender2)' }}>
+                <button type="button" className="btn btn-outline-secondary" onClick={() => setEditTarget(null)}>Cancel</button>
+                <button type="button" className="btn hw-btn-magenta px-4" onClick={() => void handleSave()} disabled={saving}>
                   {saving ? 'Saving…' : isEditing ? 'Save Changes' : 'Create Session'}
                 </button>
               </div>
@@ -590,7 +566,6 @@ export default function ProcessRecordingPage() {
         </div>
       )}
 
-      {/* ── Delete Modal ──────────────────────────────────────────────────────── */}
       <DeleteConfirmModal
         show={deleteTarget !== null}
         itemLabel={deleteTarget ? `session on ${fmtDate(deleteTarget.sessionDate)}` : ''}
