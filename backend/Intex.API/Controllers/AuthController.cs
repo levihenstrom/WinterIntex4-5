@@ -25,10 +25,11 @@ public class AuthController(
     private const string DefaultExternalReturnPath = "/";
 
     // Single-use tokens for cross-site OAuth flow (mobile Safari/Chrome block third-party cookies).
-    // After Google sign-in the backend mints a token → frontend redirects back to /api/auth/exchange-token
-    // as a top-level navigation → cookie is set first-party → redirect to frontend.
+    // After Google sign-in the backend mints a token → browser opens the SPA at /oauth/callback?authToken=…
+    // → POST /api/auth/exchange-token (fetch) sets the cookie + localStorage → navigate to the app.
     private static readonly ConcurrentDictionary<string, (string UserId, DateTime Expiry)> _pendingTokens = new();
 
+    [AllowAnonymous]
     [HttpGet("me")]
     public async Task<IActionResult> GetCurrentSession()
     {
@@ -60,6 +61,7 @@ public class AuthController(
         });
     }
 
+    [AllowAnonymous]
     [HttpGet("providers")]
     public IActionResult GetExternalProviders()
     {
@@ -77,6 +79,7 @@ public class AuthController(
         return Ok(providers);
     }
 
+    [AllowAnonymous]
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
@@ -204,6 +207,7 @@ public class AuthController(
         });
     }
 
+    [AllowAnonymous]
     [HttpPost("password-login")]
     public async Task<IActionResult> PasswordLogin([FromBody] PasswordLoginRequest request)
     {
@@ -214,7 +218,7 @@ public class AuthController(
             request.Email,
             request.Password,
             request.RememberMe,
-            lockoutOnFailure: false);
+            lockoutOnFailure: true);
 
         if (result.RequiresTwoFactor)
             return Ok(new { requiresTwoFactor = true });
@@ -239,6 +243,7 @@ public class AuthController(
         return Unauthorized(new { message = "Invalid email or password." });
     }
 
+    [AllowAnonymous]
     [HttpPost("password-login/2fa")]
     public async Task<IActionResult> CompleteTwoFactorLogin([FromBody] TwoFactorLoginRequest request)
     {
@@ -275,6 +280,7 @@ public class AuthController(
         return Unauthorized(new { message = "Invalid authenticator or recovery code." });
     }
 
+    [AllowAnonymous]
     [HttpGet("external-login")]
     public IActionResult ExternalLogin(
         [FromQuery] string provider,
@@ -288,7 +294,7 @@ public class AuthController(
 
         var callbackUrl = Url.Action(nameof(ExternalLoginCallback), new
         {
-            returnPath = NormalizeReturnPath(returnPath)
+            returnPath = SanitizeFrontendReturnPath(returnPath)
         });
 
         if (string.IsNullOrWhiteSpace(callbackUrl))
@@ -300,6 +306,7 @@ public class AuthController(
         return Challenge(properties, GoogleDefaults.AuthenticationScheme);
     }
 
+    [AllowAnonymous]
     [HttpGet("external-callback")]
     public async Task<IActionResult> ExternalLoginCallback(
         [FromQuery] string? returnPath = null,
@@ -373,11 +380,17 @@ public class AuthController(
         PurgeExpiredTokens();
         _pendingTokens[token] = (resolvedUser.Id, DateTime.UtcNow.AddMinutes(2));
 
+        // Always land on a public SPA route first so RequireAuth never runs before the token is exchanged.
         var frontendUrl = configuration["FrontendUrl"] ?? DefaultFrontendUrl;
-        var callbackPath = NormalizeReturnPath(returnPath);
+        var safeReturnPath = SanitizeFrontendReturnPath(returnPath);
+        var oauthCallback = $"{frontendUrl.TrimEnd('/')}/oauth/callback";
         var redirectUrl = QueryHelpers.AddQueryString(
-            $"{frontendUrl.TrimEnd('/')}{callbackPath}",
-            new Dictionary<string, string?> { ["authToken"] = token });
+            oauthCallback,
+            new Dictionary<string, string?>
+            {
+                ["authToken"] = token,
+                ["returnPath"] = safeReturnPath
+            });
 
         return Redirect(redirectUrl);
     }
@@ -387,6 +400,7 @@ public class AuthController(
     /// Returns the session JSON so the frontend can store it in localStorage.
     /// Also sets the Identity cookie (works on desktop; ignored on mobile Safari).
     /// </summary>
+    [AllowAnonymous]
     [HttpPost("exchange-token")]
     public async Task<IActionResult> ExchangeToken([FromBody] ExchangeTokenRequest request)
     {
@@ -430,6 +444,7 @@ public class AuthController(
     /// Frontend calls this with a stored refreshToken to re-validate the session
     /// (e.g., on page reload when cookies aren't available).
     /// </summary>
+    [AllowAnonymous]
     [HttpPost("refresh-session")]
     public async Task<IActionResult> RefreshSession([FromBody] RefreshSessionRequest request)
     {
@@ -496,6 +511,7 @@ public class AuthController(
         string? RecoveryCode,
         bool RememberMe);
 
+    [AllowAnonymous]
     [HttpPost("logout")]
     public async Task<IActionResult> Logout([FromBody] LogoutRequest? request = null)
     {
@@ -518,6 +534,19 @@ public class AuthController(
         string.IsNullOrWhiteSpace(returnPath) || !returnPath.StartsWith('/')
             ? DefaultExternalReturnPath
             : returnPath;
+
+    /// <summary>
+    /// Prevents open redirects: only same-site relative paths (single leading slash, no scheme).
+    /// </summary>
+    private string SanitizeFrontendReturnPath(string? returnPath)
+    {
+        var path = NormalizeReturnPath(returnPath);
+        if (path.StartsWith("//", StringComparison.Ordinal) || path.Contains("://", StringComparison.Ordinal))
+            return DefaultExternalReturnPath;
+        if (path.Length > 512)
+            return DefaultExternalReturnPath;
+        return path;
+    }
 
     private string BuildFrontendSuccessUrl(string? returnPath)
     {

@@ -1,19 +1,13 @@
-import { useEffect, useState } from 'react';
 import {
   BrowserRouter as Router,
   Routes,
   Route,
   Navigate,
   Link,
-  useSearchParams,
-  useNavigate,
-  useLocation,
 } from 'react-router-dom';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthProvider } from './context/AuthContext';
 import { CookieConsentProvider } from './context/CookieConsentContext';
 import CookieConsentBanner from './components/CookieConsentBanner';
-import { exchangeAuthToken } from './lib/authAPI';
-import { resolvePostLoginPath } from './lib/authRedirect';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import LogoutPage from './pages/LogoutPage';
@@ -39,6 +33,7 @@ import ResidentVisitsAndConferencesPage from './pages/scaffold/ResidentVisitsAnd
 import SocialMediaHistoryPage from './pages/scaffold/SocialMediaHistoryPage';
 import SocialMediaSuggestPage from './pages/scaffold/SocialMediaSuggestPage';
 import ReportsAnalyticsPage from './pages/scaffold/ReportsAnalyticsPage';
+import OAuthCallbackPage from './pages/OAuthCallbackPage';
 
 // Auth pages — same fixed NavBar as the landing page (see NavBar.tsx)
 function AuthLayout({ children }: { children: React.ReactNode }) {
@@ -64,54 +59,16 @@ function AuthLayout({ children }: { children: React.ReactNode }) {
   );
 }
 
-/**
- * After Google OAuth, the backend redirects here with ?authToken=...
- */
-function AuthTokenExchanger() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const { refreshAuthState } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [exchanging, setExchanging] = useState(false);
-
-  useEffect(() => {
-    const authToken = searchParams.get('authToken');
-    if (!authToken || exchanging) return;
-    setExchanging(true);
-    exchangeAuthToken(authToken)
-      .then((session) => {
-        void refreshAuthState();
-        searchParams.delete('authToken');
-        setSearchParams(searchParams, { replace: true });
-        navigate(resolvePostLoginPath(location.pathname, session.roles), {
-          replace: true,
-        });
-      })
-      .catch(() => {
-        navigate('/login?externalError=Unable+to+complete+sign-in.', { replace: true });
-      });
-  }, [searchParams, setSearchParams, refreshAuthState, navigate, exchanging, location.pathname]);
-
-  if (searchParams.get('authToken')) {
-    return (
-      <div className="container text-center mt-5">
-        <p>Completing sign-in...</p>
-      </div>
-    );
-  }
-  return null;
-}
-
 function App() {
   return (
     <CookieConsentProvider>
       <AuthProvider>
         <Router>
-          <AuthTokenExchanger />
           <Routes>
             {/* Public routes */}
             <Route path="/" element={<HealingWingsHome />} />
             <Route path="/impact" element={<ImpactPage />} />
+            <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
             <Route path="/login" element={<AuthLayout><LoginPage /></AuthLayout>} />
             <Route path="/register" element={<AuthLayout><RegisterPage /></AuthLayout>} />
             <Route path="/logout" element={<AuthLayout><LogoutPage /></AuthLayout>} />
