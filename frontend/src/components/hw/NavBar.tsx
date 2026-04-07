@@ -17,6 +17,11 @@ export default function NavBar() {
   const location = useLocation();
   const { isAuthenticated, authSession, isLoading } = useAuth();
   const isHome = location.pathname === '/';
+  const portalPath = authSession.roles.includes('Admin') || authSession.roles.includes('Staff')
+    ? '/admin/home'
+    : (authSession.roles.includes('Donor') || authSession.roles.includes('LegacyCustomer')
+      ? '/donor/dashboard'
+      : '/');
 
   /** Section anchors only exist on `/`; from other routes link to `/#section`. */
   function sectionHref(hash: string) {
@@ -58,6 +63,13 @@ export default function NavBar() {
               <span className="text-sm text-white/70 truncate max-w-[180px]">
                 {authSession.email}
               </span>
+              <button
+                type="button"
+                onClick={() => navigate(portalPath)}
+                className="px-4 py-2 rounded-full text-sm font-semibold cursor-pointer border border-white/30 text-white/90 hover:text-white"
+              >
+                Portal
+              </button>
               {authSession.roles[0] && (
                 <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-teal-500/20 text-teal-300 border border-teal-400/30">
                   {authSession.roles[0]}
@@ -138,6 +150,13 @@ export default function NavBar() {
                     </span>
                   )}
                 </div>
+                <Link
+                  to={portalPath}
+                  onClick={() => setMenuOpen(false)}
+                  className="block text-center py-3 rounded-full text-sm font-semibold text-white/90 border border-white/30 no-underline"
+                >
+                  Portal
+                </Link>
                 <Link
                   to="/mfa"
                   onClick={() => setMenuOpen(false)}
