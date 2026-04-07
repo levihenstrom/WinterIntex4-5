@@ -10,6 +10,7 @@ import {
   loginUser,
   type ExternalAuthProvider,
 } from '../lib/authAPI';
+import { resolvePostLoginPath } from '../lib/authRedirect';
 
 type LoginStep = 'credentials' | 'twoFactor';
 
@@ -17,7 +18,7 @@ function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
-  const from = (location.state as { from?: Location })?.from?.pathname ?? '/';
+  const fromPathname = (location.state as { from?: Location })?.from?.pathname;
   const { refreshAuthState } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -62,7 +63,7 @@ function LoginPage() {
       }
 
       await refreshAuthState();
-      navigate(from, { replace: true });
+      navigate(resolvePostLoginPath(fromPathname, result.roles), { replace: true });
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : 'Unable to log in.'
@@ -78,13 +79,13 @@ function LoginPage() {
     setIsSubmitting(true);
 
     try {
-      await completeTwoFactorLogin(
+      const result = await completeTwoFactorLogin(
         rememberMe,
         twoFactorCode || undefined,
         recoveryCode || undefined
       );
       await refreshAuthState();
-      navigate(from, { replace: true });
+      navigate(resolvePostLoginPath(fromPathname, result.roles), { replace: true });
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : 'Unable to verify MFA.'
@@ -102,7 +103,9 @@ function LoginPage() {
   }
 
   function handleExternalLogin(providerName: string) {
-    window.location.assign(buildExternalLoginUrl(providerName, '/'));
+    window.location.assign(
+      buildExternalLoginUrl(providerName, resolvePostLoginPath(fromPathname, []))
+    );
   }
 
   return (

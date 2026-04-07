@@ -6,11 +6,13 @@ import {
   Link,
   useSearchParams,
   useNavigate,
+  useLocation,
 } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CookieConsentProvider } from './context/CookieConsentContext';
 import CookieConsentBanner from './components/CookieConsentBanner';
 import { exchangeAuthToken } from './lib/authAPI';
+import { resolvePostLoginPath } from './lib/authRedirect';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import LogoutPage from './pages/LogoutPage';
@@ -68,6 +70,7 @@ function AuthTokenExchanger() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { refreshAuthState } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [exchanging, setExchanging] = useState(false);
 
   useEffect(() => {
@@ -75,16 +78,18 @@ function AuthTokenExchanger() {
     if (!authToken || exchanging) return;
     setExchanging(true);
     exchangeAuthToken(authToken)
-      .then(() => refreshAuthState())
-      .then(() => {
+      .then((session) => {
+        void refreshAuthState();
         searchParams.delete('authToken');
         setSearchParams(searchParams, { replace: true });
-        navigate('/', { replace: true });
+        navigate(resolvePostLoginPath(location.pathname, session.roles), {
+          replace: true,
+        });
       })
       .catch(() => {
         navigate('/login?externalError=Unable+to+complete+sign-in.', { replace: true });
       });
-  }, [searchParams, setSearchParams, refreshAuthState, navigate, exchanging]);
+  }, [searchParams, setSearchParams, refreshAuthState, navigate, exchanging, location.pathname]);
 
   if (searchParams.get('authToken')) {
     return (
