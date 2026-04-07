@@ -1,53 +1,51 @@
-import { useState } from 'react';
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'givebutter-iframe': any;
+    }
+  }
+}
 
-const PRESETS = [500, 1000, 2500];
+import { useEffect, useState } from 'react';
 
 export default function DonationWidget() {
-  const [selected, setSelected] = useState<number | 'custom'>(500);
-  const [customAmount, setCustomAmount] = useState('');
+  const [height, setHeight] = useState(400); // Initial placeholder height
+
+  useEffect(() => {
+    // Listen for Givebutter's internal iframe-resizer broadcast events
+    const handleMessage = (event: MessageEvent) => {
+      if (typeof event.data === 'string' && event.data.includes('[iFrameSizer]')) {
+        // iframe-resizer strings look like: "[iFrameSizer]iFrameResizer0:412:..."
+        const match = event.data.match(/\[iFrameSizer\][^:]+:(\d+)/);
+        if (match && match[1]) {
+           setHeight(parseInt(match[1]) + 50); // Add 50px buffer
+        }
+      } else if (event.data && typeof event.data === 'object' && event.data.height) {
+        // Fallback for standard JSON height events
+        setHeight(event.data.height + 50); // Add 50px buffer
+      }
+    };
+    
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
 
   return (
-    <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-8 max-w-xl mx-auto shadow-2xl">
-      <p className="text-white/70 text-xs uppercase tracking-widest font-semibold mb-5 text-center">
-        Choose an amount
-      </p>
-      <div className="flex flex-wrap gap-3 justify-center mb-5">
-        {PRESETS.map((amt) => (
-          <button
-            key={amt}
-            onClick={() => setSelected(amt)}
-            className={`hw-amount-btn px-6 py-3 rounded-xl font-semibold text-sm ${selected === amt ? 'active' : ''}`}
-          >
-            ₱{amt.toLocaleString()}
-          </button>
-        ))}
-        <button
-          onClick={() => setSelected('custom')}
-          className={`hw-amount-btn px-6 py-3 rounded-xl font-semibold text-sm ${selected === 'custom' ? 'active' : ''}`}
-        >
-          Custom
-        </button>
-      </div>
-      {selected === 'custom' && (
-        <div className="mb-5">
-          <div className="flex items-center gap-2 bg-white/10 border border-white/30 rounded-xl px-4 py-3">
-            <span className="text-white font-bold text-lg">₱</span>
-            <input
-              type="number"
-              placeholder="Enter amount"
-              value={customAmount}
-              onChange={(e) => setCustomAmount(e.target.value)}
-              className="bg-transparent text-white placeholder-white/40 outline-none flex-1 text-sm"
-            />
-          </div>
-        </div>
-      )}
-      <button className="hw-btn-magenta w-full py-4 rounded-xl font-bold text-base tracking-wide mt-1">
-        Donate Now →
-      </button>
-      <p className="text-white/40 text-xs text-center mt-3">
-        Secure donation · 100% goes directly to the girls we serve
-      </p>
+    <div className="w-full flex justify-center">
+      <iframe
+        name="givebutter"
+        title="givebutter-iframe"
+        allow="payment"
+        className="w-full bg-white rounded-[24px] border-0 transition-all duration-300 ease-out"
+        style={{ 
+          height: `${height}px`, 
+          minHeight: '400px',
+          width: '100%', 
+          overflow: 'hidden' 
+        }}
+        src="https://givebutter.com/embed/c/ozvC2F?goalBar=false&amp;v=1"
+        scrolling="auto"
+      />
     </div>
   );
 }
