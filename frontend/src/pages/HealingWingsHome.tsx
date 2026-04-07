@@ -1,11 +1,10 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import NavBar from '../components/hw/NavBar';
 import SectionContainer from '../components/hw/SectionContainer';
 import MetricCard from '../components/hw/MetricCard';
-import PillarCard from '../components/hw/PillarCard';
-import QuoteBlock from '../components/hw/QuoteBlock';
 import DonationWidget from '../components/hw/DonationWidget';
 import Footer from '../components/hw/Footer';
+import CarouselPillarsSection from '../components/hw/CarouselPillarsSection';
 
 // ── Scroll fade-in hook ───────────────────────────────────────────────────────
 function useFadeIn() {
@@ -24,11 +23,8 @@ function useFadeIn() {
 }
 
 // ── Image URLs ────────────────────────────────────────────────────────────────
-const HERO_IMG = 'https://images.unsplash.com/photo-1594708767771-a7502209ff51?w=1800&auto=format&fit=crop&q=80';
-const MISSION_IMG = 'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=900&auto=format&fit=crop&q=80';
-const PILLAR_EDU_IMG = 'https://images.unsplash.com/photo-1513258496099-48168024aec0?w=800&auto=format&fit=crop&q=80';
-const PILLAR_HEAL_IMG = 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800&auto=format&fit=crop&q=80';
-const PILLAR_REINT_IMG = 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=800&auto=format&fit=crop&q=80';
+const HERO_IMG = '/girls.avif';
+const MISSION_IMG = '/free.avif';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Section 1 — Hero
@@ -44,25 +40,22 @@ function HeroSection() {
       <div className="h-16 lg:h-[72px] flex-shrink-0" />
       {/* Content */}
       <div className="relative z-10 flex-1 flex flex-col items-center justify-center text-center px-6 py-16">
-        <span className="inline-block mb-5 px-4 py-1.5 rounded-full bg-purple-900/40 border border-purple-300/30 text-xs font-bold tracking-[0.18em] uppercase backdrop-blur-sm" style={{ color: '#D8B4FE' }}>
-          A safe place for every child
-        </span>
         <h1
-          className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-white leading-tight max-w-4xl hw-heading-font"
+          className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-white leading-tight max-w-4xl hw-heading-font hw-text-shadow-heavy"
         >
           Every child deserves
           <br />
-          <span className="hw-text-soft">to heal and soar</span>
+          <span>to heal and soar</span>
         </h1>
-        <p className="mt-6 text-base md:text-lg text-white/80 max-w-2xl leading-relaxed">
+        <p className="mt-6 text-base md:text-lg text-white/80 max-w-2xl leading-relaxed hw-text-shadow-heavy">
           HealingWings provides safe homes, counseling, and education for children who are survivors of
-          trafficking and abuse in the Philippines.
+          trafficking and abuse in the World.
         </p>
         <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
-          <a href="#donate" className="hw-btn-magenta inline-flex items-center gap-2 px-8 py-3.5 rounded-full font-bold text-sm tracking-wide no-underline">
+          <a href="#donate" className="hw-btn-magenta inline-flex items-center gap-2 px-8 py-3.5 rounded-full font-bold text-sm tracking-wide no-underline shadow-xl">
             Donate Now →
           </a>
-          <a href="#mission" className="hw-btn-ghost-white inline-flex items-center gap-2 px-8 py-3.5 rounded-full font-semibold text-sm tracking-wide no-underline">
+          <a href="#mission" className="hw-btn-ghost-white inline-flex items-center gap-2 px-8 py-3.5 rounded-full font-semibold text-sm tracking-wide no-underline shadow-xl">
             Learn Our Story
           </a>
         </div>
@@ -85,15 +78,15 @@ function HeroSection() {
 // ─────────────────────────────────────────────────────────────────────────────
 function ImpactBar() {
   return (
-    <section id="impact" className="hw-bg-navy">
-      <SectionContainer>
-        <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-white/10">
+    <section id="impact" className="relative z-20 mx-auto max-w-7xl w-[92%] -mt-20 sm:-mt-24 lg:-mt-28 bg-[#1E3A5F]/75 backdrop-blur-xl rounded-[2rem] shadow-2xl border border-white/20">
+      <div className="py-10 px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-white/20 gap-y-10 lg:gap-y-0 text-center">
           <MetricCard target={247} label="children Served" />
           <MetricCard target={4} label="Safe Homes" />
           <MetricCard target={89} suffix="%" label="Reintegration Rate" />
           <MetricCard target={6} label="Years of Impact" />
         </div>
-      </SectionContainer>
+      </div>
     </section>
   );
 }
@@ -103,50 +96,75 @@ function ImpactBar() {
 // ─────────────────────────────────────────────────────────────────────────────
 function MissionSection() {
   return (
-    <section id="mission" className="py-24 lg:py-32 overflow-hidden hw-bg-offwhite">
-      <SectionContainer>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
+    <section id="mission" className="py-10 overflow-hidden hw-bg-offwhite">
+      <div className="w-[95%] max-w-[1600px] mx-auto">
+        <div className="hw-fade-in hw-mission-card grid grid-cols-1 lg:grid-cols-2 p-0 group cursor-default" ref={useFadeIn()}>
           {/* Photo */}
-          <div className="hw-fade-in" ref={useFadeIn()}>
-            <div className="relative rounded-2xl overflow-hidden shadow-2xl h-[420px] lg:h-[520px]">
-              <img src={MISSION_IMG} alt="A child in a safe space" className="w-full h-full object-cover" />
-              {/* Purple corner overlay */}
-              <div className="absolute top-0 left-0 w-1/2 h-full hw-photo-overlay" />
-            </div>
-            {/* Badge */}
-            <div className="hw-badge-purple absolute mt-[-60px] ml-[20px] w-32 h-32 rounded-full flex items-center justify-center shadow-lg"
-              style={{ position: 'relative', top: '-60px', left: '20px', width: '128px', height: '128px', borderRadius: '50%' }}>
-              <span className="text-white font-extrabold text-xl text-center leading-tight hw-heading-font">
-                Since<br />2019
-              </span>
-            </div>
+          <div className="w-full h-[320px] md:h-[420px] lg:h-auto overflow-hidden">
+            <img 
+              src={MISSION_IMG} 
+              alt="A child in a safe space" 
+              className="w-full h-full object-cover transition-transform duration-[1500ms] ease-out group-hover:scale-105" 
+            />
           </div>
           {/* Text */}
-          <div className="hw-fade-in hw-delay-100" ref={useFadeIn()}>
+          <div className="p-8 md:p-12 lg:p-14 flex flex-col justify-center">
             <span className="hw-eyebrow">Our Mission</span>
             <h2 className="hw-heading mt-3 text-3xl md:text-4xl font-extrabold leading-snug">
               We believe every child deserves safety, healing, and a future.
             </h2>
             <div className="mt-6 space-y-4 text-stone-600 leading-relaxed text-base">
               <p>
-                HealingWings operates residential safe homes in the Philippines, providing a full circle of care
-                for children who have experienced the unimaginable. Each resident receives a private, nurturing space
-                to begin her journey of healing.
+                HealingWings provides safe homes and professional rehabilitation services for girl survivors of sexual abuse and trafficking, helping them successfully reintegrate into family life and society. With residential shelters serving girls aged 8 to 18, we work alongside local authorities and social welfare agencies to rescue, shelter, and restore.
               </p>
               <p>
-                Our trauma-informed counselors, educators, and social workers walk alongside each child —
-                from her first day of safety through full reintegration with her family and community.
+                 The children are rescued by the local police department or anti-trafficking agents who refer the children through the Department of Social Welfare and Development (DSWD) to Lighthouse Sanctuary. The social worker in the sanctuary will assist the child in transitioning into their new environment.
+
               </p>
             </div>
             <div className="mt-7 grid grid-cols-2 gap-3">
               {[
-                { icon: '🏠', label: 'Safe Residential Homes' },
-                { icon: '🧠', label: 'Trauma Counseling' },
-                { icon: '📚', label: 'Education Programs' },
-                { icon: '💞', label: 'Family Reintegration' },
+                {
+                  icon: (
+                    <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                      <path d="M3 12L12 3l9 9" /><path d="M9 21V12h6v9" /><path d="M3 12v9h18v-9" />
+                    </svg>
+                  ),
+                  label: 'Safe Residential Homes',
+                },
+                {
+                  icon: (
+                    <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                      <path d="M12 21C12 21 4 14.5 4 9a8 8 0 0 1 16 0c0 5.5-8 12-8 12z" />
+                      <path d="M12 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2z" fill="currentColor" />
+                      <path d="M12 11v3" />
+                    </svg>
+                  ),
+                  label: 'Trauma Counseling',
+                },
+                {
+                  icon: (
+                    <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+                    </svg>
+                  ),
+                  label: 'Education Programs',
+                },
+                {
+                  icon: (
+                    <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                      <circle cx="9" cy="7" r="4" />
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                    </svg>
+                  ),
+                  label: 'Family Reintegration',
+                },
               ].map((item) => (
-                <div key={item.label} className="flex items-center gap-2 text-stone-700 text-sm font-medium">
-                  <span className="text-lg">{item.icon}</span>
+                <div key={item.label} className="flex items-center gap-2.5 text-stone-700 text-sm font-medium">
+                  <span className="hw-text-teal flex-shrink-0">{item.icon}</span>
                   <span>{item.label}</span>
                 </div>
               ))}
@@ -159,7 +177,7 @@ function MissionSection() {
             </a>
           </div>
         </div>
-      </SectionContainer>
+      </div>
     </section>
   );
 }
@@ -167,244 +185,273 @@ function MissionSection() {
 // ─────────────────────────────────────────────────────────────────────────────
 // Section 4 — Three Pillars
 // ─────────────────────────────────────────────────────────────────────────────
-function PillarsSection() {
+// Legacy static Pillars Section removed — now using CarouselPillarsSection
+
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Section 7 — How You Can Help
+// ─────────────────────────────────────────────────────────────────────────────
+function BoardOfDirectorsSection() {
   const ref = useFadeIn();
+  
+  const directors = [
+    { name: 'Board Member', role: 'Executive Director', image: '/director.jpeg' },
+    { name: 'Board Member', role: 'Executive Director', image: '/director1.png' },
+    { name: 'Board Member', role: 'Executive Director', image: '/director2.jpeg' },
+    { name: 'Board Member', role: 'Executive Director', image: '/directors.jpeg' },
+  ];
+
   return (
-    <section id="pillars" className="py-24 lg:py-32 hw-bg-gray">
+    <section className="p-20 hw-bg-white">
       <SectionContainer>
-        <div className="text-center mb-14 hw-fade-in" ref={ref}>
-          <span className="hw-eyebrow">Our Approach</span>
-          <h2 className="hw-heading mt-3 text-3xl md:text-4xl font-extrabold">
-            How we restore lives
+        <div className="text-center mb-16 hw-fade-in" ref={ref}>
+          <span className="hw-eyebrow">Leadership</span>
+          <h2 className="hw-heading mt-3 text-3xl md:text-5xl font-extrabold tracking-tight">
+            Board of Directors
           </h2>
+          <p className="text-stone-500 max-w-2xl mx-auto mt-6 text-lg">
+            Meet the dedicated individuals guiding our mission to restore hope and rebuild lives for children in need.
+          </p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Purple overlay */}
-          <PillarCard imageUrl={PILLAR_EDU_IMG} title="Education" subtitle="Giving every child the tools to build her own future." overlayColor="var(--hw-pillar-edu)" />
-          {/* Teal overlay */}
-          <PillarCard imageUrl={PILLAR_HEAL_IMG} title="Healing" subtitle="Trauma-informed care for every resident, at her own pace." overlayColor="var(--hw-pillar-heal)" />
-          <PillarCard imageUrl={PILLAR_REINT_IMG} title="Reintegration" subtitle="Restoring family bonds, community, and the will to thrive." overlayColor="var(--hw-pillar-reint)" />
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-8 max-w-6xl mx-auto">
+          {directors.map((dir, i) => (
+            <div key={i} className="flex flex-col items-center text-center group">
+              <div className="w-56 h-56 lg:w-48 lg:h-48 mb-6 overflow-hidden rounded-full border-4 border-white shadow-2xl relative">
+                <img 
+                  src={dir.image} 
+                  alt={dir.name} 
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                />
+                <div className="absolute inset-0 bg-[#1E3A5F]/0 group-hover:bg-[#1E3A5F]/10 transition-colors duration-300 rounded-full" />
+              </div>
+              <h3 className="text-xl font-bold text-stone-900 mb-1" style={{ fontFamily: 'var(--hw-font-heading)' }}>
+                {dir.name}
+              </h3>
+              <p className="text-sky-600 font-bold text-sm tracking-widest uppercase">
+                {dir.role}
+              </p>
+            </div>
+          ))}
         </div>
       </SectionContainer>
     </section>
   );
 }
 
+
 // ─────────────────────────────────────────────────────────────────────────────
-// Section 5 — Story Spotlight
 // ─────────────────────────────────────────────────────────────────────────────
-function StorySpotlight() {
+// Section 8 — Donation CTA Banner (Legacy/Redesigned to "Broken Grid")
+function DonationBanner() {
   const ref = useFadeIn();
+
   return (
-    <section id="stories" className="py-28 lg:py-36 hw-bg-lavender">
-      <div className="hw-fade-in" ref={ref}>
-        <QuoteBlock
-          quote="For the first time in my life, I felt safe."
-          attribution="Anonymous Resident"
-          subtext="One of 247 children who found hope at HealingWings."
-          ctaLabel="Read More Stories"
-          ctaHref="#"
-          accentColor="#6B21A8"
-          textColor="#3b0764"
-          subColor="#0D9488"
-        />
+    <section
+      id="donate"
+      ref={ref}
+      className="bg-[#f6f1ff] px-6 py-10 lg:px-16"
+    >
+      <div className="mx-auto max-w-7xl">
+
+        {/* PURPLE FRAME */}
+        <div className="border-[6px] border-[#6B21A8]">
+
+          {/* SPACE BETWEEN BORDER AND PANEL */}
+          <div className="p-[15px]">
+
+            {/* MAIN PANEL */}
+            <div className="bg-[#efe6ff] shadow-lg">
+
+              <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] min-h-[280px]">
+
+                {/* IMAGE */}
+                <div className="relative overflow-hidden">
+                  <img
+                    src="/girl-portrait.png"
+                    alt="HealingWings Resident"
+                    className="h-full w-full object-cover object-center"
+                  />
+
+                  <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-black/10 to-transparent" />
+
+                  <div className="absolute bottom-6 left-6 max-w-[240px] text-white">
+                    <p className="text-sm leading-5 font-medium">
+                      Every contribution helps provide safety and hope.
+                    </p>
+                  </div>
+                </div>
+
+                {/* RIGHT SIDE */}
+                <div className="flex items-center px-8 py-6 lg:px-12">
+                  <div className="w-full">
+
+                    <div className="mb-4">
+                      <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#6B21A8]">
+                        Make an impact
+                      </p>
+
+                      <h2 className="hw-heading-font text-3xl font-extrabold text-stone-900">
+                        Your donation changes lives
+                      </h2>
+                    </div>
+
+                    <div className="bg-white p-5 shadow-md border border-stone-200">
+                      <DonationWidget />
+
+                      <div className="mt-4 flex gap-6 border-t pt-4 text-sm">
+
+                        <div className="flex items-center gap-2 text-stone-600">
+                          <svg
+                            className="w-4 h-4 text-[#0D9488]"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                          Impact Driven
+                        </div>
+
+                        <div className="flex items-center gap-2 text-stone-600">
+                          <svg
+                            className="w-4 h-4 text-[#6B21A8]"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                          Secure Giving
+                        </div>
+
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+
       </div>
     </section>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Section 6 — Color Meaning Callout
-// ─────────────────────────────────────────────────────────────────────────────
-function ColorMeaningSection() {
-  const ref = useFadeIn();
-  const cards = [
-    {
-      color: '#6B21A8',
-      label: 'Purple',
-      cause: 'Domestic Violence Awareness',
-      desc: 'Purple represents the courage and resilience of survivors of domestic violence — the strength to speak, seek safety, and start again.',
-    },
-    {
-      color: '#0D9488',
-      label: 'Teal',
-      cause: 'Sexual Assault Prevention',
-      desc: 'Teal represents the fight for consent, safety, and healing — because every survivor deserves to be believed, supported, and free.',
-    },
-    {
-      color: '#1E3A5F',
-      label: 'Navy',
-      cause: 'Child Abuse Prevention',
-      desc: 'Navy represents the protection every child deserves — because no child should ever have to endure what our residents have survived.',
-    },
-  ];
-  return (
-    <section className="py-20 lg:py-28 hw-bg-white">
-      <SectionContainer>
-        <div className="text-center mb-12 hw-fade-in" ref={ref}>
-          <span className="hw-eyebrow">Intentional by Design</span>
-          <h2 className="mt-2 text-2xl md:text-3xl font-extrabold text-stone-800 hw-heading-font">
-            Why our colors matter
-          </h2>
-          <p className="mt-3 text-stone-500 text-sm max-w-xl mx-auto">
-            Every color in our brand is a deliberate act of solidarity with the causes we serve.
-          </p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {cards.map((card) => (
-            <div
-              key={card.label}
-              className="hw-fade-in rounded-2xl p-7 bg-white shadow-sm border border-stone-100"
-              ref={useFadeIn()}
-              style={{ borderLeft: `5px solid ${card.color}` }}
-            >
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-4 h-4 rounded-full flex-shrink-0" style={{ background: card.color }} />
-                <span className="font-bold text-sm" style={{ color: card.color }}>{card.label}</span>
-                <span className="text-stone-400 text-xs">·</span>
-                <span className="text-stone-500 text-xs font-medium">{card.cause}</span>
-              </div>
-              <p className="text-stone-600 text-sm leading-relaxed">{card.desc}</p>
-            </div>
-          ))}
-        </div>
-      </SectionContainer>
-    </section>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Section 7 — How You Can Help
-// ─────────────────────────────────────────────────────────────────────────────
-function HowToHelpSection() {
-  const ref = useFadeIn();
-  const cols = [
-    {
-      iconColor: '#E11D74',
-      iconPath: <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />,
-      title: 'Donate',
-      desc: 'Your gift funds safe shelter, counseling, and education for one more children who needs hope.',
-      link: 'Give Today →',
-    },
-    {
-      iconColor: '#6B21A8',
-      iconPath: (
-        <>
-          <path d="M18 11V20a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2v-9" />
-          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-          <line x1="12" y1="15" x2="12" y2="18" />
-        </>
-      ),
-      title: 'Volunteer',
-      desc: 'Bring your skills to the safehouses — educators, counselors, mentors, and more are always needed.',
-      link: 'Get Involved →',
-    },
-    {
-      iconColor: '#1E3A5F',
-      iconPath: (
-        <>
-          <circle cx="18" cy="5" r="3" />
-          <circle cx="6" cy="12" r="3" />
-          <circle cx="18" cy="19" r="3" />
-          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-          <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-        </>
-      ),
-      title: 'Spread the Word',
-      desc: 'Share our mission and help us reach more children in need. Every voice amplifies our impact.',
-      link: 'Share Now →',
-    },
-  ];
-  return (
-    <section className="py-24 lg:py-32 hw-bg-white">
-      <SectionContainer>
-        <div className="text-center mb-14 hw-fade-in" ref={ref}>
-          <span className="hw-eyebrow">Get Involved</span>
-          <h2 className="hw-heading mt-3 text-3xl md:text-4xl font-extrabold">
-            Join the mission
-          </h2>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8">
-          {cols.map((col) => (
-            <div key={col.title} className="text-center px-4 hw-fade-in" ref={useFadeIn()}>
-              <div
-                className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-5"
-                style={{ background: col.iconColor + '18' }}
-              >
-                <svg width="26" height="26" fill="none" stroke={col.iconColor} strokeWidth="1.8" viewBox="0 0 24 24">
-                  {col.iconPath}
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold text-stone-800 mb-3" style={{ fontFamily: 'Poppins, sans-serif' }}>
-                {col.title}
-              </h3>
-              <p className="text-stone-500 text-sm leading-relaxed mb-5">{col.desc}</p>
-              <a href="#" className="hw-text-teal font-semibold text-sm no-underline transition-colors">
-                {col.link}
-              </a>
-            </div>
-          ))}
-        </div>
-      </SectionContainer>
-    </section>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Section 8 — Donation CTA Banner
-// ─────────────────────────────────────────────────────────────────────────────
-function DonationBanner() {
-  const ref = useFadeIn();
-  return (
-    <section id="donate" className="relative py-24 lg:py-32 overflow-hidden">
-      <div className="absolute inset-0 hw-bg-donate" />
-      {/* Decorative circles */}
-      <div className="absolute -top-20 -right-20 w-80 h-80 rounded-full bg-white/5 pointer-events-none" />
-      <div className="absolute -bottom-16 -left-16 w-96 h-96 rounded-full bg-white/5 pointer-events-none" />
-      <SectionContainer className="relative z-10">
-        <div className="text-center mb-10 hw-fade-in" ref={ref}>
-          <h2
-            className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-white leading-snug hw-heading-font"
-          >
-            ₱500 provides one week of safety
-            <br />
-            <span className="hw-text-soft">for a child in need.</span>
-          </h2>
-          <p className="mt-4 text-white/75 text-base">Every peso goes directly to the children we serve.</p>
-        </div>
-        <DonationWidget />
-      </SectionContainer>
-    </section>
-  );
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Section 9 — Partners
 // ─────────────────────────────────────────────────────────────────────────────
-function PartnersSection() {
-  const ref = useFadeIn();
+const ALL_DONORS = [
+  // Row 1 - Large, prominent names
+  { name: "Maria F. Santos", size: "text-3xl", weight: "font-bold", opacity: 0.95 },
+  { name: "Benjamin A. Clark", size: "text-lg", weight: "font-medium", opacity: 0.6 },
+  { name: "Liam & Sofia Walker", size: "text-2xl", weight: "font-semibold", opacity: 0.85 },
+  { name: "Elena Rossi", size: "text-sm", weight: "font-normal", opacity: 0.45 },
+  { name: "Dr. Noah P. Smith", size: "text-xl", weight: "font-medium", opacity: 0.7 },
+  { name: "The Johnson Family", size: "text-2xl", weight: "font-bold", opacity: 0.9 },
+  { name: "Ava Martinez", size: "text-sm", weight: "font-normal", opacity: 0.4 },
+  { name: "Lucas Chen", size: "text-lg", weight: "font-medium", opacity: 0.65 },
+  { name: "Isabella Kim", size: "text-3xl", weight: "font-bold", opacity: 1 },
+  { name: "Mateo & Clara Silva", size: "text-xl", weight: "font-semibold", opacity: 0.8 },
+  { name: "Harper & James Lewis", size: "text-sm", weight: "font-light", opacity: 0.35 },
+  { name: "Charlotte M. Lee", size: "text-2xl", weight: "font-medium", opacity: 0.75 },
+  { name: "Grace Allen", size: "text-lg", weight: "font-medium", opacity: 0.55 },
+  { name: "Amelia R. Taylor", size: "text-3xl", weight: "font-extrabold", opacity: 0.9 },
+  { name: "Oliver N. Brown", size: "text-sm", weight: "font-normal", opacity: 0.4 },
+  { name: "The Davis Foundation", size: "text-2xl", weight: "font-bold", opacity: 0.85 },
+  { name: "Sophia White", size: "text-xl", weight: "font-medium", opacity: 0.7 },
+  { name: "Ethan Hall", size: "text-sm", weight: "font-light", opacity: 0.38 },
+  { name: "Mia & Jack Thompson", size: "text-2xl", weight: "font-semibold", opacity: 0.82 },
+  { name: "Chloe D. Wright", size: "text-lg", weight: "font-medium", opacity: 0.6 },
+  { name: "Alexander Scott", size: "text-3xl", weight: "font-bold", opacity: 0.95 },
+  { name: "Emma L. Wilson", size: "text-sm", weight: "font-normal", opacity: 0.42 },
+  { name: "James R. Anderson", size: "text-xl", weight: "font-medium", opacity: 0.72 },
+  { name: "Lily Chen", size: "text-2xl", weight: "font-semibold", opacity: 0.8 },
+  { name: "Ryan & Megan Moore", size: "text-sm", weight: "font-light", opacity: 0.36 },
+  { name: "Victoria Torres", size: "text-xl", weight: "font-medium", opacity: 0.68 },
+  { name: "Andrés Peña", size: "text-3xl", weight: "font-bold", opacity: 0.92 },
+  { name: "Natalie Santos", size: "text-sm", weight: "font-normal", opacity: 0.44 },
+  { name: "Joshua Bennett", size: "text-2xl", weight: "font-semibold", opacity: 0.78 },
+  { name: "Samantha Cox", size: "text-lg", weight: "font-medium", opacity: 0.58 },
+];
+
+function DonorWallSection() {
+  type DonorParticle = {
+    id: number;
+    name: string;
+    size: string;
+    weight: string;
+    opacity: number;
+    left: string;
+    top: string;
+    duration: string;
+    delay: string;
+  };
+
+  const particles: DonorParticle[] = useMemo(() =>
+    ALL_DONORS.map((donor, i) => ({
+      id: i,
+      ...donor,
+      left: `${(i * 7 + 3) % 90}%`,
+      top: `${(i * 11 + 5) % 82}%`,
+      duration: `${20 + (i % 7) * 5}s`,
+      delay: `${-(i * 2.3) % 18}s`,
+    }))
+  , []);
+
   return (
-    <section className="py-16 hw-bg-lavender2">
-      <SectionContainer>
-        <div className="text-center mb-10 hw-fade-in" ref={ref}>
-          <span className="hw-eyebrow">Trusted by our partners</span>
+    <section className="relative overflow-hidden bg-white" style={{ minHeight: '420px' }}>
+      {/* Soft off-white gradient for depth */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#FAFAF9] to-white z-0" />
+      
+      {/* Floating donor names in dark amber (#B45309) */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none select-none z-10">
+        {particles.map((p) => (
+          <div
+            key={p.id}
+            className={`absolute hw-animate-float hw-donor-name ${p.size} ${p.weight} text-[#B45309]`}
+            style={{
+              left: p.left,
+              top: p.top,
+              opacity: p.opacity,
+              '--float-duration': p.duration,
+              '--float-delay': p.delay,
+              letterSpacing: '0.01em',
+            } as React.CSSProperties & { '--float-duration': string; '--float-delay': string }}
+          >
+            {p.name}
+          </div>
+        ))}
+      </div>
+
+      {/* Centered text overlay with ultra-transparent glass card */}
+      <div className="relative z-10 flex flex-col items-center justify-center text-center pointer-events-none" style={{ minHeight: '420px', padding: '80px 24px' }}>
+        <div className="bg-white/10 backdrop-blur-md border border-white/30 rounded-3xl p-8 lg:p-12 shadow-[0_8px_32px_rgba(30,58,95,0.06)] max-w-3xl">
+          <h2 className="hw-heading-font text-[#1E3A5F] font-extrabold text-4xl lg:text-5xl tracking-tight leading-tight mix-blend-multiply mb-4">
+            Thank you to our Donors
+          </h2>
+          <p className="text-stone-600/90 text-lg lg:text-xl font-medium tracking-wide">
+            Each of these names has made a contribution and a lasting impact on the lives of our children.
+          </p>
         </div>
-        <div className="flex flex-wrap justify-center items-center gap-6">
-          {['UNICEF Philippines', 'DSWD', 'IJM', 'Hope Foundation', 'Rotary Club', 'GMA Kapuso'].map((name) => (
-            <div
-              key={name}
-              className="hw-partner-logo hw-partner-bg h-12 px-6 flex items-center justify-center rounded-lg shadow-sm"
-            >
-              <span className="text-stone-500 text-xs font-bold uppercase tracking-widest whitespace-nowrap">
-                {name}
-              </span>
-            </div>
-          ))}
-        </div>
-      </SectionContainer>
+      </div>
     </section>
   );
 }
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Page
@@ -416,12 +463,10 @@ export default function HealingWingsHome() {
       <HeroSection />
       <ImpactBar />
       <MissionSection />
-      <PillarsSection />
-      <StorySpotlight />
-      <ColorMeaningSection />
-      <HowToHelpSection />
+      <CarouselPillarsSection />
+      <BoardOfDirectorsSection />
       <DonationBanner />
-      <PartnersSection />
+      <DonorWallSection />
       <Footer />
     </div>
   );

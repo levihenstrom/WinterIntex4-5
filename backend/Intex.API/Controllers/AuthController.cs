@@ -2,9 +2,13 @@ using System.Collections.Concurrent;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
+using Intex.API.Authorization;
 using Intex.API.Data;
 
 namespace Intex.API.Controllers;
@@ -14,7 +18,8 @@ namespace Intex.API.Controllers;
 public class AuthController(
     UserManager<ApplicationUser> userManager,
     SignInManager<ApplicationUser> signInManager,
-    IConfiguration configuration) : ControllerBase
+    IConfiguration configuration,
+    AppDbContext appDb) : ControllerBase
 {
     private const string DefaultFrontendUrl = "http://localhost:3000";
     private const string DefaultExternalReturnPath = "/";
@@ -70,6 +75,133 @@ public class AuthController(
         }
 
         return Ok(providers);
+    }
+
+    [HttpPost("register")]
+    public async Task<IActionResult> Register([FromBody] RegisterRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
+            return BadRequest(new { message = "Email and password are required." });
+
+        var user = new ApplicationUser
+        {
+            UserName = request.Email,
+            Email = request.Email
+        };
+
+        var createResult = await userManager.CreateAsync(user, request.Password);
+        if (!createResult.Succeeded)
+        {
+            foreach (var error in createResult.Errors)
+                ModelState.AddModelError(error.Code, error.Description);
+            return ValidationProblem(ModelState);
+        }
+
+        var roleResult = await userManager.AddToRoleAsync(user, AuthRoles.Donor);
+        if (!roleResult.Succeeded)
+        {
+            await userManager.DeleteAsync(user);
+            foreach (var error in roleResult.Errors)
+                ModelState.AddModelError(error.Code, error.Description);
+            return ValidationProblem(ModelState);
+        }
+
+        return Ok(new { message = "Registration successful.", assignedRole = AuthRoles.Donor });
+    }
+
+    [Authorize(Policy = AuthPolicies.AdminOnly)]
+    [HttpPost("assign-role")]
+    public async Task<IActionResult> AssignRole([FromBody] AssignRoleRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Role))
+            return BadRequest(new { message = "Email and role are required." });
+
+        var normalizedRole = request.Role.Trim();
+        var allowedRoles = new[] { AuthRoles.Admin, AuthRoles.Staff, AuthRoles.Donor };
+        if (!allowedRoles.Contains(normalizedRole, StringComparer.OrdinalIgnoreCase))
+            return BadRequest(new { message = "Role must be Admin, Staff, or Donor." });
+
+        var canonicalRole = allowedRoles.First(r => string.Equals(r, normalizedRole, StringComparison.OrdinalIgnoreCase));
+        var user = await userManager.FindByEmailAsync(request.Email);
+        if (user is null)
+            return NotFound(new { message = "User not found." });
+
+        foreach (var role in allowedRoles.Concat([AuthRoles.LegacyCustomer]))
+        {
+            if (await userManager.IsInRoleAsync(user, role))
+            {
+                var removalResult = await userManager.RemoveFromRoleAsync(user, role);
+                if (!removalResult.Succeeded)
+                {
+                    foreach (var error in removalResult.Errors)
+                        ModelState.AddModelError(error.Code, error.Description);
+                    return ValidationProblem(ModelState);
+                }
+            }
+        }
+
+        var addRoleResult = await userManager.AddToRoleAsync(user, canonicalRole);
+        if (!addRoleResult.Succeeded)
+        {
+            foreach (var error in addRoleResult.Errors)
+                ModelState.AddModelError(error.Code, error.Description);
+            return ValidationProblem(ModelState);
+        }
+
+        return Ok(new { message = "Role assigned successfully.", email = user.Email, role = canonicalRole });
+    }
+
+    [Authorize(Policy = AuthPolicies.AdminOnly)]
+    [HttpPost("assign-staff-partner")]
+    public async Task<IActionResult> AssignStaffPartner([FromBody] AssignStaffPartnerRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Email))
+            return BadRequest(new { message = "Email is required." });
+
+        var user = await userManager.FindByEmailAsync(request.Email);
+        if (user is null)
+            return NotFound(new { message = "User not found." });
+
+        var partner = await appDb.Partners.AsNoTracking()
+            .FirstOrDefaultAsync(p => p.PartnerId == request.PartnerId);
+        if (partner is null)
+            return NotFound(new { message = "Partner not found." });
+
+        if (!await userManager.IsInRoleAsync(user, AuthRoles.Staff)
+            && !await userManager.IsInRoleAsync(user, AuthRoles.Admin))
+        {
+            return BadRequest(new { message = "User must have Staff or Admin role before assigning a partner." });
+        }
+
+        var existingClaims = await userManager.GetClaimsAsync(user);
+        foreach (var claim in existingClaims.Where(c => c.Type == StaffScopeResolver.PartnerIdClaimType).ToList())
+        {
+            var removeResult = await userManager.RemoveClaimAsync(user, claim);
+            if (!removeResult.Succeeded)
+            {
+                foreach (var error in removeResult.Errors)
+                    ModelState.AddModelError(error.Code, error.Description);
+                return ValidationProblem(ModelState);
+            }
+        }
+
+        var addResult = await userManager.AddClaimAsync(
+            user,
+            new Claim(StaffScopeResolver.PartnerIdClaimType, request.PartnerId.ToString()));
+        if (!addResult.Succeeded)
+        {
+            foreach (var error in addResult.Errors)
+                ModelState.AddModelError(error.Code, error.Description);
+            return ValidationProblem(ModelState);
+        }
+
+        return Ok(new
+        {
+            message = "Staff partner assignment updated successfully. User must sign out and sign back in to refresh claims.",
+            email = user.Email,
+            partnerId = partner.PartnerId,
+            partnerName = partner.PartnerName
+        });
     }
 
     [HttpPost("password-login")]
@@ -217,6 +349,10 @@ public class AuthController(
                 var createResult = await userManager.CreateAsync(resolvedUser);
                 if (!createResult.Succeeded)
                     return Redirect(BuildFrontendErrorUrl("Unable to create a local account for the external login."));
+
+                var donorRoleResult = await userManager.AddToRoleAsync(resolvedUser, AuthRoles.Donor);
+                if (!donorRoleResult.Succeeded)
+                    return Redirect(BuildFrontendErrorUrl("Unable to assign the default donor role."));
             }
 
             var addLoginResult = await userManager.AddLoginAsync(resolvedUser, info);
@@ -327,10 +463,38 @@ public class AuthController(
         });
     }
 
-    public record ExchangeTokenRequest(string Token);
-    public record RefreshSessionRequest(string RefreshToken);
-    public record PasswordLoginRequest(string Email, string Password, bool RememberMe);
-    public record TwoFactorLoginRequest(string? TwoFactorCode, string? RecoveryCode, bool RememberMe);
+    public record ExchangeTokenRequest([property: Required(ErrorMessage = "Token is required.")] string Token);
+    public record RefreshSessionRequest([property: Required(ErrorMessage = "Refresh token is required.")] string RefreshToken);
+    public record RegisterRequest(
+        [property: Required(ErrorMessage = "Email is required.")]
+        [property: EmailAddress(ErrorMessage = "Enter a valid email address.")]
+        string Email,
+        [property: Required(ErrorMessage = "Password is required.")]
+        [property: MinLength(14, ErrorMessage = "Password must be at least 14 characters.")]
+        string Password);
+    public record AssignRoleRequest(
+        [property: Required(ErrorMessage = "Email is required.")]
+        [property: EmailAddress(ErrorMessage = "Enter a valid email address.")]
+        string Email,
+        [property: Required(ErrorMessage = "Role is required.")]
+        string Role);
+    public record AssignStaffPartnerRequest(
+        [property: Required(ErrorMessage = "Email is required.")]
+        [property: EmailAddress(ErrorMessage = "Enter a valid email address.")]
+        string Email,
+        [property: Range(1, int.MaxValue, ErrorMessage = "Partner is required.")]
+        int PartnerId);
+    public record PasswordLoginRequest(
+        [property: Required(ErrorMessage = "Email is required.")]
+        [property: EmailAddress(ErrorMessage = "Enter a valid email address.")]
+        string Email,
+        [property: Required(ErrorMessage = "Password is required.")]
+        string Password,
+        bool RememberMe);
+    public record TwoFactorLoginRequest(
+        string? TwoFactorCode,
+        string? RecoveryCode,
+        bool RememberMe);
 
     [HttpPost("logout")]
     public async Task<IActionResult> Logout([FromBody] LogoutRequest? request = null)

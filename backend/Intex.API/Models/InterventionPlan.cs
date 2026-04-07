@@ -11,11 +11,13 @@ public class InterventionPlan
     public int PlanId { get; set; }
 
     [Column("resident_id")]
+    [Range(1, int.MaxValue, ErrorMessage = "Resident is required.")]
     public int ResidentId { get; set; }
 
     public Resident Resident { get; set; } = null!;
 
     [Column("plan_category")]
+    [Required(ErrorMessage = "Plan category is required.")]
     public string? PlanCategory { get; set; }
 
     [Column("plan_description")]
@@ -31,6 +33,7 @@ public class InterventionPlan
     public DateTime? TargetDate { get; set; }
 
     [Column("status")]
+    [Required(ErrorMessage = "Status is required.")]
     public string? Status { get; set; }
 
     [Column("case_conference_date")]

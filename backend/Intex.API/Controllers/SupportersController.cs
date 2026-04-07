@@ -1,3 +1,4 @@
+using Intex.API.Authorization;
 using Intex.API.Contracts;
 using Intex.API.Data;
 using Intex.API.Extensions;
@@ -10,10 +11,10 @@ namespace Intex.API.Controllers;
 
 [ApiController]
 [Route("api/supporters")]
-[Authorize(Policy = AuthPolicies.ManageCatalog)]
-public class SupportersController(AppDbContext db) : ControllerBase
+public class SupportersController(AppDbContext db, StaffScopeResolver scopeResolver) : ControllerBase
 {
     [HttpGet]
+    [Authorize(Policy = AuthPolicies.StaffRead)]
     [ProducesResponseType(typeof(PagedResult<Supporter>), StatusCodes.Status200OK)]
     public async Task<ActionResult<PagedResult<Supporter>>> GetPage(
         [FromQuery] int page = 1,
@@ -22,7 +23,8 @@ public class SupportersController(AppDbContext db) : ControllerBase
         [FromQuery] string? status = null,
         CancellationToken cancellationToken = default)
     {
-        var query = db.Supporters.AsNoTracking().AsQueryable();
+        var scope = await scopeResolver.GetForUserAsync(User, cancellationToken);
+        var query = scope.Apply(db.Supporters.AsNoTracking().AsQueryable());
         if (!string.IsNullOrWhiteSpace(supporterType))
             query = query.Where(s => s.SupporterType == supporterType);
         if (!string.IsNullOrWhiteSpace(status))
@@ -34,17 +36,21 @@ public class SupportersController(AppDbContext db) : ControllerBase
     }
 
     [HttpGet("{id:int}")]
+    [Authorize(Policy = AuthPolicies.StaffRead)]
     [ProducesResponseType(typeof(Supporter), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Supporter>> GetById(int id, CancellationToken cancellationToken)
     {
-        var entity = await db.Supporters.AsNoTracking().FirstOrDefaultAsync(s => s.SupporterId == id, cancellationToken);
+        var scope = await scopeResolver.GetForUserAsync(User, cancellationToken);
+        var entity = await scope.Apply(db.Supporters.AsNoTracking().AsQueryable())
+            .FirstOrDefaultAsync(s => s.SupporterId == id, cancellationToken);
         if (entity is null)
             return NotFound();
         return Ok(entity);
     }
 
     [HttpPost]
+    [Authorize(Policy = AuthPolicies.StaffWrite)]
     [ProducesResponseType(typeof(Supporter), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<Supporter>> Create([FromBody] Supporter supporter, CancellationToken cancellationToken)
@@ -58,6 +64,7 @@ public class SupportersController(AppDbContext db) : ControllerBase
     }
 
     [HttpPut("{id:int}")]
+    [Authorize(Policy = AuthPolicies.StaffWrite)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -74,6 +81,7 @@ public class SupportersController(AppDbContext db) : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
+    [Authorize(Policy = AuthPolicies.StaffWrite)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)

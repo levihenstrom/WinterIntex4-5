@@ -10,10 +10,10 @@ namespace Intex.API.Controllers;
 
 [ApiController]
 [Route("api/social-media-posts")]
-[Authorize(Policy = AuthPolicies.ManageCatalog)]
 public class SocialMediaPostsController(AppDbContext db) : ControllerBase
 {
     [HttpGet]
+    [Authorize(Policy = AuthPolicies.StaffRead)]
     [ProducesResponseType(typeof(PagedResult<SocialMediaPost>), StatusCodes.Status200OK)]
     public async Task<ActionResult<PagedResult<SocialMediaPost>>> GetPage(
         [FromQuery] int page = 1,
@@ -34,6 +34,7 @@ public class SocialMediaPostsController(AppDbContext db) : ControllerBase
     }
 
     [HttpGet("{id:int}")]
+    [Authorize(Policy = AuthPolicies.StaffRead)]
     [ProducesResponseType(typeof(SocialMediaPost), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<SocialMediaPost>> GetById(int id, CancellationToken cancellationToken)
@@ -45,6 +46,7 @@ public class SocialMediaPostsController(AppDbContext db) : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Policy = AuthPolicies.StaffWrite)]
     [ProducesResponseType(typeof(SocialMediaPost), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<SocialMediaPost>> Create([FromBody] SocialMediaPost post, CancellationToken cancellationToken)
@@ -58,6 +60,7 @@ public class SocialMediaPostsController(AppDbContext db) : ControllerBase
     }
 
     [HttpPut("{id:int}")]
+    [Authorize(Policy = AuthPolicies.StaffWrite)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -74,6 +77,7 @@ public class SocialMediaPostsController(AppDbContext db) : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
+    [Authorize(Policy = AuthPolicies.StaffWrite)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)

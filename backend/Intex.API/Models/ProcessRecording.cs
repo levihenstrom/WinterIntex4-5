@@ -11,17 +11,21 @@ public class ProcessRecording
     public int RecordingId { get; set; }
 
     [Column("resident_id")]
+    [Range(1, int.MaxValue, ErrorMessage = "Resident is required.")]
     public int ResidentId { get; set; }
 
     public Resident Resident { get; set; } = null!;
 
     [Column("session_date")]
+    [Required(ErrorMessage = "Session date is required.")]
     public DateTime? SessionDate { get; set; }
 
     [Column("social_worker")]
+    [Required(ErrorMessage = "Social worker is required.")]
     public string? SocialWorker { get; set; }
 
     [Column("session_type")]
+    [Required(ErrorMessage = "Session type is required.")]
     public string? SessionType { get; set; }
 
     [Column("session_duration_minutes")]

@@ -11,14 +11,17 @@ public class Donation
     public int DonationId { get; set; }
 
     [Column("supporter_id")]
+    [Range(1, int.MaxValue, ErrorMessage = "Supporter is required.")]
     public int SupporterId { get; set; }
 
     public Supporter Supporter { get; set; } = null!;
 
     [Column("donation_type")]
+    [Required(ErrorMessage = "Donation type is required.")]
     public string? DonationType { get; set; }
 
     [Column("donation_date")]
+    [Required(ErrorMessage = "Donation date is required.")]
     public DateTime? DonationDate { get; set; }
 
     [Column("is_recurring")]

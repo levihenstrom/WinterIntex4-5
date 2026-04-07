@@ -11,17 +11,21 @@ public class HomeVisitation
     public int VisitationId { get; set; }
 
     [Column("resident_id")]
+    [Range(1, int.MaxValue, ErrorMessage = "Resident is required.")]
     public int ResidentId { get; set; }
 
     public Resident Resident { get; set; } = null!;
 
     [Column("visit_date")]
+    [Required(ErrorMessage = "Visit date is required.")]
     public DateTime? VisitDate { get; set; }
 
     [Column("social_worker")]
+    [Required(ErrorMessage = "Social worker is required.")]
     public string? SocialWorker { get; set; }
 
     [Column("visit_type")]
+    [Required(ErrorMessage = "Visit type is required.")]
     public string? VisitType { get; set; }
 
     [Column("location_visited")]

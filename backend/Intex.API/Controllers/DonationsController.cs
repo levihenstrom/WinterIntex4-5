@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using Intex.API.Authorization;
 using Intex.API.Contracts;
 using Intex.API.Data;
 using Intex.API.Extensions;
@@ -10,10 +12,10 @@ namespace Intex.API.Controllers;
 
 [ApiController]
 [Route("api/donations")]
-[Authorize(Policy = AuthPolicies.ManageCatalog)]
-public class DonationsController(AppDbContext db) : ControllerBase
+public class DonationsController(AppDbContext db, StaffScopeResolver scopeResolver) : ControllerBase
 {
     [HttpGet]
+    [Authorize(Policy = AuthPolicies.StaffRead)]
     [ProducesResponseType(typeof(PagedResult<Donation>), StatusCodes.Status200OK)]
     public async Task<ActionResult<PagedResult<Donation>>> GetPage(
         [FromQuery] int page = 1,
@@ -22,7 +24,8 @@ public class DonationsController(AppDbContext db) : ControllerBase
         [FromQuery] string? donationType = null,
         CancellationToken cancellationToken = default)
     {
-        var query = db.Donations.AsNoTracking().AsQueryable();
+        var scope = await scopeResolver.GetForUserAsync(User, cancellationToken);
+        var query = scope.Apply(db.Donations.AsNoTracking().AsQueryable());
         if (supporterId is { } sid)
             query = query.Where(d => d.SupporterId == sid);
         if (!string.IsNullOrWhiteSpace(donationType))
@@ -33,18 +36,55 @@ public class DonationsController(AppDbContext db) : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>
+    /// Donor self-service: return donations for the supporter linked to the current user
+    /// via the "supporterId" claim. Admins without a claim see an empty result.
+    /// </summary>
+    [HttpGet("mine")]
+    [Authorize(Policy = AuthPolicies.DonorSelfService)]
+    [ProducesResponseType(typeof(PagedResult<Donation>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResult<Donation>>> GetMine(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = Pagination.DefaultPageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var supporterIdClaim = User.FindFirstValue(StaffScopeResolver.SupporterIdClaimType);
+        if (!int.TryParse(supporterIdClaim, out var supporterId))
+        {
+            return Ok(new PagedResult<Donation>
+            {
+                Page = 1,
+                PageSize = pageSize,
+                TotalCount = 0,
+                Items = Array.Empty<Donation>()
+            });
+        }
+
+        var query = db.Donations.AsNoTracking()
+            .Where(d => d.SupporterId == supporterId)
+            .OrderByDescending(d => d.DonationDate)
+            .ThenBy(d => d.DonationId);
+
+        var result = await query.ToPagedResultAsync(page, pageSize, cancellationToken);
+        return Ok(result);
+    }
+
     [HttpGet("{id:int}")]
+    [Authorize(Policy = AuthPolicies.StaffRead)]
     [ProducesResponseType(typeof(Donation), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Donation>> GetById(int id, CancellationToken cancellationToken)
     {
-        var entity = await db.Donations.AsNoTracking().FirstOrDefaultAsync(d => d.DonationId == id, cancellationToken);
+        var scope = await scopeResolver.GetForUserAsync(User, cancellationToken);
+        var entity = await scope.Apply(db.Donations.AsNoTracking().AsQueryable())
+            .FirstOrDefaultAsync(d => d.DonationId == id, cancellationToken);
         if (entity is null)
             return NotFound();
         return Ok(entity);
     }
 
     [HttpPost]
+    [Authorize(Policy = AuthPolicies.StaffWrite)]
     [ProducesResponseType(typeof(Donation), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<Donation>> Create([FromBody] Donation donation, CancellationToken cancellationToken)
@@ -58,6 +98,7 @@ public class DonationsController(AppDbContext db) : ControllerBase
     }
 
     [HttpPut("{id:int}")]
+    [Authorize(Policy = AuthPolicies.StaffWrite)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -74,6 +115,7 @@ public class DonationsController(AppDbContext db) : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
+    [Authorize(Policy = AuthPolicies.StaffWrite)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)

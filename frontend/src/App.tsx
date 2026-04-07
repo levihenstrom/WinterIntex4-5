@@ -6,11 +6,13 @@ import {
   Link,
   useSearchParams,
   useNavigate,
+  useLocation,
 } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CookieConsentProvider } from './context/CookieConsentContext';
 import CookieConsentBanner from './components/CookieConsentBanner';
 import { exchangeAuthToken } from './lib/authAPI';
+import { resolvePostLoginPath } from './lib/authRedirect';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import LogoutPage from './pages/LogoutPage';
@@ -18,6 +20,25 @@ import ManageMFAPage from './pages/ManageMFAPage';
 import PrivacyPage from './pages/PrivacyPage';
 import HealingWingsHome from './pages/HealingWingsHome';
 import NavBar from './components/hw/NavBar';
+import RequireAuth from './components/RequireAuth';
+
+// Scaffold layouts + pages (SCAF-1)
+import AdminLayout from './layouts/AdminLayout';
+import DonorLayout from './layouts/DonorLayout';
+import ImpactPage from './pages/scaffold/ImpactPage';
+import DonorDashboardPage from './pages/scaffold/DonorDashboardPage';
+import AdminHomePage from './pages/scaffold/AdminHomePage';
+import SupportersListPage from './pages/scaffold/SupportersListPage';
+import ContributionsPage from './pages/scaffold/ContributionsPage';
+import AllocationsPage from './pages/scaffold/AllocationsPage';
+import ResidentsListPage from './pages/scaffold/ResidentsListPage';
+import ProcessRecordingPage from './pages/scaffold/ProcessRecordingPage';
+import VisitsPage from './pages/scaffold/VisitsPage';
+import ResidentVisitsAndConferencesPage from './pages/scaffold/ResidentVisitsAndConferencesPage';
+import SocialMediaHistoryPage from './pages/scaffold/SocialMediaHistoryPage';
+import SocialMediaSuggestPage from './pages/scaffold/SocialMediaSuggestPage';
+import DonationsReportPage from './pages/scaffold/DonationsReportPage';
+import OutcomesReportPage from './pages/scaffold/OutcomesReportPage';
 
 // Auth pages — same fixed NavBar as the landing page (see NavBar.tsx)
 function AuthLayout({ children }: { children: React.ReactNode }) {
@@ -50,6 +71,7 @@ function AuthTokenExchanger() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { refreshAuthState } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [exchanging, setExchanging] = useState(false);
 
   useEffect(() => {
@@ -57,16 +79,18 @@ function AuthTokenExchanger() {
     if (!authToken || exchanging) return;
     setExchanging(true);
     exchangeAuthToken(authToken)
-      .then(() => refreshAuthState())
-      .then(() => {
+      .then((session) => {
+        void refreshAuthState();
         searchParams.delete('authToken');
         setSearchParams(searchParams, { replace: true });
-        navigate('/', { replace: true });
+        navigate(resolvePostLoginPath(location.pathname, session.roles), {
+          replace: true,
+        });
       })
       .catch(() => {
         navigate('/login?externalError=Unable+to+complete+sign-in.', { replace: true });
       });
-  }, [searchParams, setSearchParams, refreshAuthState, navigate, exchanging]);
+  }, [searchParams, setSearchParams, refreshAuthState, navigate, exchanging, location.pathname]);
 
   if (searchParams.get('authToken')) {
     return (
@@ -85,14 +109,84 @@ function App() {
         <Router>
           <AuthTokenExchanger />
           <Routes>
-            {/* HealingWings landing page — has its own NavBar */}
+            {/* Public routes */}
             <Route path="/" element={<HealingWingsHome />} />
-            {/* Auth pages — use Bootstrap layout */}
+            <Route path="/impact" element={<ImpactPage />} />
             <Route path="/login" element={<AuthLayout><LoginPage /></AuthLayout>} />
             <Route path="/register" element={<AuthLayout><RegisterPage /></AuthLayout>} />
             <Route path="/logout" element={<AuthLayout><LogoutPage /></AuthLayout>} />
-            <Route path="/mfa" element={<AuthLayout><ManageMFAPage /></AuthLayout>} />
+            <Route
+              path="/mfa"
+              element={
+                <RequireAuth>
+                  <AuthLayout><ManageMFAPage /></AuthLayout>
+                </RequireAuth>
+              }
+            />
             <Route path="/privacy" element={<AuthLayout><PrivacyPage /></AuthLayout>} />
+            <Route
+              path="/unauthorized"
+              element={
+                <AuthLayout>
+                  <div className="container text-center mt-5">
+                    <h2>Access Denied</h2>
+                    <p className="text-muted">You don't have permission to view this page.</p>
+                  </div>
+                </AuthLayout>
+              }
+            />
+
+            {/* Donor portal (SCAF-1) */}
+            <Route
+              path="/donor"
+              element={
+                <RequireAuth role={['Donor', 'LegacyCustomer', 'Admin']}>
+                  <DonorLayout />
+                </RequireAuth>
+              }
+            >
+              <Route index element={<DonorDashboardPage />} />
+              <Route path="dashboard" element={<DonorDashboardPage />} />
+            </Route>
+
+            {/* Admin / staff portal (SCAF-1) */}
+            <Route
+              path="/admin"
+              element={
+                <RequireAuth role={['Admin', 'Staff']}>
+                  <AdminLayout />
+                </RequireAuth>
+              }
+            >
+              <Route index element={<AdminHomePage />} />
+              <Route path="home" element={<AdminHomePage />} />
+              <Route path="donations" element={<SupportersListPage />} />
+              <Route path="donations/contributions" element={<ContributionsPage />} />
+              <Route path="donations/allocations" element={<AllocationsPage />} />
+              <Route path="residents" element={<ResidentsListPage />} />
+              <Route path="residents/process-recordings" element={<ProcessRecordingPage />} />
+              <Route path="residents/visits-conferences" element={<ResidentVisitsAndConferencesPage />} />
+              <Route path="residents/:id/process" element={<ProcessRecordingPage />} />
+              <Route path="residents/:id/visits" element={<VisitsPage />} />
+              <Route
+                path="social-media"
+                element={
+                  <RequireAuth role="Admin">
+                    <SocialMediaHistoryPage />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="social-media/suggest"
+                element={
+                  <RequireAuth role="Admin">
+                    <SocialMediaSuggestPage />
+                  </RequireAuth>
+                }
+              />
+              <Route path="reports/donations" element={<DonationsReportPage />} />
+              <Route path="reports/outcomes" element={<OutcomesReportPage />} />
+            </Route>
           </Routes>
           <CookieConsentBanner />
         </Router>

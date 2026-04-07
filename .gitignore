@@ -59,6 +59,9 @@ nunit-*.xml
 
 sqlite/
 *.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite-journal
 *.db
 *.db-*
 *.zip
@@ -69,3 +72,7 @@ node_modules/
 .env.*
 
 convo.md
+
+# Large local artifacts (do not commit)
+Chapters/
+*.pre-ef-migration.bak

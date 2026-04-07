@@ -1,0 +1,4 @@
+platform,post_type,media_type,post_hour,content_topic,has_call_to_action,call_to_action_type,features_resident_story,predicted_engagement_rate,predicted_p_any_referral,predicted_referrals_count,ranking_score,goal,why_recommended
+Instagram,FundraisingAppeal,Video,20,Health,1.0,ShareStory,1.0,0.1579,0.9807,49.05,0.9699,awareness,media Video; Pred engagement 0.158; P(any referral) 0.981; expected referrals 49.1; CTA included; resident story content; awareness goal weighting
+Instagram,ThankYou,Video,20,Health,1.0,ShareStory,1.0,0.1616,0.8358,45.51,0.9577,awareness,media Video; Pred engagement 0.162; P(any referral) 0.836; expected referrals 45.5; CTA included; resident story content; awareness goal weighting
+Instagram,ImpactStory,Video,20,Health,1.0,ShareStory,1.0,0.1546,0.9881,50.85,0.9511,awareness,media Video; Pred engagement 0.155; P(any referral) 0.988; expected referrals 50.9; CTA included; resident story content; awareness goal weighting
