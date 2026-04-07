@@ -24,7 +24,7 @@ export default function NavBar() {
   }
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 shadow-sm bg-[#1E3A5F]/50 backdrop-blur-xl border-b border-white/20 transition-all duration-300">
+    <header className="fixed top-0 left-0 right-0 z-50 shadow-sm bg-[#1E3A5F]/75 backdrop-blur-xl border-b border-white/20 transition-all duration-300">
       <div className="max-w-7xl mx-auto px-6 lg:px-10 flex items-center justify-between h-16 lg:h-18">
 
         {/* Logo */}
@@ -116,7 +116,7 @@ export default function NavBar() {
 
       {/* Mobile drawer */}
       {menuOpen && (
-        <div className="lg:hidden border-t border-white/20 px-6 py-4 bg-[#1E3A5F]/50 backdrop-blur-xl">
+        <div className="lg:hidden border-t border-white/20 px-6 py-4 bg-[#1E3A5F]/75 backdrop-blur-xl">
           {NAV_LINKS.map((link) => (
             <a
               key={link.label}
