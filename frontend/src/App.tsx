@@ -18,6 +18,7 @@ import ManageMFAPage from './pages/ManageMFAPage';
 import PrivacyPage from './pages/PrivacyPage';
 import HealingWingsHome from './pages/HealingWingsHome';
 import NavBar from './components/hw/NavBar';
+import RequireAuth from './components/RequireAuth';
 
 // Auth pages — same fixed NavBar as the landing page (see NavBar.tsx)
 function AuthLayout({ children }: { children: React.ReactNode }) {
@@ -91,8 +92,26 @@ function App() {
             <Route path="/login" element={<AuthLayout><LoginPage /></AuthLayout>} />
             <Route path="/register" element={<AuthLayout><RegisterPage /></AuthLayout>} />
             <Route path="/logout" element={<AuthLayout><LogoutPage /></AuthLayout>} />
-            <Route path="/mfa" element={<AuthLayout><ManageMFAPage /></AuthLayout>} />
+            <Route
+              path="/mfa"
+              element={
+                <RequireAuth>
+                  <AuthLayout><ManageMFAPage /></AuthLayout>
+                </RequireAuth>
+              }
+            />
             <Route path="/privacy" element={<AuthLayout><PrivacyPage /></AuthLayout>} />
+            <Route
+              path="/unauthorized"
+              element={
+                <AuthLayout>
+                  <div className="container text-center mt-5">
+                    <h2>Access Denied</h2>
+                    <p className="text-muted">You don't have permission to view this page.</p>
+                  </div>
+                </AuthLayout>
+              }
+            />
           </Routes>
           <CookieConsentBanner />
         </Router>
