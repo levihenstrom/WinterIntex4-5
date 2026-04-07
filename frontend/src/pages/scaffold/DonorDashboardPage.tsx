@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { fetchPaged } from '../../lib/apiClient';
+import SectionContainer from '../../components/hw/SectionContainer';
 
 /**
  * DON-4 — Donor self-service: own donation history + impact by funded program areas.
  * Data comes only from GET /api/donations/mine (supporter scoped by claim on the server).
+ * Visual language matches HealingWingsHome + hw.css tokens.
  */
 
 interface DonationAllocationApi {
@@ -127,6 +129,29 @@ function buildProgramImpact(donations: DonationMine[]): ProgramImpactRow[] {
     .sort((a, b) => b.totalAmount - a.totalAmount);
 }
 
+function DonorMetricCell({
+  value,
+  label,
+  isMoney,
+}: {
+  value: string | number;
+  label: string;
+  isMoney?: boolean;
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center px-4 py-8 text-center sm:py-10">
+      <span
+        className={`hw-metric-num font-extrabold leading-none text-white ${isMoney ? 'text-3xl sm:text-4xl md:text-5xl' : 'text-4xl sm:text-5xl md:text-6xl'}`}
+      >
+        {value}
+      </span>
+      <span className="mt-3 text-[11px] font-semibold uppercase tracking-[0.2em]" style={{ color: '#5eead4' }}>
+        {label}
+      </span>
+    </div>
+  );
+}
+
 export default function DonorDashboardPage() {
   const [donations, setDonations] = useState<DonationMine[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -165,101 +190,100 @@ export default function DonorDashboardPage() {
   const programImpact = useMemo(() => (donations ? buildProgramImpact(donations) : []), [donations]);
 
   return (
-    <div className="hw-bg-offwhite pb-5">
-      <div className="container py-4">
-        <header className="mb-4">
-          <p className="hw-eyebrow mb-1">Donor portal</p>
-          <h1 className="hw-heading display-6">Your giving & impact</h1>
-          <p className="text-muted mb-0 col-lg-9">
-            This page shows only donations tied to your account. The server scopes results to your supporter
-            profile—other donors never appear here. Resident outcomes are summarized by program area without
-            identifying anyone.
-          </p>
+    <div className="hw-bg-offwhite min-h-[50vh] pb-16" style={{ fontFamily: 'var(--hw-font-body)' }}>
+      <SectionContainer className="py-10 lg:py-14">
+        <header className="mb-10 max-w-3xl">
+          <span className="hw-eyebrow">Donor portal</span>
+          <h1 className="hw-heading mt-3 text-3xl font-extrabold tracking-tight md:text-4xl lg:text-5xl">
+            Your giving & impact
+          </h1>
+          <div className="mt-6 space-y-4 text-base leading-relaxed text-stone-600">
+            <p>
+              This page shows only donations tied to your account. The server scopes results to your supporter
+              profile—other donors never appear here.
+            </p>
+            <p className="mb-0">
+              Resident outcomes are summarized by program area without identifying anyone.
+            </p>
+          </div>
         </header>
 
         {loading && (
-          <div className="py-5 text-center text-muted" aria-live="polite">
+          <div className="py-16 text-center text-stone-500" aria-live="polite">
             Loading your dashboard…
           </div>
         )}
 
         {error && (
-          <div className="alert alert-danger" role="alert">
+          <div className="hw-alert-error max-w-2xl" role="alert">
             {error}
           </div>
         )}
 
         {!loading && !error && donations && (
           <>
-            <section className="row g-3 mb-4" aria-label="Summary">
-              <div className="col-md-4">
-                <div className="card h-100 border-0 shadow-sm hw-bg-lavender">
-                  <div className="card-body">
-                    <div className="small text-muted text-uppercase fw-semibold">Lifetime gifts</div>
-                    <div className="h3 hw-text-purple mb-0">{totals.count}</div>
-                  </div>
-                </div>
-              </div>
-              <div className="col-md-4">
-                <div className="card h-100 border-0 shadow-sm">
-                  <div className="card-body">
-                    <div className="small text-muted text-uppercase fw-semibold">Total amount</div>
-                    <div className="h3 hw-text-teal mb-0">
-                      {totals.count === 0 ? '—' : formatMoney(totals.sum, totals.currency)}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="col-md-4">
-                <div className="card h-100 border-0 shadow-sm">
-                  <div className="card-body">
-                    <div className="small text-muted text-uppercase fw-semibold">Program areas supported</div>
-                    <div className="h3 hw-text-purple mb-0">{programImpact.length}</div>
-                  </div>
-                </div>
+            {/* Summary strip — same glass / navy language as HealingWingsHome ImpactBar */}
+            <section
+              className="relative z-10 mx-auto mb-12 w-full max-w-7xl rounded-[2rem] border border-white/20 bg-[#1E3A5F]/75 shadow-2xl backdrop-blur-xl"
+              aria-label="Giving summary"
+            >
+              <div className="grid grid-cols-1 divide-y divide-white/20 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+                <DonorMetricCell value={totals.count} label="Lifetime gifts" />
+                <DonorMetricCell
+                  value={totals.count === 0 ? '—' : formatMoney(totals.sum, totals.currency)}
+                  label="Total amount"
+                  isMoney
+                />
+                <DonorMetricCell value={programImpact.length} label="Program areas supported" />
               </div>
             </section>
 
-            <section className="mb-5" aria-labelledby="impact-heading">
-              <h2 id="impact-heading" className="h4 hw-heading mb-3">
-                Impact by program area
-              </h2>
-              <p className="text-muted small col-lg-10 mb-3">
-                Amounts roll up to the campaigns and allocations linked to your gifts. When the API includes
-                allocation rows, we group by program area; otherwise we group by campaign name. Impact notes
-                come from your gift metadata (for example units of service)—never resident identities.
-              </p>
+            <section className="mb-12" aria-labelledby="impact-heading">
+              <div className="mb-6 max-w-3xl">
+                <span className="hw-eyebrow">Your impact</span>
+                <h2 id="impact-heading" className="hw-heading mt-3 text-2xl font-extrabold md:text-3xl">
+                  By program area
+                </h2>
+                <p className="mt-4 text-stone-600">
+                  Amounts roll up to campaigns and allocations linked to your gifts. When the API includes
+                  allocation rows, we group by program area; otherwise we group by campaign name. Impact notes
+                  come from your gift metadata (for example units of service)—never resident identities.
+                </p>
+              </div>
 
               {programImpact.length === 0 ? (
-                <div className="card border-0 shadow-sm">
-                  <div className="card-body text-muted">
+                <div className="rounded-2xl border border-stone-200 bg-white p-8 shadow-md">
+                  <p className="mb-0 text-stone-500">
                     No program-level breakdown yet. When you have recorded gifts, they will appear here.
-                  </div>
+                  </p>
                 </div>
               ) : (
-                <div className="row g-3">
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
                   {programImpact.map((row) => (
-                    <div key={row.label} className="col-md-6 col-lg-4">
-                      <div className="card h-100 border-0 shadow-sm">
-                        <div className="card-body">
-                          <h3 className="h6 hw-text-teal">{row.label}</h3>
-                          <p className="mb-1">
-                            <strong>{formatMoney(row.totalAmount, totals.currency)}</strong>
-                            <span className="text-muted small ms-2">
-                              · {row.giftCount} gift{row.giftCount === 1 ? '' : 's'}
-                            </span>
+                    <div
+                      key={row.label}
+                      className="rounded-2xl border border-stone-200 bg-white p-6 shadow-md transition-shadow duration-300 hover:shadow-xl"
+                    >
+                      <div className="border-l-4 border-[#6B21A8] pl-4">
+                        <h3 className="hw-heading-font text-lg font-bold text-[#0D9488]">{row.label}</h3>
+                        <p className="mt-2 text-stone-900">
+                          <span className="text-2xl font-extrabold tabular-nums">
+                            {formatMoney(row.totalAmount, totals.currency)}
+                          </span>
+                          <span className="ml-2 text-sm text-stone-500">
+                            · {row.giftCount} gift{row.giftCount === 1 ? '' : 's'}
+                          </span>
+                        </p>
+                        {row.outcomeNotes.length > 0 ? (
+                          <p className="mt-3 text-sm leading-relaxed text-stone-600">
+                            <span className="font-semibold text-stone-800">Aggregate impact notes: </span>
+                            {row.outcomeNotes.join(' · ')}
                           </p>
-                          {row.outcomeNotes.length > 0 ? (
-                            <p className="small text-muted mb-0 mt-2">
-                              <span className="fw-semibold text-secondary">Aggregate impact notes: </span>
-                              {row.outcomeNotes.join(' · ')}
-                            </p>
-                          ) : (
-                            <p className="small text-muted mb-0 mt-2">
-                              Outcomes for this area are tracked in aggregate to protect resident privacy.
-                            </p>
-                          )}
-                        </div>
+                        ) : (
+                          <p className="mt-3 text-sm leading-relaxed text-stone-600">
+                            Outcomes for this area are tracked in aggregate to protect resident privacy.
+                          </p>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -268,52 +292,76 @@ export default function DonorDashboardPage() {
             </section>
 
             <section aria-labelledby="history-heading">
-              <h2 id="history-heading" className="h4 hw-heading mb-3">
-                Donation history
-              </h2>
+              <div className="mb-6">
+                <span className="hw-eyebrow">Record</span>
+                <h2 id="history-heading" className="hw-heading mt-3 text-2xl font-extrabold md:text-3xl">
+                  Donation history
+                </h2>
+              </div>
+
               {donations.length === 0 ? (
-                <p className="text-muted">
+                <p className="text-stone-600">
                   No donations on file for your supporter profile yet. If you recently gave, allow time for
                   processing.
                 </p>
               ) : (
-                <div className="table-responsive card border-0 shadow-sm">
-                  <table className="table table-hover mb-0 align-middle">
-                    <thead className="table-light">
-                      <tr>
-                        <th scope="col">Date</th>
-                        <th scope="col">Amount</th>
-                        <th scope="col">Type</th>
-                        <th scope="col">Campaign / program</th>
-                        <th scope="col">Recurring</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {donations.map((d) => (
-                        <tr key={d.donationId}>
-                          <td>{formatDate(d.donationDate)}</td>
-                          <td className="fw-semibold">{formatMoney(d.amount, d.currencyCode)}</td>
-                          <td>{d.donationType?.trim() || '—'}</td>
-                          <td>{d.campaignName?.trim() || '—'}</td>
-                          <td>
-                            {d.isRecurring === true ? (
-                              <span className="badge text-bg-secondary">Yes</span>
-                            ) : d.isRecurring === false ? (
-                              <span className="badge text-bg-light text-muted border">No</span>
-                            ) : (
-                              '—'
-                            )}
-                          </td>
+                <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-lg">
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[640px] border-collapse text-left text-sm">
+                      <thead>
+                        <tr className="border-b border-stone-200 bg-[#FAFAF9]">
+                          <th scope="col" className="hw-heading-font px-5 py-4 font-bold text-stone-800">
+                            Date
+                          </th>
+                          <th scope="col" className="hw-heading-font px-5 py-4 font-bold text-stone-800">
+                            Amount
+                          </th>
+                          <th scope="col" className="hw-heading-font px-5 py-4 font-bold text-stone-800">
+                            Type
+                          </th>
+                          <th scope="col" className="hw-heading-font px-5 py-4 font-bold text-stone-800">
+                            Campaign / program
+                          </th>
+                          <th scope="col" className="hw-heading-font px-5 py-4 font-bold text-stone-800">
+                            Recurring
+                          </th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="divide-y divide-stone-100">
+                        {donations.map((d) => (
+                          <tr key={d.donationId} className="transition-colors hover:bg-[#F5F3FF]/60">
+                            <td className="whitespace-nowrap px-5 py-4 text-stone-700">
+                              {formatDate(d.donationDate)}
+                            </td>
+                            <td className="px-5 py-4 font-semibold tabular-nums text-[#1E3A5F]">
+                              {formatMoney(d.amount, d.currencyCode)}
+                            </td>
+                            <td className="px-5 py-4 text-stone-700">{d.donationType?.trim() || '—'}</td>
+                            <td className="px-5 py-4 text-stone-700">{d.campaignName?.trim() || '—'}</td>
+                            <td className="px-5 py-4">
+                              {d.isRecurring === true ? (
+                                <span className="inline-flex rounded-full bg-[#EDE9FE] px-2.5 py-0.5 text-xs font-semibold text-[#6B21A8]">
+                                  Yes
+                                </span>
+                              ) : d.isRecurring === false ? (
+                                <span className="inline-flex rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-medium text-stone-600">
+                                  No
+                                </span>
+                              ) : (
+                                <span className="text-stone-400">—</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
             </section>
           </>
         )}
-      </div>
+      </SectionContainer>
     </div>
   );
 }
