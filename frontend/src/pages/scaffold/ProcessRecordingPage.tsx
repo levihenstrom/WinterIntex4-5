@@ -10,6 +10,7 @@ export default function ProcessRecordingPage() {
     <PagedTable
       endpoint={endpoint}
       heading={`CASE-2 — Process Recordings${id ? ` (resident ${id})` : ''}`}
+      allowDelete
     />
   );
 }

@@ -74,3 +74,14 @@ export async function fetchJson<T>(path: string): Promise<T> {
   }
   return response.json();
 }
+
+export async function deleteJson(path: string): Promise<void> {
+  const response = await fetch(`${apiBaseUrl}${path}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    throw new Error(await readApiError(response));
+  }
+}

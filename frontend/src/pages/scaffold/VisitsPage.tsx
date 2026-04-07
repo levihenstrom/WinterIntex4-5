@@ -10,6 +10,7 @@ export default function VisitsPage() {
     <PagedTable
       endpoint={endpoint}
       heading={`CASE-3 — Home Visitations${id ? ` (resident ${id})` : ''}`}
+      allowDelete
     />
   );
 }
