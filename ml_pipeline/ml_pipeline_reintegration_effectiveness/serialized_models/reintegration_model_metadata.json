@@ -1,0 +1,143 @@
+{
+  "pipeline_purpose": "decision_support_reintegration_completed",
+  "label": "y=1 if reintegration_status=='Completed' on master record; Active/In Progress treated as 0 (censored \u2014 see README).",
+  "observation_date": "2027-02-02",
+  "feature_window": [
+    "2026-01-03",
+    "2027-01-03"
+  ],
+  "numeric_features": [
+    "initial_risk_ord",
+    "age_at_admission_years",
+    "stay_years_approx",
+    "days_in_program_at_window_end",
+    "pr_sessions_prior",
+    "pr_mean_duration",
+    "pr_progress_rate",
+    "pr_concern_rate",
+    "pr_referral_rate",
+    "pr_mean_emotional_delta",
+    "pr_gap_mean_days",
+    "pr_days_since_last",
+    "hv_visits_prior",
+    "hv_favorable_rate",
+    "hv_uncooperative_rate",
+    "edu_rows_prior",
+    "edu_mean_attendance",
+    "edu_mean_progress",
+    "hw_rows_prior",
+    "hw_mean_general",
+    "hw_mean_energy",
+    "ip_plans_prior",
+    "ip_achieved_rate",
+    "ip_on_hold_rate",
+    "inc_count_prior",
+    "inc_mean_severity",
+    "sub_cat_orphaned",
+    "sub_cat_trafficked",
+    "sub_cat_child_labor",
+    "sub_cat_physical_abuse",
+    "sub_cat_sexual_abuse",
+    "sub_cat_osaec",
+    "sub_cat_cicl",
+    "sub_cat_at_risk",
+    "sub_cat_street_child",
+    "sub_cat_child_with_hiv"
+  ],
+  "categorical_features": [
+    "case_category",
+    "initial_case_assessment",
+    "region"
+  ],
+  "model_selection": {
+    "selected": "random_forest",
+    "grid_best_params": {
+      "model__max_depth": 2,
+      "model__min_samples_leaf": 1,
+      "model__n_estimators": 100
+    },
+    "grid_best_cv_roc_auc": 0.7095238095238097
+  },
+  "holdout_metrics": {
+    "accuracy": 0.6666666666666666,
+    "precision": 0.5,
+    "recall": 0.6,
+    "f1": 0.5454545454545454,
+    "confusion_matrix": [
+      [
+        7,
+        3
+      ],
+      [
+        2,
+        3
+      ]
+    ],
+    "roc_auc": 0.6000000000000001,
+    "threshold": 0.5
+  },
+  "best_predictive_family": "random_forest",
+  "ethics": "Human review required; do not automate removal of care.",
+  "top_importance_features": [
+    {
+      "feature": "num__pr_gap_mean_days",
+      "importance": 0.1270691891747734
+    },
+    {
+      "feature": "num__days_in_program_at_window_end",
+      "importance": 0.10668827924816171
+    },
+    {
+      "feature": "num__pr_concern_rate",
+      "importance": 0.08965629531886661
+    },
+    {
+      "feature": "num__stay_years_approx",
+      "importance": 0.07513399276553581
+    },
+    {
+      "feature": "num__pr_days_since_last",
+      "importance": 0.07217132752888351
+    },
+    {
+      "feature": "num__pr_mean_duration",
+      "importance": 0.05603766088905873
+    },
+    {
+      "feature": "num__age_at_admission_years",
+      "importance": 0.05497669966964365
+    },
+    {
+      "feature": "num__pr_mean_emotional_delta",
+      "importance": 0.043181898837494265
+    },
+    {
+      "feature": "num__initial_risk_ord",
+      "importance": 0.0411220585479751
+    },
+    {
+      "feature": "cat__case_category_Neglected",
+      "importance": 0.040772952132132924
+    },
+    {
+      "feature": "cat__case_category_Surrendered",
+      "importance": 0.035023121454926136
+    },
+    {
+      "feature": "num__hv_favorable_rate",
+      "importance": 0.025356329389272843
+    },
+    {
+      "feature": "num__hv_visits_prior",
+      "importance": 0.023896044892050262
+    },
+    {
+      "feature": "cat__region_Visayas",
+      "importance": 0.023720096403316484
+    },
+    {
+      "feature": "num__pr_sessions_prior",
+      "importance": 0.02353726049832845
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "schema": "donor_next_gift_features_v1",
+  "supporter_id": 4,
+  "features": {
+    "prior_n_monetary": 4.0,
+    "prior_mean_amount": 1173.3175,
+    "prior_std_amount": 296.09932770735907,
+    "prior_last_amount": 1623.68,
+    "prior_span_days": 339.0,
+    "prior_freq_per_month": 0.35398230088495575,
+    "prior_recurring_any": 1.0,
+    "prior_distinct_campaigns": 2.0,
+    "prior_distinct_channels": 4.0,
+    "prior_roll3_mean": 1289.0933333333332,
+    "prior_trend_amount": 199.4225,
+    "prior_mean_share_prog_Education": 0.25,
+    "prior_mean_share_prog_Maintenance": 0.125,
+    "prior_mean_share_prog_Operations": 0.375,
+    "prior_mean_share_prog_Outreach": 0.0,
+    "prior_mean_share_prog_Transport": 0.0,
+    "prior_mean_share_prog_Wellbeing": 0.25,
+    "days_since_prior_donation": 305.0,
+    "target_donation_month": 8.0,
+    "target_donation_quarter": 3.0,
+    "sup_supporter_type": "MonetaryDonor",
+    "sup_relationship_type": "PartnerOrganization",
+    "sup_region": "Mindanao",
+    "sup_country": "Philippines",
+    "sup_acquisition_channel": "Church"
+  }
+}
