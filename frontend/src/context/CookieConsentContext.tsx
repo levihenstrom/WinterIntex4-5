@@ -1,6 +1,10 @@
 import { createContext, useContext, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 
+/**
+ * Cookie consent acknowledgement (localStorage). Banner UI is
+ * {@link ../components/CookieConsentBanner}; styles use `hw.css` (`.hw-cookie-*`).
+ */
 const cookieConsentStorageKey = 'intex-cookie-consent';
 
 interface CookieConsentContextValue {

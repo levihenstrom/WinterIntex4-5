@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+
 const SOCIAL_ICONS = {
   Instagram: (
     <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
@@ -111,7 +113,7 @@ export default function Footer() {
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/35">
           <p>© {new Date().getFullYear()} HealingWings. All rights reserved.</p>
           <div className="flex gap-5">
-            <a href="#" className="hover:text-white/70 no-underline transition-colors">Privacy Policy</a>
+            <Link to="/privacy" className="hover:text-white/70 no-underline transition-colors">Privacy Policy</Link>
             <a href="#" className="hover:text-white/70 no-underline transition-colors">Cookie Policy</a>
           </div>
         </div>

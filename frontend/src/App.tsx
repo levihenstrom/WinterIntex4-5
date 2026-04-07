@@ -17,55 +17,89 @@ import LogoutPage from './pages/LogoutPage';
 import ManageMFAPage from './pages/ManageMFAPage';
 import PrivacyPage from './pages/PrivacyPage';
 import HealingWingsHome from './pages/HealingWingsHome';
-import './App.css';
 
-// Bootstrap NavBar — shown on auth/utility pages only
+// Auth pages nav — matches HealingWings hw.css (navy + amber CTAs)
 function AuthNavBar() {
   const { isAuthenticated, authSession, isLoading } = useAuth();
   return (
-    <nav className="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
-      <div className="container">
-        <Link className="navbar-brand" to="/">
+    <header
+      className="shadow-lg mb-0"
+      style={{ background: 'var(--hw-navy)' }}
+    >
+      <div className="container d-flex align-items-center justify-content-between py-3 flex-wrap gap-2">
+        <Link
+          className="text-white text-decoration-none fw-bold hw-heading-font fs-5"
+          to="/"
+        >
           HealingWings
         </Link>
-        <div className="navbar-nav ms-auto">
+        <div className="d-flex align-items-center flex-wrap gap-2 gap-md-3">
           {isLoading ? null : isAuthenticated ? (
             <>
-              <span className="navbar-text me-3">
+              <span className="text-white-50 small me-md-2">
                 {authSession.email}
                 {authSession.roles.length > 0 && (
-                  <span className="badge bg-info ms-2">
+                  <span
+                    className="badge ms-2 rounded-pill"
+                    style={{
+                      background: 'var(--hw-teal)',
+                      color: 'white',
+                    }}
+                  >
                     {authSession.roles.join(', ')}
                   </span>
                 )}
               </span>
-              <Link className="nav-link" to="/mfa">MFA</Link>
-              <Link className="nav-link" to="/logout">Logout</Link>
+              <Link className="text-white-50 text-decoration-none small" to="/mfa">
+                MFA
+              </Link>
+              <Link className="text-white-50 text-decoration-none small" to="/logout">
+                Logout
+              </Link>
             </>
           ) : (
             <>
-              <Link className="nav-link" to="/login">Login</Link>
-              <Link className="nav-link" to="/register">Register</Link>
+              <Link
+                className="hw-nav-login px-3 py-2 rounded-pill text-sm fw-semibold text-decoration-none d-inline-block"
+                to="/login"
+              >
+                Log In
+              </Link>
+              <Link
+                className="hw-nav-signup px-3 py-2 rounded-pill text-sm fw-semibold text-decoration-none text-white d-inline-block"
+                to="/register"
+              >
+                Sign Up
+              </Link>
             </>
           )}
         </div>
       </div>
-    </nav>
+    </header>
   );
 }
 
-// Auth page with Bootstrap nav wrapper
+// Auth page — full-height column so hw-auth-shell fills viewport
 function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <>
+    <div className="d-flex flex-column min-vh-100">
       <AuthNavBar />
       {children}
-      <footer className="bg-dark text-light text-center py-3 mt-auto">
+      <footer
+        className="text-center py-3 mt-auto text-white-50 small"
+        style={{ background: 'var(--hw-navy)' }}
+      >
         <div className="container">
-          <Link className="text-light" to="/privacy">Privacy Policy</Link>
+          <Link
+            className="text-decoration-none"
+            style={{ color: 'rgba(255,255,255,0.7)' }}
+            to="/privacy"
+          >
+            Privacy Policy
+          </Link>
         </div>
       </footer>
-    </>
+    </div>
   );
 }
 
