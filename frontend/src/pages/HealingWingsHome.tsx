@@ -25,7 +25,7 @@ function useFadeIn() {
 
 // ── Image URLs ────────────────────────────────────────────────────────────────
 const HERO_IMG = '/girls.avif';
-const MISSION_IMG = 'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=900&auto=format&fit=crop&q=80';
+const MISSION_IMG = '/free.avif';
 const PILLAR_EDU_IMG = 'https://images.unsplash.com/photo-1513258496099-48168024aec0?w=800&auto=format&fit=crop&q=80';
 const PILLAR_HEAL_IMG = 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800&auto=format&fit=crop&q=80';
 const PILLAR_REINT_IMG = 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=800&auto=format&fit=crop&q=80';
@@ -110,9 +110,7 @@ function MissionSection() {
           <div className="hw-fade-in" ref={useFadeIn()}>
             <div className="relative rounded-2xl overflow-hidden shadow-2xl h-[420px] lg:h-[520px]">
               <img src={MISSION_IMG} alt="A child in a safe space" className="w-full h-full object-cover" />
-              {/* Purple corner overlay */}
-              <div className="absolute top-0 left-0 w-1/2 h-full hw-photo-overlay" />
-            </div>
+              </div>
             {/* Badge */}
             <div className="hw-badge-purple absolute mt-[-60px] ml-[20px] w-32 h-32 rounded-full flex items-center justify-center shadow-lg"
               style={{ position: 'relative', top: '-60px', left: '20px', width: '128px', height: '128px', borderRadius: '50%' }}>
@@ -129,24 +127,58 @@ function MissionSection() {
             </h2>
             <div className="mt-6 space-y-4 text-stone-600 leading-relaxed text-base">
               <p>
-                HealingWings operates residential safe homes in the Philippines, providing a full circle of care
-                for children who have experienced the unimaginable. Each resident receives a private, nurturing space
-                to begin her journey of healing.
+                Created to meet the needs of children-survivors of sexual abuse and sex trafficking in the world by providing a safe haven and professional rehabilitation services so children can successfully reintegrate back into family life and society.
+                There is a great need for residential shelters in different countries for children who are trapped in abuse or who are sexually trafficked. Lighthouse Sanctuary has stepped up to fill the need for female survivors between the ages of 8 to 18.
+
               </p>
               <p>
-                Our trauma-informed counselors, educators, and social workers walk alongside each child —
-                from her first day of safety through full reintegration with her family and community.
+                Lighthouse Sanctuary has two residential style shelters, that caters to up to 20 children each. The children are rescued by the local police department or anti-trafficking agents who refer the children through the Department of Social Welfare and Development (DSWD) to Lighthouse Sanctuary. The social worker in the sanctuary will assist the child in transitioning into their new environment.
+
               </p>
             </div>
             <div className="mt-7 grid grid-cols-2 gap-3">
               {[
-                { icon: '🏠', label: 'Safe Residential Homes' },
-                { icon: '🧠', label: 'Trauma Counseling' },
-                { icon: '📚', label: 'Education Programs' },
-                { icon: '💞', label: 'Family Reintegration' },
+                {
+                  icon: (
+                    <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                      <path d="M3 12L12 3l9 9" /><path d="M9 21V12h6v9" /><path d="M3 12v9h18v-9" />
+                    </svg>
+                  ),
+                  label: 'Safe Residential Homes',
+                },
+                {
+                  icon: (
+                    <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                      <path d="M12 21C12 21 4 14.5 4 9a8 8 0 0 1 16 0c0 5.5-8 12-8 12z" />
+                      <path d="M12 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2z" fill="currentColor" />
+                      <path d="M12 11v3" />
+                    </svg>
+                  ),
+                  label: 'Trauma Counseling',
+                },
+                {
+                  icon: (
+                    <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+                    </svg>
+                  ),
+                  label: 'Education Programs',
+                },
+                {
+                  icon: (
+                    <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                      <circle cx="9" cy="7" r="4" />
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                    </svg>
+                  ),
+                  label: 'Family Reintegration',
+                },
               ].map((item) => (
-                <div key={item.label} className="flex items-center gap-2 text-stone-700 text-sm font-medium">
-                  <span className="text-lg">{item.icon}</span>
+                <div key={item.label} className="flex items-center gap-2.5 text-stone-700 text-sm font-medium">
+                  <span className="hw-text-teal flex-shrink-0">{item.icon}</span>
                   <span>{item.label}</span>
                 </div>
               ))}
