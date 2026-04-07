@@ -288,6 +288,19 @@ export default function ReportsAnalyticsPage() {
           }}
         >
           <div>
+            <span
+              style={{
+                display: 'block',
+                fontSize: 12,
+                fontWeight: 700,
+                color: '#0D9488',
+                letterSpacing: 2,
+                textTransform: 'uppercase',
+                marginBottom: 8,
+              }}
+            >
+              Administration
+            </span>
             <h1 style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: 28, color: '#1E3A5F', marginBottom: 10 }}>
               Reports &amp; Analytics
             </h1>

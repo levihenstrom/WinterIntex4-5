@@ -58,14 +58,16 @@ export default function SocialMediaSuggestPage() {
               border: '1px solid #CBD5E1', padding: '10px 18px', fontWeight: 600, fontSize: 14,
             }}
           >
-            ← Post history
+            Post history
           </Link>
         </div>
 
         {loading && (
           <div style={{ textAlign: 'center', padding: '56px 0', color: '#94A3B8' }}>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>⏳</div>
-            <p style={{ fontWeight: 600, fontSize: 16 }}>Loading recommendation…</p>
+            <div className="spinner-border text-secondary mb-3" role="status" aria-label="Loading">
+              <span className="visually-hidden">Loading…</span>
+            </div>
+            <p className="fw-semibold fs-6 mb-0">Loading recommendation…</p>
           </div>
         )}
 

@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   deleteJson,
+  fetchJson,
   fetchPaged,
   postJson,
   putJson,
@@ -9,6 +10,7 @@ import {
 } from '../../lib/apiClient';
 import { useAuth } from '../../context/AuthContext';
 import DeleteConfirmModal from '../../components/DeleteConfirmModal';
+import AdminKpiStrip from '../../components/admin/AdminKpiStrip';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -58,6 +60,24 @@ interface Resident {
   dateEnrolled: string | null;
   dateClosed: string | null;
   notesRestricted: string | null;
+}
+
+interface ResidentWithNav extends Resident {
+  safehouse?: { safehouseId: number; name?: string | null; safehouseCode?: string | null };
+}
+
+interface IncidentSummary {
+  incidentId: number;
+  safehouseId: number;
+  incidentDate: string | null;
+  incidentType: string | null;
+  severity: string | null;
+  description: string | null;
+  responseTaken: string | null;
+  resolved: boolean | null;
+  resolutionDate: string | null;
+  reportedBy: string | null;
+  followUpRequired: boolean | null;
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -130,43 +150,19 @@ function Badge({ label, bg, text }: { label: string; bg: string; text: string })
   );
 }
 
-// ── KPI Strip ─────────────────────────────────────────────────────────────────
-
-function KPIStrip({ items }: { items: Resident[] }) {
-  const total = items.length;
-  const active = items.filter(r => r.caseStatus === 'Active').length;
-  const highRisk = items.filter(r => r.currentRiskLevel === 'High' || r.currentRiskLevel === 'Critical').length;
-  const female = items.filter(r => r.sex === 'Female').length;
-  const pwd = items.filter(r => r.isPwd).length;
-
-  const kpis = [
-    { label: 'Total on Page', value: String(total), icon: '👥', color: '#1E3A5F' },
-    { label: 'Active Cases',  value: String(active), icon: '✅', color: '#166534' },
-    { label: 'High / Critical Risk', value: String(highRisk), icon: '⚠️', color: '#991B1B' },
-    { label: 'Female',        value: String(female), icon: '👧', color: '#6B21A8' },
-    { label: 'PWD',           value: String(pwd), icon: '♿', color: '#1E40AF' },
-  ];
-
-  return (
-    <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 24 }}>
-      {kpis.map(k => (
-        <div key={k.label} style={{
-          flex: '1 1 140px', background: '#fff', borderRadius: 12,
-          padding: '14px 16px', border: '1px solid #E2E8F0',
-          boxShadow: '0 2px 8px rgba(30,58,95,0.06)',
-        }}>
-          <div style={{ fontSize: 20, marginBottom: 4 }}>{k.icon}</div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: k.color }}>{k.value}</div>
-          <div style={{ fontSize: 12, color: '#64748B', fontWeight: 500 }}>{k.label}</div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 // ── Sort helpers ──────────────────────────────────────────────────────────────
 
-type SortCol = 'caseControlNo' | 'internalCode' | 'dateOfBirth' | 'sex' | 'caseCategory' | 'caseStatus' | 'safehouseId' | 'assignedSocialWorker' | 'currentRiskLevel';
+type SortCol =
+  | 'residentId'
+  | 'caseControlNo'
+  | 'internalCode'
+  | 'dateOfBirth'
+  | 'sex'
+  | 'caseCategory'
+  | 'caseStatus'
+  | 'safehouseId'
+  | 'assignedSocialWorker'
+  | 'currentRiskLevel';
 
 function sortArrow(col: SortCol, sortCol: SortCol | null, sortDir: 'asc' | 'desc'): string {
   if (col !== sortCol) return ' ↕';
@@ -271,10 +267,6 @@ const thStyle: React.CSSProperties = {
 const tdStyle: React.CSSProperties = {
   padding: '12px 16px', fontSize: 13,
 };
-const actionBtn = (color: string, border: string): React.CSSProperties => ({
-  background: 'none', border: `1px solid ${border}`, borderRadius: 6,
-  color, fontSize: 11, fontWeight: 600, padding: '3px 10px', cursor: 'pointer', whiteSpace: 'nowrap' as const,
-});
 const navBtn = (disabled: boolean): React.CSSProperties => ({
   background: disabled ? '#F1F5F9' : '#fff',
   border: '1px solid #CBD5E1', borderRadius: 8, padding: '6px 16px',
@@ -308,6 +300,11 @@ export default function ResidentsListPage() {
 
   const [deleteTarget, setDeleteTarget] = useState<Resident | null>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
+
+  const [profileViewId, setProfileViewId] = useState<number | null>(null);
+  const [profileDetail, setProfileDetail] = useState<{ resident: ResidentWithNav; incidents: IncidentSummary[] } | null>(null);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
 
   const [sortCol, setSortCol] = useState<SortCol | null>(null);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
@@ -419,6 +416,30 @@ export default function ResidentsListPage() {
     }
   }
 
+  function closeProfile() {
+    setProfileViewId(null);
+    setProfileDetail(null);
+    setProfileError(null);
+    setProfileLoading(false);
+  }
+
+  async function openProfile(residentId: number) {
+    setProfileViewId(residentId);
+    setProfileLoading(true);
+    setProfileError(null);
+    setProfileDetail(null);
+    try {
+      const d = await fetchJson<{ resident: ResidentWithNav; incidents: IncidentSummary[] }>(
+        `/api/residents/${residentId}/detail`,
+      );
+      setProfileDetail(d);
+    } catch (e) {
+      setProfileError(e instanceof Error ? e.message : 'Could not load resident profile.');
+    } finally {
+      setProfileLoading(false);
+    }
+  }
+
   const isEditing = editTarget !== null && editTarget !== 'new';
 
   // ── Render ────────────────────────────────────────────────────────────────────
@@ -429,12 +450,14 @@ export default function ResidentsListPage() {
         {/* Header */}
         <div style={{ marginBottom: 28, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
           <div>
-            <span style={{ fontSize: 12, fontWeight: 700, color: '#0D9488', letterSpacing: 2, textTransform: 'uppercase' }}>Case Management</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: '#0D9488', letterSpacing: 2, textTransform: 'uppercase' }}>Case management</span>
             <h1 style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: 28, color: '#1E3A5F', marginBottom: 4 }}>
-              Caseload Inventory
+              Resident caseload
             </h1>
-            <p style={{ color: '#64748B', fontSize: 14, marginBottom: 0 }}>
-              {data ? `${data.totalCount} resident${data.totalCount !== 1 ? 's' : ''} found` : 'Loading residents…'}
+            <p style={{ color: '#64748B', fontSize: 14, marginBottom: 0, maxWidth: 720 }}>
+              Track each girl through intake, counseling, education, health, and reintegration. Use the table for quick triage; open a row for the full
+              case file and incident history.
+              {data ? ` ${data.totalCount} resident${data.totalCount !== 1 ? 's' : ''} match your filters.` : ''}
             </p>
           </div>
           {canWrite && (
@@ -451,8 +474,31 @@ export default function ResidentsListPage() {
           )}
         </div>
 
-        {/* KPI Strip */}
-        {data && <KPIStrip items={data.items} />}
+        {data && (
+          <AdminKpiStrip
+            items={[
+              { label: 'Residents on this page', value: String(data.items.length), accent: '#1E3A5F' },
+              {
+                label: 'Active on this page',
+                value: String(data.items.filter((r) => r.caseStatus === 'Active').length),
+                accent: '#0D9488',
+              },
+              {
+                label: 'High or critical risk (page)',
+                value: String(
+                  data.items.filter((r) => r.currentRiskLevel === 'High' || r.currentRiskLevel === 'Critical').length,
+                ),
+                accent: '#991B1B',
+              },
+              {
+                label: 'Total in database (filtered)',
+                value: String(data.totalCount),
+                sub: `Page ${data.page} of ${data.totalPages || 1}`,
+                accent: '#6B21A8',
+              },
+            ]}
+          />
+        )}
 
         {/* Filter bar */}
         <div style={{
@@ -462,7 +508,7 @@ export default function ResidentsListPage() {
         }}>
           <input
             type="text"
-            placeholder="Search by case no, code, worker…"
+            placeholder="Search case control no., internal code, or social worker…"
             value={search}
             onChange={e => setSearch(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && applyFilters()}
@@ -517,12 +563,10 @@ export default function ResidentsListPage() {
         }}>
           {loading ? (
             <div style={{ textAlign: 'center', padding: '48px 0', color: '#94A3B8' }}>
-              <div style={{ fontSize: 32, marginBottom: 8 }}>⏳</div>
               <p style={{ fontWeight: 600 }}>Loading residents…</p>
             </div>
           ) : data && data.items.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '48px 0', color: '#94A3B8' }}>
-              <div style={{ fontSize: 40, marginBottom: 8 }}>🔍</div>
               <p style={{ fontWeight: 600 }}>No residents match your filters.</p>
             </div>
           ) : data ? (
@@ -531,15 +575,16 @@ export default function ResidentsListPage() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: '#F8FAFC', borderBottom: '2px solid #E2E8F0' }}>
-                      <th style={thStyle} onClick={() => handleSort('caseControlNo')}>Case No{sortArrow('caseControlNo', sortCol, sortDir)}</th>
-                      <th style={thStyle} onClick={() => handleSort('internalCode')}>Code{sortArrow('internalCode', sortCol, sortDir)}</th>
-                      <th style={thStyle} onClick={() => handleSort('dateOfBirth')}>DOB{sortArrow('dateOfBirth', sortCol, sortDir)}</th>
+                      <th style={thStyle} onClick={() => handleSort('residentId')}>Resident ID{sortArrow('residentId', sortCol, sortDir)}</th>
+                      <th style={thStyle} onClick={() => handleSort('caseControlNo')}>Case control no.{sortArrow('caseControlNo', sortCol, sortDir)}</th>
+                      <th style={thStyle} onClick={() => handleSort('internalCode')}>Internal code{sortArrow('internalCode', sortCol, sortDir)}</th>
+                      <th style={thStyle} onClick={() => handleSort('dateOfBirth')}>Date of birth{sortArrow('dateOfBirth', sortCol, sortDir)}</th>
                       <th style={thStyle} onClick={() => handleSort('sex')}>Sex{sortArrow('sex', sortCol, sortDir)}</th>
-                      <th style={thStyle} onClick={() => handleSort('caseCategory')}>Category{sortArrow('caseCategory', sortCol, sortDir)}</th>
-                      <th style={thStyle} onClick={() => handleSort('caseStatus')}>Status{sortArrow('caseStatus', sortCol, sortDir)}</th>
-                      <th style={thStyle} onClick={() => handleSort('safehouseId')}>Safehouse{sortArrow('safehouseId', sortCol, sortDir)}</th>
-                      <th style={thStyle} onClick={() => handleSort('assignedSocialWorker')}>Worker{sortArrow('assignedSocialWorker', sortCol, sortDir)}</th>
-                      <th style={thStyle} onClick={() => handleSort('currentRiskLevel')}>Risk{sortArrow('currentRiskLevel', sortCol, sortDir)}</th>
+                      <th style={thStyle} onClick={() => handleSort('caseCategory')}>Case category{sortArrow('caseCategory', sortCol, sortDir)}</th>
+                      <th style={thStyle} onClick={() => handleSort('caseStatus')}>Case status{sortArrow('caseStatus', sortCol, sortDir)}</th>
+                      <th style={thStyle} onClick={() => handleSort('safehouseId')}>Safehouse ID{sortArrow('safehouseId', sortCol, sortDir)}</th>
+                      <th style={thStyle} onClick={() => handleSort('assignedSocialWorker')}>Social worker{sortArrow('assignedSocialWorker', sortCol, sortDir)}</th>
+                      <th style={thStyle} onClick={() => handleSort('currentRiskLevel')}>Risk level{sortArrow('currentRiskLevel', sortCol, sortDir)}</th>
                       <th style={{ ...thStyle, cursor: 'default' }}>Actions</th>
                     </tr>
                   </thead>
@@ -548,8 +593,18 @@ export default function ResidentsListPage() {
                       const sCfg = STATUS_COLORS[r.caseStatus ?? ''] ?? { bg: '#F1F5F9', text: '#64748B' };
                       const rCfg = RISK_COLORS[r.currentRiskLevel ?? ''];
                       return (
-                        <tr key={r.residentId} style={{ background: i % 2 === 0 ? '#fff' : '#FAFAFA', borderBottom: '1px solid #F1F5F9' }}>
-                          <td style={{ ...tdStyle, fontWeight: 700, color: '#6B21A8' }}>{r.caseControlNo || '—'}</td>
+                        <tr
+                          key={r.residentId}
+                          style={{
+                            background: i % 2 === 0 ? '#fff' : '#FAFAFA',
+                            borderBottom: '1px solid #F1F5F9',
+                            cursor: 'pointer',
+                          }}
+                          onClick={() => void openProfile(r.residentId)}
+                          title="Open full resident profile"
+                        >
+                          <td style={{ ...tdStyle, fontWeight: 700, color: '#1E3A5F' }}>{r.residentId}</td>
+                          <td style={{ ...tdStyle, fontWeight: 600, color: '#475569' }}>{r.caseControlNo || '—'}</td>
                           <td style={{ ...tdStyle, color: '#64748B' }}>{r.internalCode || '—'}</td>
                           <td style={{ ...tdStyle, color: '#64748B', whiteSpace: 'nowrap' }}>{fmtDate(r.dateOfBirth)}</td>
                           <td style={tdStyle}>{r.sex || '—'}</td>
@@ -564,16 +619,59 @@ export default function ResidentsListPage() {
                               ? <Badge label={r.currentRiskLevel!} bg={rCfg.bg} text={rCfg.text} />
                               : <span style={{ color: '#94A3B8' }}>—</span>}
                           </td>
-                          <td style={tdStyle}>
-                            <div style={{ display: 'flex', gap: 4, flexWrap: 'nowrap' }}>
-                              {canWrite && (
-                                <button type="button" style={actionBtn('#1E40AF', '#93C5FD')} onClick={() => openEdit(r)}>Edit</button>
-                              )}
-                              <Link to={`/admin/residents/${r.residentId}/process`} style={{ ...actionBtn('#0D9488', '#99F6E4'), textDecoration: 'none' }}>Sessions</Link>
-                              <Link to={`/admin/residents/${r.residentId}/visits`} style={{ ...actionBtn('#6B21A8', '#D8B4FE'), textDecoration: 'none' }}>Visits</Link>
-                              {canWrite && (
-                                <button type="button" style={actionBtn('#DC2626', '#FCA5A5')} onClick={() => setDeleteTarget(r)}>Delete</button>
-                              )}
+                          <td style={tdStyle} onClick={(e) => e.stopPropagation()}>
+                            <div className="dropdown">
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-outline-secondary dropdown-toggle"
+                                data-bs-toggle="dropdown"
+                                aria-expanded="false"
+                                aria-label={`Actions for resident ${r.residentId}`}
+                              >
+                                Actions
+                              </button>
+                              <ul className="dropdown-menu dropdown-menu-end">
+                                <li>
+                                  <button
+                                    type="button"
+                                    className="dropdown-item"
+                                    onClick={() => void openProfile(r.residentId)}
+                                  >
+                                    Full profile
+                                  </button>
+                                </li>
+                                {canWrite ? (
+                                  <li>
+                                    <button type="button" className="dropdown-item" onClick={() => openEdit(r)}>
+                                      Edit
+                                    </button>
+                                  </li>
+                                ) : null}
+                                <li>
+                                  <Link className="dropdown-item" to={`/admin/residents/${r.residentId}/process`}>
+                                    Process recordings
+                                  </Link>
+                                </li>
+                                <li>
+                                  <Link className="dropdown-item" to={`/admin/residents/${r.residentId}/visits`}>
+                                    Home visits
+                                  </Link>
+                                </li>
+                                {canWrite ? (
+                                  <>
+                                    <li><hr className="dropdown-divider" /></li>
+                                    <li>
+                                      <button
+                                        type="button"
+                                        className="dropdown-item text-danger"
+                                        onClick={() => setDeleteTarget(r)}
+                                      >
+                                        Delete
+                                      </button>
+                                    </li>
+                                  </>
+                                ) : null}
+                              </ul>
                             </div>
                           </td>
                         </tr>
@@ -843,6 +941,160 @@ export default function ResidentsListPage() {
                 <button type="button" className="btn btn-outline-secondary" onClick={() => setEditTarget(null)}>Cancel</button>
                 <button type="button" className="btn hw-btn-magenta px-4" onClick={() => void handleSave()} disabled={saving}>
                   {saving ? 'Saving…' : isEditing ? 'Save Changes' : 'Create Resident'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {profileViewId !== null && (
+        <div className="modal d-block" style={{ backgroundColor: 'rgba(0,0,0,0.55)' }} role="dialog" aria-modal="true" aria-labelledby="residentProfileTitle">
+          <div className="modal-dialog modal-xl modal-dialog-scrollable modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header border-bottom">
+                <div>
+                  <h5 className="modal-title fw-bold text-dark mb-0" id="residentProfileTitle">
+                    Resident profile
+                  </h5>
+                  <p className="small text-muted mb-0">Database ID {profileViewId} · read-only summary for staff review</p>
+                </div>
+                <button type="button" className="btn-close" aria-label="Close" onClick={closeProfile} />
+              </div>
+              <div className="modal-body">
+                {profileLoading && <p className="text-muted">Loading full record…</p>}
+                {profileError && <div className="alert alert-danger">{profileError}</div>}
+                {profileDetail && (
+                  <>
+                    {(() => {
+                      const r = profileDetail.resident;
+                      const site =
+                        r.safehouse?.name?.trim() ||
+                        r.safehouse?.safehouseCode?.trim() ||
+                        `Safehouse #${r.safehouseId}`;
+                      const pairs = (label: string, val: string) => (
+                        <div key={label} className="col-md-6 col-lg-4 py-2 border-bottom">
+                          <div className="text-uppercase small text-muted fw-semibold" style={{ fontSize: 10, letterSpacing: '0.04em' }}>
+                            {label}
+                          </div>
+                          <div className="small text-break">{val}</div>
+                        </div>
+                      );
+                      const yn = (b: boolean | null | undefined) => (b ? 'Yes' : 'No');
+                      return (
+                        <>
+                          <h6 className="text-uppercase small fw-bold text-secondary mb-3">Identification &amp; placement</h6>
+                          <div className="row mb-4">
+                            {pairs('Resident ID (database)', String(r.residentId))}
+                            {pairs('Case control number', r.caseControlNo || '—')}
+                            {pairs('Internal code', r.internalCode || '—')}
+                            {pairs('Safehouse', site)}
+                            {pairs('Safehouse ID', String(r.safehouseId))}
+                            {pairs('Assigned social worker', r.assignedSocialWorker || '—')}
+                          </div>
+                          <h6 className="text-uppercase small fw-bold text-secondary mb-3">Case classification</h6>
+                          <div className="row mb-4">
+                            {pairs('Case status', r.caseStatus || '—')}
+                            {pairs('Case category', r.caseCategory || '—')}
+                            {pairs('Initial risk level', r.initialRiskLevel || '—')}
+                            {pairs('Current risk level', r.currentRiskLevel || '—')}
+                            {pairs('Sub-categories', SUB_CATS.filter((s) => r[s.key]).map((s) => s.label).join(', ') || '—')}
+                          </div>
+                          <h6 className="text-uppercase small fw-bold text-secondary mb-3">Demographics</h6>
+                          <div className="row mb-4">
+                            {pairs('Sex', r.sex || '—')}
+                            {pairs('Date of birth', fmtDate(r.dateOfBirth))}
+                            {pairs('Birth status', r.birthStatus || '—')}
+                            {pairs('Place of birth', r.placeOfBirth || '—')}
+                            {pairs('Religion', r.religion || '—')}
+                            {pairs('PWD', yn(r.isPwd))}
+                            {pairs('PWD type', r.pwdType || '—')}
+                            {pairs('Special needs', yn(r.hasSpecialNeeds))}
+                            {pairs('Special needs diagnosis', r.specialNeedsDiagnosis || '—')}
+                          </div>
+                          <h6 className="text-uppercase small fw-bold text-secondary mb-3">Family profile</h6>
+                          <div className="row mb-4">
+                            {pairs('4Ps beneficiary', yn(r.familyIs4ps))}
+                            {pairs('Solo parent household', yn(r.familySoloParent))}
+                            {pairs('Indigenous group', yn(r.familyIndigenous))}
+                            {pairs('Parent with disability', yn(r.familyParentPwd))}
+                            {pairs('Informal settler', yn(r.familyInformalSettler))}
+                          </div>
+                          <h6 className="text-uppercase small fw-bold text-secondary mb-3">Admission &amp; referral</h6>
+                          <div className="row mb-4">
+                            {pairs('Date of admission', fmtDate(r.dateOfAdmission))}
+                            {pairs('Age upon admission', r.ageUponAdmission || '—')}
+                            {pairs('Present age', r.presentAge || '—')}
+                            {pairs('Length of stay', r.lengthOfStay || '—')}
+                            {pairs('Referral source', r.referralSource || '—')}
+                            {pairs('Referring agency / person', r.referringAgencyPerson || '—')}
+                            {pairs('Date enrolled', fmtDate(r.dateEnrolled))}
+                            {pairs('Date closed', fmtDate(r.dateClosed))}
+                            <div className="col-12 py-2 border-bottom">
+                              <div className="text-uppercase small text-muted fw-semibold" style={{ fontSize: 10, letterSpacing: '0.04em' }}>
+                                Initial case assessment
+                              </div>
+                              <div className="small text-break">{r.initialCaseAssessment?.trim() || '—'}</div>
+                            </div>
+                          </div>
+                          <h6 className="text-uppercase small fw-bold text-secondary mb-3">Reintegration</h6>
+                          <div className="row mb-4">
+                            {pairs('Reintegration type', r.reintegrationType || '—')}
+                            {pairs('Reintegration status', r.reintegrationStatus || '—')}
+                          </div>
+                          <h6 className="text-uppercase small fw-bold text-secondary mb-3">Restricted notes</h6>
+                          <p className="small text-break border rounded p-3 bg-light">{r.notesRestricted?.trim() || '—'}</p>
+                        </>
+                      );
+                    })()}
+                    <h6 className="text-uppercase small fw-bold text-secondary mb-3 mt-4">Incident reports</h6>
+                    {profileDetail.incidents.length === 0 ? (
+                      <p className="small text-muted">No incident reports on file for this resident.</p>
+                    ) : (
+                      <div className="table-responsive border rounded">
+                        <table className="table table-sm table-striped mb-0 small">
+                          <thead className="table-light">
+                            <tr>
+                              <th>Date</th>
+                              <th>Type</th>
+                              <th>Severity</th>
+                              <th>Resolved</th>
+                              <th>Resolution date</th>
+                              <th>Follow-up</th>
+                              <th>Reported by</th>
+                              <th>Description</th>
+                              <th>Response taken</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {profileDetail.incidents.map((inc) => (
+                              <tr key={inc.incidentId}>
+                                <td className="text-nowrap">{fmtDate(inc.incidentDate)}</td>
+                                <td>{inc.incidentType || '—'}</td>
+                                <td>{inc.severity || '—'}</td>
+                                <td>{inc.resolved === true ? 'Yes' : inc.resolved === false ? 'No' : '—'}</td>
+                                <td className="text-nowrap">{fmtDate(inc.resolutionDate)}</td>
+                                <td>{inc.followUpRequired === true ? 'Yes' : inc.followUpRequired === false ? 'No' : '—'}</td>
+                                <td>{inc.reportedBy || '—'}</td>
+                                <td style={{ maxWidth: 220 }}>{inc.description?.trim() || '—'}</td>
+                                <td style={{ maxWidth: 220 }}>{inc.responseTaken?.trim() || '—'}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+              <div className="modal-footer border-top">
+                {profileDetail && canWrite ? (
+                  <button type="button" className="btn btn-primary" onClick={() => { closeProfile(); openEdit(profileDetail.resident); }}>
+                    Edit this resident
+                  </button>
+                ) : null}
+                <button type="button" className="btn btn-outline-secondary" onClick={closeProfile}>
+                  Close
                 </button>
               </div>
             </div>

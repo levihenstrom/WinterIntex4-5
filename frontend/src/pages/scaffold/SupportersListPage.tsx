@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { deleteJson, fetchAllPaged, postJson, putJson } from '../../lib/apiClient';
+import AdminKpiStrip from '../../components/admin/AdminKpiStrip';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
 /* ── API shape (camelCase from ASP.NET) ─────────────────────── */
@@ -82,8 +83,7 @@ function Badge({ label, bg, text }: { label: string; bg: string; text: string })
   );
 }
 
-/* ── Stat strip ──────────────────────────────────────────────── */
-function StatStrip({
+function SupporterKpiStrip({
   supporters,
   monetaryTotalPhp,
 }: {
@@ -93,6 +93,16 @@ function StatStrip({
   const active = supporters.filter((s) => s.status === 'Active').length;
   const monetary = supporters.filter((s) => s.supporterType === 'MonetaryDonor').length;
   const volunteers = supporters.filter((s) => s.supporterType === 'Volunteer').length;
+  return (
+    <AdminKpiStrip
+      items={[
+        { label: 'Total supporters', value: String(supporters.length), accent: '#1E3A5F' },
+        { label: 'Active', value: String(active), sub: 'status in database', accent: '#059669' },
+        { label: 'Monetary donors', value: String(monetary), accent: '#0D9488' },
+        { label: 'Volunteers', value: String(volunteers), accent: '#2563EB' },
+        { label: 'Monetary gifts (PHP)', value: fmtMoneyPhp(monetaryTotalPhp), sub: 'loaded gifts total', accent: '#7C3AED' },
+      ]}
+    />
 
   const stats = [
     { label: 'Total Supporters', value: supporters.length, icon: 'people' },
@@ -326,7 +336,7 @@ export default function SupportersListPage() {
 
         {!loading && (
           <>
-            <StatStrip supporters={supporters} monetaryTotalPhp={monetaryTotalPhp} />
+            <SupporterKpiStrip supporters={supporters} monetaryTotalPhp={monetaryTotalPhp} />
 
             <div
               style={{
@@ -394,7 +404,7 @@ export default function SupportersListPage() {
                   cursor: 'pointer',
                 }}
               >
-                {showForm ? '✕ Cancel' : '+ New Supporter'}
+                {showForm ? 'Cancel' : 'New supporter'}
               </button>
               <span style={{ fontSize: 12, color: '#94A3B8', marginLeft: 'auto' }}>
                 {filtered.length} of {supporters.length} supporters
@@ -559,11 +569,33 @@ export default function SupportersListPage() {
 
             {filtered.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '48px 0', color: '#94A3B8' }}>
+                <p className="fw-semibold mb-1">No supporters match your filters.</p>
+                <p className="small mb-0">Try clearing search or type filters.</p>
                 <div style={{ fontSize: 40, marginBottom: 8 }}><i className="bi bi-search" style={{ color: '#CBD5E1' }} /></div>
                 <p style={{ fontWeight: 600 }}>No supporters match your filters.</p>
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
+              <>
+                <style>{`
+                  .supporter-card-netflix {
+                    position: relative;
+                    transition: transform 0.2s ease, box-shadow 0.2s ease;
+                  }
+                  .supporter-card-netflix:hover {
+                    transform: scale(1.03);
+                    z-index: 2;
+                    box-shadow: 0 12px 32px rgba(30, 58, 95, 0.14);
+                  }
+                  @media (prefers-reduced-motion: reduce) {
+                    .supporter-card-netflix {
+                      transition: box-shadow 0.2s ease;
+                    }
+                    .supporter-card-netflix:hover {
+                      transform: none;
+                    }
+                  }
+                `}</style>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
                 {filtered.map((s) => {
                   const st = s.supporterType ?? '';
                   const tc = TYPE_COLORS[st] ?? { bg: '#F1F5F9', text: '#475569' };
@@ -579,6 +611,7 @@ export default function SupportersListPage() {
                   return (
                     <div
                       key={s.supporterId}
+                      className="supporter-card-netflix"
                       style={{
                         background: '#fff',
                         borderRadius: 14,
@@ -641,13 +674,33 @@ export default function SupportersListPage() {
                         </div>
                       </div>
 
+                      <div style={{ fontSize: 12, color: '#475569', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        {s.email && (
+                          <span className="text-break">
+                            <i className="bi bi-envelope me-1 text-secondary" aria-hidden />
+                            {s.email}
+                          </span>
+                        )}
+                        {s.phone && (
+                          <span>
+                            <i className="bi bi-telephone me-1 text-secondary" aria-hidden />
+                            {s.phone}
+                          </span>
+                        )}
+                        <span>
+                          <i className="bi bi-geo-alt me-1 text-secondary" aria-hidden />
+                          {[s.region, s.country].filter(Boolean).join(', ') || '—'}
                       <div style={{ fontSize: 12, color: '#475569', display: 'flex', flexDirection: 'column', gap: 3 }}>
                         {s.email && <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><i className="bi bi-envelope" style={{ fontSize: 13 }} /> {s.email}</span>}
                         {s.phone && <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><i className="bi bi-telephone" style={{ fontSize: 13 }} /> {s.phone}</span>}
                         <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                           <i className="bi bi-geo-alt" style={{ fontSize: 13 }} /> {[s.region, s.country].filter(Boolean).join(', ') || '—'}
                         </span>
+                        <span className="text-muted small">ID {s.supporterId}</span>
                         {s.createdAt && (
+                          <span>
+                            <i className="bi bi-calendar3 me-1 text-secondary" aria-hidden />
+                            Joined{' '}
                           <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                             <i className="bi bi-calendar3" style={{ fontSize: 13 }} /> Joined{' '}
                             {new Date(s.createdAt).toLocaleDateString('en-GB', {
@@ -658,6 +711,8 @@ export default function SupportersListPage() {
                           </span>
                         )}
                         {aggRow && aggRow.totalPhp > 0 && (
+                          <span style={{ color: '#166534', fontWeight: 600 }}>
+                            {fmtMoneyPhp(aggRow.totalPhp)} monetary (tracked)
                           <span style={{ color: '#166534', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
                             <i className="bi bi-wallet2" style={{ fontSize: 14 }} /> {fmtMoneyPhp(aggRow.totalPhp)} monetary
                           </span>
@@ -684,46 +739,47 @@ export default function SupportersListPage() {
                         )}
                       </div>
 
-                      <div style={{ borderTop: '1px solid #F1F5F9', paddingTop: 10, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-                        <button
-                          type="button"
-                          onClick={() => handleEdit(s)}
-                          style={{
-                            background: '#F1F5F9',
-                            border: 'none',
-                            borderRadius: 6,
-                            color: '#475569',
-                            fontSize: 12,
-                            fontWeight: 600,
-                            padding: '4px 12px',
-                            cursor: 'pointer',
-                            transition: 'background 0.2s',
-                          }}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => void handleDelete(s.supporterId)}
-                          style={{
-                            background: '#FEF2F2',
-                            border: 'none',
-                            borderRadius: 6,
-                            color: '#DC2626',
-                            fontSize: 12,
-                            fontWeight: 600,
-                            padding: '4px 12px',
-                            cursor: 'pointer',
-                            transition: 'background 0.2s',
-                          }}
-                        >
-                          Delete
-                        </button>
+                      <div
+                        style={{ borderTop: '1px solid #F1F5F9', paddingTop: 10 }}
+                        className="d-flex justify-content-end"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="dropdown">
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-secondary dropdown-toggle"
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false"
+                            aria-label={`Actions for supporter ${s.supporterId}`}
+                          >
+                            Actions
+                          </button>
+                          <ul className="dropdown-menu dropdown-menu-end">
+                            <li>
+                              <button type="button" className="dropdown-item" onClick={() => handleEdit(s)}>
+                                Edit
+                              </button>
+                            </li>
+                            <li>
+                              <hr className="dropdown-divider" />
+                            </li>
+                            <li>
+                              <button
+                                type="button"
+                                className="dropdown-item text-danger"
+                                onClick={() => void handleDelete(s.supporterId)}
+                              >
+                                Delete
+                              </button>
+                            </li>
+                          </ul>
+                        </div>
                       </div>
                     </div>
                   );
                 })}
-              </div>
+                </div>
+              </>
             )}
           </>
         )}
