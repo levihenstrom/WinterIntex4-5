@@ -146,35 +146,19 @@ function ProgramImpactCard({ row, delay }: { row: ProgramImpactRow; delay: strin
   return (
     <div 
       ref={ref}
-      className={`hw-fade-in ${delay} group rounded-[1.5rem] border border-stone-200 bg-white p-8 shadow-sm transition-all duration-500 hover:shadow-xl hover:-translate-y-1.5 flex flex-col justify-between`}
-      style={{ minHeight: '280px' }}
+      className={`hw-fade-in ${delay} group rounded-[1.5rem] border border-stone-200 bg-white p-9 shadow-sm transition-all duration-500 hover:shadow-xl hover:-translate-y-1.5 flex flex-col`}
     >
-       <div>
-         <div className="flex justify-between items-start mb-6">
-           <span className="inline-block px-3 py-1.5 bg-violet-50 text-[#6B21A8] rounded-full text-[10px] uppercase font-bold tracking-widest">
-             Program Funding
-           </span>
-         </div>
-         <h3 className="font-extrabold text-2xl text-[#1E3A5F] mb-3 group-hover:text-[#6B21A8] transition-colors leading-tight">{row.label}</h3>
-         <div className="flex items-baseline gap-2 mb-6">
-           <span className="text-3xl font-black text-[#0D9488] tabular-nums tracking-tight">
-             {formatMoney(row.totalAmount)}
-           </span>
-           <span className="text-stone-400 text-sm font-semibold">from {row.giftCount} gift{row.giftCount === 1 ? '' : 's'}</span>
-         </div>
+       <div className="flex justify-between items-start mb-6">
+         <span className="inline-block px-3 py-1.5 bg-violet-50 text-[#6B21A8] rounded-full text-[10px] font-bold uppercase tracking-widest">
+           Program Funding
+         </span>
        </div>
-       
-       <div className="pt-6 border-t border-stone-100 mt-auto">
-         <p className="text-[0.925rem] leading-relaxed text-stone-500 font-medium italic">
-           {row.outcomeNotes.length > 0 ? (
-             <>
-               <span className="text-stone-700 not-italic font-bold">Aggregate Outcomes: </span>
-               {row.outcomeNotes.join(' · ')}
-             </>
-           ) : (
-             "Funding is pooled to maximize direct resident services and programs."
-           )}
-         </p>
+       <h3 className="font-extrabold text-2xl text-[#1E3A5F] mb-3 group-hover:text-[#6B21A8] transition-colors leading-tight">{row.label}</h3>
+       <div className="flex items-baseline gap-2">
+         <span className="text-4xl font-black text-[#0D9488] tabular-nums tracking-tighter">
+           {formatMoney(row.totalAmount)}
+         </span>
+         <span className="text-stone-400 text-sm font-semibold">from {row.giftCount} gift{row.giftCount === 1 ? '' : 's'}</span>
        </div>
     </div>
   );
@@ -247,16 +231,16 @@ export default function DonorDashboardPage() {
         </div>
       </SectionContainer>
 
-      <SectionContainer className="py-20 lg:py-24">
+      <SectionContainer className="py-20 lg:py-28">
         {loading && (
           <div className="py-24 text-center">
             <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-[#1E3A5F] border-t-transparent mb-6"></div>
-            <p className="text-stone-400 font-bold uppercase tracking-widest text-sm">Synchronizing your giving data...</p>
+            <p className="text-stone-400 font-bold uppercase tracking-[0.2em] text-xs">Synchronizing your giving data...</p>
           </div>
         )}
 
         {error && (
-          <div className="hw-alert-error max-w-2xl mx-auto shadow-xl p-10 text-center" role="alert">
+          <div className="hw-alert-error max-w-2xl mx-auto shadow-xl p-10 text-center" role="alert" style={{ borderRadius: '2rem' }}>
              <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10" /><path d="m15 9-6 6M9 9l6 6" /></svg>
              </div>
@@ -266,18 +250,17 @@ export default function DonorDashboardPage() {
         )}
 
         {!loading && !error && donations && (
-          <div className="space-y-24">
+          <div className="space-y-32">
             {/* ── Program Area Impact ── */}
             <section>
-              <div className="mb-12 text-center">
-                <span className="hw-eyebrow" style={{ color: '#0D9488' }}>Social Impact</span>
-                <h2 className="hw-heading mt-3 text-3xl font-black md:text-4xl text-[#1E3A5F] tracking-tight">Impact by Category</h2>
-                <div className="h-1.5 w-20 bg-[#5eead4] mx-auto mt-6 rounded-full" />
+              <div className="mb-10 text-left">
+                <span className="hw-eyebrow" style={{ color: '#0D9488', fontSize: '0.75rem' }}>Social Impact</span>
+                <h2 className="hw-heading-font mt-2 text-3xl font-black md:text-4xl text-[#6B21A8] tracking-tight">Impact by Category</h2>
               </div>
 
               {programImpact.length === 0 ? (
                 <div className="bg-white rounded-[2rem] border border-stone-200 p-16 text-center shadow-sm">
-                  <p className="text-stone-400 font-medium italic m-0 text-lg">Your generosity will fuel measurable change across our programs. Check back after your first gift!</p>
+                  <p className="text-stone-400 font-medium italic m-0 text-lg">Your generosity will fuel measurable change across our programs.</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -294,9 +277,9 @@ export default function DonorDashboardPage() {
 
             {/* ── History Table ── */}
             <section>
-              <div className="mb-12">
-                <span className="hw-eyebrow" style={{ color: '#6B21A8' }}>Financial History</span>
-                <h2 className="hw-heading mt-3 text-3xl font-black md:text-4xl text-[#1E3A5F] tracking-tight">Record of Stewardship</h2>
+              <div className="mb-10 text-left">
+                <span className="hw-eyebrow" style={{ color: '#0D9488', fontSize: '0.75rem' }}>Financial History</span>
+                <h2 className="hw-heading-font mt-2 text-3xl font-black md:text-4xl text-[#6B21A8] tracking-tight">Stewardship Record</h2>
               </div>
 
               {donations.length === 0 ? (
@@ -309,10 +292,10 @@ export default function DonorDashboardPage() {
                     <table className="w-full border-collapse text-left">
                       <thead>
                         <tr className="bg-stone-50/50 border-b border-stone-100">
-                          <th className="px-8 py-6 text-xs font-black uppercase tracking-[0.2em] text-stone-400">Date</th>
-                          <th className="px-8 py-6 text-xs font-black uppercase tracking-[0.2em] text-stone-400">Amount (USD)</th>
-                          <th className="px-8 py-6 text-xs font-black uppercase tracking-[0.2em] text-stone-400">Initiative</th>
-                          <th className="px-8 py-6 text-xs font-black uppercase tracking-[0.2em] text-stone-400 text-center">Frequency</th>
+                          <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.25em] text-stone-400">Date</th>
+                          <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.25em] text-stone-400">Amount (USD)</th>
+                          <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.25em] text-stone-400">Initiative</th>
+                          <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.25em] text-stone-400 text-center">Plan</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-stone-50">
@@ -322,7 +305,7 @@ export default function DonorDashboardPage() {
                               {formatDate(d.donationDate)}
                             </td>
                             <td className="px-8 py-7">
-                              <span className="font-black text-[#1E3A5F] text-xl tabular-nums tracking-tight">
+                              <span className="font-black text-[#1E3A5F] text-xl tabular-nums tracking-tighter">
                                 {formatMoney(d.amount)}
                               </span>
                               <span className="block text-[10px] text-stone-400 uppercase font-black mt-1.5 tracking-widest">{d.donationType || 'Gift'}</span>
@@ -334,7 +317,7 @@ export default function DonorDashboardPage() {
                             <td className="px-8 py-7 text-center">
                               {d.isRecurring ? (
                                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-violet-100 text-[#6B21A8] text-[10px] font-black uppercase tracking-widest">
-                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" className="animate-spin-slow"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" /><polyline points="21 3 21 8 16 8" /></svg>
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" /><polyline points="21 3 21 8 16 8" /></svg>
                                   Recurring
                                 </span>
                               ) : (
@@ -356,16 +339,16 @@ export default function DonorDashboardPage() {
       </SectionContainer>
       
       {/* ── Footer / CTA ── */}
-      <section className="py-24 bg-[#1E3A5F] relative overflow-hidden">
+      <section className="py-28 bg-[#1E3A5F] relative overflow-hidden">
         <div className="absolute inset-0 opacity-10 pointer-events-none">
-           <div className="absolute top-0 right-0 w-96 h-96 bg-white rounded-full blur-[120px]" />
-           <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#5eead4] rounded-full blur-[100px]" />
+           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white rounded-full blur-[120px]" />
+           <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#5eead4] rounded-full blur-[100px]" />
         </div>
         <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
            <h3 className="hw-heading-font text-4xl font-black text-white mb-6 tracking-tight italic">Continue your legacy of giving.</h3>
-           <p className="text-white/60 text-xl mb-12 max-w-2xl mx-auto leading-relaxed">Your continued support allows us to expand our outreach and bring hope to even more individuals.</p>
+           <p className="text-white/60 text-xl mb-12 max-w-2xl mx-auto leading-relaxed font-medium">Your continued support allows us to expand our outreach and bring hope to even more individuals.</p>
            <div className="flex justify-center">
-              <a href="/#donate" className="hw-btn-magenta h-16 px-14 flex items-center justify-center rounded-full text-xl font-black shadow-2xl hover:scale-105 transition-transform">
+              <a href="/#donate" className="hw-btn-magenta h-16 px-16 flex items-center justify-center rounded-full text-xl font-extrabold shadow-2xl hover:scale-105 transition-transform" style={{ minWidth: '280px' }}>
                 Give Again Now →
               </a>
            </div>
