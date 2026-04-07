@@ -13,11 +13,14 @@ import joblib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from sklearn.base import clone
+from sklearn.calibration import CalibratedClassifierCV
 from sklearn.inspection import permutation_importance
+from sklearn.model_selection import StratifiedKFold
 
 from . import config
 from .data_prep import load_social_media_posts
-from .feature_engineering import build_modeling_frame
+from .feature_engineering import build_modeling_frame, get_X_y
 from .train_explanatory import run_explanatory_suite
 from .train_predictive import run_predictive_suite
 
@@ -94,6 +97,53 @@ def export_all(
     ref_pipe = ref["best_pipeline"]
     dval_pipe = dval["best_pipeline"]
     clf_pipe = any_ref["best_pipeline"]
+
+    referral_calibration_meta: dict[str, Any] = {
+        "applied": False,
+        "reason": "Raw classifier probabilities are often miscalibrated (especially tree/boosting).",
+    }
+    if not getattr(config, "CALIBRATE_ANY_REFERRAL_CLASSIFIER", True):
+        referral_calibration_meta = {
+            "applied": False,
+            "reason": "Disabled via config.CALIBRATE_ANY_REFERRAL_CLASSIFIER = False",
+        }
+    else:
+        X_bin, y_bin = get_X_y(df, meta, meta["target_referrals_binary"])
+        y_bin = y_bin.astype(int)
+        pos, neg = int(y_bin.sum()), int(len(y_bin) - y_bin.sum())
+        minor = min(pos, neg)
+        # Stratified folds: need n_splits <= minority count (roughly); skip if too few
+        n_splits = min(config.CALIBRATION_N_SPLITS, minor)
+        if n_splits < 2:
+            referral_calibration_meta = {
+                "applied": False,
+                "reason": f"minority class count {minor} too small for stratified calibration (need >=2 folds)",
+            }
+        else:
+            try:
+                cv = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=config.RANDOM_STATE)
+                clf_pipe = CalibratedClassifierCV(
+                    estimator=clone(clf_pipe),
+                    cv=cv,
+                    method=config.CALIBRATION_METHOD,
+                )
+                clf_pipe.fit(X_bin, y_bin)
+                referral_calibration_meta = {
+                    "applied": True,
+                    "method": config.CALIBRATION_METHOD,
+                    "cv_splits": n_splits,
+                    "note": (
+                        "Probabilities are Platt-scaled (sigmoid) via cross-fitted calibration on the full modeling frame. "
+                        "Holdout metrics in predictive_holdout.any_referral still describe the *uncalibrated* model "
+                        "used for model selection; ranking uses calibrated scores at inference."
+                    ),
+                }
+            except Exception as exc:  # noqa: BLE001
+                referral_calibration_meta = {
+                    "applied": False,
+                    "error": str(exc),
+                    "note": "Calibration skipped; using uncalibrated classifier.",
+                }
 
     # Charts
     fig, ax = plt.subplots(figsize=(8, 4))
@@ -173,6 +223,7 @@ def export_all(
             },
         },
         "permutation_importance_engagement_top": imp_eng,
+        "any_referral_probability_calibration": referral_calibration_meta,
         "ethics": "Associations are not causal. Human judgment required for content and brand.",
     }
 

@@ -1,5 +1,5 @@
 """
-Score one post feature row with saved pipelines.
+Score one post feature row and generate next-post recommendations.
 
 From ``ml_pipeline``::
 
@@ -17,6 +17,7 @@ import numpy as np
 import pandas as pd
 
 from . import config
+from .recommend_posts import save_recommendations_outputs
 
 
 def main() -> None:
@@ -56,6 +57,42 @@ def main() -> None:
                 "predicted_p_any_referral": round(p_any, 4),
             },
             indent=2,
+        )
+    )
+
+    # Recommendation examples for post planning
+    rec1, _, csv1, json1 = save_recommendations_outputs(
+        goal="donations",
+        top_k=3,
+        output_stem="sample_recommendations_donations",
+    )
+    rec2, _, csv2, json2 = save_recommendations_outputs(
+        goal="awareness",
+        fixed_inputs={"platform": "Instagram", "day_of_week": "Thursday", "month": 7},
+        top_k=3,
+        output_stem="sample_recommendations_awareness_instagram",
+    )
+    rec3, _, csv3, json3 = save_recommendations_outputs(
+        goal="mixed",
+        fixed_inputs={"content_topic": "Reintegration"},
+        top_k=3,
+        output_stem="sample_recommendations_mixed_reintegration",
+    )
+    print(
+        json.dumps(
+            {
+                "recommendation_samples": {
+                    "donations": {"csv": str(csv1), "json": str(json1), "top1": rec1.iloc[0].to_dict()},
+                    "awareness_fixed_platform": {
+                        "csv": str(csv2),
+                        "json": str(json2),
+                        "top1": rec2.iloc[0].to_dict(),
+                    },
+                    "mixed_fixed_topic": {"csv": str(csv3), "json": str(json3), "top1": rec3.iloc[0].to_dict()},
+                }
+            },
+            indent=2,
+            default=str,
         )
     )
 

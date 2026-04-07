@@ -120,7 +120,7 @@
           "model": "random_forest",
           "rmse": 28.113876155778993,
           "mae": 12.251778916414976,
-          "r2": 0.26746258477747475
+          "r2": 0.267462584777475
         },
         {
           "model": "gradient_boosting",
@@ -147,7 +147,7 @@
         {
           "model": "random_forest",
           "rmse": 3.2679340198919533,
-          "mae": 2.51179225648172,
+          "mae": 2.511792256481719,
           "r2": 0.5626386942730042
         },
         {
@@ -355,5 +355,11 @@
       "importance": 0.002744529946211254
     }
   ],
+  "any_referral_probability_calibration": {
+    "applied": true,
+    "method": "sigmoid",
+    "cv_splits": 5,
+    "note": "Probabilities are Platt-scaled (sigmoid) via cross-fitted calibration on the full modeling frame. Holdout metrics in predictive_holdout.any_referral still describe the *uncalibrated* model used for model selection; ranking uses calibrated scores at inference."
+  },
   "ethics": "Associations are not causal. Human judgment required for content and brand."
 }
