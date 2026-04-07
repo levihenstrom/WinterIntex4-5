@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import GoogleIcon from '../components/hw/GoogleIcon';
 import {
   buildExternalLoginUrl,
   getExternalProviders,
@@ -60,92 +61,104 @@ function RegisterPage() {
   }
 
   return (
-    <div className="container mt-4">
-      <div className="row justify-content-center">
-        <div className="col-md-6 col-lg-5">
-          <div className="card shadow-sm">
-            <div className="card-body p-4">
-              <h2 className="h4 mb-3">Register</h2>
-              <p className="text-muted">Create a new account.</p>
+    <div className="hw-auth-shell">
+      <div className="container py-4 py-md-5">
+        <div className="row justify-content-center">
+          <div className="col-12 col-sm-10 col-md-8 col-lg-5 col-xl-4">
+            <div className="hw-auth-card p-4 p-md-5">
+              <p className="hw-eyebrow mb-2">Account</p>
+              <h1 className="hw-heading hw-heading-font h3 mb-2">Sign up</h1>
+              <p className="text-secondary small mb-4">
+                Email and password, or a provider when available.
+              </p>
               <form onSubmit={handleSubmit}>
                 <div className="mb-3">
-                  <label className="form-label" htmlFor="email">
+                  <label className="hw-label" htmlFor="email">
                     Email
                   </label>
                   <input
                     id="email"
                     type="email"
-                    className="form-control"
+                    className="hw-input"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
+                    autoComplete="email"
                   />
                 </div>
                 <div className="mb-3">
-                  <label className="form-label" htmlFor="password">
+                  <label className="hw-label" htmlFor="password">
                     Password
                   </label>
                   <input
                     id="password"
                     type="password"
-                    className="form-control"
+                    className="hw-input"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
+                    autoComplete="new-password"
                   />
                 </div>
-                <div className="mb-3">
-                  <label className="form-label" htmlFor="confirmPassword">
+                <div className="mb-4">
+                  <label className="hw-label" htmlFor="confirmPassword">
                     Confirm password
                   </label>
                   <input
                     id="confirmPassword"
                     type="password"
-                    className="form-control"
+                    className="hw-input"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
+                    autoComplete="new-password"
                   />
                 </div>
                 {errorMessage ? (
-                  <div className="alert alert-danger" role="alert">
+                  <div className="hw-alert-error mb-3" role="alert">
                     {errorMessage}
                   </div>
                 ) : null}
                 {successMessage ? (
-                  <div className="alert alert-success" role="alert">
+                  <div className="hw-alert-success mb-3" role="alert">
                     {successMessage}
                   </div>
                 ) : null}
                 <button
                   type="submit"
-                  className="btn btn-primary w-100"
+                  className="hw-btn-magenta w-100 py-2 rounded-3 fw-semibold"
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? 'Creating account...' : 'Create account'}
+                  {isSubmitting ? 'Signing up...' : 'Sign up'}
                 </button>
               </form>
 
               {externalProviders.length > 0 ? (
                 <>
-                  <div className="text-center text-muted my-3">or</div>
+                  <div className="hw-divider-or">or sign up with</div>
                   <div className="d-grid gap-2">
                     {externalProviders.map((provider) => (
                       <button
                         key={provider.name}
                         type="button"
-                        className="btn btn-outline-dark"
+                        className="hw-btn-external"
                         onClick={() => handleExternalLogin(provider.name)}
                       >
-                        Continue with {provider.displayName}
+                        {provider.displayName.toLowerCase() === 'google' ? (
+                          <GoogleIcon />
+                        ) : null}
+                        Sign up with {provider.displayName}
                       </button>
                     ))}
                   </div>
                 </>
               ) : null}
 
-              <p className="mt-3 mb-0">
-                Already registered? <Link to="/login">Go to login</Link>.
+              <p className="hw-auth-footer-hint mb-0">
+                Already have an account?{' '}
+                <Link className="hw-link" to="/login">
+                  Sign in
+                </Link>
               </p>
             </div>
           </div>
