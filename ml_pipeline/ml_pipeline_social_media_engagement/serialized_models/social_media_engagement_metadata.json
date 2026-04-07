@@ -1,0 +1,359 @@
+{
+  "pipeline_purpose": "social_media_engagement_and_conversion",
+  "n_rows_modeled": 812,
+  "leakage_columns_excluded_from_X": [
+    "impressions",
+    "reach",
+    "likes",
+    "comments",
+    "shares",
+    "saves",
+    "click_throughs",
+    "profile_visits",
+    "video_views",
+    "watch_time_seconds",
+    "avg_view_duration_seconds",
+    "subscriber_count_at_post",
+    "forwards"
+  ],
+  "dropped_from_X": [
+    "post_id",
+    "platform_post_id",
+    "post_url",
+    "caption",
+    "hashtags",
+    "campaign_name",
+    "impressions",
+    "reach",
+    "likes",
+    "comments",
+    "shares",
+    "saves",
+    "click_throughs",
+    "profile_visits",
+    "video_views",
+    "watch_time_seconds",
+    "avg_view_duration_seconds",
+    "subscriber_count_at_post",
+    "forwards"
+  ],
+  "numeric_features": [
+    "post_hour",
+    "num_hashtags",
+    "mentions_count",
+    "caption_length",
+    "boost_budget_php",
+    "boost_budget_missing",
+    "log_follower_count",
+    "month",
+    "is_weekend",
+    "hashtag_density",
+    "campaign_present",
+    "boosted_with_budget",
+    "has_call_to_action",
+    "features_resident_story",
+    "is_boosted"
+  ],
+  "categorical_features": [
+    "platform",
+    "day_of_week",
+    "post_type",
+    "media_type",
+    "call_to_action_type",
+    "content_topic",
+    "sentiment_tone",
+    "time_of_day_bucket",
+    "caption_length_bucket",
+    "platform_post_type"
+  ],
+  "targets": {
+    "engagement_rate": "engagement_rate",
+    "donation_referrals_count": "donation_referrals",
+    "estimated_donation_value_php_log1p": "log1p(estimated_donation_value_php)",
+    "any_referral_binary": "referrals_positive",
+    "referrals_ge_median": "referrals_high"
+  },
+  "predictive_holdout": {
+    "engagement": {
+      "best_model": "gradient_boosting",
+      "metrics": {
+        "rmse": 0.02520498444648376,
+        "mae": 0.018834096718905062,
+        "r2": 0.7637481049031793
+      },
+      "comparison": [
+        {
+          "model": "ridge",
+          "rmse": 0.0357759926033413,
+          "mae": 0.028719543920623584,
+          "r2": 0.5240231642889146
+        },
+        {
+          "model": "random_forest",
+          "rmse": 0.029778731536941532,
+          "mae": 0.022576844814846748,
+          "r2": 0.6702272071609808
+        },
+        {
+          "model": "gradient_boosting",
+          "rmse": 0.02520498444648376,
+          "mae": 0.018834096718905062,
+          "r2": 0.7637481049031793
+        }
+      ]
+    },
+    "donation_referrals_count": {
+      "best_model": "ridge",
+      "metrics": {
+        "rmse": 27.20028767182931,
+        "mae": 13.541791742284731,
+        "r2": 0.3142981024754601
+      },
+      "comparison": [
+        {
+          "model": "ridge",
+          "rmse": 27.20028767182931,
+          "mae": 13.541791742284731,
+          "r2": 0.3142981024754601
+        },
+        {
+          "model": "random_forest",
+          "rmse": 28.113876155778993,
+          "mae": 12.251778916414976,
+          "r2": 0.26746258477747475
+        },
+        {
+          "model": "gradient_boosting",
+          "rmse": 29.17836263558247,
+          "mae": 13.786530619168124,
+          "r2": 0.21093970246174265
+        }
+      ]
+    },
+    "donation_value_log1p": {
+      "best_model": "ridge",
+      "metrics": {
+        "rmse": 3.1311528376807365,
+        "mae": 2.531599423166515,
+        "r2": 0.5984844843111601
+      },
+      "comparison": [
+        {
+          "model": "ridge",
+          "rmse": 3.1311528376807365,
+          "mae": 2.531599423166515,
+          "r2": 0.5984844843111601
+        },
+        {
+          "model": "random_forest",
+          "rmse": 3.2679340198919533,
+          "mae": 2.51179225648172,
+          "r2": 0.5626386942730042
+        },
+        {
+          "model": "gradient_boosting",
+          "rmse": 3.156876800081341,
+          "mae": 2.4649725973723897,
+          "r2": 0.5918600889457097
+        }
+      ]
+    },
+    "any_referral": {
+      "best_model": "gradient_boosting",
+      "metrics": {
+        "model": "gradient_boosting",
+        "accuracy": 0.8282208588957055,
+        "precision": 0.8737864077669902,
+        "recall": 0.8571428571428571,
+        "f1": 0.8653846153846154,
+        "roc_auc": 0.9142857142857143
+      },
+      "comparison": [
+        {
+          "model": "logistic",
+          "accuracy": 0.7914110429447853,
+          "precision": 0.9176470588235294,
+          "recall": 0.7428571428571429,
+          "f1": 0.8210526315789474,
+          "roc_auc": 0.9022988505747127
+        },
+        {
+          "model": "random_forest",
+          "accuracy": 0.803680981595092,
+          "precision": 0.9101123595505618,
+          "recall": 0.7714285714285715,
+          "f1": 0.8350515463917526,
+          "roc_auc": 0.884072249589491
+        },
+        {
+          "model": "gradient_boosting",
+          "accuracy": 0.8282208588957055,
+          "precision": 0.8737864077669902,
+          "recall": 0.8571428571428571,
+          "f1": 0.8653846153846154,
+          "roc_auc": 0.9142857142857143
+        }
+      ]
+    },
+    "referrals_ge_median": {
+      "best_model": "random_forest",
+      "metrics": {
+        "model": "random_forest",
+        "accuracy": 0.8466257668711656,
+        "precision": 0.8470588235294118,
+        "recall": 0.8571428571428571,
+        "f1": 0.8520710059171598,
+        "roc_auc": 0.9088306208559374
+      },
+      "comparison": [
+        {
+          "model": "logistic",
+          "accuracy": 0.8098159509202454,
+          "precision": 0.8045977011494253,
+          "recall": 0.8333333333333334,
+          "f1": 0.8187134502923976,
+          "roc_auc": 0.9041591320072333
+        },
+        {
+          "model": "random_forest",
+          "accuracy": 0.8466257668711656,
+          "precision": 0.8470588235294118,
+          "recall": 0.8571428571428571,
+          "f1": 0.8520710059171598,
+          "roc_auc": 0.9088306208559374
+        },
+        {
+          "model": "gradient_boosting",
+          "accuracy": 0.8159509202453987,
+          "precision": 0.813953488372093,
+          "recall": 0.8333333333333334,
+          "f1": 0.8235294117647058,
+          "roc_auc": 0.9041591320072333
+        }
+      ]
+    }
+  },
+  "permutation_importance_engagement_top": [
+    {
+      "feature": "num__post_hour",
+      "importance": 0.434316973337555
+    },
+    {
+      "feature": "cat__sentiment_tone_Informative",
+      "importance": 0.12405440170415585
+    },
+    {
+      "feature": "cat__sentiment_tone_Grateful",
+      "importance": 0.03848334751784097
+    },
+    {
+      "feature": "cat__sentiment_tone_Celebratory",
+      "importance": 0.0329443775238107
+    },
+    {
+      "feature": "num__log_follower_count",
+      "importance": 0.029718423255183223
+    },
+    {
+      "feature": "cat__sentiment_tone_Emotional",
+      "importance": 0.02734040711969742
+    },
+    {
+      "feature": "cat__call_to_action_type___none__",
+      "importance": 0.027107933001816707
+    },
+    {
+      "feature": "cat__time_of_day_bucket_evening",
+      "importance": 0.026152490479009926
+    },
+    {
+      "feature": "cat__sentiment_tone_Hopeful",
+      "importance": 0.02496641277410317
+    },
+    {
+      "feature": "cat__platform_TikTok",
+      "importance": 0.024398393902983283
+    },
+    {
+      "feature": "num__month",
+      "importance": 0.019475929056924062
+    },
+    {
+      "feature": "cat__platform_YouTube",
+      "importance": 0.01742313175137017
+    },
+    {
+      "feature": "cat__platform_Twitter",
+      "importance": 0.016949258746133088
+    },
+    {
+      "feature": "num__caption_length",
+      "importance": 0.015470825850241676
+    },
+    {
+      "feature": "num__hashtag_density",
+      "importance": 0.014824926911610596
+    },
+    {
+      "feature": "num__has_call_to_action",
+      "importance": 0.014460610032944755
+    },
+    {
+      "feature": "cat__platform_Instagram",
+      "importance": 0.013236983581102712
+    },
+    {
+      "feature": "cat__platform_LinkedIn",
+      "importance": 0.011020827108713395
+    },
+    {
+      "feature": "cat__time_of_day_bucket_morning",
+      "importance": 0.008036539430918865
+    },
+    {
+      "feature": "cat__time_of_day_bucket_afternoon",
+      "importance": 0.005805621389019978
+    },
+    {
+      "feature": "cat__sentiment_tone_Urgent",
+      "importance": 0.005282573335639793
+    },
+    {
+      "feature": "cat__time_of_day_bucket_night",
+      "importance": 0.004592239795569593
+    },
+    {
+      "feature": "num__boost_budget_php",
+      "importance": 0.004088646899828141
+    },
+    {
+      "feature": "cat__media_type_Carousel",
+      "importance": 0.003578517330961073
+    },
+    {
+      "feature": "cat__platform_Facebook",
+      "importance": 0.0032995049901858773
+    },
+    {
+      "feature": "cat__post_type_EventPromotion",
+      "importance": 0.0032672204880007877
+    },
+    {
+      "feature": "cat__media_type_Photo",
+      "importance": 0.003185843658992699
+    },
+    {
+      "feature": "cat__call_to_action_type_ShareStory",
+      "importance": 0.0031004199826674484
+    },
+    {
+      "feature": "cat__platform_post_type_Instagram|Campaign",
+      "importance": 0.0030149045749756423
+    },
+    {
+      "feature": "cat__platform_post_type_YouTube|EventPromotion",
+      "importance": 0.002744529946211254
+    }
+  ],
+  "ethics": "Associations are not causal. Human judgment required for content and brand."
+}

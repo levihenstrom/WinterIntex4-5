@@ -1,0 +1,20 @@
+{
+  "resident_code": "C3534",
+  "reintegration_readiness_score": 0.3741,
+  "risk_of_regression": 0.6259,
+  "top_positive_factors": [
+    "cat__case_category_Surrendered (OR=3.27)",
+    "num__sub_cat_trafficked (OR=2.74)",
+    "num__sub_cat_child_labor (OR=2.00)",
+    "num__days_in_program_at_window_end (OR=1.86)",
+    "cat__region_Luzon (OR=1.83)"
+  ],
+  "top_risk_factors": [
+    "num__pr_concern_rate (OR=0.37)",
+    "cat__case_category_Neglected (OR=0.44)",
+    "num__ip_achieved_rate (OR=0.53)",
+    "num__sub_cat_orphaned (OR=0.57)",
+    "num__pr_gap_mean_days (OR=0.57)"
+  ],
+  "note": "Scores are associational / predictive estimates, not clinical facts."
+}

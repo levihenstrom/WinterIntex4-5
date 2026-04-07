@@ -1,0 +1,35 @@
+{
+  "supporter_id": "D-4",
+  "predicted_next_donation_php": 1000.38,
+  "allocation_program_area": {
+    "Education": 0.1452,
+    "Maintenance": 0.1448,
+    "Operations": 0.2516,
+    "Outreach": 0.0882,
+    "Transport": 0.1776,
+    "Wellbeing": 0.1924
+  },
+  "allocation_safehouse": {},
+  "implied_split_example_php": {
+    "Education": 145.25,
+    "Maintenance": 144.85,
+    "Operations": 251.7,
+    "Outreach": 88.23,
+    "Transport": 177.67,
+    "Wellbeing": 192.47
+  },
+  "top_positive_factors": [
+    "num__prior_mean_share_prog_Operations (coef=0.0371)",
+    "cat__sup_acquisition_channel_SocialMedia (coef=0.0284)",
+    "num__target_donation_quarter (coef=0.0270)",
+    "num__prior_std_amount (coef=0.0245)",
+    "num__target_donation_month (coef=0.0242)"
+  ],
+  "top_negative_factors": [
+    "cat__sup_acquisition_channel_Website (coef=-0.0178)",
+    "num__prior_mean_share_prog_Outreach (coef=-0.0169)",
+    "num__prior_freq_per_month (coef=-0.0165)",
+    "num__prior_mean_share_prog_Education (coef=-0.0162)",
+    "num__prior_recurring_any (coef=-0.0154)"
+  ]
+}

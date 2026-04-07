@@ -1,0 +1,320 @@
+{
+  "target_amount": "next monetary donation PHP amount; prior-only features; time-based split",
+  "allocation_outputs": [
+    "y_alloc_Education",
+    "y_alloc_Maintenance",
+    "y_alloc_Operations",
+    "y_alloc_Outreach",
+    "y_alloc_Transport",
+    "y_alloc_Wellbeing"
+  ],
+  "allocation_n_program": 6,
+  "best_amount_model": "random_forest",
+  "holdout_amount_metrics": {
+    "rmse": 803.5735037032164,
+    "mae": 545.869716984146,
+    "r2": -0.055826333570533127
+  },
+  "amount_model_comparison": [
+    {
+      "model": "ridge",
+      "rmse": 812.1838517962004,
+      "mae": 537.5051480677718,
+      "r2": -0.07857406666295486,
+      "r2_log": -0.03264891424424654,
+      "rmse_log": 0.6756817682116926,
+      "cv_rmse_log_mean": null,
+      "cv_n_splits": null
+    },
+    {
+      "model": "random_forest",
+      "rmse": 803.5735037032164,
+      "mae": 545.8697169841458,
+      "r2": -0.05582633357053335,
+      "r2_log": -0.025167173474190063,
+      "rmse_log": 0.6732295960857108,
+      "cv_rmse_log_mean": 0.7121110381715652,
+      "cv_n_splits": 5.0
+    },
+    {
+      "model": "gradient_boosting",
+      "rmse": 830.3590061996459,
+      "mae": 638.7708321994552,
+      "r2": -0.12738713325345996,
+      "r2_log": -0.3124110064321737,
+      "rmse_log": 0.7617295193861818,
+      "cv_rmse_log_mean": null,
+      "cv_n_splits": null
+    }
+  ],
+  "random_forest_time_series_cv": {
+    "best_params": {
+      "model__n_estimators": 200,
+      "model__min_samples_split": 16,
+      "model__min_samples_leaf": 8,
+      "model__max_features": 0.7,
+      "model__max_depth": 5
+    },
+    "cv_n_splits": 5,
+    "cv_rmse_log_mean": 0.7121110381715652,
+    "cv_neg_mse_std": 0.11671319534085076
+  },
+  "allocation_holdout": {
+    "per_area_mae": {
+      "y_alloc_Education": 0.3860315368419149,
+      "y_alloc_Maintenance": 0.17806298990207464,
+      "y_alloc_Operations": 0.3182962590333402,
+      "y_alloc_Outreach": 0.18593644864789008,
+      "y_alloc_Transport": 0.22810336613798426,
+      "y_alloc_Wellbeing": 0.28474286200888305
+    },
+    "mean_abs_l1_row": 1.5811734625720875
+  },
+  "numeric_features": [
+    "prior_n_monetary",
+    "prior_mean_amount",
+    "prior_std_amount",
+    "prior_last_amount",
+    "prior_span_days",
+    "prior_freq_per_month",
+    "prior_recurring_any",
+    "prior_distinct_campaigns",
+    "prior_distinct_channels",
+    "prior_roll3_mean",
+    "prior_trend_amount",
+    "prior_mean_share_prog_Education",
+    "prior_mean_share_prog_Maintenance",
+    "prior_mean_share_prog_Operations",
+    "prior_mean_share_prog_Outreach",
+    "prior_mean_share_prog_Transport",
+    "prior_mean_share_prog_Wellbeing",
+    "days_since_prior_donation",
+    "target_donation_month",
+    "target_donation_quarter"
+  ],
+  "categorical_features": [
+    "sup_supporter_type",
+    "sup_relationship_type",
+    "sup_region",
+    "sup_country",
+    "sup_acquisition_channel"
+  ],
+  "combined_predicted_funding_test_rows": {
+    "total_predicted_php_sample": 38378.86336496927,
+    "predicted_php_by_program_area": {
+      "y_alloc_Education": 7003.387829629062,
+      "y_alloc_Maintenance": 4861.471950967296,
+      "y_alloc_Operations": 10050.246231558971,
+      "y_alloc_Outreach": 3938.811297451902,
+      "y_alloc_Transport": 4138.871472344834,
+      "y_alloc_Wellbeing": 8386.074583017205
+    },
+    "predicted_php_by_safehouse": {},
+    "note": "Program and safehouse splits are two views of the same predicted gifts; do not add both totals for 'overall budget'."
+  },
+  "amount_feature_importance": [
+    {
+      "feature": "num__prior_last_amount",
+      "importance": 0.1347107689229993
+    },
+    {
+      "feature": "cat__sup_acquisition_channel_SocialMedia",
+      "importance": 0.11494312697385493
+    },
+    {
+      "feature": "num__prior_trend_amount",
+      "importance": 0.10102071064286032
+    },
+    {
+      "feature": "num__days_since_prior_donation",
+      "importance": 0.08272027279306222
+    },
+    {
+      "feature": "num__prior_mean_share_prog_Operations",
+      "importance": 0.0827183404941018
+    },
+    {
+      "feature": "num__prior_mean_amount",
+      "importance": 0.05576241230730627
+    },
+    {
+      "feature": "num__target_donation_month",
+      "importance": 0.04801996663696282
+    },
+    {
+      "feature": "num__prior_mean_share_prog_Wellbeing",
+      "importance": 0.04281815724233335
+    },
+    {
+      "feature": "num__prior_roll3_mean",
+      "importance": 0.041979254673432824
+    },
+    {
+      "feature": "num__prior_span_days",
+      "importance": 0.030088206204836612
+    },
+    {
+      "feature": "num__prior_std_amount",
+      "importance": 0.025667628860397845
+    },
+    {
+      "feature": "num__prior_freq_per_month",
+      "importance": 0.02488180690311013
+    },
+    {
+      "feature": "num__prior_mean_share_prog_Education",
+      "importance": 0.024833699577857866
+    },
+    {
+      "feature": "cat__sup_relationship_type_Local",
+      "importance": 0.018278609269971526
+    },
+    {
+      "feature": "cat__sup_region_Luzon",
+      "importance": 0.018139285714778478
+    },
+    {
+      "feature": "num__target_donation_quarter",
+      "importance": 0.01614445150005378
+    },
+    {
+      "feature": "num__prior_mean_share_prog_Maintenance",
+      "importance": 0.016126187720637425
+    },
+    {
+      "feature": "cat__sup_supporter_type_MonetaryDonor",
+      "importance": 0.01509265564191582
+    },
+    {
+      "feature": "num__prior_recurring_any",
+      "importance": 0.015055602195114247
+    },
+    {
+      "feature": "cat__sup_acquisition_channel_Event",
+      "importance": 0.013346057378008053
+    },
+    {
+      "feature": "num__prior_distinct_campaigns",
+      "importance": 0.012952772141105974
+    },
+    {
+      "feature": "cat__sup_acquisition_channel_Website",
+      "importance": 0.011490953468650573
+    },
+    {
+      "feature": "num__prior_mean_share_prog_Transport",
+      "importance": 0.010799130115594049
+    },
+    {
+      "feature": "cat__sup_supporter_type_InKindDonor",
+      "importance": 0.008464110008647175
+    },
+    {
+      "feature": "cat__sup_acquisition_channel_WordOfMouth",
+      "importance": 0.007221169646062017
+    }
+  ],
+  "allocation_feature_importance": [
+    {
+      "feature": "num__prior_last_amount",
+      "importance": 0.08166390793738042
+    },
+    {
+      "feature": "num__prior_mean_amount",
+      "importance": 0.08056995526567186
+    },
+    {
+      "feature": "num__prior_roll3_mean",
+      "importance": 0.07358235570987057
+    },
+    {
+      "feature": "num__days_since_prior_donation",
+      "importance": 0.07185030605178276
+    },
+    {
+      "feature": "num__prior_mean_share_prog_Operations",
+      "importance": 0.0614447917914295
+    },
+    {
+      "feature": "num__prior_trend_amount",
+      "importance": 0.058015553475038895
+    },
+    {
+      "feature": "num__prior_freq_per_month",
+      "importance": 0.05203876178623374
+    },
+    {
+      "feature": "num__target_donation_month",
+      "importance": 0.050056276982633825
+    },
+    {
+      "feature": "num__prior_span_days",
+      "importance": 0.045913835741640784
+    },
+    {
+      "feature": "num__prior_std_amount",
+      "importance": 0.0395497166590774
+    },
+    {
+      "feature": "num__prior_mean_share_prog_Wellbeing",
+      "importance": 0.03322202215621546
+    },
+    {
+      "feature": "num__prior_mean_share_prog_Education",
+      "importance": 0.028584840355000207
+    },
+    {
+      "feature": "num__target_donation_quarter",
+      "importance": 0.024919694038471343
+    },
+    {
+      "feature": "num__prior_mean_share_prog_Maintenance",
+      "importance": 0.024775661761156583
+    },
+    {
+      "feature": "num__prior_mean_share_prog_Transport",
+      "importance": 0.02192832602632829
+    },
+    {
+      "feature": "num__prior_n_monetary",
+      "importance": 0.021762782164090597
+    },
+    {
+      "feature": "num__prior_distinct_campaigns",
+      "importance": 0.02173215516907877
+    },
+    {
+      "feature": "cat__sup_supporter_type_InKindDonor",
+      "importance": 0.021586288118405336
+    },
+    {
+      "feature": "cat__sup_supporter_type_MonetaryDonor",
+      "importance": 0.01971444259657577
+    },
+    {
+      "feature": "num__prior_distinct_channels",
+      "importance": 0.01776624245038853
+    },
+    {
+      "feature": "num__prior_mean_share_prog_Outreach",
+      "importance": 0.017571856999751022
+    },
+    {
+      "feature": "cat__sup_relationship_type_Local",
+      "importance": 0.01517913982983955
+    },
+    {
+      "feature": "cat__sup_region_Luzon",
+      "importance": 0.014369298069120658
+    },
+    {
+      "feature": "num__prior_recurring_any",
+      "importance": 0.0115351104091914
+    },
+    {
+      "feature": "cat__sup_supporter_type_Volunteer",
+      "importance": 0.010081606184364388
+    }
+  ],
+  "ethics": "Forecasts are uncertain; do not replace donor relationships or commitments."
+}
