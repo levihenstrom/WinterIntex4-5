@@ -1,14 +1,33 @@
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import NavBar from '../components/hw/NavBar';
 
-const tabs = [
-  { to: '/admin/home', label: 'Home' },
-  { to: '/admin/donations', label: 'Donations' },
-  { to: '/admin/residents', label: 'Residents' },
-  { to: '/admin/social-media', label: 'Social Media' },
-  { to: '/admin/reports/donations', label: 'Reports' },
-];
+const sectionTabs = {
+  donations: [
+    { to: '/admin/donations', label: 'Supporters', end: true },
+    { to: '/admin/donations/contributions', label: 'Donations', end: false },
+    { to: '/admin/donations/allocations', label: 'Allocations', end: false },
+  ],
+  residents: [
+    { to: '/admin/residents', label: 'Residents', end: true },
+  ],
+  socialMedia: [
+    { to: '/admin/social-media', label: 'History', end: true },
+    { to: '/admin/social-media/suggest', label: 'Suggest Next Post', end: false },
+  ],
+  reports: [
+    { to: '/admin/reports/donations', label: 'Donation Trends', end: true },
+    { to: '/admin/reports/outcomes', label: 'Resident Outcomes', end: false },
+  ],
+} as const;
+
+function getSectionKey(pathname: string): keyof typeof sectionTabs | null {
+  if (pathname.startsWith('/admin/donations')) return 'donations';
+  if (pathname.startsWith('/admin/residents')) return 'residents';
+  if (pathname.startsWith('/admin/social-media')) return 'socialMedia';
+  if (pathname.startsWith('/admin/reports')) return 'reports';
+  return null;
+}
 
 /**
  * Scaffold layout for /admin/*. Plain tab strip, no design.
@@ -17,39 +36,35 @@ const tabs = [
  */
 export default function AdminLayout() {
   const { authSession } = useAuth();
+  const location = useLocation();
+  const activeSection = getSectionKey(location.pathname);
+  const tabs = activeSection ? sectionTabs[activeSection] : [];
+
   return (
     <div className="d-flex flex-column min-vh-100">
       <NavBar />
       <div className="hw-auth-page-content flex-grow-1">
-        <header className="bg-dark text-white p-3">
-          <div className="container d-flex justify-content-between align-items-center">
-            <strong>HealingWings — Admin Portal (scaffold)</strong>
-            <span className="small">
-              {authSession.email} · roles: {authSession.roles.join(', ') || 'none'}
-            </span>
-          </div>
-        </header>
-        <nav className="bg-light border-bottom">
-          <div className="container">
-            <ul className="nav nav-tabs border-0 pt-2">
-              {tabs.map((tab) => (
-                <li key={tab.to} className="nav-item">
-                  <NavLink
-                    to={tab.to}
-                    className={({ isActive }) =>
-                      'nav-link' + (isActive ? ' active' : '')
-                    }
-                  >
-                    {tab.label}
-                  </NavLink>
-                </li>
-              ))}
-              <li className="nav-item ms-auto">
-                <NavLink to="/logout" className="nav-link">Logout</NavLink>
-              </li>
-            </ul>
-          </div>
-        </nav>
+        {tabs.length > 0 ? (
+          <nav className="bg-light border-bottom">
+            <div className="container">
+              <ul className="nav nav-tabs border-0 pt-2">
+                {tabs.map((tab) => (
+                  <li key={tab.to} className="nav-item">
+                    <NavLink
+                      to={tab.to}
+                      end={tab.end}
+                      className={({ isActive }) =>
+                        'nav-link' + (isActive ? ' active' : '')
+                      }
+                    >
+                      {tab.label}
+                    </NavLink>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </nav>
+        ) : null}
         <main className="flex-grow-1">
           <Outlet />
         </main>
@@ -61,7 +76,7 @@ export default function AdminLayout() {
             Signed in as {authSession.email}
           </div>
         </footer>
-        </div>
+      </div>
     </div>
   );
 }
