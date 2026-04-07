@@ -10,10 +10,10 @@ namespace Intex.API.Controllers;
 
 [ApiController]
 [Route("api/process-recordings")]
-[Authorize(Policy = AuthPolicies.ManageCatalog)]
 public class ProcessRecordingsController(AppDbContext db) : ControllerBase
 {
     [HttpGet]
+    [Authorize(Policy = AuthPolicies.StaffRead)]
     [ProducesResponseType(typeof(PagedResult<ProcessRecording>), StatusCodes.Status200OK)]
     public async Task<ActionResult<PagedResult<ProcessRecording>>> GetPage(
         [FromQuery] int page = 1,
@@ -31,6 +31,7 @@ public class ProcessRecordingsController(AppDbContext db) : ControllerBase
     }
 
     [HttpGet("{id:int}")]
+    [Authorize(Policy = AuthPolicies.StaffRead)]
     [ProducesResponseType(typeof(ProcessRecording), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ProcessRecording>> GetById(int id, CancellationToken cancellationToken)
@@ -42,6 +43,7 @@ public class ProcessRecordingsController(AppDbContext db) : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Policy = AuthPolicies.StaffWrite)]
     [ProducesResponseType(typeof(ProcessRecording), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<ProcessRecording>> Create([FromBody] ProcessRecording recording, CancellationToken cancellationToken)
@@ -55,6 +57,7 @@ public class ProcessRecordingsController(AppDbContext db) : ControllerBase
     }
 
     [HttpPut("{id:int}")]
+    [Authorize(Policy = AuthPolicies.StaffWrite)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -71,6 +74,7 @@ public class ProcessRecordingsController(AppDbContext db) : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
+    [Authorize(Policy = AuthPolicies.StaffWrite)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)

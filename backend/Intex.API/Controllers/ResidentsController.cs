@@ -10,10 +10,10 @@ namespace Intex.API.Controllers;
 
 [ApiController]
 [Route("api/residents")]
-[Authorize(Policy = AuthPolicies.ManageCatalog)]
 public class ResidentsController(AppDbContext db) : ControllerBase
 {
     [HttpGet]
+    [Authorize(Policy = AuthPolicies.StaffRead)]
     [ProducesResponseType(typeof(PagedResult<Resident>), StatusCodes.Status200OK)]
     public async Task<ActionResult<PagedResult<Resident>>> GetPage(
         [FromQuery] int page = 1,
@@ -34,6 +34,7 @@ public class ResidentsController(AppDbContext db) : ControllerBase
     }
 
     [HttpGet("{id:int}")]
+    [Authorize(Policy = AuthPolicies.StaffRead)]
     [ProducesResponseType(typeof(Resident), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Resident>> GetById(int id, CancellationToken cancellationToken)
@@ -45,6 +46,7 @@ public class ResidentsController(AppDbContext db) : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Policy = AuthPolicies.StaffWrite)]
     [ProducesResponseType(typeof(Resident), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<Resident>> Create([FromBody] Resident resident, CancellationToken cancellationToken)
@@ -58,6 +60,7 @@ public class ResidentsController(AppDbContext db) : ControllerBase
     }
 
     [HttpPut("{id:int}")]
+    [Authorize(Policy = AuthPolicies.StaffWrite)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -74,6 +77,7 @@ public class ResidentsController(AppDbContext db) : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
+    [Authorize(Policy = AuthPolicies.StaffWrite)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
