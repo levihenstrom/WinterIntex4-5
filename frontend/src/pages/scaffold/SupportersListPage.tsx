@@ -95,11 +95,11 @@ function StatStrip({
   const volunteers = supporters.filter((s) => s.supporterType === 'Volunteer').length;
 
   const stats = [
-    { label: 'Total Supporters', value: supporters.length, icon: '👥' },
-    { label: 'Active', value: active, icon: '✅' },
-    { label: 'Monetary Donors', value: monetary, icon: '💵' },
-    { label: 'Volunteers', value: volunteers, icon: '🤝' },
-    { label: 'Monetary gifts (PHP)', value: fmtMoneyPhp(monetaryTotalPhp), icon: '💰', isText: true },
+    { label: 'Total Supporters', value: supporters.length, icon: 'people' },
+    { label: 'Active', value: active, icon: 'person-check' },
+    { label: 'Monetary Donors', value: monetary, icon: 'currency-dollar' },
+    { label: 'Volunteers', value: volunteers, icon: 'heart' },
+    { label: 'Monetary gifts (PHP)', value: fmtMoneyPhp(monetaryTotalPhp), icon: 'wallet2', isText: true },
   ];
 
   return (
@@ -116,7 +116,7 @@ function StatStrip({
             boxShadow: '0 2px 8px rgba(30,58,95,0.06)',
           }}
         >
-          <div style={{ fontSize: 20, marginBottom: 4 }}>{s.icon}</div>
+          <div style={{ fontSize: 20, marginBottom: 4 }}><i className={`bi bi-${s.icon}`} /></div>
           <div style={{ fontSize: 22, fontWeight: 700, color: '#1E3A5F' }}>{s.isText ? s.value : s.value}</div>
           <div style={{ fontSize: 12, color: '#64748B', fontWeight: 500 }}>{s.label}</div>
         </div>
@@ -559,7 +559,7 @@ export default function SupportersListPage() {
 
             {filtered.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '48px 0', color: '#94A3B8' }}>
-                <div style={{ fontSize: 40, marginBottom: 8 }}>🔍</div>
+                <div style={{ fontSize: 40, marginBottom: 8 }}><i className="bi bi-search" style={{ color: '#CBD5E1' }} /></div>
                 <p style={{ fontWeight: 600 }}>No supporters match your filters.</p>
               </div>
             ) : (
@@ -642,14 +642,14 @@ export default function SupportersListPage() {
                       </div>
 
                       <div style={{ fontSize: 12, color: '#475569', display: 'flex', flexDirection: 'column', gap: 3 }}>
-                        {s.email && <span>✉️ {s.email}</span>}
-                        {s.phone && <span>📞 {s.phone}</span>}
-                        <span>
-                          📍 {[s.region, s.country].filter(Boolean).join(', ') || '—'}
+                        {s.email && <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><i className="bi bi-envelope" style={{ fontSize: 13 }} /> {s.email}</span>}
+                        {s.phone && <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><i className="bi bi-telephone" style={{ fontSize: 13 }} /> {s.phone}</span>}
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <i className="bi bi-geo-alt" style={{ fontSize: 13 }} /> {[s.region, s.country].filter(Boolean).join(', ') || '—'}
                         </span>
                         {s.createdAt && (
-                          <span>
-                            📅 Joined{' '}
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <i className="bi bi-calendar3" style={{ fontSize: 13 }} /> Joined{' '}
                             {new Date(s.createdAt).toLocaleDateString('en-GB', {
                               day: 'numeric',
                               month: 'short',
@@ -658,7 +658,9 @@ export default function SupportersListPage() {
                           </span>
                         )}
                         {aggRow && aggRow.totalPhp > 0 && (
-                          <span style={{ color: '#166534', fontWeight: 600 }}>💵 {fmtMoneyPhp(aggRow.totalPhp)} monetary</span>
+                          <span style={{ color: '#166534', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <i className="bi bi-wallet2" style={{ fontSize: 14 }} /> {fmtMoneyPhp(aggRow.totalPhp)} monetary
+                          </span>
                         )}
                         {aggRow?.lastGift && (
                           <span style={{ color: '#94A3B8' }}>

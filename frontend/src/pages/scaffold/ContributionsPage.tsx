@@ -189,9 +189,9 @@ export default function ContributionsPage() {
           <>
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 24 }}>
               {[
-                { label: 'Monetary (PHP)', value: fmtMoney(kpis.monetarySum), icon: '💵', color: '#166534' },
-                { label: 'All gifts', value: String(kpis.count), icon: '📋', color: '#1E3A5F' },
-                { label: 'Monetary rows', value: String(kpis.monetaryCount), icon: '💰', color: '#854D0E' },
+                { label: 'Monetary (PHP)', value: fmtMoney(kpis.monetarySum), icon: 'cash-stack', color: '#166534' },
+                { label: 'All gifts', value: String(kpis.count), icon: 'clipboard2-data', color: '#1E3A5F' },
+                { label: 'Monetary rows', value: String(kpis.monetaryCount), icon: 'wallet2', color: '#854D0E' },
               ].map((k) => (
                 <div
                   key={k.label}
@@ -204,7 +204,7 @@ export default function ContributionsPage() {
                     boxShadow: '0 2px 8px rgba(30,58,95,0.06)',
                   }}
                 >
-                  <div style={{ fontSize: 20, marginBottom: 4 }}>{k.icon}</div>
+                  <div style={{ fontSize: 20, marginBottom: 4 }}><i className={`bi bi-${k.icon}`} /></div>
                   <div style={{ fontSize: 20, fontWeight: 700, color: k.color }}>{k.value}</div>
                   <div style={{ fontSize: 12, color: '#64748B', fontWeight: 500 }}>{k.label}</div>
                 </div>
