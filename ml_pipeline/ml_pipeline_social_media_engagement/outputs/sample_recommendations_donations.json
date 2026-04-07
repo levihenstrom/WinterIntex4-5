@@ -1,0 +1,50 @@
+[
+  {
+    "platform": "WhatsApp",
+    "post_type": "ImpactStory",
+    "media_type": "Video",
+    "post_hour": 20,
+    "content_topic": "Health",
+    "has_call_to_action": 1.0,
+    "call_to_action_type": "ShareStory",
+    "features_resident_story": 1.0,
+    "predicted_engagement_rate": 0.1517,
+    "predicted_p_any_referral": 0.9871,
+    "predicted_referrals_count": 55.42,
+    "ranking_score": 0.9892,
+    "goal": "donations",
+    "why_recommended": "media Video; Pred engagement 0.152; P(any referral) 0.987; expected referrals 55.4; CTA included; resident story content; donations goal weighting"
+  },
+  {
+    "platform": "WhatsApp",
+    "post_type": "ImpactStory",
+    "media_type": "Video",
+    "post_hour": 20,
+    "content_topic": "AwarenessRaising",
+    "has_call_to_action": 1.0,
+    "call_to_action_type": "ShareStory",
+    "features_resident_story": 1.0,
+    "predicted_engagement_rate": 0.1486,
+    "predicted_p_any_referral": 0.9845,
+    "predicted_referrals_count": 55.04,
+    "ranking_score": 0.9831,
+    "goal": "donations",
+    "why_recommended": "media Video; Pred engagement 0.149; P(any referral) 0.985; expected referrals 55.0; CTA included; resident story content; donations goal weighting"
+  },
+  {
+    "platform": "WhatsApp",
+    "post_type": "ImpactStory",
+    "media_type": "Reel",
+    "post_hour": 20,
+    "content_topic": "Health",
+    "has_call_to_action": 1.0,
+    "call_to_action_type": "ShareStory",
+    "features_resident_story": 1.0,
+    "predicted_engagement_rate": 0.1468,
+    "predicted_p_any_referral": 0.9838,
+    "predicted_referrals_count": 55.0,
+    "ranking_score": 0.981,
+    "goal": "donations",
+    "why_recommended": "media Reel; Pred engagement 0.147; P(any referral) 0.984; expected referrals 55.0; CTA included; resident story content; donations goal weighting"
+  }
+]
