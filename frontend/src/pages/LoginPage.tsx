@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import GoogleIcon from '../components/hw/GoogleIcon';
 import {
   buildExternalLoginUrl,
   getExternalProviders,
@@ -68,95 +69,109 @@ function LoginPage() {
   }
 
   return (
-    <div className="container mt-4">
-      <div className="row justify-content-center">
-        <div className="col-md-6 col-lg-5">
-          <div className="card shadow-sm">
-            <div className="card-body p-4">
-              <h2 className="h4 mb-3">Login</h2>
-              <p className="text-muted">
-                Sign in with your account. If MFA is enabled, include either an
-                authenticator code or a recovery code.
+    <div className="hw-auth-shell">
+      <div className="container py-4 py-md-5">
+        <div className="row justify-content-center">
+          <div className="col-12 col-sm-10 col-md-8 col-lg-5 col-xl-4">
+            <div className="hw-auth-card p-4 p-md-5">
+              <p className="hw-eyebrow mb-2">Account</p>
+              <h1 className="hw-heading hw-heading-font h3 mb-2">Sign in</h1>
+              <p className="text-secondary small mb-4">
+                Email and password. Expand below if you use MFA.
               </p>
               <form onSubmit={handleSubmit}>
                 <div className="mb-3">
-                  <label className="form-label" htmlFor="email">
+                  <label className="hw-label" htmlFor="email">
                     Email
                   </label>
                   <input
                     id="email"
                     type="email"
-                    className="form-control"
+                    className="hw-input"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
+                    autoComplete="email"
                   />
                 </div>
                 <div className="mb-3">
-                  <label className="form-label" htmlFor="password">
+                  <label className="hw-label" htmlFor="password">
                     Password
                   </label>
                   <input
                     id="password"
                     type="password"
-                    className="form-control"
+                    className="hw-input"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
+                    autoComplete="current-password"
                   />
                 </div>
-                <div className="mb-3">
-                  <label className="form-label" htmlFor="twoFactorCode">
-                    Authenticator code
-                  </label>
-                  <input
-                    id="twoFactorCode"
-                    type="text"
-                    className="form-control"
-                    inputMode="numeric"
-                    value={twoFactorCode}
-                    onChange={(e) => setTwoFactorCode(e.target.value)}
-                  />
-                  <div className="form-text">
-                    Leave blank unless MFA is enabled on the account.
+
+                <details className="hw-auth-details">
+                  <summary>Authenticator or recovery code</summary>
+                  <div className="hw-auth-details-body">
+                    <div className="mb-3">
+                      <label className="hw-label" htmlFor="twoFactorCode">
+                        Authenticator code
+                      </label>
+                      <input
+                        id="twoFactorCode"
+                        type="text"
+                        className="hw-input"
+                        inputMode="numeric"
+                        value={twoFactorCode}
+                        onChange={(e) => setTwoFactorCode(e.target.value)}
+                        autoComplete="one-time-code"
+                      />
+                      <div className="hw-form-hint">
+                        Leave blank unless MFA is enabled.
+                      </div>
+                    </div>
+                    <div className="mb-0">
+                      <label className="hw-label" htmlFor="recoveryCode">
+                        Recovery code
+                      </label>
+                      <input
+                        id="recoveryCode"
+                        type="text"
+                        className="hw-input"
+                        value={recoveryCode}
+                        onChange={(e) => setRecoveryCode(e.target.value)}
+                        autoComplete="off"
+                      />
+                      <div className="hw-form-hint">
+                        If you cannot use your authenticator app.
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="mb-3">
-                  <label className="form-label" htmlFor="recoveryCode">
-                    Recovery code
-                  </label>
-                  <input
-                    id="recoveryCode"
-                    type="text"
-                    className="form-control"
-                    value={recoveryCode}
-                    onChange={(e) => setRecoveryCode(e.target.value)}
-                  />
-                  <div className="form-text">
-                    Use a recovery code instead of an authenticator code when
-                    needed.
-                  </div>
-                </div>
-                <div className="form-check mb-3">
+                </details>
+
+                <div className="form-check mb-4">
                   <input
                     id="rememberMe"
                     type="checkbox"
-                    className="form-check-input"
+                    className="form-check-input hw-check"
                     checked={rememberMe}
                     onChange={(e) => setRememberMe(e.target.checked)}
                   />
-                  <label className="form-check-label" htmlFor="rememberMe">
-                    Keep me signed in across browser restarts
+                  <label
+                    className="form-check-label small"
+                    style={{ color: 'var(--hw-navy)' }}
+                    htmlFor="rememberMe"
+                  >
+                    Keep me signed in on this device
                   </label>
                 </div>
                 {errorMessage ? (
-                  <div className="alert alert-danger" role="alert">
+                  <div className="hw-alert-error mb-3" role="alert">
                     {errorMessage}
                   </div>
                 ) : null}
                 <button
                   type="submit"
-                  className="btn btn-primary w-100"
+                  className="hw-btn-magenta w-100 py-2 rounded-3 fw-semibold"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? 'Signing in...' : 'Sign in'}
@@ -165,15 +180,18 @@ function LoginPage() {
 
               {externalProviders.length > 0 ? (
                 <>
-                  <div className="text-center text-muted my-3">or</div>
+                  <div className="hw-divider-or">or continue with</div>
                   <div className="d-grid gap-2">
                     {externalProviders.map((provider) => (
                       <button
                         key={provider.name}
                         type="button"
-                        className="btn btn-outline-dark"
+                        className="hw-btn-external"
                         onClick={() => handleExternalLogin(provider.name)}
                       >
+                        {provider.displayName.toLowerCase() === 'google' ? (
+                          <GoogleIcon />
+                        ) : null}
                         Continue with {provider.displayName}
                       </button>
                     ))}
@@ -181,8 +199,11 @@ function LoginPage() {
                 </>
               ) : null}
 
-              <p className="mt-3 mb-0">
-                Need an account? <Link to="/register">Register here</Link>.
+              <p className="hw-auth-footer-hint mb-0">
+                Need an account?{' '}
+                <Link className="hw-link" to="/register">
+                  Sign up
+                </Link>
               </p>
             </div>
           </div>

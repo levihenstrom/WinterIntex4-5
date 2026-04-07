@@ -206,3 +206,229 @@
 
 /* ── Metric counter ───────────────────────────────────────────── */
 .hw-metric-num { font-variant-numeric: tabular-nums; }
+
+/* ── Auth pages (login / register) — single centered card ───── */
+.hw-auth-shell {
+  flex: 1;
+  min-height: calc(100vh - 12rem);
+  background: linear-gradient(
+    180deg,
+    var(--hw-bg-lavender2) 0%,
+    var(--hw-bg-lavender) 45%,
+    var(--hw-bg-off-white) 100%
+  );
+}
+
+.hw-auth-card {
+  margin-inline: auto;
+  max-width: 420px;
+  background: var(--hw-bg-white);
+  border-radius: 1rem;
+  border: 1px solid rgba(107, 33, 168, 0.1);
+  box-shadow:
+    0 10px 40px rgba(30, 58, 95, 0.08),
+    0 2px 12px rgba(107, 33, 168, 0.06);
+}
+
+.hw-auth-footer-hint {
+  font-size: 0.9rem;
+  color: #78716c;
+  text-align: center;
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid rgba(107, 33, 168, 0.08);
+}
+
+/* Collapsible MFA / optional fields */
+.hw-auth-details {
+  border-radius: 0.65rem;
+  border: 1px dashed rgba(107, 33, 168, 0.28);
+  background: rgba(245, 243, 255, 0.55);
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+
+.hw-auth-details > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--hw-purple);
+  font-family: var(--hw-font-body);
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.hw-auth-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.hw-auth-details > summary::after {
+  content: '';
+  width: 0.5rem;
+  height: 0.5rem;
+  flex-shrink: 0;
+  border-right: 2px solid var(--hw-purple);
+  border-bottom: 2px solid var(--hw-purple);
+  transform: rotate(45deg);
+  transition: transform 0.2s;
+  margin-bottom: 2px;
+}
+
+.hw-auth-details[open] > summary::after {
+  transform: rotate(-135deg);
+  margin-bottom: 0;
+}
+
+.hw-auth-details-body {
+  padding: 0 0.85rem 0.85rem;
+}
+
+/* Google / external — reads clearly on white */
+.hw-btn-external {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.6rem 1rem;
+  border-radius: 0.65rem;
+  font-family: var(--hw-font-body);
+  font-weight: 600;
+  font-size: 0.92rem;
+  background: var(--hw-bg-white);
+  border: 1.5px solid #e7e5e4;
+  color: var(--hw-navy);
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+.hw-btn-external:hover {
+  background: var(--hw-bg-off-white);
+  border-color: #d6d3d1;
+  box-shadow: 0 4px 14px rgba(30, 58, 95, 0.08);
+}
+.hw-label {
+  display: block;
+  font-family: var(--hw-font-body);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--hw-navy);
+  margin-bottom: 0.35rem;
+}
+.hw-input {
+  width: 100%;
+  border-radius: 0.5rem;
+  border: 1px solid #E7E5E4;
+  padding: 0.55rem 0.85rem;
+  font-family: var(--hw-font-body);
+  font-size: 0.95rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.hw-input:focus {
+  outline: none;
+  border-color: var(--hw-purple-light);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
+}
+.hw-form-hint {
+  font-size: 0.8rem;
+  color: #78716C;
+  margin-top: 0.25rem;
+}
+.hw-link {
+  color: var(--hw-purple);
+  font-weight: 600;
+  text-decoration: none;
+}
+.hw-link:hover {
+  color: var(--hw-teal-dark);
+  text-decoration: underline;
+}
+.hw-divider-or {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #78716C;
+  font-size: 0.85rem;
+  margin: 1.25rem 0;
+}
+.hw-divider-or::before,
+.hw-divider-or::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(107, 33, 168, 0.15);
+}
+.hw-alert-error {
+  border-radius: 0.5rem;
+  padding: 0.65rem 0.85rem;
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  color: #991B1B;
+  font-size: 0.9rem;
+}
+.hw-alert-success {
+  border-radius: 0.5rem;
+  padding: 0.65rem 0.85rem;
+  background: #ECFDF5;
+  border: 1px solid #A7F3D0;
+  color: #065F46;
+  font-size: 0.9rem;
+}
+.hw-check {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--hw-purple);
+}
+
+/* ── Cookie consent banner (CookieConsentBanner + CookieConsentContext) ─ */
+.hw-cookie-banner {
+  position: fixed;
+  inset-inline: 1rem;
+  bottom: 1rem;
+  z-index: 1050;
+  display: grid;
+  gap: 1rem;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: color-mix(in srgb, var(--hw-navy) 92%, black);
+  color: #f8f9fa;
+  font-family: var(--hw-font-body);
+  box-shadow: 0 12px 40px rgba(30, 58, 95, 0.35);
+}
+
+.hw-cookie-banner a {
+  color: var(--hw-amber);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.hw-cookie-banner a:hover {
+  color: var(--hw-amber-hover);
+}
+
+.hw-cookie-copy {
+  text-align: left;
+}
+
+.hw-cookie-eyebrow {
+  color: var(--hw-amber);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+@media (min-width: 768px) {
+  .hw-cookie-banner {
+    inset-inline: auto 2rem;
+    max-width: 34rem;
+    grid-template-columns: 1fr auto;
+  }
+}
