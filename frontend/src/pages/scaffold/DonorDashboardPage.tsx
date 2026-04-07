@@ -124,9 +124,9 @@ function useFadeIn() {
 function StatBox({ label, value, color, bg, border, delay }: { label: string; value: string; color: string; bg: string; border: string; delay?: string }) {
   const ref = useFadeIn();
   return (
-    <div ref={ref} className={`hw-fade-in ${delay}`} style={{ background: bg, border: `1px solid ${border}`, borderRadius: 20, padding: '2rem 1.5rem', textAlign: 'center', boxShadow: '0 4px 20px rgba(30,58,95,0.04)' }}>
-      <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 900, fontSize: '2.8rem', color, lineHeight: 1, letterSpacing: '-0.02em' }}>{value}</div>
-      <div style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.15em', color, opacity: 0.6, marginTop: 12 }}>{label}</div>
+    <div ref={ref} className={`hw-fade-in ${delay}`} style={{ background: bg, border: `1px solid ${border}`, borderRadius: 20, padding: '1.25rem 1rem', textAlign: 'center', boxShadow: '0 4px 15px rgba(30,58,95,0.03)' }}>
+      <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 900, fontSize: '2.4rem', color, lineHeight: 1, letterSpacing: '-0.03em' }}>{value}</div>
+      <div style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color, opacity: 0.55, marginTop: 10 }}>{label}</div>
     </div>
   );
 }
@@ -212,19 +212,19 @@ export default function DonorDashboardPage() {
 
       {/* ── KPI Grid (overlapping) ── */}
       <SectionContainer style={{ marginTop: '-4rem', position: 'relative', zIndex: 10 }}>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-3 gap-4">
           <StatBox 
-            label="Lifetime Gifts" 
+            label="Gifts" 
             value={loading ? '—' : String(totals.count)} 
             color="#6B21A8" bg="#fff" border="#e9d5ff" delay="hw-delay-100" 
           />
           <StatBox 
-            label="Total Amount (USD)" 
+            label="Total Impact" 
             value={loading ? '—' : formatMoney(totals.sum)} 
             color="#0D9488" bg="#fff" border="#bbf7d0" delay="hw-delay-200" 
           />
           <StatBox 
-            label="Program Areas Funded" 
+            label="Areas Funded" 
             value={loading ? '—' : String(programImpact.length)} 
             color="#D97706" bg="#fff" border="#fde68a" delay="hw-delay-300" 
           />
