@@ -24,6 +24,7 @@ import AdminLayout from './layouts/AdminLayout';
 import DonorLayout from './layouts/DonorLayout';
 import ImpactPage from './pages/scaffold/ImpactPage';
 import VolunteerPage from './pages/VolunteerPage';
+import StoriesPage from './pages/StoriesPage';
 import DonorDashboardPage from './pages/scaffold/DonorDashboardPage';
 import AdminHomePage from './pages/scaffold/AdminHomePage';
 import SupportersListPage from './pages/scaffold/SupportersListPage';
@@ -123,7 +124,7 @@ function App() {
             <Route path="/" element={<HealingWingsHome />} />
             <Route path="/impact" element={<ImpactPage />} />
             <Route path="/volunteer" element={<VolunteerPage />} />
-            <Route path="/stories" element={<Navigate to="/" replace />} />
+            <Route path="/stories" element={<StoriesPage />} />
             <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
             <Route path="/login" element={<AuthLayout><LoginPage /></AuthLayout>} />
             <Route path="/register" element={<AuthLayout><RegisterPage /></AuthLayout>} />
