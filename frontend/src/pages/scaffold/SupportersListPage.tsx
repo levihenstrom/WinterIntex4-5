@@ -385,7 +385,7 @@ export default function SupportersListPage() {
                   color: '#7F1D1D',
                 }}
               >
-                <strong>Donors at risk:</strong> {mlCriticalOrHighCount} supporter
+                <strong>Donors needing outreach:</strong> {mlCriticalOrHighCount} supporter
                 {mlCriticalOrHighCount !== 1 ? 's' : ''} scored Critical or High churn risk (
                 {donorMlById.size} total scored).
               </div>

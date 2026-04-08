@@ -178,9 +178,6 @@ function MlSectionCard({
     <div className="col-12 col-lg-4">
       <div className="card border-0 shadow-sm rounded-3 h-100">
         <div className="card-body d-flex flex-column">
-          <p className="hw-eyebrow mb-2" style={{ color: 'var(--hw-teal)' }}>
-            Insights
-          </p>
           <h3 className="h6 fw-semibold mb-3" style={{ color: 'var(--hw-navy)' }}>
             {title}
           </h3>
@@ -497,9 +494,9 @@ export default function AdminHomePage() {
           />
         </div>
 
-        {/* Priority & insights — staff-only API; failures are contained per widget */}
+        {/* Priority & Insights — staff-only API; failures are contained per widget */}
         <div className="mb-5">
-          <p className="hw-eyebrow mb-3">Priority &amp; insights</p>
+          <p className="hw-eyebrow mb-3">Priority &amp; Insights</p>
           <div className="row g-3">
             <MlSectionCard
               title="Residents needing attention"
@@ -508,7 +505,7 @@ export default function AdminHomePage() {
               <ResidentsNeedingAttentionWidget />
             </MlSectionCard>
             <MlSectionCard
-              title="Donors at risk"
+              title="Donors needing outreach"
               footerLink={{ to: '/admin/donations', label: 'Open supporters' }}
             >
               <AtRiskDonorsWidget />

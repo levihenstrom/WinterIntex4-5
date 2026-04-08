@@ -131,7 +131,7 @@ export default function SocialMediaSuggestPage() {
             What to optimize for
           </h2>
           <form onSubmit={(e) => void handleSubmit(e)}>
-            <div className="row g-3">
+            <div className="row g-3 align-items-end">
               <div className="col-md-4">
                 <label className="form-label small fw-semibold text-muted">Goal</label>
                 <select
@@ -163,11 +163,8 @@ export default function SocialMediaSuggestPage() {
                   disabled={loading}
                   aria-describedby="social-suggest-num-suggestions-hint"
                 />
-                <div id="social-suggest-num-suggestions-hint" className="form-text text-muted small">
-                  Choose how many post ideas you want to see.
-                </div>
               </div>
-              <div className="col-md-4 d-flex align-items-end">
+              <div className="col-md-4">
                 <button
                   type="submit"
                   className="btn w-100 fw-semibold text-white"
@@ -177,6 +174,15 @@ export default function SocialMediaSuggestPage() {
                   {loading ? 'Getting recommendations…' : 'Get recommendations'}
                 </button>
               </div>
+            </div>
+            <div className="row g-2 mt-0">
+              <div className="col-12 col-md-4 offset-md-4">
+                <div id="social-suggest-num-suggestions-hint" className="form-text text-muted small mb-0">
+                  Choose how many post ideas you want to see.
+                </div>
+              </div>
+            </div>
+            <div className="row g-3">
               <div className="col-md-6">
                 <label className="form-label small fw-semibold text-muted">Content topic (optional)</label>
                 <input
