@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
-import { fetchPaged } from '../../lib/apiClient';
+import { fetchPaged, postJson } from '../../lib/apiClient';
 import NavBar from '../../components/hw/NavBar';
 import MetricCard from '../../components/hw/MetricCard';
 import { ErrorState, LoadingState } from '../../components/common/AsyncStatus';
@@ -194,6 +194,16 @@ export default function DonorDashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [ledgerPage, setLedgerPage] = useState(1);
+  const [showGiveModal, setShowGiveModal] = useState(false);
+  const [giveForm, setGiveForm] = useState({
+    amount: '',
+    giftType: 'One-time',
+    campaign: '',
+    note: '',
+  });
+  const [giveSuccess, setGiveSuccess] = useState<string | null>(null);
+  const [giveError, setGiveError] = useState<string | null>(null);
+  const [giveSubmitting, setGiveSubmitting] = useState(false);
 
   const loadDonations = useCallback((opts?: { silent?: boolean }) => {
     if (!opts?.silent) {
@@ -216,6 +226,15 @@ export default function DonorDashboardPage() {
     void loadDonations();
   }, [loadDonations]);
 
+  useEffect(() => {
+    if (!showGiveModal) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowGiveModal(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [showGiveModal]);
+
   const totals = useMemo(() => {
     if (!donations) return { count: 0, sum: 0 };
     let sum = 0;
@@ -230,6 +249,50 @@ export default function DonorDashboardPage() {
   const heroRef = useFadeIn();
 
   const impactTotalTarget = Math.max(0, Math.round(totals.sum));
+
+  function resetGiveForm() {
+    setGiveForm({
+      amount: '',
+      giftType: 'One-time',
+      campaign: '',
+      note: '',
+    });
+    setGiveSuccess(null);
+    setGiveError(null);
+  }
+
+  async function handleGiveSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const amount = Number(giveForm.amount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setGiveError('Please enter a valid donation amount.');
+      return;
+    }
+
+    setGiveSubmitting(true);
+    setGiveError(null);
+    setGiveSuccess(null);
+    try {
+      await postJson<DonationMine>('/api/donations', {
+        donationType: 'Monetary',
+        amount,
+        estimatedValue: amount,
+        currencyCode: 'PHP',
+        campaignName: giveForm.campaign.trim() || null,
+        notes: giveForm.note.trim() || null,
+        donationDate: new Date().toISOString(),
+        isRecurring: giveForm.giftType === 'Recurring monthly',
+        channelSource: 'DonorPortal',
+      });
+      setGiveSuccess('Thank you! Your donation was recorded successfully.');
+      await loadDonations({ silent: true });
+      setGiveForm((f) => ({ ...f, amount: '', campaign: '', note: '' }));
+    } catch (err) {
+      setGiveError(err instanceof Error ? err.message : 'Could not submit donation right now.');
+    } finally {
+      setGiveSubmitting(false);
+    }
+  }
 
   return (
     <div style={{ fontFamily: 'var(--hw-font-body)', minHeight: '100vh', background: '#f8fafc' }}>
@@ -635,23 +698,162 @@ export default function DonorDashboardPage() {
             Your support expands outreach and brings hope to more individuals we serve.
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <a
-              href="/#donate"
+            <button
+              type="button"
+              onClick={() => {
+                resetGiveForm();
+                setShowGiveModal(true);
+              }}
               className="hw-btn-magenta"
               style={{
                 padding: '0.75rem 2rem',
                 borderRadius: 50,
                 fontWeight: 700,
                 fontSize: '0.9rem',
-                textDecoration: 'none',
-                display: 'inline-block',
+                border: 'none',
+                cursor: 'pointer',
               }}
             >
               Give again now →
-            </a>
+            </button>
           </div>
         </div>
       </section>
+
+      {showGiveModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="give-again-title"
+          onClick={() => setShowGiveModal(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15,23,42,0.5)',
+            backdropFilter: 'blur(2px)',
+            zIndex: 90,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1rem',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: 'min(560px, 100%)',
+              background: '#fff',
+              borderRadius: 16,
+              border: '1px solid #E2E8F0',
+              boxShadow: '0 20px 60px rgba(15,23,42,0.22)',
+              overflow: 'hidden',
+            }}
+          >
+            <div
+              style={{
+                padding: '1rem 1.25rem',
+                borderBottom: '1px solid #E2E8F0',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <div>
+                <p className="hw-eyebrow" style={{ margin: 0 }}>Support HealingWings</p>
+                <h3 id="give-again-title" style={{ margin: '0.25rem 0 0', fontFamily: 'Poppins, sans-serif', color: '#1E3A5F' }}>
+                  Give again
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowGiveModal(false)}
+                aria-label="Close donation form"
+                style={{ border: 'none', background: 'transparent', fontSize: 24, lineHeight: 1, color: '#64748B', cursor: 'pointer' }}
+              >
+                ×
+              </button>
+            </div>
+
+            <form onSubmit={handleGiveSubmit} style={{ padding: '1rem 1.25rem 1.25rem' }}>
+              <div style={{ display: 'grid', gap: 12 }}>
+                <label style={{ fontSize: 13, color: '#475569', fontWeight: 600 }}>
+                  Amount (PHP)
+                  <input
+                    type="number"
+                    min={1}
+                    required
+                    value={giveForm.amount}
+                    onChange={(e) => setGiveForm((f) => ({ ...f, amount: e.target.value }))}
+                    style={{ marginTop: 6, width: '100%', border: '1px solid #CBD5E1', borderRadius: 10, padding: '10px 12px' }}
+                    placeholder="e.g. 1000"
+                  />
+                </label>
+
+                <label style={{ fontSize: 13, color: '#475569', fontWeight: 600 }}>
+                  Gift type
+                  <select
+                    value={giveForm.giftType}
+                    onChange={(e) => setGiveForm((f) => ({ ...f, giftType: e.target.value }))}
+                    style={{ marginTop: 6, width: '100%', border: '1px solid #CBD5E1', borderRadius: 10, padding: '10px 12px', background: '#fff' }}
+                  >
+                    <option>One-time</option>
+                    <option>Recurring monthly</option>
+                  </select>
+                </label>
+
+                <label style={{ fontSize: 13, color: '#475569', fontWeight: 600 }}>
+                  Campaign (optional)
+                  <input
+                    type="text"
+                    value={giveForm.campaign}
+                    onChange={(e) => setGiveForm((f) => ({ ...f, campaign: e.target.value }))}
+                    style={{ marginTop: 6, width: '100%', border: '1px solid #CBD5E1', borderRadius: 10, padding: '10px 12px' }}
+                    placeholder="General Mission"
+                  />
+                </label>
+
+                <label style={{ fontSize: 13, color: '#475569', fontWeight: 600 }}>
+                  Note (optional)
+                  <textarea
+                    value={giveForm.note}
+                    onChange={(e) => setGiveForm((f) => ({ ...f, note: e.target.value }))}
+                    style={{ marginTop: 6, width: '100%', border: '1px solid #CBD5E1', borderRadius: 10, padding: '10px 12px', minHeight: 90, resize: 'vertical' }}
+                    placeholder="Add a dedication or comment"
+                  />
+                </label>
+
+                {giveSuccess && (
+                  <div style={{ fontSize: 13, color: '#0D9488', background: '#ECFDF5', border: '1px solid #A7F3D0', borderRadius: 10, padding: '9px 11px' }}>
+                    {giveSuccess}
+                  </div>
+                )}
+                {giveError && (
+                  <div style={{ fontSize: 13, color: '#991B1B', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 10, padding: '9px 11px' }}>
+                    {giveError}
+                  </div>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 14 }}>
+                <button
+                  type="button"
+                  onClick={() => setShowGiveModal(false)}
+                  style={{ border: '1px solid #CBD5E1', background: '#fff', color: '#475569', borderRadius: 999, padding: '9px 14px', fontWeight: 600, cursor: 'pointer' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={giveSubmitting}
+                  style={{ border: 'none', background: '#6B21A8', color: '#fff', borderRadius: 999, padding: '9px 16px', fontWeight: 700, cursor: giveSubmitting ? 'default' : 'pointer', opacity: giveSubmitting ? 0.7 : 1 }}
+                >
+                  {giveSubmitting ? 'Submitting…' : 'Continue'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
