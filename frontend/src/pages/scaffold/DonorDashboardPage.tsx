@@ -245,6 +245,14 @@ export default function DonorDashboardPage() {
   }, [donations]);
 
   const programImpact = useMemo(() => (donations ? buildProgramImpact(donations) : []), [donations]);
+  const campaignOptions = useMemo(
+    () =>
+      donations
+        ? [...new Set(donations.map((d) => d.campaignName?.trim()).filter((name): name is string => Boolean(name)))]
+            .sort((a, b) => a.localeCompare(b))
+        : [],
+    [donations],
+  );
 
   const heroRef = useFadeIn();
 
@@ -266,6 +274,10 @@ export default function DonorDashboardPage() {
     const amount = Number(giveForm.amount);
     if (!Number.isFinite(amount) || amount <= 0) {
       setGiveError('Please enter a valid donation amount.');
+      return;
+    }
+    if (!giveForm.campaign.trim()) {
+      setGiveError('Please select a campaign.');
       return;
     }
 
@@ -808,14 +820,22 @@ export default function DonorDashboardPage() {
                 </label>
 
                 <label style={{ fontSize: 13, color: '#475569', fontWeight: 600 }}>
-                  Campaign (optional)
-                  <input
-                    type="text"
+                  Campaign
+                  <select
+                    required
                     value={giveForm.campaign}
                     onChange={(e) => setGiveForm((f) => ({ ...f, campaign: e.target.value }))}
-                    style={{ marginTop: 6, width: '100%', border: '1px solid #CBD5E1', borderRadius: 10, padding: '10px 12px' }}
-                    placeholder="General Mission"
-                  />
+                    style={{ marginTop: 6, width: '100%', border: '1px solid #CBD5E1', borderRadius: 10, padding: '10px 12px', background: '#fff' }}
+                  >
+                    <option value="" disabled>
+                      {campaignOptions.length > 0 ? 'Select a campaign' : 'No campaigns available'}
+                    </option>
+                    {campaignOptions.map((campaign) => (
+                      <option key={campaign} value={campaign}>
+                        {campaign}
+                      </option>
+                    ))}
+                  </select>
                 </label>
 
                 <label style={{ fontSize: 13, color: '#475569', fontWeight: 600 }}>
