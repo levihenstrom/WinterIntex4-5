@@ -10,6 +10,7 @@ const NAV_LINKS = [
   { label: 'Donate', hash: '#donate' },
   { label: 'Impact', to: '/impact' },
   { label: 'Stories', to: '/stories' },
+  { label: 'Volunteer', to: '/volunteer' },
 ];
 
 const ADMIN_NAV_LINKS = [

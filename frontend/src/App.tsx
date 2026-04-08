@@ -23,6 +23,7 @@ import RequireAuth from './components/RequireAuth';
 import AdminLayout from './layouts/AdminLayout';
 import DonorLayout from './layouts/DonorLayout';
 import ImpactPage from './pages/scaffold/ImpactPage';
+import VolunteerPage from './pages/VolunteerPage';
 import DonorDashboardPage from './pages/scaffold/DonorDashboardPage';
 import AdminHomePage from './pages/scaffold/AdminHomePage';
 import SupportersListPage from './pages/scaffold/SupportersListPage';
@@ -82,6 +83,8 @@ function RouteTitleManager() {
       ['/admin', 'Admin'],
       ['/donor/dashboard', 'Donor Dashboard'],
       ['/donor', 'Donor Dashboard'],
+      ['/volunteer', 'Volunteer'],
+      ['/stories', 'Stories'],
       ['/impact', 'Impact'],
       ['/privacy', 'Privacy Policy'],
       ['/mfa', 'Manage MFA'],
@@ -112,6 +115,8 @@ function App() {
             {/* Public routes */}
             <Route path="/" element={<HealingWingsHome />} />
             <Route path="/impact" element={<ImpactPage />} />
+            <Route path="/volunteer" element={<VolunteerPage />} />
+            <Route path="/stories" element={<Navigate to="/" replace />} />
             <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
             <Route path="/login" element={<AuthLayout><LoginPage /></AuthLayout>} />
             <Route path="/register" element={<AuthLayout><RegisterPage /></AuthLayout>} />
