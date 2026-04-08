@@ -579,7 +579,7 @@ export default function DonorDashboardPage() {
                               {hoveredCategory.label}
                             </div>
                             <div style={{ marginTop: 6, fontFamily: 'Poppins, sans-serif', fontWeight: 800, fontSize: '1.1rem', color: '#1E3A5F' }}>
-                              {formatMoney(hoveredCategory.totalAmount)}
+                              {formatPhpAndUsd(hoveredCategory.totalAmount)}
                             </div>
                             <div style={{ marginTop: 4, fontFamily: 'Inter, sans-serif', fontSize: '0.84rem', color: '#64748b' }}>
                               {totalAllocated > 0 ? ((hoveredCategory.totalAmount / totalAllocated) * 100).toFixed(1) : '0.0'}% of total allocation · {hoveredCategory.giftCount} gift{hoveredCategory.giftCount === 1 ? '' : 's'}
