@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { fetchPaged } from '../../lib/apiClient';
-import SectionContainer from '../../components/hw/SectionContainer';
+import NavBar from '../../components/hw/NavBar';
+import MetricCard from '../../components/hw/MetricCard';
 
 /* ── Types ───────────────────────────────────────────────────── */
 interface DonationAllocationApi {
@@ -112,75 +113,73 @@ function buildProgramImpact(donations: DonationMine[]): ProgramImpactRow[] {
     .sort((a, b) => b.totalAmount - a.totalAmount);
 }
 
-/* ── Components (following ImpactPage patterns) ──────────────── */
+/* ── ImpactPage-aligned visuals ──────────────────────────────── */
+const CONTENT_MAX = 1100;
+
+const CATEGORY_PILL_STYLES: { color: string; bg: string; border: string }[] = [
+  { color: '#6B21A8', bg: '#f5f3ff', border: '#e9d5ff' },
+  { color: '#0D9488', bg: '#f0fdf4', border: '#bbf7d0' },
+  { color: '#D97706', bg: '#fffbeb', border: '#fde68a' },
+  { color: '#1d4ed8', bg: '#eff6ff', border: '#bfdbfe' },
+  { color: '#059669', bg: '#f0fdf4', border: '#a7f3d0' },
+  { color: '#0284c7', bg: '#f0f9ff', border: '#bae6fd' },
+];
+
 function useFadeIn() {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    const el = ref.current; if (!el) return;
-    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) el.classList.add('hw-visible'); }, { threshold: 0.1 });
-    obs.observe(el); return () => obs.disconnect();
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) el.classList.add('hw-visible');
+    }, { threshold: 0.08 });
+    obs.observe(el);
+    return () => obs.disconnect();
   }, []);
   return ref;
 }
 
-function StatBox({ label, value, color, bg, border, delay }: { label: string; value: string; color: string; bg: string; border: string; delay?: string }) {
+function DashboardCard({ title, sub, titleId, children }: { title: string; sub?: string; titleId?: string; children: React.ReactNode }) {
   const ref = useFadeIn();
+  const TitleTag = titleId ? 'h3' : 'p';
   return (
     <div
       ref={ref}
-      className={`hw-fade-in ${delay}`}
-      role="group"
-      aria-label={`${label}: ${value}`}
-      style={{ background: bg, border: `1px solid ${border}`, borderRadius: 20, padding: '1.25rem 1rem', textAlign: 'center', boxShadow: '0 4px 15px rgba(30,58,95,0.03)' }}
+      className="hw-fade-in"
+      style={{ background: '#fff', borderRadius: 16, border: '1px solid #e2e8f0', boxShadow: '0 2px 16px rgba(30,58,95,0.07)', padding: '1.4rem 1.5rem' }}
     >
-      <div aria-hidden="true">
-        <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 900, fontSize: '2.4rem', color, lineHeight: 1, letterSpacing: '-0.03em' }}>{value}</div>
-        <div style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color, opacity: 0.55, marginTop: 10 }}>{label}</div>
-      </div>
-    </div>
-  );
-}
-
-function Card({ title, titleId, className = "", children }: { title: string; titleId?: string; className?: string; children: React.ReactNode }) {
-  const ref = useFadeIn();
-  const flush = className.includes('p-0');
-  return (
-    <div ref={ref} className={`hw-fade-in bg-white rounded-[2rem] border border-stone-200 shadow-sm p-8 lg:p-10 ${className}`} style={{ boxShadow: '0 10px 40px rgba(30,58,95,0.03)' }}>
-      <h3
+      <TitleTag
         id={titleId}
-        className={flush ? 'px-8 pt-8' : undefined}
-        style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 800, color: '#1E3A5F', fontSize: '1.25rem', marginBottom: flush ? '1.25rem' : '2rem', letterSpacing: '-0.01em' }}
+        style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, color: '#1E3A5F', fontSize: '0.9rem', margin: '0 0 2px' }}
       >
         {title}
-      </h3>
+      </TitleTag>
+      {sub && (
+        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.72rem', color: '#94a3b8', margin: '0 0 1rem' }}>{sub}</p>
+      )}
+      {!sub && <div style={{ marginBottom: '1rem' }} />}
       {children}
     </div>
   );
 }
 
-function ProgramImpactCard({ row, delay }: { row: ProgramImpactRow; delay: string }) {
-  const ref = useFadeIn();
+function KpiStripPlaceholder() {
   return (
-    <div
-      ref={ref}
-      className={`hw-fade-in ${delay} group rounded-3xl border border-stone-100 bg-white p-8 shadow-sm transition-all duration-700 hover:shadow-2xl hover:-translate-y-2 flex flex-col items-center text-center justify-center`}
-      style={{ minHeight: '260px', boxShadow: '0 10px 40px rgba(30,58,95,0.02)' }}
-    >
-      <span className="inline-block px-4 py-1.5 bg-stone-50 text-[#6B21A8] rounded-full text-[10px] font-black uppercase tracking-[0.25em] mb-6">
-        Program Funding
-      </span>
-
-      <h3 className="font-extrabold text-2xl text-[#1E3A5F] mb-3 group-hover:text-[#6B21A8] transition-colors leading-tight tracking-tight">
-        {row.label}
-      </h3>
-
-      <div className="flex flex-col items-center gap-1">
-        <span className="text-4xl font-black text-[#0D9488] tabular-nums tracking-tighter">
-          {formatMoney(row.totalAmount)}
-        </span>
-        <span className="text-stone-400 text-[11px] font-bold uppercase tracking-widest mt-1">
-          from {row.giftCount} gift{row.giftCount === 1 ? '' : 's'}
-        </span>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)' }}>
+      {[0, 1].map((i) => (
+        <div
+          key={i}
+          style={{
+            borderRight: '1px solid rgba(255,255,255,0.1)',
+            padding: '2.25rem 1.5rem',
+            textAlign: 'center',
+          }}
+        >
+          <span className="hw-metric-num text-4xl font-extrabold text-white/40">—</span>
+        </div>
+      ))}
+      <div style={{ padding: '2.25rem 1.5rem', textAlign: 'center' }}>
+        <span className="hw-metric-num text-4xl font-extrabold text-white/40">—</span>
       </div>
     </div>
   );
@@ -191,6 +190,7 @@ export default function DonorDashboardPage() {
   const [donations, setDonations] = useState<DonationMine[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
   const loadDonations = useCallback((opts?: { silent?: boolean }) => {
     if (!opts?.silent) {
       setLoading(true);
@@ -225,188 +225,394 @@ export default function DonorDashboardPage() {
 
   const heroRef = useFadeIn();
 
+  const impactTotalTarget = Math.max(0, Math.round(totals.sum));
+
   return (
-    <div style={{ fontFamily: 'var(--hw-font-body)', background: '#f8fafc', minHeight: '100vh' }}>
-      {/* ── Hero ── */}
+    <div style={{ fontFamily: 'var(--hw-font-body)', minHeight: '100vh', background: '#f8fafc' }}>
+      <NavBar />
+
+      {/* ── Hero (ImpactPage-aligned) ── */}
       <section
         aria-label="Donor dashboard introduction"
-        style={{ background: 'linear-gradient(135deg, #1E3A5F 0%, #0f2744 100%)', paddingTop: '6rem', paddingBottom: '9rem', paddingLeft: '1.5rem', paddingRight: '1.5rem', textAlign: 'center' }}
+        style={{
+          background: 'linear-gradient(135deg, #1E3A5F 0%, #0f2744 100%)',
+          paddingTop: '7rem',
+          paddingBottom: '5rem',
+          paddingLeft: '1.5rem',
+          paddingRight: '1.5rem',
+        }}
       >
-        <div ref={heroRef} className="hw-fade-in" style={{ maxWidth: 900, margin: '0 auto' }}>
-          <span className="hw-eyebrow" style={{ color: '#5eead4', fontSize: '0.8rem' }}>Supporter Portal</span>
-          <h1 style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 900, fontSize: 'clamp(2.5rem, 6vw, 4rem)', color: '#fff', margin: '1rem 0 1.5rem', lineHeight: 1, letterSpacing: '-0.03em' }}>
+        <div ref={heroRef} className="hw-fade-in" style={{ maxWidth: CONTENT_MAX, margin: '0 auto' }}>
+          <span className="hw-eyebrow">Supporter Portal</span>
+          <h1
+            style={{
+              fontFamily: 'Poppins, sans-serif',
+              fontWeight: 900,
+              fontSize: 'clamp(2.2rem, 5vw, 3.4rem)',
+              color: '#fff',
+              margin: '0.5rem 0 0.75rem',
+              lineHeight: 1.1,
+            }}
+          >
             Your Giving & Impact
           </h1>
-          <p style={{ color: 'rgba(255,255,255,0.82)', fontSize: '1.25rem', maxWidth: 700, lineHeight: 1.6, margin: '0 auto' }}>
-            Because of your generosity, we are able to provide safe housing and restorative care to those who need it most.
-            Thank you for being part of the HealingWings mission.
+          <p
+            style={{
+              color: 'rgba(255,255,255,0.65)',
+              fontSize: '1.05rem',
+              maxWidth: 520,
+              lineHeight: 1.65,
+              margin: '0 0 1.5rem',
+            }}
+          >
+            Because of your generosity, we provide safe housing and restorative care. Thank you for being part of the HealingWings mission.
           </p>
         </div>
       </section>
 
-      {/* ── KPI Grid (overlapping) ── */}
-      <SectionContainer style={{ marginTop: '-4rem', position: 'relative', zIndex: 10 }}>
-        <div className="grid grid-cols-3 gap-4">
-          <StatBox
-            label="Gifts"
-            value={loading ? '—' : String(totals.count)}
-            color="#6B21A8" bg="#fff" border="#e9d5ff" delay="hw-delay-100"
-          />
-          <StatBox
-            label="Total Impact"
-            value={loading ? '—' : formatMoney(totals.sum)}
-            color="#0D9488" bg="#fff" border="#bbf7d0" delay="hw-delay-200"
-          />
-          <StatBox
-            label="Areas Funded"
-            value={loading ? '—' : String(programImpact.length)}
-            color="#D97706" bg="#fff" border="#fde68a" delay="hw-delay-300"
-          />
+      {/* ── KPI strip (same glass treatment as ImpactPage) ── */}
+      <div style={{ maxWidth: CONTENT_MAX, margin: '0 auto', padding: '0 1.5rem' }}>
+        <div
+          style={{
+            marginTop: -44,
+            background: 'rgba(30,58,95,0.92)',
+            backdropFilter: 'blur(14px)',
+            borderRadius: 20,
+            border: '1px solid rgba(255,255,255,0.13)',
+            boxShadow: '0 20px 60px rgba(30,58,95,0.28)',
+            position: 'relative',
+            zIndex: 10,
+          }}
+        >
+          {loading || !donations ? (
+            <KpiStripPlaceholder />
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)' }}>
+              <div style={{ borderRight: '1px solid rgba(255,255,255,0.1)' }}>
+                <MetricCard target={totals.count} label="Gifts" />
+              </div>
+              <div style={{ borderRight: '1px solid rgba(255,255,255,0.1)' }}>
+                <MetricCard target={impactTotalTarget} prefix="₱" label="Total impact (PHP)" />
+              </div>
+              <div>
+                <MetricCard target={programImpact.length} label="Areas funded" />
+              </div>
+            </div>
+          )}
         </div>
-      </SectionContainer>
+      </div>
 
       <main id="donor-dashboard-main">
-      <SectionContainer className="py-20 lg:py-28">
-        {loading && (
-          <div className="py-24 text-center" role="status" aria-live="polite" aria-busy="true">
-            <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-[#1E3A5F] border-t-transparent mb-6" aria-hidden="true" />
-            <p className="text-stone-400 font-bold uppercase tracking-[0.2em] text-xs">Synchronizing your giving data...</p>
-          </div>
-        )}
-
-        {error && (
-          <div className="hw-alert-error max-w-2xl mx-auto shadow-xl p-10 text-center" role="alert" style={{ borderRadius: '2rem' }}>
-            <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6" aria-hidden="true">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true"><circle cx="12" cy="12" r="10" /><path d="m15 9-6 6M9 9l6 6" /></svg>
+        <div style={{ maxWidth: CONTENT_MAX, margin: '0 auto', padding: '2rem 1.5rem 5rem' }}>
+          {loading && (
+            <div style={{ padding: '3rem 0', textAlign: 'center' }} role="status" aria-live="polite" aria-busy="true">
+              <div
+                className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-[#1E3A5F] border-t-transparent mb-4"
+                aria-hidden="true"
+              />
+              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.14em', color: '#94a3b8', textTransform: 'uppercase', margin: 0 }}>
+                Loading your giving data…
+              </p>
             </div>
-            <h3 className="font-extrabold text-xl mb-2 text-[#991B1B]">Unable to load dashboard</h3>
-            <p className="text-red-700/70">{error}</p>
-          </div>
-        )}
+          )}
 
-        {!loading && !error && donations && (
-          <div className="space-y-32">
-            {/* ── Program Area Impact ── */}
-            <section aria-labelledby="impact-by-category-heading">
-              <div className="mb-12 text-left">
-                <h2 id="impact-by-category-heading" className="hw-heading-font mt-2 text-3xl font-black md:text-4xl text-[#6B21A8] tracking-tight">Impact by Category</h2>
+          {error && (
+            <div
+              className="hw-alert-error shadow-sm p-8 text-center"
+              role="alert"
+              style={{ borderRadius: 16, maxWidth: 560, margin: '0 auto' }}
+            >
+              <div className="w-14 h-14 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4" aria-hidden="true">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="m15 9-6 6M9 9l6 6" />
+                </svg>
               </div>
+              <h2 className="font-extrabold text-lg mb-1 text-[#991B1B]" style={{ fontFamily: 'Poppins, sans-serif' }}>
+                Unable to load dashboard
+              </h2>
+              <p className="text-red-700/80 mb-0" style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem' }}>
+                {error}
+              </p>
+            </div>
+          )}
 
-              {programImpact.length === 0 ? (
-                <div className="bg-white rounded-[2rem] border border-stone-200 p-16 text-center shadow-sm">
-                  <p className="text-stone-400 font-medium italic m-0 text-lg">Your generosity will fuel measurable change across our programs.</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
-                  {programImpact.map((row, idx) => (
-                    <ProgramImpactCard
-                      key={row.label}
-                      row={row}
-                      delay={`hw-delay-${(idx % 3 + 1) * 100}`}
-                    />
-                  ))}
-                </div>
-              )}
-            </section>
+          {!loading && !error && donations && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+              {/* ── Impact by category (ReportCard-style pills) ── */}
+              <section aria-labelledby="impact-by-category-heading">
+                <h2
+                  id="impact-by-category-heading"
+                  style={{
+                    fontFamily: 'Inter, sans-serif',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.16em',
+                    color: '#0D9488',
+                    margin: '0 0 1.25rem',
+                  }}
+                >
+                  Impact by category
+                </h2>
 
-            {/* ── History Table ── */}
-            <section aria-labelledby="stewardship-record-heading">
-              <div className="mb-10 text-left">
-                <h2 id="stewardship-record-heading" className="hw-heading-font mt-2 text-3xl font-black md:text-4xl text-[#6B21A8] tracking-tight">Stewardship Record</h2>
-              </div>
-
-              {donations.length === 0 ? (
-                <div className="bg-white rounded-[2rem] border border-stone-200 p-12 text-center">
-                  <p className="text-stone-400 font-medium text-lg italic">No financial transactions found on your account.</p>
-                </div>
-              ) : (
-                <Card title="Donation Ledger" titleId="donation-ledger-heading" className="overflow-hidden p-0 lg:p-0 border-none">
-                  <div className="overflow-x-auto relative">
-                    <table className="w-full border-collapse text-left" aria-labelledby="donation-ledger-heading">
-                      <caption
-                        style={{
-                          position: 'absolute',
-                          width: 1,
-                          height: 1,
-                          padding: 0,
-                          margin: -1,
-                          overflow: 'hidden',
-                          clip: 'rect(0,0,0,0)',
-                          whiteSpace: 'nowrap',
-                          border: 0,
-                        }}
-                      >
-                        Your donations with date, amount, initiative, and plan type
-                      </caption>
-                      <thead>
-                        <tr className="bg-stone-50/50 border-b border-stone-100">
-                          <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.25em] text-stone-400">Date</th>
-                          <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.25em] text-stone-400">Amount</th>
-                          <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.25em] text-stone-400">Initiative</th>
-                          <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.25em] text-stone-400 text-center">Plan</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-stone-50">
-                        {donations.map((d) => (
-                          <tr key={d.donationId} className="hover:bg-violet-50/30 transition-all group">
-                            <td className="px-8 py-7 text-stone-500 font-semibold text-[0.95rem]">
-                              {formatDate(d.donationDate)}
-                            </td>
-                            <td className="px-8 py-7">
-                              <span className="font-black text-[#1E3A5F] text-xl tabular-nums tracking-tighter">
-                                {formatMoney(d.amount, d.currencyCode ?? 'PHP')}
-                              </span>
-                              <span className="block text-[10px] text-stone-400 uppercase font-black mt-1.5 tracking-widest">{d.donationType || 'Gift'}</span>
-                            </td>
-                            <td className="px-8 py-7">
-                              <span className="font-bold text-[#1E3A5F] text-[1.05rem] leading-snug block mb-1">{d.campaignName?.trim() || 'General Mission'}</span>
-                              {d.impactUnit && <span className="inline-flex px-2 py-0.5 bg-teal-50 text-[#0D9488] text-[10px] font-bold uppercase rounded-md tracking-wider">{d.impactUnit}</span>}
-                            </td>
-                            <td className="px-8 py-7 text-center">
-                              {d.isRecurring ? (
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-violet-100 text-[#6B21A8] text-[10px] font-black uppercase tracking-widest">
-                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" /><polyline points="21 3 21 8 16 8" /></svg>
-                                  Recurring
-                                </span>
-                              ) : (
-                                <span className="inline-flex px-3 py-1.5 rounded-full bg-stone-100 text-stone-400 text-[10px] font-black uppercase tracking-widest">
-                                  One-Time
-                                </span>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                {programImpact.length === 0 ? (
+                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.95rem', color: '#64748b', margin: 0 }}>
+                    Your generosity will fuel measurable change across our programs.
+                  </p>
+                ) : (
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: 8,
+                      padding: '1rem 1.25rem',
+                      background: '#fafaf9',
+                      border: '1px solid #f1f5f9',
+                      borderRadius: 16,
+                    }}
+                  >
+                    {programImpact.map((row, idx) => {
+                      const pal = CATEGORY_PILL_STYLES[idx % CATEGORY_PILL_STYLES.length];
+                      return (
+                        <div
+                          key={row.label}
+                          style={{
+                            background: pal.bg,
+                            border: `1px solid ${pal.border}`,
+                            borderRadius: 12,
+                            padding: '0.5rem 0.85rem',
+                            textAlign: 'center',
+                            minWidth: 100,
+                          }}
+                        >
+                          <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 800, fontSize: '1.1rem', color: pal.color, lineHeight: 1 }}>
+                            {formatMoney(row.totalAmount)}
+                          </div>
+                          <div
+                            style={{
+                              fontFamily: 'Inter, sans-serif',
+                              fontSize: '0.62rem',
+                              fontWeight: 600,
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.1em',
+                              color: pal.color,
+                              opacity: 0.75,
+                              marginTop: 4,
+                            }}
+                          >
+                            {row.label}
+                          </div>
+                          <div style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.65rem', color: '#94a3b8', marginTop: 2 }}>
+                            {row.giftCount} gift{row.giftCount === 1 ? '' : 's'}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                </Card>
-              )}
-            </section>
-          </div>
-        )}
-      </SectionContainer>
+                )}
+              </section>
+
+              {/* ── Stewardship / ledger ── */}
+              <section aria-labelledby="stewardship-record-heading">
+                <h2
+                  id="stewardship-record-heading"
+                  style={{
+                    fontFamily: 'Inter, sans-serif',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.16em',
+                    color: '#0D9488',
+                    margin: '0 0 1.25rem',
+                  }}
+                >
+                  Stewardship record
+                </h2>
+
+                {donations.length === 0 ? (
+                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.95rem', color: '#64748b', margin: 0 }}>
+                    No financial transactions found on your account.
+                  </p>
+                ) : (
+                  <DashboardCard title="Donation ledger" sub="Your gifts and initiatives" titleId="donation-ledger-heading">
+                    <div style={{ margin: '-1.4rem -1.5rem 0', overflowX: 'auto' }}>
+                      <table
+                        style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}
+                        aria-labelledby="donation-ledger-heading"
+                      >
+                        <caption
+                          style={{
+                            position: 'absolute',
+                            width: 1,
+                            height: 1,
+                            padding: 0,
+                            margin: -1,
+                            overflow: 'hidden',
+                            clip: 'rect(0,0,0,0)',
+                            whiteSpace: 'nowrap',
+                            border: 0,
+                          }}
+                        >
+                          Your donations with date, amount, initiative, and plan type
+                        </caption>
+                        <thead>
+                          <tr style={{ background: '#fafaf9', borderBottom: '1px solid #f1f5f9' }}>
+                            {['Date', 'Amount', 'Initiative', 'Plan'].map((h, i) => (
+                              <th
+                                key={h}
+                                style={{
+                                  fontFamily: 'Inter, sans-serif',
+                                  fontSize: '0.62rem',
+                                  fontWeight: 700,
+                                  textTransform: 'uppercase',
+                                  letterSpacing: '0.14em',
+                                  color: '#94a3b8',
+                                  padding: '0.85rem 1.25rem',
+                                  textAlign: i === 3 ? 'center' : 'left',
+                                }}
+                              >
+                                {h}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {donations.map((d) => (
+                            <tr key={d.donationId} style={{ borderBottom: '1px solid #f8fafc' }}>
+                              <td style={{ fontFamily: 'Inter, sans-serif', padding: '1rem 1.25rem', color: '#64748b', fontSize: '0.9rem' }}>
+                                {formatDate(d.donationDate)}
+                              </td>
+                              <td style={{ padding: '1rem 1.25rem' }}>
+                                <span style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 800, fontSize: '1.05rem', color: '#1E3A5F' }}>
+                                  {formatMoney(d.amount, d.currencyCode ?? 'PHP')}
+                                </span>
+                                <span
+                                  style={{
+                                    display: 'block',
+                                    fontFamily: 'Inter, sans-serif',
+                                    fontSize: '0.62rem',
+                                    fontWeight: 600,
+                                    color: '#94a3b8',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.08em',
+                                    marginTop: 4,
+                                  }}
+                                >
+                                  {d.donationType || 'Gift'}
+                                </span>
+                              </td>
+                              <td style={{ padding: '1rem 1.25rem' }}>
+                                <span style={{ fontFamily: 'Inter, sans-serif', fontWeight: 600, fontSize: '0.92rem', color: '#1E3A5F', display: 'block', marginBottom: 4 }}>
+                                  {d.campaignName?.trim() || 'General mission'}
+                                </span>
+                                {d.impactUnit && (
+                                  <span
+                                    style={{
+                                      display: 'inline-block',
+                                      fontFamily: 'Inter, sans-serif',
+                                      fontSize: '0.62rem',
+                                      fontWeight: 600,
+                                      textTransform: 'uppercase',
+                                      letterSpacing: '0.06em',
+                                      background: '#f0fdf4',
+                                      color: '#0D9488',
+                                      padding: '0.2rem 0.45rem',
+                                      borderRadius: 6,
+                                    }}
+                                  >
+                                    {d.impactUnit}
+                                  </span>
+                                )}
+                              </td>
+                              <td style={{ padding: '1rem 1.25rem', textAlign: 'center' }}>
+                                {d.isRecurring ? (
+                                  <span
+                                    style={{
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: 6,
+                                      fontFamily: 'Inter, sans-serif',
+                                      fontSize: '0.62rem',
+                                      fontWeight: 700,
+                                      textTransform: 'uppercase',
+                                      letterSpacing: '0.08em',
+                                      background: '#f5f3ff',
+                                      color: '#6B21A8',
+                                      padding: '0.35rem 0.65rem',
+                                      borderRadius: 999,
+                                    }}
+                                  >
+                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" aria-hidden="true">
+                                      <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
+                                      <polyline points="21 3 21 8 16 8" />
+                                    </svg>
+                                    Recurring
+                                  </span>
+                                ) : (
+                                  <span
+                                    style={{
+                                      display: 'inline-block',
+                                      fontFamily: 'Inter, sans-serif',
+                                      fontSize: '0.62rem',
+                                      fontWeight: 700,
+                                      textTransform: 'uppercase',
+                                      letterSpacing: '0.08em',
+                                      background: '#f5f5f4',
+                                      color: '#a8a29e',
+                                      padding: '0.35rem 0.65rem',
+                                      borderRadius: 999,
+                                    }}
+                                  >
+                                    One-time
+                                  </span>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </DashboardCard>
+                )}
+              </section>
+            </div>
+          )}
+        </div>
       </main>
 
-      {/* ── Footer / CTA ── */}
-      <section className="py-28 bg-[#1E3A5F] relative overflow-hidden" aria-label="Continue giving">
-        <div className="absolute inset-0 opacity-10 pointer-events-none" aria-hidden="true">
-          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white rounded-full blur-[120px]" />
-          <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#5eead4] rounded-full blur-[100px]" />
-        </div>
-        <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
-          <h3 className="hw-heading-font text-4xl font-black mb-6 tracking-tight italic" style={{ color: '#5eead4' }}>
-            Continue your legacy of giving.
-          </h3>
-          <p className="text-xl mb-12 max-w-2xl mx-auto leading-relaxed font-medium" style={{ color: 'rgba(255,255,255,0.78)' }}>
-            Your continued support allows us to expand our outreach and bring hope to even more individuals.
+      {/* ── CTA (ImpactPage bottom band) ── */}
+      <section style={{ background: 'linear-gradient(135deg, #1E3A5F 0%, #0f2744 100%)', padding: '4rem 1.5rem' }} aria-label="Continue giving">
+        <div style={{ maxWidth: 640, margin: '0 auto', textAlign: 'center' }}>
+          <span className="hw-eyebrow">Make a difference</span>
+          <h2
+            style={{
+              fontFamily: 'Poppins, sans-serif',
+              fontWeight: 900,
+              fontSize: 'clamp(1.5rem, 3vw, 2rem)',
+              color: '#fff',
+              margin: '0.6rem 0 0.75rem',
+            }}
+          >
+            Continue your legacy of giving
+          </h2>
+          <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '1rem', lineHeight: 1.65, marginBottom: '2rem' }}>
+            Your support expands outreach and brings hope to more individuals we serve.
           </p>
-          <div className="flex justify-center">
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
             <a
               href="/#donate"
-              className="hw-btn-magenta h-16 px-16 flex items-center justify-center rounded-full text-xl font-extrabold shadow-2xl hover:scale-105 transition-transform focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#5eead4]"
-              style={{ minWidth: '280px' }}
+              className="hw-btn-magenta"
+              style={{
+                padding: '0.75rem 2rem',
+                borderRadius: 50,
+                fontWeight: 700,
+                fontSize: '0.9rem',
+                textDecoration: 'none',
+                display: 'inline-block',
+              }}
             >
-              Give Again Now →
+              Give again now →
             </a>
           </div>
         </div>
