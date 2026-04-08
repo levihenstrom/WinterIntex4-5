@@ -1,0 +1,26 @@
+# This workflow runs on ios-app PRs and FAILS if the target branch is main.
+# Purpose: ios-app is a permanent testing branch — it should never be merged into main.
+name: Block ios-app → main merge
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  block-if-ios-app:
+    name: ios-app must never merge to main
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check source branch
+        run: |
+          echo "PR source branch: ${{ github.head_ref }}"
+          if [ "${{ github.head_ref }}" = "ios-app" ]; then
+            echo ""
+            echo "❌ ERROR: ios-app is a permanent native iOS testing branch."
+            echo "   It is not intended to be merged into main."
+            echo "   If you need iOS changes in main, cherry-pick specific commits."
+            echo ""
+            exit 1
+          fi
+          echo "✅ Source branch is not ios-app — merge is allowed."
