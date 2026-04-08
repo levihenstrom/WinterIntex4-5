@@ -1,0 +1,115 @@
+{
+  "candidate_dimension_fallbacks_for_validation": {
+    "call_to_action_type": [
+      "DonateNow",
+      "LearnMore",
+      "SignUp",
+      "ShareStory"
+    ],
+    "content_topic": [
+      "Education",
+      "Reintegration",
+      "AwarenessRaising",
+      "DonorImpact",
+      "Health"
+    ],
+    "features_resident_story": [
+      0.0,
+      1.0
+    ],
+    "has_call_to_action": [
+      0.0,
+      1.0
+    ],
+    "media_type": [
+      "Photo",
+      "Video",
+      "Reel",
+      "Carousel",
+      "Text"
+    ],
+    "platform": [
+      "Instagram",
+      "Facebook",
+      "TikTok",
+      "Twitter",
+      "YouTube",
+      "LinkedIn",
+      "WhatsApp"
+    ],
+    "post_hour": [
+      9,
+      12,
+      15,
+      18,
+      20
+    ],
+    "post_type": [
+      "ImpactStory",
+      "FundraisingAppeal",
+      "EducationalContent",
+      "Campaign",
+      "ThankYou"
+    ]
+  },
+  "copied_artifacts": [
+    "any_referral_classifier_pipeline.joblib",
+    "donation_referrals_count_pipeline.joblib",
+    "donation_value_log1p_pipeline.joblib",
+    "engagement_rate_pipeline.joblib",
+    "sample_payload_input.json",
+    "sample_prediction_output.json",
+    "social_media_engagement_metadata.json"
+  ],
+  "feature_lists_from_metadata": {
+    "categorical_features": [
+      "platform",
+      "day_of_week",
+      "post_type",
+      "media_type",
+      "call_to_action_type",
+      "content_topic",
+      "sentiment_tone",
+      "time_of_day_bucket",
+      "caption_length_bucket",
+      "platform_post_type"
+    ],
+    "numeric_features": [
+      "post_hour",
+      "num_hashtags",
+      "mentions_count",
+      "caption_length",
+      "boost_budget_php",
+      "boost_budget_missing",
+      "log_follower_count",
+      "month",
+      "is_weekend",
+      "hashtag_density",
+      "campaign_present",
+      "boosted_with_budget",
+      "has_call_to_action",
+      "features_resident_story",
+      "is_boosted"
+    ]
+  },
+  "metadata_path": "social_media_engagement_metadata.json",
+  "missing_source_artifacts": [],
+  "models": {
+    "donation_referrals_count": "donation_referrals_count_pipeline.joblib",
+    "donation_value_log1p": "donation_value_log1p_pipeline.joblib",
+    "engagement_rate": "engagement_rate_pipeline.joblib",
+    "p_any_referral": "any_referral_classifier_pipeline.joblib"
+  },
+  "package": "ml_pipeline_social_media_engagement",
+  "paths_relative_to_manifest_directory": true,
+  "preprocessing_note": "Each .joblib file is a sklearn Pipeline whose first step is ColumnTransformer (impute/scale/one-hot). Load metadata JSON for numeric_features + categorical_features; align column order before predict.",
+  "recommendation_goal_weights_path": "recommendation_goal_weights.json",
+  "sample_payload_path": "sample_payload_input.json",
+  "schema_version": 2,
+  "supported_goals": [
+    "awareness",
+    "donations",
+    "mixed"
+  ],
+  "training_social_posts_csv_repo_relative": "data/lighthouse_csv_v7/social_media_posts.csv"
+}

@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { deleteJson, fetchAllPaged, postJson } from '../../lib/apiClient';
+import AdminKpiStrip from '../../components/admin/AdminKpiStrip';
+import 'bootstrap-icons/font/bootstrap-icons.css';
+
 
 interface SupporterOpt {
   supporterId: number;
@@ -35,6 +38,12 @@ function supporterName(s: SupporterOpt | null | undefined): string {
   return (s.displayName ?? s.organizationName ?? `#${s.supporterId}`).trim();
 }
 
+function fmtDetailDate(iso: string | null | undefined): string {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? '—' : d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+}
+
 export default function ContributionsPage() {
   const [donations, setDonations] = useState<DonationRow[]>([]);
   const [supporters, setSupporters] = useState<SupporterOpt[]>([]);
@@ -53,6 +62,7 @@ export default function ContributionsPage() {
     notes: '',
     currencyCode: 'PHP',
   });
+  const [detailDonation, setDetailDonation] = useState<DonationRow | null>(null);
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -100,12 +110,23 @@ export default function ContributionsPage() {
   const kpis = useMemo(() => {
     const monetary = donations.filter((d) => d.donationType === 'Monetary');
     const sum = monetary.reduce((s, d) => s + Number(d.amount ?? 0), 0);
+    const typeSet = new Set(donations.map((d) => d.donationType).filter(Boolean));
     return {
       monetarySum: sum,
       count: donations.length,
       monetaryCount: monetary.length,
+      distinctTypes: typeSet.size,
     };
   }, [donations]);
+
+  useEffect(() => {
+    if (!detailDonation) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setDetailDonation(null);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [detailDonation]);
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
@@ -156,6 +177,7 @@ export default function ContributionsPage() {
     if (!window.confirm('Delete this contribution record?')) return;
     try {
       await deleteJson(`/api/donations/${id}`);
+      setDetailDonation(null);
       await reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Delete failed');
@@ -186,29 +208,37 @@ export default function ContributionsPage() {
 
         {!loading && (
           <>
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 24 }}>
-              {[
-                { label: 'Monetary (PHP)', value: fmtMoney(kpis.monetarySum), icon: '💵', color: '#166534' },
-                { label: 'All gifts', value: String(kpis.count), icon: '📋', color: '#1E3A5F' },
-                { label: 'Monetary rows', value: String(kpis.monetaryCount), icon: '💰', color: '#854D0E' },
-              ].map((k) => (
-                <div
-                  key={k.label}
-                  style={{
-                    flex: '1 1 140px',
-                    background: '#fff',
-                    borderRadius: 12,
-                    padding: '14px 16px',
-                    border: '1px solid #E2E8F0',
-                    boxShadow: '0 2px 8px rgba(30,58,95,0.06)',
-                  }}
-                >
-                  <div style={{ fontSize: 20, marginBottom: 4 }}>{k.icon}</div>
-                  <div style={{ fontSize: 20, fontWeight: 700, color: k.color }}>{k.value}</div>
-                  <div style={{ fontSize: 12, color: '#64748B', fontWeight: 500 }}>{k.label}</div>
-                </div>
-              ))}
-            </div>
+            <AdminKpiStrip
+              items={[
+                {
+                  label: 'Monetary total (PHP)',
+                  value: fmtMoney(kpis.monetarySum),
+                  sub: 'Monetary gift rows only',
+                  accent: '#059669',
+                  icon: 'cash-stack',
+                },
+                {
+                  label: 'All gift records',
+                  value: String(kpis.count),
+                  sub: 'loaded page',
+                  accent: '#1E3A5F',
+                  icon: 'clipboard2-data',
+                },
+                {
+                  label: 'Monetary rows',
+                  value: String(kpis.monetaryCount),
+                  accent: '#D97706',
+                  icon: 'wallet2',
+                },
+                {
+                  label: 'Gift types in data',
+                  value: String(kpis.distinctTypes),
+                  sub: 'distinct type values',
+                  accent: '#7C3AED',
+                  icon: 'tags',
+                },
+              ]}
+            />
 
             <div
               style={{
@@ -245,7 +275,7 @@ export default function ContributionsPage() {
                   cursor: 'pointer',
                 }}
               >
-                {showForm ? 'Cancel' : '+ Record contribution'}
+                {showForm ? 'Cancel' : 'Record contribution'}
               </button>
               <span style={{ fontSize: 12, color: '#94A3B8', marginLeft: 'auto' }}>{filtered.length} rows</span>
             </div>
@@ -377,18 +407,30 @@ export default function ContributionsPage() {
                 <table className="table table-sm table-hover mb-0" style={{ fontSize: 13 }}>
                   <thead className="table-light">
                     <tr>
-                      <th>ID</th>
+                      <th>Gift ID</th>
                       <th>Date</th>
                       <th>Supporter</th>
                       <th>Type</th>
                       <th>Amount / est.</th>
                       <th>Campaign</th>
-                      <th />
                     </tr>
                   </thead>
                   <tbody>
                     {filtered.map((d) => (
-                      <tr key={d.donationId}>
+                      <tr
+                        key={d.donationId}
+                        role="button"
+                        tabIndex={0}
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => setDetailDonation(d)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            setDetailDonation(d);
+                          }
+                        }}
+                        title="View full gift details"
+                      >
                         <td className="text-muted">{d.donationId}</td>
                         <td>
                           {d.donationDate
@@ -401,17 +443,59 @@ export default function ContributionsPage() {
                           {d.amount != null ? fmtMoney(Number(d.amount), d.currencyCode ?? 'PHP') : d.estimatedValue != null ? String(d.estimatedValue) : '—'}
                         </td>
                         <td>{d.campaignName ?? '—'}</td>
-                        <td>
-                          <button type="button" className="btn btn-link btn-sm text-danger p-0" onClick={() => void handleDelete(d.donationId)}>
-                            Delete
-                          </button>
-                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
             </div>
+
+            {detailDonation && (
+              <div className="modal d-block" style={{ backgroundColor: 'rgba(0,0,0,0.55)' }} role="dialog" aria-modal="true" aria-labelledby="contribDetailTitle">
+                <div className="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+                  <div className="modal-content">
+                    <div className="modal-header border-bottom">
+                      <div>
+                        <h5 className="modal-title fw-bold text-dark mb-0" id="contribDetailTitle">
+                          Contribution details
+                        </h5>
+                        <p className="small text-muted mb-0">Gift ID {detailDonation.donationId}</p>
+                      </div>
+                      <button type="button" className="btn-close" aria-label="Close" onClick={() => setDetailDonation(null)} />
+                    </div>
+                    <div className="modal-body">
+                      <dl className="row small mb-0">
+                        {[
+                          ['Supporter', `${supporterName(detailDonation.supporter ?? undefined)} (ID ${detailDonation.supporterId})`],
+                          ['Gift type', detailDonation.donationType ?? '—'],
+                          ['Donation date', fmtDetailDate(detailDonation.donationDate)],
+                          ['Amount', detailDonation.amount != null ? fmtMoney(Number(detailDonation.amount), detailDonation.currencyCode ?? 'PHP') : '—'],
+                          ['Estimated value', detailDonation.estimatedValue != null ? String(detailDonation.estimatedValue) : '—'],
+                          ['Currency', detailDonation.currencyCode ?? '—'],
+                          ['Campaign', detailDonation.campaignName ?? '—'],
+                          ['Channel / source', detailDonation.channelSource ?? '—'],
+                          ['Impact unit', detailDonation.impactUnit ?? '—'],
+                          ['Notes', detailDonation.notes?.trim() || '—'],
+                        ].map(([label, val]) => (
+                          <div key={label} className="col-sm-6 py-2 border-bottom">
+                            <dt className="text-uppercase fw-semibold text-muted" style={{ fontSize: 10, letterSpacing: '0.04em' }}>{label}</dt>
+                            <dd className="mb-0 mt-1 text-break">{val}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                    </div>
+                    <div className="modal-footer border-top">
+                      <button type="button" className="btn btn-outline-danger" onClick={() => void handleDelete(detailDonation.donationId)}>
+                        Delete record
+                      </button>
+                      <button type="button" className="btn btn-primary" onClick={() => setDetailDonation(null)}>
+                        Close
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>

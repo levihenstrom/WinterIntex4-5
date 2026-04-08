@@ -1,0 +1,531 @@
+[
+  {
+    "as_of_date": "2027-01-18T00:00:00",
+    "operational_band": "Needs Immediate Review",
+    "raw_score_note": "Raw probability is often small in absolute terms; use rank, percentile, and operational band for prioritization in this rare-event setting \u2014 not as a literal certainty. Cohort scores show strong compression near zero; relative ordering matters more than the number on the scale.",
+    "readiness_percentile_among_current_residents": 13.0435,
+    "reintegration_readiness_score": 0.0,
+    "resident_code": "LS-0006",
+    "support_priority_rank": 1,
+    "top_positive_factors": [
+      "edu progress trend: below typical for similar residents and associated with stronger readiness",
+      "edu mean progress: below typical for similar residents and associated with stronger readiness",
+      "age at admission years: above typical for similar residents and associated with stronger readiness",
+      "edu mean attendance: below typical for similar residents and associated with stronger readiness",
+      "pr emotional improvement trend: above typical for similar residents and associated with stronger readiness"
+    ],
+    "top_risk_factors": [
+      "hv total visits: below typical for similar residents and associated with weaker readiness",
+      "pr concern rate: below typical for similar residents and associated with weaker readiness",
+      "days since enrollment: above typical for similar residents and associated with weaker readiness",
+      "pr sessions total: below typical for similar residents and associated with weaker readiness",
+      "pr sessions last 30d: below typical for similar residents and associated with weaker readiness"
+    ]
+  },
+  {
+    "as_of_date": "2027-01-09T00:00:00",
+    "operational_band": "Needs Immediate Review",
+    "raw_score_note": "Raw probability is often small in absolute terms; use rank, percentile, and operational band for prioritization in this rare-event setting \u2014 not as a literal certainty. Cohort scores show strong compression near zero; relative ordering matters more than the number on the scale.",
+    "readiness_percentile_among_current_residents": 13.0435,
+    "reintegration_readiness_score": 0.0,
+    "resident_code": "LS-0032",
+    "support_priority_rank": 2,
+    "top_positive_factors": [
+      "edu progress trend: below typical for similar residents and associated with stronger readiness",
+      "pr concern rate: above typical for similar residents and associated with stronger readiness",
+      "inc mean severity: above typical for similar residents and associated with stronger readiness",
+      "edu mean progress: below typical for similar residents and associated with stronger readiness",
+      "pr mean duration: above typical for similar residents and associated with stronger readiness"
+    ],
+    "top_risk_factors": [
+      "hv total visits: below typical for similar residents and associated with weaker readiness",
+      "days since enrollment: above typical for similar residents and associated with weaker readiness",
+      "pr sessions total: below typical for similar residents and associated with weaker readiness",
+      "pr sessions last 30d: below typical for similar residents and associated with weaker readiness",
+      "case category: Foundling \u2014 compared with typical reference cases, associated with weaker readiness"
+    ]
+  },
+  {
+    "as_of_date": "2027-01-05T00:00:00",
+    "operational_band": "Needs Immediate Review",
+    "raw_score_note": "Raw probability is often small in absolute terms; use rank, percentile, and operational band for prioritization in this rare-event setting \u2014 not as a literal certainty. Cohort scores show strong compression near zero; relative ordering matters more than the number on the scale.",
+    "readiness_percentile_among_current_residents": 13.0435,
+    "reintegration_readiness_score": 0.0,
+    "resident_code": "LS-0038",
+    "support_priority_rank": 3,
+    "top_positive_factors": [
+      "edu progress trend: below typical for similar residents and associated with stronger readiness",
+      "edu mean progress: below typical for similar residents and associated with stronger readiness",
+      "pr mean duration: above typical for similar residents and associated with stronger readiness",
+      "edu mean attendance: below typical for similar residents and associated with stronger readiness",
+      "pr mean gap days: above typical for similar residents and associated with stronger readiness"
+    ],
+    "top_risk_factors": [
+      "hv total visits: below typical for similar residents and associated with weaker readiness",
+      "pr concern rate: below typical for similar residents and associated with weaker readiness",
+      "days since enrollment: above typical for similar residents and associated with weaker readiness",
+      "case category: Neglected \u2014 compared with typical reference cases, associated with weaker readiness",
+      "pr sessions total: below typical for similar residents and associated with weaker readiness"
+    ]
+  },
+  {
+    "as_of_date": "2027-01-27T00:00:00",
+    "operational_band": "Needs Immediate Review",
+    "raw_score_note": "Raw probability is often small in absolute terms; use rank, percentile, and operational band for prioritization in this rare-event setting \u2014 not as a literal certainty. Cohort scores show strong compression near zero; relative ordering matters more than the number on the scale.",
+    "readiness_percentile_among_current_residents": 13.0435,
+    "reintegration_readiness_score": 0.0,
+    "resident_code": "LS-0041",
+    "support_priority_rank": 4,
+    "top_positive_factors": [
+      "edu progress trend: below typical for similar residents and associated with stronger readiness",
+      "case category: Surrendered \u2014 compared with typical reference cases, associated with stronger readiness",
+      "edu mean progress: below typical for similar residents and associated with stronger readiness",
+      "edu mean attendance: below typical for similar residents and associated with stronger readiness",
+      "pr progress rate: above typical for similar residents and associated with stronger readiness"
+    ],
+    "top_risk_factors": [
+      "hv total visits: below typical for similar residents and associated with weaker readiness",
+      "days since enrollment: above typical for similar residents and associated with weaker readiness",
+      "pr concern rate: below typical for similar residents and associated with weaker readiness",
+      "pr sessions total: below typical for similar residents and associated with weaker readiness",
+      "pr mean duration: below typical for similar residents and associated with weaker readiness"
+    ]
+  },
+  {
+    "as_of_date": "2027-01-07T00:00:00",
+    "operational_band": "Needs Immediate Review",
+    "raw_score_note": "Raw probability is often small in absolute terms; use rank, percentile, and operational band for prioritization in this rare-event setting \u2014 not as a literal certainty. Cohort scores show strong compression near zero; relative ordering matters more than the number on the scale.",
+    "readiness_percentile_among_current_residents": 13.0435,
+    "reintegration_readiness_score": 0.0,
+    "resident_code": "LS-0042",
+    "support_priority_rank": 5,
+    "top_positive_factors": [
+      "edu progress trend: below typical for similar residents and associated with stronger readiness",
+      "case category: Abandoned \u2014 compared with typical reference cases, associated with stronger readiness",
+      "edu mean progress: below typical for similar residents and associated with stronger readiness",
+      "age at admission years: above typical for similar residents and associated with stronger readiness",
+      "edu mean attendance: below typical for similar residents and associated with stronger readiness"
+    ],
+    "top_risk_factors": [
+      "hv total visits: below typical for similar residents and associated with weaker readiness",
+      "pr concern rate: below typical for similar residents and associated with weaker readiness",
+      "days since enrollment: above typical for similar residents and associated with weaker readiness",
+      "pr mean duration: below typical for similar residents and associated with weaker readiness",
+      "pr sessions total: below typical for similar residents and associated with weaker readiness"
+    ]
+  },
+  {
+    "as_of_date": "2027-01-28T00:00:00",
+    "operational_band": "Needs Close Follow-up",
+    "raw_score_note": "Raw probability is often small in absolute terms; use rank, percentile, and operational band for prioritization in this rare-event setting \u2014 not as a literal certainty. Cohort scores show strong compression near zero; relative ordering matters more than the number on the scale.",
+    "readiness_percentile_among_current_residents": 13.0435,
+    "reintegration_readiness_score": 0.0,
+    "resident_code": "LS-0055",
+    "support_priority_rank": 6,
+    "top_positive_factors": [
+      "pr concern rate: above typical for similar residents and associated with stronger readiness",
+      "edu progress trend: below typical for similar residents and associated with stronger readiness",
+      "case category: Abandoned \u2014 compared with typical reference cases, associated with stronger readiness",
+      "edu mean progress: below typical for similar residents and associated with stronger readiness",
+      "edu mean attendance: below typical for similar residents and associated with stronger readiness"
+    ],
+    "top_risk_factors": [
+      "hv total visits: below typical for similar residents and associated with weaker readiness",
+      "days since enrollment: above typical for similar residents and associated with weaker readiness",
+      "pr mean duration: below typical for similar residents and associated with weaker readiness",
+      "pr sessions total: below typical for similar residents and associated with weaker readiness",
+      "pr sessions last 30d: below typical for similar residents and associated with weaker readiness"
+    ]
+  },
+  {
+    "as_of_date": "2027-01-25T00:00:00",
+    "operational_band": "Needs Close Follow-up",
+    "raw_score_note": "Raw probability is often small in absolute terms; use rank, percentile, and operational band for prioritization in this rare-event setting \u2014 not as a literal certainty. Cohort scores show strong compression near zero; relative ordering matters more than the number on the scale.",
+    "readiness_percentile_among_current_residents": 28.2609,
+    "reintegration_readiness_score": 0.0021,
+    "resident_code": "LS-0050",
+    "support_priority_rank": 7,
+    "top_positive_factors": [
+      "edu progress trend: below typical for similar residents and associated with stronger readiness",
+      "edu mean progress: below typical for similar residents and associated with stronger readiness",
+      "pr mean duration: above typical for similar residents and associated with stronger readiness",
+      "pr emotional improvement trend: above typical for similar residents and associated with stronger readiness",
+      "edu mean attendance: below typical for similar residents and associated with stronger readiness"
+    ],
+    "top_risk_factors": [
+      "hv total visits: below typical for similar residents and associated with weaker readiness",
+      "days since enrollment: above typical for similar residents and associated with weaker readiness",
+      "pr concern rate: below typical for similar residents and associated with weaker readiness",
+      "case category: Neglected \u2014 compared with typical reference cases, associated with weaker readiness",
+      "pr sessions total: below typical for similar residents and associated with weaker readiness"
+    ]
+  },
+  {
+    "as_of_date": "2027-01-16T00:00:00",
+    "operational_band": "Needs Close Follow-up",
+    "raw_score_note": "Raw probability is often small in absolute terms; use rank, percentile, and operational band for prioritization in this rare-event setting \u2014 not as a literal certainty. Cohort scores show strong compression near zero; relative ordering matters more than the number on the scale.",
+    "readiness_percentile_among_current_residents": 32.6087,
+    "reintegration_readiness_score": 0.0028,
+    "resident_code": "LS-0024",
+    "support_priority_rank": 8,
+    "top_positive_factors": [
+      "edu progress trend: below typical for similar residents and associated with stronger readiness",
+      "edu mean progress: below typical for similar residents and associated with stronger readiness",
+      "edu mean attendance: below typical for similar residents and associated with stronger readiness",
+      "pr emotional improvement trend: above typical for similar residents and associated with stronger readiness",
+      "hv family cooperation rate: below typical for similar residents and associated with stronger readiness"
+    ],
+    "top_risk_factors": [
+      "hv total visits: below typical for similar residents and associated with weaker readiness",
+      "pr concern rate: below typical for similar residents and associated with weaker readiness",
+      "days since enrollment: above typical for similar residents and associated with weaker readiness",
+      "pr sessions total: below typical for similar residents and associated with weaker readiness",
+      "pr sessions last 30d: below typical for similar residents and associated with weaker readiness"
+    ]
+  },
+  {
+    "as_of_date": "2027-01-20T00:00:00",
+    "operational_band": "Needs Close Follow-up",
+    "raw_score_note": "Raw probability is often small in absolute terms; use rank, percentile, and operational band for prioritization in this rare-event setting \u2014 not as a literal certainty. Cohort scores show strong compression near zero; relative ordering matters more than the number on the scale.",
+    "readiness_percentile_among_current_residents": 39.1304,
+    "reintegration_readiness_score": 0.0029,
+    "resident_code": "LS-0016",
+    "support_priority_rank": 9,
+    "top_positive_factors": [
+      "edu progress trend: below typical for similar residents and associated with stronger readiness",
+      "case category: Surrendered \u2014 compared with typical reference cases, associated with stronger readiness",
+      "pr mean duration: above typical for similar residents and associated with stronger readiness",
+      "edu mean progress: below typical for similar residents and associated with stronger readiness",
+      "edu mean attendance: below typical for similar residents and associated with stronger readiness"
+    ],
+    "top_risk_factors": [
+      "hv total visits: below typical for similar residents and associated with weaker readiness",
+      "pr concern rate: below typical for similar residents and associated with weaker readiness",
+      "days since enrollment: above typical for similar residents and associated with weaker readiness",
+      "pr sessions total: below typical for similar residents and associated with weaker readiness",
+      "pr sessions last 30d: below typical for similar residents and associated with weaker readiness"
+    ]
+  },
+  {
+    "as_of_date": "2027-01-17T00:00:00",
+    "operational_band": "Needs Close Follow-up",
+    "raw_score_note": "Raw probability is often small in absolute terms; use rank, percentile, and operational band for prioritization in this rare-event setting \u2014 not as a literal certainty. Cohort scores show strong compression near zero; relative ordering matters more than the number on the scale.",
+    "readiness_percentile_among_current_residents": 39.1304,
+    "reintegration_readiness_score": 0.0029,
+    "resident_code": "LS-0048",
+    "support_priority_rank": 10,
+    "top_positive_factors": [
+      "pr concern rate: above typical for similar residents and associated with stronger readiness",
+      "edu progress trend: below typical for similar residents and associated with stronger readiness",
+      "case category: Surrendered \u2014 compared with typical reference cases, associated with stronger readiness",
+      "pr mean duration: above typical for similar residents and associated with stronger readiness",
+      "pr emotional improvement trend: above typical for similar residents and associated with stronger readiness"
+    ],
+    "top_risk_factors": [
+      "hv total visits: below typical for similar residents and associated with weaker readiness",
+      "days since enrollment: above typical for similar residents and associated with weaker readiness",
+      "pr sessions total: below typical for similar residents and associated with weaker readiness",
+      "pr sessions last 30d: below typical for similar residents and associated with weaker readiness",
+      "hw mean general health: below typical for similar residents and associated with weaker readiness"
+    ]
+  },
+  {
+    "as_of_date": "2027-01-04T00:00:00",
+    "operational_band": "Needs Close Follow-up",
+    "raw_score_note": "Raw probability is often small in absolute terms; use rank, percentile, and operational band for prioritization in this rare-event setting \u2014 not as a literal certainty. Cohort scores show strong compression near zero; relative ordering matters more than the number on the scale.",
+    "readiness_percentile_among_current_residents": 45.6522,
+    "reintegration_readiness_score": 0.003,
+    "resident_code": "LS-0057",
+    "support_priority_rank": 11,
+    "top_positive_factors": [
+      "edu progress trend: below typical for similar residents and associated with stronger readiness",
+      "pr concern rate: above typical for similar residents and associated with stronger readiness",
+      "case category: Abandoned \u2014 compared with typical reference cases, associated with stronger readiness",
+      "pr mean duration: above typical for similar residents and associated with stronger readiness",
+      "edu mean progress: below typical for similar residents and associated with stronger readiness"
+    ],
+    "top_risk_factors": [
+      "hv total visits: below typical for similar residents and associated with weaker readiness",
+      "days since enrollment: above typical for similar residents and associated with weaker readiness",
+      "pr sessions total: below typical for similar residents and associated with weaker readiness",
+      "pr sessions last 30d: below typical for similar residents and associated with weaker readiness",
+      "hw mean general health: below typical for similar residents and associated with weaker readiness"
+    ]
+  },
+  {
+    "as_of_date": "2027-01-07T00:00:00",
+    "operational_band": "Routine Monitoring",
+    "raw_score_note": "Raw probability is often small in absolute terms; use rank, percentile, and operational band for prioritization in this rare-event setting \u2014 not as a literal certainty. Cohort scores show strong compression near zero; relative ordering matters more than the number on the scale.",
+    "readiness_percentile_among_current_residents": 50.0,
+    "reintegration_readiness_score": 0.0031,
+    "resident_code": "LS-0010",
+    "support_priority_rank": 12,
+    "top_positive_factors": [
+      "edu progress trend: below typical for similar residents and associated with stronger readiness",
+      "case category: Surrendered \u2014 compared with typical reference cases, associated with stronger readiness",
+      "edu mean progress: below typical for similar residents and associated with stronger readiness",
+      "edu mean attendance: below typical for similar residents and associated with stronger readiness",
+      "age at admission years: above typical for similar residents and associated with stronger readiness"
+    ],
+    "top_risk_factors": [
+      "hv total visits: below typical for similar residents and associated with weaker readiness",
+      "days since enrollment: above typical for similar residents and associated with weaker readiness",
+      "pr concern rate: below typical for similar residents and associated with weaker readiness",
+      "pr sessions total: below typical for similar residents and associated with weaker readiness",
+      "pr sessions last 30d: below typical for similar residents and associated with weaker readiness"
+    ]
+  },
+  {
+    "as_of_date": "2027-01-22T00:00:00",
+    "operational_band": "Routine Monitoring",
+    "raw_score_note": "Raw probability is often small in absolute terms; use rank, percentile, and operational band for prioritization in this rare-event setting \u2014 not as a literal certainty. Cohort scores show strong compression near zero; relative ordering matters more than the number on the scale.",
+    "readiness_percentile_among_current_residents": 54.3478,
+    "reintegration_readiness_score": 0.0032,
+    "resident_code": "LS-0004",
+    "support_priority_rank": 13,
+    "top_positive_factors": [
+      "edu progress trend: below typical for similar residents and associated with stronger readiness",
+      "pr concern rate: above typical for similar residents and associated with stronger readiness",
+      "pr mean duration: above typical for similar residents and associated with stronger readiness",
+      "edu mean progress: below typical for similar residents and associated with stronger readiness",
+      "edu mean attendance: below typical for similar residents and associated with stronger readiness"
+    ],
+    "top_risk_factors": [
+      "hv total visits: below typical for similar residents and associated with weaker readiness",
+      "days since enrollment: above typical for similar residents and associated with weaker readiness",
+      "case category: Neglected \u2014 compared with typical reference cases, associated with weaker readiness",
+      "pr sessions total: below typical for similar residents and associated with weaker readiness",
+      "pr sessions last 30d: below typical for similar residents and associated with weaker readiness"
+    ]
+  },
+  {
+    "as_of_date": "2027-01-23T00:00:00",
+    "operational_band": "Routine Monitoring",
+    "raw_score_note": "Raw probability is often small in absolute terms; use rank, percentile, and operational band for prioritization in this rare-event setting \u2014 not as a literal certainty. Cohort scores show strong compression near zero; relative ordering matters more than the number on the scale.",
+    "readiness_percentile_among_current_residents": 58.6957,
+    "reintegration_readiness_score": 0.0061,
+    "resident_code": "LS-0014",
+    "support_priority_rank": 14,
+    "top_positive_factors": [
+      "pr concern rate: above typical for similar residents and associated with stronger readiness",
+      "edu progress trend: below typical for similar residents and associated with stronger readiness",
+      "edu mean progress: below typical for similar residents and associated with stronger readiness",
+      "age at admission years: above typical for similar residents and associated with stronger readiness",
+      "edu mean attendance: below typical for similar residents and associated with stronger readiness"
+    ],
+    "top_risk_factors": [
+      "hv total visits: below typical for similar residents and associated with weaker readiness",
+      "days since enrollment: above typical for similar residents and associated with weaker readiness",
+      "pr sessions total: below typical for similar residents and associated with weaker readiness",
+      "pr sessions last 30d: below typical for similar residents and associated with weaker readiness",
+      "case category: Foundling \u2014 compared with typical reference cases, associated with weaker readiness"
+    ]
+  },
+  {
+    "as_of_date": "2027-01-15T00:00:00",
+    "operational_band": "Routine Monitoring",
+    "raw_score_note": "Raw probability is often small in absolute terms; use rank, percentile, and operational band for prioritization in this rare-event setting \u2014 not as a literal certainty. Cohort scores show strong compression near zero; relative ordering matters more than the number on the scale.",
+    "readiness_percentile_among_current_residents": 65.2174,
+    "reintegration_readiness_score": 0.0063,
+    "resident_code": "LS-0007",
+    "support_priority_rank": 15,
+    "top_positive_factors": [
+      "edu progress trend: below typical for similar residents and associated with stronger readiness",
+      "pr mean duration: above typical for similar residents and associated with stronger readiness",
+      "edu mean progress: below typical for similar residents and associated with stronger readiness",
+      "edu mean attendance: below typical for similar residents and associated with stronger readiness",
+      "pr emotional improvement trend: above typical for similar residents and associated with stronger readiness"
+    ],
+    "top_risk_factors": [
+      "hv total visits: below typical for similar residents and associated with weaker readiness",
+      "days since enrollment: above typical for similar residents and associated with weaker readiness",
+      "pr concern rate: below typical for similar residents and associated with weaker readiness",
+      "pr sessions total: below typical for similar residents and associated with weaker readiness",
+      "pr sessions last 30d: below typical for similar residents and associated with weaker readiness"
+    ]
+  },
+  {
+    "as_of_date": "2027-01-26T00:00:00",
+    "operational_band": "Routine Monitoring",
+    "raw_score_note": "Raw probability is often small in absolute terms; use rank, percentile, and operational band for prioritization in this rare-event setting \u2014 not as a literal certainty. Cohort scores show strong compression near zero; relative ordering matters more than the number on the scale.",
+    "readiness_percentile_among_current_residents": 65.2174,
+    "reintegration_readiness_score": 0.0063,
+    "resident_code": "LS-0012",
+    "support_priority_rank": 16,
+    "top_positive_factors": [
+      "pr concern rate: above typical for similar residents and associated with stronger readiness",
+      "edu progress trend: below typical for similar residents and associated with stronger readiness",
+      "case category: Abandoned \u2014 compared with typical reference cases, associated with stronger readiness",
+      "edu mean progress: below typical for similar residents and associated with stronger readiness",
+      "edu mean attendance: below typical for similar residents and associated with stronger readiness"
+    ],
+    "top_risk_factors": [
+      "hv total visits: below typical for similar residents and associated with weaker readiness",
+      "days since enrollment: above typical for similar residents and associated with weaker readiness",
+      "pr sessions total: below typical for similar residents and associated with weaker readiness",
+      "pr sessions last 30d: below typical for similar residents and associated with weaker readiness",
+      "pr mean duration: below typical for similar residents and associated with weaker readiness"
+    ]
+  },
+  {
+    "as_of_date": "2027-02-02T00:00:00",
+    "operational_band": "Routine Monitoring",
+    "raw_score_note": "Raw probability is often small in absolute terms; use rank, percentile, and operational band for prioritization in this rare-event setting \u2014 not as a literal certainty. Cohort scores show strong compression near zero; relative ordering matters more than the number on the scale.",
+    "readiness_percentile_among_current_residents": 73.913,
+    "reintegration_readiness_score": 0.0093,
+    "resident_code": "LS-0009",
+    "support_priority_rank": 17,
+    "top_positive_factors": [
+      "pr concern rate: above typical for similar residents and associated with stronger readiness",
+      "edu progress trend: below typical for similar residents and associated with stronger readiness",
+      "case category: Surrendered \u2014 compared with typical reference cases, associated with stronger readiness",
+      "pr mean duration: above typical for similar residents and associated with stronger readiness",
+      "edu mean progress: below typical for similar residents and associated with stronger readiness"
+    ],
+    "top_risk_factors": [
+      "hv total visits: below typical for similar residents and associated with weaker readiness",
+      "days since enrollment: above typical for similar residents and associated with weaker readiness",
+      "pr sessions total: below typical for similar residents and associated with weaker readiness",
+      "pr sessions last 30d: below typical for similar residents and associated with weaker readiness",
+      "hw mean general health: below typical for similar residents and associated with weaker readiness"
+    ]
+  },
+  {
+    "as_of_date": "2027-01-19T00:00:00",
+    "operational_band": "Lower Urgency",
+    "raw_score_note": "Raw probability is often small in absolute terms; use rank, percentile, and operational band for prioritization in this rare-event setting \u2014 not as a literal certainty. Cohort scores show strong compression near zero; relative ordering matters more than the number on the scale.",
+    "readiness_percentile_among_current_residents": 73.913,
+    "reintegration_readiness_score": 0.0093,
+    "resident_code": "LS-0046",
+    "support_priority_rank": 18,
+    "top_positive_factors": [
+      "edu progress trend: below typical for similar residents and associated with stronger readiness",
+      "pr concern rate: above typical for similar residents and associated with stronger readiness",
+      "edu mean progress: below typical for similar residents and associated with stronger readiness",
+      "pr mean duration: above typical for similar residents and associated with stronger readiness",
+      "pr mean gap days: above typical for similar residents and associated with stronger readiness"
+    ],
+    "top_risk_factors": [
+      "hv total visits: below typical for similar residents and associated with weaker readiness",
+      "days since enrollment: above typical for similar residents and associated with weaker readiness",
+      "pr sessions total: below typical for similar residents and associated with weaker readiness",
+      "pr sessions last 30d: below typical for similar residents and associated with weaker readiness",
+      "case category: Foundling \u2014 compared with typical reference cases, associated with weaker readiness"
+    ]
+  },
+  {
+    "as_of_date": "2027-01-27T00:00:00",
+    "operational_band": "Lower Urgency",
+    "raw_score_note": "Raw probability is often small in absolute terms; use rank, percentile, and operational band for prioritization in this rare-event setting \u2014 not as a literal certainty. Cohort scores show strong compression near zero; relative ordering matters more than the number on the scale.",
+    "readiness_percentile_among_current_residents": 80.4348,
+    "reintegration_readiness_score": 0.0096,
+    "resident_code": "LS-0040",
+    "support_priority_rank": 19,
+    "top_positive_factors": [
+      "edu progress trend: below typical for similar residents and associated with stronger readiness",
+      "pr concern rate: above typical for similar residents and associated with stronger readiness",
+      "case category: Abandoned \u2014 compared with typical reference cases, associated with stronger readiness",
+      "hw mean general health: above typical for similar residents and associated with stronger readiness",
+      "age at admission years: above typical for similar residents and associated with stronger readiness"
+    ],
+    "top_risk_factors": [
+      "hv total visits: below typical for similar residents and associated with weaker readiness",
+      "days since enrollment: above typical for similar residents and associated with weaker readiness",
+      "pr sessions total: below typical for similar residents and associated with weaker readiness",
+      "pr mean duration: below typical for similar residents and associated with weaker readiness",
+      "pr sessions last 30d: below typical for similar residents and associated with weaker readiness"
+    ]
+  },
+  {
+    "as_of_date": "2027-01-20T00:00:00",
+    "operational_band": "Lower Urgency",
+    "raw_score_note": "Raw probability is often small in absolute terms; use rank, percentile, and operational band for prioritization in this rare-event setting \u2014 not as a literal certainty. Cohort scores show strong compression near zero; relative ordering matters more than the number on the scale.",
+    "readiness_percentile_among_current_residents": 84.7826,
+    "reintegration_readiness_score": 0.0121,
+    "resident_code": "LS-0008",
+    "support_priority_rank": 20,
+    "top_positive_factors": [
+      "edu progress trend: below typical for similar residents and associated with stronger readiness",
+      "pr mean duration: above typical for similar residents and associated with stronger readiness",
+      "edu mean progress: below typical for similar residents and associated with stronger readiness",
+      "edu mean attendance: below typical for similar residents and associated with stronger readiness",
+      "pr emotional improvement trend: above typical for similar residents and associated with stronger readiness"
+    ],
+    "top_risk_factors": [
+      "hv total visits: below typical for similar residents and associated with weaker readiness",
+      "pr concern rate: below typical for similar residents and associated with weaker readiness",
+      "days since enrollment: above typical for similar residents and associated with weaker readiness",
+      "pr sessions total: below typical for similar residents and associated with weaker readiness",
+      "pr sessions last 30d: below typical for similar residents and associated with weaker readiness"
+    ]
+  },
+  {
+    "as_of_date": "2027-01-17T00:00:00",
+    "operational_band": "Lower Urgency",
+    "raw_score_note": "Raw probability is often small in absolute terms; use rank, percentile, and operational band for prioritization in this rare-event setting \u2014 not as a literal certainty. Cohort scores show strong compression near zero; relative ordering matters more than the number on the scale.",
+    "readiness_percentile_among_current_residents": 89.1304,
+    "reintegration_readiness_score": 0.0154,
+    "resident_code": "LS-0017",
+    "support_priority_rank": 21,
+    "top_positive_factors": [
+      "edu progress trend: below typical for similar residents and associated with stronger readiness",
+      "case category: Surrendered \u2014 compared with typical reference cases, associated with stronger readiness",
+      "edu mean progress: below typical for similar residents and associated with stronger readiness",
+      "edu mean attendance: below typical for similar residents and associated with stronger readiness",
+      "pr emotional improvement trend: above typical for similar residents and associated with stronger readiness"
+    ],
+    "top_risk_factors": [
+      "hv total visits: below typical for similar residents and associated with weaker readiness",
+      "pr concern rate: below typical for similar residents and associated with weaker readiness",
+      "days since enrollment: above typical for similar residents and associated with weaker readiness",
+      "pr sessions total: below typical for similar residents and associated with weaker readiness",
+      "pr sessions last 30d: below typical for similar residents and associated with weaker readiness"
+    ]
+  },
+  {
+    "as_of_date": "2027-01-05T00:00:00",
+    "operational_band": "Lower Urgency",
+    "raw_score_note": "Raw probability is often small in absolute terms; use rank, percentile, and operational band for prioritization in this rare-event setting \u2014 not as a literal certainty. Cohort scores show strong compression near zero; relative ordering matters more than the number on the scale.",
+    "readiness_percentile_among_current_residents": 93.4783,
+    "reintegration_readiness_score": 0.0218,
+    "resident_code": "LS-0036",
+    "support_priority_rank": 22,
+    "top_positive_factors": [
+      "pr concern rate: above typical for similar residents and associated with stronger readiness",
+      "edu progress trend: below typical for similar residents and associated with stronger readiness",
+      "case category: Surrendered \u2014 compared with typical reference cases, associated with stronger readiness",
+      "edu mean progress: below typical for similar residents and associated with stronger readiness",
+      "edu mean attendance: below typical for similar residents and associated with stronger readiness"
+    ],
+    "top_risk_factors": [
+      "hv total visits: below typical for similar residents and associated with weaker readiness",
+      "days since enrollment: above typical for similar residents and associated with weaker readiness",
+      "pr sessions total: below typical for similar residents and associated with weaker readiness",
+      "pr sessions last 30d: below typical for similar residents and associated with weaker readiness",
+      "pr mean duration: below typical for similar residents and associated with weaker readiness"
+    ]
+  },
+  {
+    "as_of_date": "2027-01-06T00:00:00",
+    "operational_band": "Lower Urgency",
+    "raw_score_note": "Raw probability is often small in absolute terms; use rank, percentile, and operational band for prioritization in this rare-event setting \u2014 not as a literal certainty. Cohort scores show strong compression near zero; relative ordering matters more than the number on the scale.",
+    "readiness_percentile_among_current_residents": 97.8261,
+    "reintegration_readiness_score": 0.0273,
+    "resident_code": "LS-0001",
+    "support_priority_rank": 23,
+    "top_positive_factors": [
+      "edu progress trend: below typical for similar residents and associated with stronger readiness",
+      "pr concern rate: above typical for similar residents and associated with stronger readiness",
+      "inc mean severity: above typical for similar residents and associated with stronger readiness",
+      "edu mean progress: below typical for similar residents and associated with stronger readiness",
+      "edu mean attendance: below typical for similar residents and associated with stronger readiness"
+    ],
+    "top_risk_factors": [
+      "hv total visits: below typical for similar residents and associated with weaker readiness",
+      "days since enrollment: above typical for similar residents and associated with weaker readiness",
+      "case category: Neglected \u2014 compared with typical reference cases, associated with weaker readiness",
+      "pr sessions total: below typical for similar residents and associated with weaker readiness",
+      "pr sessions last 30d: below typical for similar residents and associated with weaker readiness"
+    ]
+  }
+]

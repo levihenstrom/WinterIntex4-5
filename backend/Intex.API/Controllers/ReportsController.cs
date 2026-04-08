@@ -183,9 +183,10 @@ public sealed class ReportsController(AppDbContext db, StaffScopeResolver scopeR
             r.ReintegrationStatus != "");
 
         var reintegrationAttempted = await withReint.CountAsync(cancellationToken);
+        // Use SQL-translatable comparison (EF cannot translate StringComparison.OrdinalIgnoreCase).
         var reintegrationCompleted = await withReint.CountAsync(r =>
             r.ReintegrationStatus != null &&
-            r.ReintegrationStatus.Equals("Completed", StringComparison.OrdinalIgnoreCase),
+            r.ReintegrationStatus.ToLower() == "completed",
             cancellationToken);
 
         double? reintegrationRate = reintegrationAttempted > 0
@@ -236,7 +237,7 @@ public sealed class ReportsController(AppDbContext db, StaffScopeResolver scopeR
                 Residents = g.Count(),
                 Completed = g.Count(r =>
                     r.ReintegrationStatus != null &&
-                    r.ReintegrationStatus == "Completed"),
+                    r.ReintegrationStatus.ToLower() == "completed"),
                 Attempted = g.Count(r =>
                     r.ReintegrationStatus != null &&
                     r.ReintegrationStatus != ""),

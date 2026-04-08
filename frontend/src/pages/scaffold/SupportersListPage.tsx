@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { deleteJson, fetchAllPaged, postJson, putJson } from '../../lib/apiClient';
+import AdminKpiStrip from '../../components/admin/AdminKpiStrip';
+import 'bootstrap-icons/font/bootstrap-icons.css';
+import { buildDonorMlMap, getCurrentDonorScores, type DonorChurnRow } from '../../lib/mlApi';
 
 /* ── API shape (camelCase from ASP.NET) ─────────────────────── */
 interface SupporterApi {
@@ -49,6 +52,13 @@ const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
   Inactive: { bg: '#F1F5F9', text: '#64748B' },
 };
 
+const CHURN_BAND_COLORS: Record<string, { bg: string; text: string }> = {
+  Critical: { bg: '#FEE2E2', text: '#991B1B' },
+  High: { bg: '#FFEDD5', text: '#9A3412' },
+  Medium: { bg: '#FEF9C3', text: '#854D0E' },
+  Low: { bg: '#DCFCE7', text: '#166534' },
+};
+
 function labelForType(t: string | null | undefined): string {
   if (!t) return 'Supporter';
   return TYPE_LABEL[t] ?? t;
@@ -81,8 +91,7 @@ function Badge({ label, bg, text }: { label: string; bg: string; text: string })
   );
 }
 
-/* ── Stat strip ──────────────────────────────────────────────── */
-function StatStrip({
+function SupporterKpiStrip({
   supporters,
   monetaryTotalPhp,
 }: {
@@ -92,35 +101,16 @@ function StatStrip({
   const active = supporters.filter((s) => s.status === 'Active').length;
   const monetary = supporters.filter((s) => s.supporterType === 'MonetaryDonor').length;
   const volunteers = supporters.filter((s) => s.supporterType === 'Volunteer').length;
-
-  const stats = [
-    { label: 'Total Supporters', value: supporters.length, icon: '👥' },
-    { label: 'Active', value: active, icon: '✅' },
-    { label: 'Monetary Donors', value: monetary, icon: '💵' },
-    { label: 'Volunteers', value: volunteers, icon: '🤝' },
-    { label: 'Monetary gifts (PHP)', value: fmtMoneyPhp(monetaryTotalPhp), icon: '💰', isText: true },
-  ];
-
   return (
-    <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 24 }}>
-      {stats.map((s) => (
-        <div
-          key={s.label}
-          style={{
-            flex: '1 1 140px',
-            background: '#fff',
-            borderRadius: 12,
-            padding: '14px 16px',
-            border: '1px solid #E2E8F0',
-            boxShadow: '0 2px 8px rgba(30,58,95,0.06)',
-          }}
-        >
-          <div style={{ fontSize: 20, marginBottom: 4 }}>{s.icon}</div>
-          <div style={{ fontSize: 22, fontWeight: 700, color: '#1E3A5F' }}>{s.isText ? s.value : s.value}</div>
-          <div style={{ fontSize: 12, color: '#64748B', fontWeight: 500 }}>{s.label}</div>
-        </div>
-      ))}
-    </div>
+    <AdminKpiStrip
+      items={[
+        { label: 'Total supporters', value: String(supporters.length), accent: '#1E3A5F', icon: 'people' },
+        { label: 'Active', value: String(active), sub: 'status in database', accent: '#059669', icon: 'person-check' },
+        { label: 'Monetary donors', value: String(monetary), accent: '#0D9488', icon: 'cash-stack' },
+        { label: 'Volunteers', value: String(volunteers), accent: '#2563EB', icon: 'heart' },
+        { label: 'Monetary gifts (PHP)', value: fmtMoneyPhp(monetaryTotalPhp), sub: 'loaded gifts total', accent: '#7C3AED', icon: 'wallet2' },
+      ]}
+    />
   );
 }
 
@@ -159,6 +149,10 @@ export default function SupportersListPage() {
   const [typeFilter, setTypeFilter] = useState<string>('All');
   const [statusFilter, setStatusFilter] = useState<string>('All');
   const [search, setSearch] = useState('');
+  /** When true, sort list by ML outreach priority (lower rank = higher churn priority). */
+  const [sortByMlRisk, setSortByMlRisk] = useState(false);
+  const [donorMlById, setDonorMlById] = useState<Map<number, DonorChurnRow>>(() => new Map());
+  const [mlLoadError, setMlLoadError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm);
@@ -174,6 +168,14 @@ export default function SupportersListPage() {
         fetchAllPaged<DonationLite>('/api/donations', 200),
       ]);
       setSupporters(sups);
+      setMlLoadError(null);
+      try {
+        const donorMlRows = await getCurrentDonorScores();
+        setDonorMlById(buildDonorMlMap(donorMlRows));
+      } catch (mlErr) {
+        setDonorMlById(new Map());
+        setMlLoadError(mlErr instanceof Error ? mlErr.message : 'Donor ML scores unavailable.');
+      }
 
       let sum = 0;
       const agg = new Map<number, { totalPhp: number; lastGift: string | null }>();
@@ -214,6 +216,27 @@ export default function SupportersListPage() {
         return matchType && matchStatus && matchSearch;
       }),
     [supporters, typeFilter, statusFilter, search],
+  );
+
+  const displayedSupporters = useMemo(() => {
+    if (!sortByMlRisk) return filtered;
+    return [...filtered].sort((a, b) => {
+      const ra = donorMlById.get(a.supporterId)?.outreachPriorityRank;
+      const rb = donorMlById.get(b.supporterId)?.outreachPriorityRank;
+      const va = ra ?? 999999;
+      const vb = rb ?? 999999;
+      if (va !== vb) return va - vb;
+      return (a.displayName ?? '').localeCompare(b.displayName ?? '');
+    });
+  }, [filtered, sortByMlRisk, donorMlById]);
+
+  const mlCriticalOrHighCount = useMemo(
+    () =>
+      supporters.filter((s) => {
+        const m = donorMlById.get(s.supporterId);
+        return m && (m.riskBand === 'Critical' || m.riskBand === 'High');
+      }).length,
+    [supporters, donorMlById],
   );
 
   async function handleDelete(id: number) {
@@ -322,10 +345,33 @@ export default function SupportersListPage() {
             {error}
           </div>
         )}
+        {mlLoadError && !loading && (
+          <div className="alert alert-secondary small mb-3" role="status">
+            {mlLoadError} Churn overlays are hidden until ML data loads.
+          </div>
+        )}
 
         {!loading && (
           <>
-            <StatStrip supporters={supporters} monetaryTotalPhp={monetaryTotalPhp} />
+            <SupporterKpiStrip supporters={supporters} monetaryTotalPhp={monetaryTotalPhp} />
+
+            {donorMlById.size > 0 && (
+              <div
+                style={{
+                  background: 'linear-gradient(90deg, #FEF2F2 0%, #FFF7ED 100%)',
+                  borderRadius: 12,
+                  padding: '12px 18px',
+                  border: '1px solid #FECACA',
+                  marginBottom: 20,
+                  fontSize: 13,
+                  color: '#7F1D1D',
+                }}
+              >
+                <strong>ML at-risk donors:</strong> {mlCriticalOrHighCount} supporter
+                {mlCriticalOrHighCount !== 1 ? 's' : ''} scored Critical or High churn risk (
+                {donorMlById.size} total with ML scores). Merge key: <code>supporterId</code>.
+              </div>
+            )}
 
             <div
               style={{
@@ -378,6 +424,25 @@ export default function SupportersListPage() {
               </select>
               <button
                 type="button"
+                onClick={() => setSortByMlRisk((v) => !v)}
+                disabled={donorMlById.size === 0}
+                style={{
+                  padding: '8px 14px',
+                  borderRadius: 8,
+                  border: sortByMlRisk ? '2px solid #991B1B' : '1px solid #CBD5E1',
+                  fontSize: 13,
+                  background: sortByMlRisk ? '#FEE2E2' : '#fff',
+                  color: sortByMlRisk ? '#991B1B' : '#475569',
+                  fontWeight: 600,
+                  cursor: donorMlById.size === 0 ? 'not-allowed' : 'pointer',
+                  opacity: donorMlById.size === 0 ? 0.5 : 1,
+                }}
+                title="Sort by ML outreach priority (lower rank = reach out first)"
+              >
+                {sortByMlRisk ? '✓ ML risk sort' : 'Sort by ML risk'}
+              </button>
+              <button
+                type="button"
                 onClick={() => {
                   if (showForm) resetForm();
                   else setShowForm(true);
@@ -393,10 +458,10 @@ export default function SupportersListPage() {
                   cursor: 'pointer',
                 }}
               >
-                {showForm ? '✕ Cancel' : '+ New Supporter'}
+                {showForm ? 'Cancel' : 'New supporter'}
               </button>
               <span style={{ fontSize: 12, color: '#94A3B8', marginLeft: 'auto' }}>
-                {filtered.length} of {supporters.length} supporters
+                {displayedSupporters.length} of {supporters.length} supporters
               </span>
             </div>
 
@@ -556,17 +621,42 @@ export default function SupportersListPage() {
               ))}
             </div>
 
-            {filtered.length === 0 ? (
+            {displayedSupporters.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '48px 0', color: '#94A3B8' }}>
-                <div style={{ fontSize: 40, marginBottom: 8 }}>🔍</div>
-                <p style={{ fontWeight: 600 }}>No supporters match your filters.</p>
+                <div className="mb-3" style={{ fontSize: 40 }}>
+                  <i className="bi bi-search" style={{ color: '#CBD5E1' }} aria-hidden />
+                </div>
+                <p className="fw-semibold mb-1">No supporters match your filters.</p>
+                <p className="small mb-0">Try clearing search or type filters.</p>
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
-                {filtered.map((s) => {
+              <>
+                <style>{`
+                  .supporter-card-netflix {
+                    position: relative;
+                    transition: transform 0.2s ease, box-shadow 0.2s ease;
+                  }
+                  .supporter-card-netflix:hover {
+                    transform: scale(1.03);
+                    z-index: 2;
+                    box-shadow: 0 12px 32px rgba(30, 58, 95, 0.14);
+                  }
+                  @media (prefers-reduced-motion: reduce) {
+                    .supporter-card-netflix {
+                      transition: box-shadow 0.2s ease;
+                    }
+                    .supporter-card-netflix:hover {
+                      transform: none;
+                    }
+                  }
+                `}</style>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
+                {displayedSupporters.map((s) => {
                   const st = s.supporterType ?? '';
                   const tc = TYPE_COLORS[st] ?? { bg: '#F1F5F9', text: '#475569' };
                   const sc = STATUS_COLORS[s.status ?? ''] ?? STATUS_COLORS.Inactive;
+                  const dm = donorMlById.get(s.supporterId);
+                  const churnColors = dm ? CHURN_BAND_COLORS[dm.riskBand] ?? { bg: '#F1F5F9', text: '#475569' } : null;
                   const display = (s.displayName ?? 'Unknown').trim();
                   const initials = display
                     .split(/\s+/)
@@ -578,6 +668,7 @@ export default function SupportersListPage() {
                   return (
                     <div
                       key={s.supporterId}
+                      className="supporter-card-netflix"
                       style={{
                         background: '#fff',
                         borderRadius: 14,
@@ -636,19 +727,64 @@ export default function SupportersListPage() {
                           <div style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
                             <Badge label={labelForType(s.supporterType)} bg={tc.bg} text={tc.text} />
                             <Badge label={s.status ?? '—'} bg={sc.bg} text={sc.text} />
+                            {dm && churnColors && (
+                              <Badge label={`Churn: ${dm.riskBand}`} bg={churnColors.bg} text={churnColors.text} />
+                            )}
                           </div>
                         </div>
                       </div>
 
-                      <div style={{ fontSize: 12, color: '#475569', display: 'flex', flexDirection: 'column', gap: 3 }}>
-                        {s.email && <span>✉️ {s.email}</span>}
-                        {s.phone && <span>📞 {s.phone}</span>}
+                      {dm && (
+                        <div
+                          style={{
+                            fontSize: 11,
+                            padding: '10px 12px',
+                            background: '#FFFBEB',
+                            borderRadius: 10,
+                            border: '1px solid #FDE68A',
+                            color: '#78350F',
+                          }}
+                        >
+                          <div className="fw-semibold">Donor ML (supporter #{s.supporterId})</div>
+                          <div>
+                            Outreach priority rank <strong>#{dm.outreachPriorityRank}</strong> · score{' '}
+                            {Number(dm.churnRiskScore).toFixed(2)}
+                          </div>
+                          {dm.topDrivers?.[0] && (
+                            <div style={{ marginTop: 4, color: '#92400E' }} title={dm.topDrivers.join(' · ')}>
+                              Driver: {dm.topDrivers[0]}
+                            </div>
+                          )}
+                          {(dm.riskBand === 'Critical' || dm.riskBand === 'High') && (
+                            <div style={{ marginTop: 6, fontWeight: 700, color: '#991B1B' }}>
+                              High risk of lapsing — consider outreach
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      <div style={{ fontSize: 12, color: '#475569', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        {s.email && (
+                          <span className="text-break">
+                            <i className="bi bi-envelope me-1 text-secondary" aria-hidden />
+                            {s.email}
+                          </span>
+                        )}
+                        {s.phone && (
+                          <span>
+                            <i className="bi bi-telephone me-1 text-secondary" aria-hidden />
+                            {s.phone}
+                          </span>
+                        )}
                         <span>
-                          📍 {[s.region, s.country].filter(Boolean).join(', ') || '—'}
+                          <i className="bi bi-geo-alt me-1 text-secondary" aria-hidden />
+                          {[s.region, s.country].filter(Boolean).join(', ') || '—'}
                         </span>
+                        <span className="text-muted small">ID {s.supporterId}</span>
                         {s.createdAt && (
                           <span>
-                            📅 Joined{' '}
+                            <i className="bi bi-calendar3 me-1 text-secondary" aria-hidden />
+                            Joined{' '}
                             {new Date(s.createdAt).toLocaleDateString('en-GB', {
                               day: 'numeric',
                               month: 'short',
@@ -657,7 +793,10 @@ export default function SupportersListPage() {
                           </span>
                         )}
                         {aggRow && aggRow.totalPhp > 0 && (
-                          <span style={{ color: '#166534', fontWeight: 600 }}>💵 {fmtMoneyPhp(aggRow.totalPhp)} monetary</span>
+                          <span style={{ color: '#166534', fontWeight: 600 }}>
+                            <i className="bi bi-wallet2 me-1" aria-hidden />
+                            {fmtMoneyPhp(aggRow.totalPhp)} monetary (tracked)
+                          </span>
                         )}
                         {aggRow?.lastGift && (
                           <span style={{ color: '#94A3B8' }}>
@@ -681,46 +820,47 @@ export default function SupportersListPage() {
                         )}
                       </div>
 
-                      <div style={{ borderTop: '1px solid #F1F5F9', paddingTop: 10, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-                        <button
-                          type="button"
-                          onClick={() => handleEdit(s)}
-                          style={{
-                            background: '#F1F5F9',
-                            border: 'none',
-                            borderRadius: 6,
-                            color: '#475569',
-                            fontSize: 12,
-                            fontWeight: 600,
-                            padding: '4px 12px',
-                            cursor: 'pointer',
-                            transition: 'background 0.2s',
-                          }}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => void handleDelete(s.supporterId)}
-                          style={{
-                            background: '#FEF2F2',
-                            border: 'none',
-                            borderRadius: 6,
-                            color: '#DC2626',
-                            fontSize: 12,
-                            fontWeight: 600,
-                            padding: '4px 12px',
-                            cursor: 'pointer',
-                            transition: 'background 0.2s',
-                          }}
-                        >
-                          Delete
-                        </button>
+                      <div
+                        style={{ borderTop: '1px solid #F1F5F9', paddingTop: 10 }}
+                        className="d-flex justify-content-end"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="dropdown">
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-secondary dropdown-toggle"
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false"
+                            aria-label={`Actions for supporter ${s.supporterId}`}
+                          >
+                            Actions
+                          </button>
+                          <ul className="dropdown-menu dropdown-menu-end">
+                            <li>
+                              <button type="button" className="dropdown-item" onClick={() => handleEdit(s)}>
+                                Edit
+                              </button>
+                            </li>
+                            <li>
+                              <hr className="dropdown-divider" />
+                            </li>
+                            <li>
+                              <button
+                                type="button"
+                                className="dropdown-item text-danger"
+                                onClick={() => void handleDelete(s.supporterId)}
+                              >
+                                Delete
+                              </button>
+                            </li>
+                          </ul>
+                        </div>
                       </div>
                     </div>
                   );
                 })}
-              </div>
+                </div>
+              </>
             )}
           </>
         )}

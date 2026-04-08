@@ -4,8 +4,11 @@ using Intex.API.Authorization;
 using Intex.API.Data;
 using Microsoft.AspNetCore.Identity;
 using Intex.API.Infrastructure;
+using Intex.API.Options;
+using Intex.API.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 using Scalar.AspNetCore;
@@ -76,6 +79,34 @@ if (!isDevelopment)
 }
 builder.Services.AddScoped<StaffScopeResolver>();
 
+builder.Services.AddOptions<MlInferenceServiceOptions>()
+    .Bind(builder.Configuration.GetSection(MlInferenceServiceOptions.SectionName))
+    .ValidateOnStart();
+builder.Services.AddSingleton<Microsoft.Extensions.Options.IValidateOptions<MlInferenceServiceOptions>, MlInferenceServiceOptionsValidator>();
+
+builder.Services.AddSingleton<MlArtifactService>();
+builder.Services.AddHttpClient<MlSocialProxyService>((sp, client) =>
+{
+    var opt = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<MlInferenceServiceOptions>>().Value;
+    var url = opt.BaseUrl?.Trim();
+    if (string.IsNullOrEmpty(url))
+        return;
+
+    if (!Uri.TryCreate(url.EndsWith('/') ? url : url + "/", UriKind.Absolute, out var baseUri))
+        return;
+
+    client.BaseAddress = baseUri;
+    client.Timeout = TimeSpan.FromSeconds(Math.Clamp(opt.TimeoutSeconds, 1, 300));
+
+    if (!string.IsNullOrWhiteSpace(opt.ApiKey))
+    {
+        var headerName = string.IsNullOrWhiteSpace(opt.ApiKeyHeaderName)
+            ? "X-ML-Service-Key"
+            : opt.ApiKeyHeaderName.Trim();
+        client.DefaultRequestHeaders.TryAddWithoutValidation(headerName, opt.ApiKey);
+    }
+});
+
 static bool IsSqliteConnectionString(string? connectionString) =>
     !string.IsNullOrWhiteSpace(connectionString)
     && connectionString.StartsWith("Data Source=", StringComparison.OrdinalIgnoreCase);
@@ -144,9 +175,13 @@ if (!string.IsNullOrEmpty(googleClientId) && !string.IsNullOrEmpty(googleClientS
         });
 }
 
-// Authorization policies
+// Authorization policies — default deny: every endpoint requires authentication unless marked [AllowAnonymous].
 builder.Services.AddAuthorization(options =>
 {
+    options.FallbackPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+
     options.AddPolicy(AuthPolicies.AdminOnly, policy => policy.RequireRole(AuthRoles.Admin));
     options.AddPolicy(
         AuthPolicies.StaffWrite,
@@ -159,7 +194,7 @@ builder.Services.AddAuthorization(options =>
         policy => policy.RequireRole(AuthRoles.Admin, AuthRoles.Donor, AuthRoles.LegacyCustomer));
 });
 
-// Password policy
+// Password policy (stricter than Identity defaults) + account lockout after failed attempts (IS 414).
 builder.Services.Configure<IdentityOptions>(options =>
 {
     options.Password.RequireDigit = false;
@@ -168,6 +203,10 @@ builder.Services.Configure<IdentityOptions>(options =>
     options.Password.RequireUppercase = false;
     options.Password.RequiredLength = 14;
     options.Password.RequiredUniqueChars = 1;
+
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+    options.Lockout.MaxFailedAccessAttempts = 5;
+    options.Lockout.AllowedForNewUsers = true;
 });
 
 // Cookie auth: dev uses Lax (Vite proxy → same-origin /api). Production SPA + API on different
@@ -197,6 +236,14 @@ builder.Services.AddCors(options =>
             .AllowAnyMethod()
             .AllowAnyHeader();
     });
+});
+
+// HSTS for production HTTPS hardening (IS 414).
+builder.Services.AddHsts(options =>
+{
+    options.Preload = false;
+    options.IncludeSubDomains = true;
+    options.MaxAge = TimeSpan.FromDays(180);
 });
 
 var app = builder.Build();
@@ -244,15 +291,6 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// Simple health check — use to verify the site and runtime without auth
-app.MapGet("/health", () => Results.Json(new { status = "ok", utc = DateTime.UtcNow }));
-
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-    app.MapScalarApiReference();
-}
-
 app.UseForwardedHeaders();
 app.UseExceptionHandler(errorApp =>
 {
@@ -292,6 +330,16 @@ app.UseRouting();
 app.UseCors(FrontendCorsPolicy);
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Public endpoints (explicit opt-out of FallbackPolicy).
+app.MapGet("/health", () => Results.Json(new { status = "ok", utc = DateTime.UtcNow }))
+    .AllowAnonymous();
+
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi().AllowAnonymous();
+    app.MapScalarApiReference().AllowAnonymous();
+}
 
 app.MapControllers().RequireCors(FrontendCorsPolicy);
 app.MapGroup("/api/auth")

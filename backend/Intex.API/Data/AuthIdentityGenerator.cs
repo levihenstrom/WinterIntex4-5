@@ -72,7 +72,9 @@ public class AuthIdentityGenerator
     {
         var section = configuration.GetSection(configSection);
         var email = section["Email"] ?? defaultEmail;
-        var password = section["Password"] ?? defaultPassword;
+        // Empty string in JSON is not null — treat whitespace as "use coded default" so Identity min-length rules still pass.
+        var configPassword = section["Password"];
+        var password = string.IsNullOrWhiteSpace(configPassword) ? defaultPassword : configPassword;
 
         var user = await userManager.FindByEmailAsync(email);
         if (user == null)

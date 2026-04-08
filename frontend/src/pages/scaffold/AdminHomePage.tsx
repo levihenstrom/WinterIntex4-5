@@ -1,7 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchPaged, type PagedResult } from '../../lib/apiClient';
+import {
+  getAtRiskDonors,
+  getResidentPriority,
+  recommendSocialPost,
+  type DonorChurnRow,
+  type ResidentMlScoreRow,
+  type SocialRecommendResponse,
+} from '../../lib/mlApi';
 import { useAuth } from '../../context/AuthContext';
+import 'bootstrap-icons/font/bootstrap-icons.css';
 
 interface MetricState {
   count: number | null;
@@ -64,7 +73,7 @@ function MetricCard({ label, sublabel, metric, accentColor, icon, linkTo }: Metr
                 fontSize: '1.5rem',
               }}
             >
-              {icon}
+              {icon.includes('bi-') ? <i className={icon} /> : <i className={`bi bi-${icon}`} />}
             </div>
             <div>
               <p className="hw-eyebrow mb-1" style={{ color: accentColor }}>
@@ -120,7 +129,7 @@ function QuickLink({ to, icon, title, description }: QuickLinkProps) {
           (e.currentTarget as HTMLElement).style.background = 'var(--hw-bg-white)';
         }}
       >
-        <span style={{ fontSize: '1.4rem', lineHeight: 1, marginTop: 2 }}>{icon}</span>
+        <i className={icon.includes('bi-') ? icon : `bi bi-${icon}`} style={{ fontSize: '1.4rem', lineHeight: 1, marginTop: 2 }} />
         <div>
           <p className="fw-semibold mb-1" style={{ color: 'var(--hw-purple)' }}>{title}</p>
           <p className="small text-muted mb-0">{description}</p>
@@ -147,6 +156,230 @@ function fmtDonationMoney(n: number | null | undefined, currency = 'PHP') {
   } catch {
     return `${currency} ${n.toFixed(0)}`;
   }
+}
+
+// ── ML dashboard widgets (isolated fetch/error so one failure does not block others) ──
+
+function MlSectionCard({
+  title,
+  children,
+  footerLink,
+}: {
+  title: string;
+  children: ReactNode;
+  footerLink?: { to: string; label: string };
+}) {
+  return (
+    <div className="col-12 col-lg-4">
+      <div className="card border-0 shadow-sm rounded-3 h-100">
+        <div className="card-body d-flex flex-column">
+          <p className="hw-eyebrow mb-2" style={{ color: 'var(--hw-teal)' }}>
+            ML insights
+          </p>
+          <h3 className="h6 fw-semibold mb-3" style={{ color: 'var(--hw-navy)' }}>
+            {title}
+          </h3>
+          <div className="flex-grow-1 small">{children}</div>
+          {footerLink && (
+            <Link
+              to={footerLink.to}
+              className="small fw-semibold text-decoration-none mt-3"
+              style={{ color: 'var(--hw-purple)' }}
+            >
+              {footerLink.label} →
+            </Link>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ResidentsNeedingAttentionWidget() {
+  const [rows, setRows] = useState<ResidentMlScoreRow[] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    getResidentPriority(10)
+      .then((r) => {
+        if (!cancelled) {
+          setRows(r);
+          setErr(null);
+        }
+      })
+      .catch((e: Error) => {
+        if (!cancelled) {
+          setErr(e.message || 'Could not load ML priority list.');
+          setRows(null);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (loading) {
+    return <p className="text-muted mb-0">Loading…</p>;
+  }
+  if (err) {
+    return <p className="text-danger mb-0">{err}</p>;
+  }
+  if (!rows?.length) {
+    return <p className="text-muted mb-0">No ML readiness rows returned.</p>;
+  }
+
+  return (
+    <ul className="list-unstyled mb-0" style={{ maxHeight: 220, overflowY: 'auto' }}>
+      {rows.slice(0, 8).map((r) => (
+        <li key={r.residentCode} className="mb-2 pb-2 border-bottom border-light">
+          <div className="fw-semibold" style={{ color: 'var(--hw-navy)' }}>
+            {r.residentCode}
+            <span className="text-muted fw-normal ms-1">· rank {r.supportPriorityRank}</span>
+          </div>
+          <div className="text-muted">{r.operationalBand}</div>
+          <div className="text-muted">
+            Readiness %ile:{' '}
+            {r.readinessPercentileAmongCurrentResidents != null
+              ? `${Number(r.readinessPercentileAmongCurrentResidents).toFixed(1)}%`
+              : '—'}
+          </div>
+          {r.topRiskFactors?.[0] && (
+            <div className="text-truncate" title={r.topRiskFactors[0]} style={{ fontSize: 12, color: '#64748B' }}>
+              Risk: {r.topRiskFactors[0]}
+            </div>
+          )}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function AtRiskDonorsWidget() {
+  const [rows, setRows] = useState<DonorChurnRow[] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    getAtRiskDonors(10)
+      .then((r) => {
+        if (!cancelled) {
+          setRows(r);
+          setErr(null);
+        }
+      })
+      .catch((e: Error) => {
+        if (!cancelled) {
+          setErr(e.message || 'Could not load at-risk donors.');
+          setRows(null);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (loading) {
+    return <p className="text-muted mb-0">Loading…</p>;
+  }
+  if (err) {
+    return <p className="text-danger mb-0">{err}</p>;
+  }
+  if (!rows?.length) {
+    return <p className="text-muted mb-0">No donor churn scores returned.</p>;
+  }
+
+  return (
+    <ul className="list-unstyled mb-0" style={{ maxHeight: 220, overflowY: 'auto' }}>
+      {rows.slice(0, 8).map((d) => (
+        <li key={d.supporterId} className="mb-2 pb-2 border-bottom border-light">
+          <div className="fw-semibold" style={{ color: 'var(--hw-navy)' }}>
+            {d.displayName || `Supporter #${d.supporterId}`}
+          </div>
+          <div className="text-muted">
+            {d.riskBand} · outreach rank {d.outreachPriorityRank} · score {Number(d.churnRiskScore).toFixed(2)}
+          </div>
+          {d.topDrivers?.[0] && (
+            <div className="text-truncate" title={d.topDrivers[0]} style={{ fontSize: 12, color: '#64748B' }}>
+              {d.topDrivers[0]}
+            </div>
+          )}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function BestNextPostWidget() {
+  const [data, setData] = useState<SocialRecommendResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    recommendSocialPost({ goal: 'donations', topK: 1 })
+      .then((r) => {
+        if (!cancelled) {
+          setData(r);
+          setErr(null);
+        }
+      })
+      .catch((e: Error) => {
+        if (!cancelled) {
+          setErr(e.message || 'Social ML service unavailable.');
+          setData(null);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (loading) {
+    return <p className="text-muted mb-0">Loading…</p>;
+  }
+  if (err) {
+    return <p className="text-danger mb-0">{err}</p>;
+  }
+  const rec = data?.recommendations?.[0];
+  if (!rec) {
+    return <p className="text-muted mb-0">No recommendation returned.</p>;
+  }
+
+  return (
+    <div>
+      <div className="mb-1">
+        <span className="fw-semibold" style={{ color: 'var(--hw-navy)' }}>
+          {rec.platform}
+        </span>
+        <span className="text-muted"> · {rec.postType}</span>
+      </div>
+      <div className="text-muted small">
+        {rec.mediaType} · {rec.postHour}:00 · topic: {rec.contentTopic || '—'}
+      </div>
+      <div className="small mt-2">
+        P(referral):{' '}
+        <strong>{(rec.predictedPAnyReferral * 100).toFixed(0)}%</strong>
+      </div>
+      <p className="small text-muted mt-2 mb-0" style={{ lineHeight: 1.45 }}>
+        {rec.whyRecommended}
+      </p>
+    </div>
+  );
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────
@@ -181,11 +414,34 @@ export default function AdminHomePage() {
     <div className="py-4" style={{ background: 'var(--hw-bg-gray)', minHeight: '100%' }}>
       <div className="container-xl">
 
-        {/* Header */}
+        {/* Header — match other admin pages (Poppins, bold navy title) */}
         <div className="mb-5">
-          <p className="hw-eyebrow mb-1">Admin Portal</p>
-          <h1 className="hw-heading mb-1" style={{ fontSize: '2rem' }}>Dashboard</h1>
-          <p className="text-muted mb-0">
+          <span
+            style={{
+              display: 'block',
+              fontSize: 12,
+              fontWeight: 700,
+              color: '#0D9488',
+              letterSpacing: 2,
+              textTransform: 'uppercase',
+              marginBottom: 8,
+            }}
+          >
+            Administration
+          </span>
+          <h1
+            style={{
+              fontFamily: 'Poppins, sans-serif',
+              fontWeight: 700,
+              fontSize: 28,
+              color: '#1E3A5F',
+              marginBottom: 8,
+              lineHeight: 1.2,
+            }}
+          >
+            Dashboard
+          </h1>
+          <p className="text-muted mb-0" style={{ fontSize: 14 }}>
             Welcome back, <strong>{authSession.email}</strong>
             {authSession.roles.length > 0 && (
               <span className="ms-2">
@@ -210,7 +466,7 @@ export default function AdminHomePage() {
             sublabel="All Residents"
             metric={totalResidents}
             accentColor="var(--hw-purple)"
-            icon="👥"
+            icon="people"
             linkTo="/admin/residents"
           />
           <MetricCard
@@ -218,25 +474,50 @@ export default function AdminHomePage() {
             sublabel="Active Cases"
             metric={activeResidents}
             accentColor="var(--hw-teal)"
-            icon="📋"
+            icon="clipboard-data"
             linkTo="/admin/residents"
           />
           <MetricCard
             label="Counseling sessions logged"
-            sublabel="Process Recordings"
+            sublabel="Session notes"
             metric={totalSessions}
             accentColor="var(--hw-purple-light)"
-            icon="📝"
+            icon="file-earmark-text"
             linkTo="/admin/residents/process-recordings"
           />
           <MetricCard
             label="Home visits conducted"
-            sublabel="Home Visitations"
+            sublabel="Visits & conferences"
             metric={totalVisits}
             accentColor="var(--hw-amber)"
-            icon="🏠"
+            icon="house-door"
             linkTo="/admin/residents/visits-conferences"
           />
+        </div>
+
+        {/* ML insights — staff-only API; failures are contained per widget */}
+        <div className="mb-5">
+          <p className="hw-eyebrow mb-3">Machine learning</p>
+          <div className="row g-3">
+            <MlSectionCard
+              title="Residents needing attention"
+              footerLink={{ to: '/admin/residents', label: 'Open caseload' }}
+            >
+              <ResidentsNeedingAttentionWidget />
+            </MlSectionCard>
+            <MlSectionCard
+              title="At-risk donors"
+              footerLink={{ to: '/admin/donations', label: 'Open supporters' }}
+            >
+              <AtRiskDonorsWidget />
+            </MlSectionCard>
+            <MlSectionCard
+              title="Best next post (live model)"
+              footerLink={{ to: '/admin/social-media/suggest', label: 'Explore recommendations' }}
+            >
+              <BestNextPostWidget />
+            </MlSectionCard>
+          </div>
         </div>
 
         {/* Recent donations */}
@@ -314,13 +595,13 @@ export default function AdminHomePage() {
               color: 'white',
             }}
           >
-            <span style={{ fontSize: '1.5rem' }}>📅</span>
+            <i className="bi bi-calendar-event" style={{ fontSize: '1.5rem' }} />
             <div>
               <p className="fw-semibold mb-0">
                 {upcomingConfs.count} upcoming case conference{upcomingConfs.count !== 1 ? 's' : ''}
               </p>
               <p className="small mb-0" style={{ opacity: 0.85 }}>
-                Review scheduled conferences in the Home Visits &amp; Conferences tab.
+                Review scheduled conferences in the Visits &amp; conferences tab.
               </p>
             </div>
             <Link
@@ -345,31 +626,31 @@ export default function AdminHomePage() {
         <div className="row g-3">
           <QuickLink
             to="/admin/residents"
-            icon="👥"
-            title="Caseload Inventory"
+            icon="people"
+            title="Residents"
             description="View, search, and manage all resident profiles."
           />
           <QuickLink
             to="/admin/residents/process-recordings"
-            icon="📝"
-            title="Process Recordings"
-            description="Log and review counseling session notes."
+            icon="file-earmark-text"
+            title="Session notes"
+            description="Record and review counseling session documentation."
           />
           <QuickLink
             to="/admin/residents/visits-conferences"
-            icon="🏠"
-            title="Home Visits &amp; Conferences"
-            description="Record field visits and view upcoming conferences."
+            icon="house-door"
+            title="Visits &amp; conferences"
+            description="Log home visits and see upcoming case conferences."
           />
           <QuickLink
             to="/admin/donations"
-            icon="💛"
+            icon="heart"
             title="Supporters"
             description="Manage donor profiles and contribution history."
           />
           <QuickLink
             to="/admin/reports"
-            icon="📊"
+            icon="bar-chart-fill"
             title="Reports &amp; Analytics"
             description="Giving trends, outcomes, site performance, and annual service summaries."
           />
