@@ -146,25 +146,32 @@ export default function NavBar() {
               </NavLink>
             ))
           ) : (
-            NAV_LINKS.map((link) =>
-              link.to ? (
-                <Link
-                  key={link.label}
-                  to={link.to}
-                  className="text-sm font-medium text-white/75 hover:text-white transition-colors no-underline"
-                >
-                  {link.label}
+            <>
+              {NAV_LINKS.map((link) =>
+                link.to ? (
+                  <Link
+                    key={link.label}
+                    to={link.to}
+                    className="text-sm font-medium text-white/75 hover:text-white transition-colors no-underline"
+                  >
+                    {link.label}
+                  </Link>
+                ) : (
+                  <a
+                    key={link.label}
+                    href={sectionHref(link.hash!)}
+                    className="text-sm font-medium text-white/75 hover:text-white transition-colors no-underline"
+                  >
+                    {link.label}
+                  </a>
+                )
+              )}
+              {isAuthenticated && (
+                <Link to="/donor" className="text-sm font-medium text-white/75 hover:text-white transition-colors no-underline">
+                  My Portal
                 </Link>
-              ) : (
-                <a
-                  key={link.label}
-                  href={sectionHref(link.hash!)}
-                  className="text-sm font-medium text-white/75 hover:text-white transition-colors no-underline"
-                >
-                  {link.label}
-                </a>
-              )
-            )
+              )}
+            </>
           )}
         </nav>
 
@@ -266,27 +273,38 @@ export default function NavBar() {
               </NavLink>
             ))
           ) : (
-            NAV_LINKS.map((link) =>
-              link.to ? (
+            <>
+              {NAV_LINKS.map((link) =>
+                link.to ? (
+                  <Link
+                    key={link.label}
+                    to={link.to}
+                    onClick={() => setMenuOpen(false)}
+                    className="block py-3 text-white/75 hover:text-white font-medium text-sm border-b border-white/10 no-underline transition-colors"
+                  >
+                    {link.label}
+                  </Link>
+                ) : (
+                  <a
+                    key={link.label}
+                    href={sectionHref(link.hash!)}
+                    onClick={() => setMenuOpen(false)}
+                    className="block py-3 text-white/75 hover:text-white font-medium text-sm border-b border-white/10 no-underline transition-colors"
+                  >
+                    {link.label}
+                  </a>
+                )
+              )}
+              {isAuthenticated && (
                 <Link
-                  key={link.label}
-                  to={link.to}
+                  to="/donor"
                   onClick={() => setMenuOpen(false)}
                   className="block py-3 text-white/75 hover:text-white font-medium text-sm border-b border-white/10 no-underline transition-colors"
                 >
-                  {link.label}
+                  My Portal
                 </Link>
-              ) : (
-                <a
-                  key={link.label}
-                  href={sectionHref(link.hash!)}
-                  onClick={() => setMenuOpen(false)}
-                  className="block py-3 text-white/75 hover:text-white font-medium text-sm border-b border-white/10 no-underline transition-colors"
-                >
-                  {link.label}
-                </a>
-              )
-            )
+              )}
+            </>
           )}
 
           {/* Mobile account section */}
