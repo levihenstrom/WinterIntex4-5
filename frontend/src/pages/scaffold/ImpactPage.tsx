@@ -56,7 +56,42 @@ function normalizeSnapshot(s: ApiImpactSnapshot): ImpactSnapshot {
 }
 
 /* ── Helpers ─────────────────────────────────────────────────── */
-const parse = (j: string): MetricPayload => { try { return JSON.parse(j); } catch { return {} as MetricPayload; } };
+function asNumber(v: unknown, fallback = 0): number {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function parseMetricPayload(raw: string): MetricPayload {
+  let parsed: Record<string, unknown> = {};
+  try {
+    parsed = JSON.parse(raw) as Record<string, unknown>;
+  } catch {
+    // Support legacy payloads that were persisted with single quotes.
+    try {
+      parsed = JSON.parse(raw.replace(/'/g, '"')) as Record<string, unknown>;
+    } catch {
+      parsed = {};
+    }
+  }
+
+  return {
+    residents_served: asNumber(parsed.residents_served ?? parsed.total_residents),
+    new_admissions: asNumber(parsed.new_admissions),
+    successful_reintegrations: asNumber(
+      parsed.successful_reintegrations ?? parsed.reintegrations_completed,
+    ),
+    reintegration_rate_pct: asNumber(
+      parsed.reintegration_rate_pct ?? parsed.reintegration_success_rate_pct,
+    ),
+    active_volunteers: asNumber(parsed.active_volunteers),
+    volunteer_hours: asNumber(parsed.volunteer_hours),
+    programs_completed: asNumber(parsed.programs_completed),
+    donations_received_usd: asNumber(
+      parsed.donations_received_usd ?? parsed.donations_total_for_month ?? parsed.donations_total,
+    ),
+    safehouses_active: asNumber(parsed.safehouses_active ?? parsed.safehouses),
+  };
+}
 const fmtMonth = (iso: string) => new Date(iso + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 const fmtShort = (iso: string) => new Date(iso + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
 
@@ -104,7 +139,7 @@ function StatBox({ label, value, color, bg, border }: { label: string; value: st
 /* ── Report card ─────────────────────────────────────────────── */
 function ReportCard({ snap, featured = false }: { snap: ImpactSnapshot; featured?: boolean }) {
   const [open, setOpen] = useState(featured);
-  const p = parse(snap.metric_payload_json);
+  const p = parseMetricPayload(snap.metric_payload_json);
   const ref = useFadeIn();
 
   const pills = [
@@ -186,7 +221,7 @@ export default function ImpactPage() {
   const rest = published.slice(1);
 
   const chartData = [...published].reverse().map((s) => {
-    const p = parse(s.metric_payload_json);
+    const p = parseMetricPayload(s.metric_payload_json);
     return {
       month: fmtShort(s.snapshot_date),
       donations: p.donations_received_usd,
@@ -203,17 +238,17 @@ export default function ImpactPage() {
   const radialColors = ['#6B21A8', '#7C3AED', '#0D9488', '#D97706', '#34d399', '#60a5fa'];
   const radialData = [...published].reverse().map((s, i) => ({
     name: fmtShort(s.snapshot_date),
-    value: parse(s.metric_payload_json).successful_reintegrations,
+    value: parseMetricPayload(s.metric_payload_json).successful_reintegrations,
     fill: radialColors[i % radialColors.length],
   }));
 
   const maxResidents =
     published.length > 0
-      ? Math.max(...published.map((s) => parse(s.metric_payload_json).residents_served ?? 0))
+      ? Math.max(...published.map((s) => parseMetricPayload(s.metric_payload_json).residents_served ?? 0))
       : 0;
-  const totalReint = published.reduce((n, s) => n + (parse(s.metric_payload_json).successful_reintegrations ?? 0), 0);
-  const totalHours = published.reduce((n, s) => n + (parse(s.metric_payload_json).volunteer_hours ?? 0), 0);
-  const totalDonations = published.reduce((n, s) => n + (parse(s.metric_payload_json).donations_received_usd ?? 0), 0);
+  const totalReint = published.reduce((n, s) => n + (parseMetricPayload(s.metric_payload_json).successful_reintegrations ?? 0), 0);
+  const totalHours = published.reduce((n, s) => n + (parseMetricPayload(s.metric_payload_json).volunteer_hours ?? 0), 0);
+  const totalDonations = published.reduce((n, s) => n + (parseMetricPayload(s.metric_payload_json).donations_received_usd ?? 0), 0);
 
   return (
     <div style={{ fontFamily: 'var(--hw-font-body)', minHeight: '100vh', background: '#f8fafc' }}>

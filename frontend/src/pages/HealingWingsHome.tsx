@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import NavBar from '../components/hw/NavBar';
 import MetricCard from '../components/hw/MetricCard';
 import DonationWidget from '../components/hw/DonationWidget';
 import Footer from '../components/hw/Footer';
 import CarouselPillarsSection from '../components/hw/CarouselPillarsSection';
+import { fetchJson } from '../lib/apiClient';
 
 // ── Scroll fade-in hook ───────────────────────────────────────────────────────
 function useFadeIn() {
@@ -24,6 +25,33 @@ function useFadeIn() {
 // ── Image URLs ────────────────────────────────────────────────────────────────
 const HERO_IMG = '/girls.avif';
 const MISSION_IMG = '/free.avif';
+
+interface PublicImpactSnapshot {
+  snapshotId: number;
+  snapshotDate?: string | null;
+  metricPayloadJson?: string | null;
+}
+
+interface PublicMetricPayload {
+  residents_served?: number;
+  safehouses_active?: number;
+  reintegration_rate_pct?: number;
+  total_residents?: number;
+}
+
+function parsePublicMetricPayload(raw: string | null | undefined): PublicMetricPayload {
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw) as PublicMetricPayload;
+  } catch {
+    try {
+      // Support legacy single-quoted payload rows.
+      return JSON.parse(raw.replace(/'/g, '"')) as PublicMetricPayload;
+    } catch {
+      return {};
+    }
+  }
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Section 1 — Hero
@@ -75,15 +103,25 @@ function HeroSection() {
 // ─────────────────────────────────────────────────────────────────────────────
 // Section 2 — Impact Numbers Bar
 // ─────────────────────────────────────────────────────────────────────────────
-function ImpactBar() {
+function ImpactBar({
+  residentsServed,
+  safehousesActive,
+  reintegrationRatePct,
+  yearsOfImpact,
+}: {
+  residentsServed: number;
+  safehousesActive: number;
+  reintegrationRatePct: number;
+  yearsOfImpact: number;
+}) {
   return (
     <section id="impact" className="relative z-20 mx-auto max-w-7xl w-[92%] -mt-20 sm:-mt-24 lg:-mt-28 bg-[#1E3A5F]/75 backdrop-blur-xl rounded-[2rem] shadow-2xl border border-white/20">
       <div className="py-10 px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-white/20 gap-y-10 lg:gap-y-0 text-center">
-          <MetricCard target={247} label="children Served" />
-          <MetricCard target={4} label="Safe Homes" />
-          <MetricCard target={89} suffix="%" label="Reintegration Rate" />
-          <MetricCard target={6} label="Years of Impact" />
+          <MetricCard target={residentsServed} label="children Served" />
+          <MetricCard target={safehousesActive} label="Safe Homes" />
+          <MetricCard target={reintegrationRatePct} suffix="%" label="Reintegration Rate" />
+          <MetricCard target={yearsOfImpact} label="Years of Impact" />
         </div>
       </div>
     </section>
@@ -404,11 +442,58 @@ function DonorWallSection() {
 // Page
 // ─────────────────────────────────────────────────────────────────────────────
 export default function HealingWingsHome() {
+  const [impactKpis, setImpactKpis] = useState({
+    residentsServed: 247,
+    safehousesActive: 4,
+    reintegrationRatePct: 89,
+    yearsOfImpact: 6,
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchJson<PublicImpactSnapshot[]>('/api/public-impact/snapshots')
+      .then((rows) => {
+        if (cancelled || rows.length === 0) return;
+        const latest = [...rows].sort((a, b) => {
+          const ad = a.snapshotDate ? new Date(a.snapshotDate).getTime() : 0;
+          const bd = b.snapshotDate ? new Date(b.snapshotDate).getTime() : 0;
+          return bd - ad;
+        })[0];
+
+        const parsed = parsePublicMetricPayload(latest.metricPayloadJson);
+
+        const years = new Set(
+          rows
+            .map((r) => (r.snapshotDate ? new Date(r.snapshotDate).getFullYear() : null))
+            .filter((y): y is number => y != null && Number.isFinite(y)),
+        ).size;
+
+        setImpactKpis((prev) => ({
+          residentsServed: Number(parsed.residents_served ?? parsed.total_residents ?? prev.residentsServed) || prev.residentsServed,
+          safehousesActive: Number(parsed.safehouses_active ?? prev.safehousesActive) || prev.safehousesActive,
+          reintegrationRatePct: Number(parsed.reintegration_rate_pct ?? prev.reintegrationRatePct) || prev.reintegrationRatePct,
+          yearsOfImpact: years > 0 ? years : prev.yearsOfImpact,
+        }));
+      })
+      .catch(() => {
+        // Keep defaults when public impact snapshots are unavailable.
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <div style={{ fontFamily: 'var(--hw-font-body)' }}>
       <NavBar />
       <HeroSection />
-      <ImpactBar />
+      <ImpactBar
+        residentsServed={impactKpis.residentsServed}
+        safehousesActive={impactKpis.safehousesActive}
+        reintegrationRatePct={impactKpis.reintegrationRatePct}
+        yearsOfImpact={impactKpis.yearsOfImpact}
+      />
       <MissionSection />
       <CarouselPillarsSection />
       <DonationBanner />
