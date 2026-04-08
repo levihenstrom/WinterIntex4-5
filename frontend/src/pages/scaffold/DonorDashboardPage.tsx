@@ -456,6 +456,8 @@ export default function DonorDashboardPage() {
                               <div
                                 key={row.label}
                                 onMouseEnter={() => setHoveredCategory(row)}
+                                title={`${row.label} - hover for details`}
+                                aria-label={`${row.label} segment`}
                                 style={{
                                   width: `${pct}%`,
                                   background: pal.color,
