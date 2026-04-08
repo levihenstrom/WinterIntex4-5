@@ -34,7 +34,7 @@ public sealed class PublicImpactController(AppDbContext db) : ControllerBase
         // public landing and impact pages always show real data rather than hardcoded defaults.
         var totalResidents = await db.Residents.CountAsync(cancellationToken);
         var reintegrated = await db.Residents
-            .CountAsync(r => r.ReintegrationStatus != null, cancellationToken);
+            .CountAsync(r => r.ReintegrationStatus == "Completed", cancellationToken);
         var safehousesActive = await db.Safehouses
             .CountAsync(s => s.Status == "Active", cancellationToken);
         if (safehousesActive == 0)
@@ -78,9 +78,10 @@ public sealed class PublicImpactController(AppDbContext db) : ControllerBase
     {
         var totalResidents = await db.Residents.CountAsync(cancellationToken);
 
-        // Residents who have any reintegration status recorded are considered successfully reintegrated.
+        // Only "Completed" reintegration_status counts as a successful reintegration.
+        // "Closed" cases may be administrative closures; "Transferred" means moved to another facility.
         var reintegrated = await db.Residents
-            .CountAsync(r => r.ReintegrationStatus != null, cancellationToken);
+            .CountAsync(r => r.ReintegrationStatus == "Completed", cancellationToken);
 
         var safehousesActive = await db.Safehouses
             .CountAsync(s => s.Status == "Active", cancellationToken);
