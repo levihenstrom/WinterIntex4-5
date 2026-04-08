@@ -59,12 +59,12 @@ export default function AdminSectionTabs({ tabs }: { tabs: AdminSectionTabItem[]
               <NavLink
                 to={tab.to}
                 end={tab.end}
-                style={({ isActive }) => ({
+                style={({ isActive }: { isActive: boolean }) => ({
                   ...baseLink,
                   ...(isActive ? activeLink : {}),
                 })}
               >
-                {({ isActive }) => (
+                {({ isActive }: { isActive: boolean }) => (
                   <>
                     {tab.icon ? (
                       <i
