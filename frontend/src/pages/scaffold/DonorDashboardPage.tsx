@@ -289,6 +289,10 @@ export default function DonorDashboardPage() {
       setGiveSuccess('Thank you! Your donation was recorded successfully.');
       await loadDonations({ silent: true });
       setGiveForm((f) => ({ ...f, amount: '', campaign: '', note: '' }));
+      setTimeout(() => {
+        setShowGiveModal(false);
+        setGiveSuccess(null);
+      }, 1500);
     } catch (err) {
       setGiveError(err instanceof Error ? err.message : 'Could not submit donation right now.');
     } finally {

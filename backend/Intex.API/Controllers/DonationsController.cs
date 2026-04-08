@@ -65,6 +65,7 @@ public class DonationsController(AppDbContext db, StaffScopeResolver scopeResolv
 
         var query = db.Donations.AsNoTracking()
             .Include(d => d.Supporter)
+            .Include(d => d.DonationAllocations)
             .Where(d => d.SupporterId == supporterId)
             .OrderByDescending(d => d.DonationDate)
             .ThenBy(d => d.DonationId);
