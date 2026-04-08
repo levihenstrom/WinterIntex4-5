@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { fetchPaged } from '../../lib/apiClient';
 import NavBar from '../../components/hw/NavBar';
 import MetricCard from '../../components/hw/MetricCard';
-import SectionContainer from '../../components/hw/SectionContainer';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
 /* ── Types ───────────────────────────────────────────────────── */
