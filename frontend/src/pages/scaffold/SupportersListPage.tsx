@@ -369,7 +369,7 @@ export default function SupportersListPage() {
               >
                 <strong>ML at-risk donors:</strong> {mlCriticalOrHighCount} supporter
                 {mlCriticalOrHighCount !== 1 ? 's' : ''} scored Critical or High churn risk (
-                {donorMlById.size} total with ML scores). Merge key: <code>supporterId</code>.
+                {donorMlById.size} total with ML scores).
               </div>
             )}
 

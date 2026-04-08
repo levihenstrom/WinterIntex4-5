@@ -15,8 +15,9 @@ Override via environment variables, e.g. `MlInferenceService__BaseUrl`, `MlInfer
 
 ## Local development
 
-- Run FastAPI (e.g. `uvicorn ml_service.main:app --port 8001`).
-- In `appsettings.Development.json`, set `MlInferenceService:BaseUrl` to that base URL (see checked-in example).
+- Run FastAPI from the repo root (e.g. `uvicorn ml_service.main:app --reload --port 8001`).
+- `appsettings.json` defaults `BaseUrl` to `http://127.0.0.1:8001` so the API works even when `ASPNETCORE_ENVIRONMENT` is not `Development`. Override the port in `appsettings.Development.json` or with `MlInferenceService__BaseUrl` if your service listens elsewhere.
+- **Production:** `appsettings.Production.json` sets `BaseUrl` to empty; set `MlInferenceService__BaseUrl` (or your host’s config) to your deployed FastAPI URL.
 - Call `POST /api/ml/social/recommend` on the .NET API (staff-authenticated); the response is camelCase DTOs, not raw Python JSON.
 
 ## FastAPI changes
