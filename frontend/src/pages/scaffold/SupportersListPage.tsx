@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { deleteJson, fetchAllPaged, postJson, putJson } from '../../lib/apiClient';
 import AdminKpiStrip from '../../components/admin/AdminKpiStrip';
+import DeleteConfirmModal from '../../components/DeleteConfirmModal';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import { buildDonorMlMap, getCurrentDonorScores, type DonorChurnRow } from '../../lib/mlApi';
 
@@ -62,6 +63,10 @@ const CHURN_BAND_COLORS: Record<string, { bg: string; text: string }> = {
 function labelForType(t: string | null | undefined): string {
   if (!t) return 'Supporter';
   return TYPE_LABEL[t] ?? t;
+}
+
+function supporterDisplayLabel(s: SupporterApi): string {
+  return (s.displayName ?? s.organizationName ?? `#${s.supporterId}`).trim();
 }
 
 function fmtMoneyPhp(n: number) {
@@ -158,6 +163,7 @@ export default function SupportersListPage() {
   const [form, setForm] = useState<FormState>(emptyForm);
   /** Full row from API when editing — merged into PUT so we do not null optional columns. */
   const [editSource, setEditSource] = useState<SupporterApi | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: number; label: string } | null>(null);
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -239,10 +245,10 @@ export default function SupportersListPage() {
     [supporters, donorMlById],
   );
 
-  async function handleDelete(id: number) {
-    if (!window.confirm('Delete this supporter? Linked donations may block this action.')) return;
+  async function performDeleteSupporter(id: number) {
     try {
       await deleteJson(`/api/supporters/${id}`);
+      setDeleteTarget(null);
       await reload();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Delete failed');
@@ -848,7 +854,12 @@ export default function SupportersListPage() {
                               <button
                                 type="button"
                                 className="dropdown-item text-danger"
-                                onClick={() => void handleDelete(s.supporterId)}
+                                onClick={() =>
+                                  setDeleteTarget({
+                                    id: s.supporterId,
+                                    label: supporterDisplayLabel(s),
+                                  })
+                                }
                               >
                                 Delete
                               </button>
@@ -864,6 +875,16 @@ export default function SupportersListPage() {
             )}
           </>
         )}
+
+        <DeleteConfirmModal
+          show={deleteTarget !== null}
+          itemLabel={deleteTarget?.label ?? ''}
+          description="Linked donations or other records may prevent deletion; the server will return an error if so."
+          onCancel={() => setDeleteTarget(null)}
+          onConfirm={() => {
+            if (deleteTarget) void performDeleteSupporter(deleteTarget.id);
+          }}
+        />
       </div>
     </div>
   );
