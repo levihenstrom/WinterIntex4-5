@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import HealingWingsLogo from './HealingWingsLogo';
 
 const SOCIAL_ICONS = {
   Instagram: (
@@ -37,10 +38,7 @@ export default function Footer() {
           {/* Col 1: Brand */}
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
-                <path d="M14 26C14 26 3 19 3 11C3 7.13 6.13 4 10 4C11.9 4 13.6 4.78 14 5C14.4 4.78 16.1 4 18 4C21.87 4 25 7.13 25 11C25 19 14 26 14 26Z" fill="#0D9488" opacity="0.9" />
-                <path d="M14 26C14 26 7 17 7 11C7 8.24 9.24 6 12 6C13.1 6 14 6.45 14 6.45V26Z" fill="#5eead4" opacity="0.6" />
-              </svg>
+              <HealingWingsLogo size={22} />
               <span className="font-bold text-base text-white" style={{ fontFamily: 'Poppins, sans-serif' }}>
                 HealingWings
               </span>
