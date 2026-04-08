@@ -22,7 +22,6 @@ const ADMIN_NAV_LINKS = [
 export default function NavBar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const navigate = useNavigate();
@@ -49,14 +48,6 @@ export default function NavBar() {
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, []);
 
-  /** Toggle dark mode on <html> */
-  function toggleDarkMode() {
-    const next = !darkMode;
-    setDarkMode(next);
-    document.documentElement.classList.toggle('dark', next);
-    document.documentElement.setAttribute('data-bs-theme', next ? 'dark' : 'light');
-  }
-
   // ── Dropdown menu (desktop) ─────────────────────────────────────────────────
   const dropdownMenu = dropdownOpen && (
     <div className="absolute right-0 top-[calc(100%+8px)] bg-white/95 backdrop-blur-3xl rounded-2xl shadow-[0_16px_50px_rgba(30,58,95,0.15)] min-w-[250px] z-[3000] overflow-hidden border border-stone-200/60 p-1.5 flex flex-col">
@@ -76,22 +67,6 @@ export default function NavBar() {
           </div>
         )}
       </div>
-
-      {/* Dark / Light mode toggle */}
-      <button
-        type="button"
-        onClick={toggleDarkMode}
-        className="w-full bg-transparent border-none cursor-pointer px-4 py-2.5 flex items-center gap-3 text-[13px] text-[#1E3A5F] font-semibold text-left rounded-xl hover:bg-stone-50 transition-colors"
-      >
-        <span className="w-7 h-7 rounded-full bg-stone-100 flex items-center justify-center flex-shrink-0 text-stone-600">
-          <i className={`bi ${darkMode ? 'bi-sun-fill text-[#D97706]' : 'bi-moon-stars-fill text-[#1E3A5F]'} text-[13px]`} />
-        </span>
-        <span className="flex-1">{darkMode ? 'Light Mode' : 'Dark Mode'}</span>
-        {/* Toggle pill */}
-        <span className={`relative inline-flex items-center w-[30px] h-[16px] rounded-full transition-colors flex-shrink-0 ${darkMode ? 'bg-[#0D9488]' : 'bg-stone-300'}`}>
-          <span className={`absolute left-[2px] w-[12px] h-[12px] rounded-full bg-white shadow-sm transition-all duration-300 ${darkMode ? 'translate-x-[14px]' : 'translate-x-0'}`} />
-        </span>
-      </button>
 
       {/* User Manager — Admin only */}
       {isAdmin && (
@@ -334,19 +309,6 @@ export default function NavBar() {
                     </div>
                   )}
                 </div>
-
-                {/* Dark mode toggle */}
-                <button
-                  type="button"
-                  onClick={toggleDarkMode}
-                  className="w-full bg-white/5 border border-transparent rounded-xl cursor-pointer p-3.5 flex items-center gap-3 text-[13px] text-white font-medium text-left hover:bg-white/10 transition-colors mb-1.5"
-                >
-                  <i className={`bi ${darkMode ? 'bi-sun-fill text-[#D97706]' : 'bi-moon-stars-fill text-teal-400'} text-[15px]`} />
-                  <span className="flex-1">{darkMode ? 'Light Mode' : 'Dark Mode'}</span>
-                  <span className={`relative inline-flex items-center w-[32px] h-[18px] rounded-full transition-colors ${darkMode ? 'bg-[#0D9488]' : 'bg-white/30'}`}>
-                    <span className={`absolute left-[2px] w-[14px] h-[14px] rounded-full bg-white shadow-sm transition-all duration-300 ${darkMode ? 'translate-x-[14px]' : 'translate-x-0'}`} />
-                  </span>
-                </button>
 
                 {/* User Manager — Admin only */}
                 {isAdmin && (
