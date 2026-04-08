@@ -2,8 +2,6 @@ import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { fetchPaged } from '../../lib/apiClient';
 import NavBar from '../../components/hw/NavBar';
 import MetricCard from '../../components/hw/MetricCard';
-import SectionContainer from '../../components/hw/SectionContainer';
-import 'bootstrap-icons/font/bootstrap-icons.css';
 
 /* ── Types ───────────────────────────────────────────────────── */
 interface DonationAllocationApi {
@@ -365,52 +363,83 @@ export default function DonorDashboardPage() {
                 ) : (
                   <div
                     style={{
-                      display: 'flex',
-                      flexWrap: 'wrap',
-                      gap: 8,
-                      padding: '1rem 1.25rem',
+                      width: '100%',
+                      boxSizing: 'border-box',
+                      padding: '1.25rem',
                       background: '#fafaf9',
                       border: '1px solid #f1f5f9',
                       borderRadius: 16,
                     }}
                   >
-                    {programImpact.map((row, idx) => {
-                      const pal = CATEGORY_PILL_STYLES[idx % CATEGORY_PILL_STYLES.length];
-                      return (
-                        <div
-                          key={row.label}
-                          style={{
-                            background: pal.bg,
-                            border: `1px solid ${pal.border}`,
-                            borderRadius: 12,
-                            padding: '0.5rem 0.85rem',
-                            textAlign: 'center',
-                            minWidth: 100,
-                          }}
-                        >
-                          <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 800, fontSize: '1.1rem', color: pal.color, lineHeight: 1 }}>
-                            {formatMoney(row.totalAmount)}
-                          </div>
+                    <div
+                      style={{
+                        display: 'grid',
+                        width: '100%',
+                        boxSizing: 'border-box',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))',
+                        gap: '1rem',
+                      }}
+                    >
+                      {programImpact.map((row, idx) => {
+                        const pal = CATEGORY_PILL_STYLES[idx % CATEGORY_PILL_STYLES.length];
+                        return (
                           <div
+                            key={row.label}
                             style={{
-                              fontFamily: 'Inter, sans-serif',
-                              fontSize: '0.62rem',
-                              fontWeight: 600,
-                              textTransform: 'uppercase',
-                              letterSpacing: '0.1em',
-                              color: pal.color,
-                              opacity: 0.75,
-                              marginTop: 4,
+                              background: pal.bg,
+                              border: `1px solid ${pal.border}`,
+                              borderRadius: 16,
+                              padding: '1.75rem 1.5rem',
+                              textAlign: 'center',
+                              minHeight: 168,
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              boxSizing: 'border-box',
                             }}
                           >
-                            {row.label}
+                            <div
+                              style={{
+                                fontFamily: 'Poppins, sans-serif',
+                                fontWeight: 800,
+                                fontSize: 'clamp(1.35rem, 3.2vw, 2rem)',
+                                color: pal.color,
+                                lineHeight: 1.15,
+                                wordBreak: 'break-word',
+                              }}
+                            >
+                              {formatMoney(row.totalAmount)}
+                            </div>
+                            <div
+                              style={{
+                                fontFamily: 'Inter, sans-serif',
+                                fontSize: '0.8rem',
+                                fontWeight: 700,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.08em',
+                                color: pal.color,
+                                opacity: 0.88,
+                                marginTop: 12,
+                                maxWidth: '100%',
+                              }}
+                            >
+                              {row.label}
+                            </div>
+                            <div
+                              style={{
+                                fontFamily: 'Inter, sans-serif',
+                                fontSize: '0.85rem',
+                                color: '#64748b',
+                                marginTop: 10,
+                              }}
+                            >
+                              {row.giftCount} gift{row.giftCount === 1 ? '' : 's'}
+                            </div>
                           </div>
-                          <div style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.65rem', color: '#94a3b8', marginTop: 2 }}>
-                            {row.giftCount} gift{row.giftCount === 1 ? '' : 's'}
-                          </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
               </section>
