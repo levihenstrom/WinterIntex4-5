@@ -10,6 +10,7 @@ import {
   type SocialRecommendResponse,
 } from '../../lib/mlApi';
 import { useAuth } from '../../context/AuthContext';
+import { ErrorState, LoadingState } from '../../components/common/AsyncStatus';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
 interface MetricState {
@@ -224,12 +225,8 @@ function ResidentsNeedingAttentionWidget() {
     };
   }, []);
 
-  if (loading) {
-    return <p className="text-muted mb-0">Loading…</p>;
-  }
-  if (err) {
-    return <p className="text-danger mb-0">{err}</p>;
-  }
+  if (loading) return <LoadingState message="Loading ML insights…" size="compact" />;
+  if (err) return <ErrorState message={err} />;
   if (!rows?.length) {
     return <p className="text-muted mb-0">No ML readiness rows returned.</p>;
   }
@@ -289,12 +286,8 @@ function AtRiskDonorsWidget() {
     };
   }, []);
 
-  if (loading) {
-    return <p className="text-muted mb-0">Loading…</p>;
-  }
-  if (err) {
-    return <p className="text-danger mb-0">{err}</p>;
-  }
+  if (loading) return <LoadingState message="Loading ML insights…" size="compact" />;
+  if (err) return <ErrorState message={err} />;
   if (!rows?.length) {
     return <p className="text-muted mb-0">No donor churn scores returned.</p>;
   }
@@ -349,12 +342,8 @@ function BestNextPostWidget() {
     };
   }, []);
 
-  if (loading) {
-    return <p className="text-muted mb-0">Loading…</p>;
-  }
-  if (err) {
-    return <p className="text-danger mb-0">{err}</p>;
-  }
+  if (loading) return <LoadingState message="Loading ML insights…" size="compact" />;
+  if (err) return <ErrorState message={err} />;
   const rec = data?.recommendations?.[0];
   if (!rec) {
     return <p className="text-muted mb-0">No recommendation returned.</p>;
@@ -533,11 +522,9 @@ export default function AdminHomePage() {
                   View all →
                 </Link>
               </div>
-              {recentError && (
-                <div className="px-4 py-3 text-danger small">Could not load donations.</div>
-              )}
+              {recentError && <div className="px-4 py-3"><ErrorState message="Could not load donations." /></div>}
               {!recentError && recentDonations === null && (
-                <div className="px-4 py-4 text-muted small">Loading…</div>
+                <div className="px-4 py-4"><LoadingState message="Loading donations…" size="compact" /></div>
               )}
               {!recentError && recentDonations && recentDonations.items.length === 0 && (
                 <div className="px-4 py-4 text-muted small">No donation rows yet.</div>

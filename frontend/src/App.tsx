@@ -4,7 +4,9 @@ import {
   Route,
   Navigate,
   Link,
+  useLocation,
 } from 'react-router-dom';
+import { useEffect } from 'react';
 import { AuthProvider } from './context/AuthContext';
 import { CookieConsentProvider } from './context/CookieConsentContext';
 import CookieConsentBanner from './components/CookieConsentBanner';
@@ -60,11 +62,52 @@ function AuthLayout({ children }: { children: React.ReactNode }) {
   );
 }
 
+function RouteTitleManager() {
+  const location = useLocation();
+
+  useEffect(() => {
+    const titleByPathPrefix: Array<[string, string]> = [
+      ['/admin/donations/contributions', 'Contributions'],
+      ['/admin/donations/allocations', 'Allocations'],
+      ['/admin/donations', 'Supporters'],
+      ['/admin/residents/visits-conferences', 'Visits & Conferences'],
+      ['/admin/residents/process-recordings', 'Session Notes'],
+      ['/admin/residents/', 'Resident Detail'],
+      ['/admin/residents', 'Residents'],
+      ['/admin/social-media/suggest', 'Social Media Suggestions'],
+      ['/admin/social-media', 'Social Media History'],
+      ['/admin/reports', 'Reports & Analytics'],
+      ['/admin/user-manager', 'User Manager'],
+      ['/admin/home', 'Admin Home'],
+      ['/admin', 'Admin'],
+      ['/donor/dashboard', 'Donor Dashboard'],
+      ['/donor', 'Donor Dashboard'],
+      ['/impact', 'Impact'],
+      ['/privacy', 'Privacy Policy'],
+      ['/mfa', 'Manage MFA'],
+      ['/logout', 'Logout'],
+      ['/register', 'Register'],
+      ['/login', 'Login'],
+      ['/unauthorized', 'Unauthorized'],
+      ['/oauth/callback', 'OAuth Callback'],
+      ['/', 'Home'],
+    ];
+
+    const pageName =
+      titleByPathPrefix.find(([prefix]) => location.pathname.startsWith(prefix))?.[1] ??
+      'HealingWings';
+    document.title = `HealingWings — ${pageName}`;
+  }, [location.pathname]);
+
+  return null;
+}
+
 function App() {
   return (
     <CookieConsentProvider>
       <AuthProvider>
         <Router>
+          <RouteTitleManager />
           <Routes>
             {/* Public routes */}
             <Route path="/" element={<HealingWingsHome />} />

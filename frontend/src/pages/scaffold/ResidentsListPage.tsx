@@ -264,7 +264,7 @@ function residentToForm(r: Resident): FormData {
 // ── Shared inline styles ──────────────────────────────────────────────────────
 
 const inputStyle: React.CSSProperties = {
-  padding: '8px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, outline: 'none', width: '100%',
+  padding: '8px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, width: '100%',
 };
 const selectStyle: React.CSSProperties = {
   ...inputStyle, background: '#fff',
