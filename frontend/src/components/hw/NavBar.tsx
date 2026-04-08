@@ -15,7 +15,6 @@ const ADMIN_NAV_LINKS = [
   { label: 'Home', to: '/admin/home' },
   { label: 'Donations', to: '/admin/donations' },
   { label: 'Residents', to: '/admin/residents' },
-  { label: 'Social Media', to: '/admin/social-media' },
   { label: 'Reports', to: '/admin/reports' },
 ];
 
@@ -133,18 +132,31 @@ export default function NavBar() {
         {/* Desktop nav links */}
         <nav className="hidden lg:flex items-center gap-7">
           {isAdminPortalUser ? (
-            ADMIN_NAV_LINKS.map((link) => (
-              <NavLink
-                key={link.label}
-                to={link.to}
-                className={({ isActive }: { isActive: boolean }) =>
-                  'text-sm font-medium no-underline transition-colors ' +
-                  (isActive ? 'text-white' : 'text-white/75 hover:text-white')
-                }
-              >
-                {link.label}
-              </NavLink>
-            ))
+            <>
+              {ADMIN_NAV_LINKS.map((link) => (
+                <NavLink
+                  key={link.label}
+                  to={link.to}
+                  className={({ isActive }: { isActive: boolean }) =>
+                    'text-sm font-medium no-underline transition-colors ' +
+                    (isActive ? 'text-white' : 'text-white/75 hover:text-white')
+                  }
+                >
+                  {link.label}
+                </NavLink>
+              ))}
+              {isAdmin && (
+                <NavLink
+                  to="/admin/social-media"
+                  className={({ isActive }: { isActive: boolean }) =>
+                    'text-sm font-medium no-underline transition-colors ' +
+                    (isActive ? 'text-white' : 'text-white/75 hover:text-white')
+                  }
+                >
+                  Social Media
+                </NavLink>
+              )}
+            </>
           ) : (
             <>
               {NAV_LINKS.map((link) =>
@@ -259,19 +271,33 @@ export default function NavBar() {
       {menuOpen && (
         <div className="lg:hidden border-t border-white/20 px-6 py-4 bg-[#1E3A5F]/75 backdrop-blur-xl">
           {isAdminPortalUser ? (
-            ADMIN_NAV_LINKS.map((link) => (
-              <NavLink
-                key={link.label}
-                to={link.to}
-                onClick={() => setMenuOpen(false)}
-                className={({ isActive }: { isActive: boolean }) =>
-                  'block py-3 font-medium text-sm border-b border-white/10 no-underline transition-colors ' +
-                  (isActive ? 'text-white' : 'text-white/75 hover:text-white')
-                }
-              >
-                {link.label}
-              </NavLink>
-            ))
+            <>
+              {ADMIN_NAV_LINKS.map((link) => (
+                <NavLink
+                  key={link.label}
+                  to={link.to}
+                  onClick={() => setMenuOpen(false)}
+                  className={({ isActive }: { isActive: boolean }) =>
+                    'block py-3 font-medium text-sm border-b border-white/10 no-underline transition-colors ' +
+                    (isActive ? 'text-white' : 'text-white/75 hover:text-white')
+                  }
+                >
+                  {link.label}
+                </NavLink>
+              ))}
+              {isAdmin && (
+                <NavLink
+                  to="/admin/social-media"
+                  onClick={() => setMenuOpen(false)}
+                  className={({ isActive }: { isActive: boolean }) =>
+                    'block py-3 font-medium text-sm border-b border-white/10 no-underline transition-colors ' +
+                    (isActive ? 'text-white' : 'text-white/75 hover:text-white')
+                  }
+                >
+                  Social Media
+                </NavLink>
+              )}
+            </>
           ) : (
             <>
               {NAV_LINKS.map((link) =>
