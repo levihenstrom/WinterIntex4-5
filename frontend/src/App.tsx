@@ -38,6 +38,7 @@ import SocialMediaHistoryPage from './pages/scaffold/SocialMediaHistoryPage';
 import SocialMediaSuggestPage from './pages/scaffold/SocialMediaSuggestPage';
 import ReportsAnalyticsPage from './pages/scaffold/ReportsAnalyticsPage';
 import UserManagerPage from './pages/scaffold/UserManagerPage';
+import VolunteerSubmissionsPage from './pages/scaffold/VolunteerSubmissionsPage';
 import OAuthCallbackPage from './pages/OAuthCallbackPage';
 
 // Auth pages — same fixed NavBar as the landing page (see NavBar.tsx)
@@ -65,8 +66,24 @@ function AuthLayout({ children }: { children: React.ReactNode }) {
 }
 
 function ScrollToTop() {
-  const { pathname } = useLocation();
-  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+  const { pathname, hash } = useLocation();
+  useEffect(() => {
+    if (hash) {
+      // Wait for the page to render, then scroll to the anchor
+      const id = hash.replace('#', '');
+      const attempt = (tries: number) => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth' });
+        } else if (tries > 0) {
+          setTimeout(() => attempt(tries - 1), 80);
+        }
+      };
+      attempt(10);
+    } else {
+      window.scrollTo(0, 0);
+    }
+  }, [pathname, hash]);
   return null;
 }
 
@@ -204,6 +221,14 @@ function App() {
                 element={
                   <RequireAuth role="Admin">
                     <UserManagerPage />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="volunteer-submissions"
+                element={
+                  <RequireAuth role="Admin">
+                    <VolunteerSubmissionsPage />
                   </RequireAuth>
                 }
               />
