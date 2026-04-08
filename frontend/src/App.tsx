@@ -63,6 +63,12 @@ function AuthLayout({ children }: { children: React.ReactNode }) {
   );
 }
 
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+  return null;
+}
+
 function RouteTitleManager() {
   const location = useLocation();
 
@@ -110,6 +116,7 @@ function App() {
     <CookieConsentProvider>
       <AuthProvider>
         <Router>
+          <ScrollToTop />
           <RouteTitleManager />
           <Routes>
             {/* Public routes */}

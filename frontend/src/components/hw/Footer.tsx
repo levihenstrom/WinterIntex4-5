@@ -44,7 +44,7 @@ const SOCIAL_LINKS = [
 ];
 
 const QUICK_LINKS = [
-  { label: 'Home', href: '/' },
+  { label: 'Home', href: '/', scrollTop: true },
   { label: 'About Us', href: '/#mission' },
   { label: 'Impact', href: '/impact' },
   { label: 'Stories', href: '/stories' },
@@ -52,7 +52,7 @@ const QUICK_LINKS = [
 
 const GET_INVOLVED_LINKS = [
   { label: 'Donate', href: '/#donate' },
-  { label: 'Volunteer', href: '/volunteer' },
+  { label: 'Volunteer', href: '/volunteer', scrollTop: true },
 ];
 
 export default function Footer() {
@@ -98,12 +98,16 @@ export default function Footer() {
 
           {/* Col 2: Quick Links */}
           <div>
-            <h4 className="text-white font-semibold text-sm uppercase tracking-widest mb-5">Quick Links</h4>
+            <h4 className="text-white font-semibold text-sm uppercase tracking-widest mb-2">Quick Links</h4>
             <ul className="space-y-3">
-              {QUICK_LINKS.map(({ label, href }) => (
+              {QUICK_LINKS.map(({ label, href, scrollTop }) => (
                 <li key={label}>
-                  {href.startsWith('/') && !href.includes('#') ? (
-                    <Link to={href} className="text-white/50 text-sm no-underline hover:text-white transition-colors">
+                  {!href.includes('#') ? (
+                    <Link
+                      to={href}
+                      onClick={scrollTop ? () => window.scrollTo(0, 0) : undefined}
+                      className="text-white/50 text-sm no-underline hover:text-white transition-colors"
+                    >
                       {label}
                     </Link>
                   ) : (
@@ -118,12 +122,16 @@ export default function Footer() {
 
           {/* Col 3: Get Involved */}
           <div>
-            <h4 className="text-white font-semibold text-sm uppercase tracking-widest mb-5">Get Involved</h4>
+            <h4 className="text-white font-semibold text-sm uppercase tracking-widest mb-2">Get Involved</h4>
             <ul className="space-y-3">
-              {GET_INVOLVED_LINKS.map(({ label, href }) => (
+              {GET_INVOLVED_LINKS.map(({ label, href, scrollTop }) => (
                 <li key={label}>
-                  {href.startsWith('/') && !href.includes('#') ? (
-                    <Link to={href} className="text-white/50 text-sm no-underline hover:text-white transition-colors">
+                  {!href.includes('#') ? (
+                    <Link
+                      to={href}
+                      onClick={scrollTop ? () => window.scrollTo(0, 0) : undefined}
+                      className="text-white/50 text-sm no-underline hover:text-white transition-colors"
+                    >
                       {label}
                     </Link>
                   ) : (
@@ -138,7 +146,7 @@ export default function Footer() {
 
           {/* Col 4: Contact */}
           <div>
-            <h4 className="text-white font-semibold text-sm uppercase tracking-widest mb-5">Contact</h4>
+            <h4 className="text-white font-semibold text-sm uppercase tracking-widest mb-2">Contact</h4>
             <ul className="space-y-3">
               <li>
                 <a href="mailto:info@healingwings.org" className="text-white/50 text-sm no-underline transition-colors hover:text-white">
