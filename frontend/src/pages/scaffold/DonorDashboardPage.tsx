@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { fetchPaged, postJson } from '../../lib/apiClient';
 import NavBar from '../../components/hw/NavBar';
+import Footer from '../../components/hw/Footer';
 import MetricCard from '../../components/hw/MetricCard';
 import { ErrorState, LoadingState } from '../../components/common/AsyncStatus';
 
@@ -353,6 +354,26 @@ export default function DonorDashboardPage() {
           >
             Because of your generosity, we provide safe housing and restorative care. Thank you for being part of the HealingWings mission.
           </p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12 }}>
+            <button
+              type="button"
+              onClick={() => {
+                resetGiveForm();
+                setShowGiveModal(true);
+              }}
+              className="hw-btn-magenta"
+              style={{
+                padding: '0.75rem 2rem',
+                borderRadius: 50,
+                fontWeight: 700,
+                fontSize: '0.9rem',
+                border: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              Give again now →
+            </button>
+          </div>
         </div>
       </section>
 
@@ -794,46 +815,7 @@ export default function DonorDashboardPage() {
         </div>
       </main>
 
-      {/* ── CTA (ImpactPage bottom band) ── */}
-      <section style={{ background: 'linear-gradient(135deg, #1E3A5F 0%, #0f2744 100%)', padding: '4rem 1.5rem' }} aria-label="Continue giving">
-        <div style={{ maxWidth: 640, margin: '0 auto', textAlign: 'center' }}>
-          <span className="hw-eyebrow">Make a difference</span>
-          <h2
-            style={{
-              fontFamily: 'Poppins, sans-serif',
-              fontWeight: 900,
-              fontSize: 'clamp(1.5rem, 3vw, 2rem)',
-              color: '#fff',
-              margin: '0.6rem 0 0.75rem',
-            }}
-          >
-            Continue your legacy of giving
-          </h2>
-          <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '1rem', lineHeight: 1.65, marginBottom: '2rem' }}>
-            Your support expands outreach and brings hope to more individuals we serve.
-          </p>
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <button
-              type="button"
-              onClick={() => {
-                resetGiveForm();
-                setShowGiveModal(true);
-              }}
-              className="hw-btn-magenta"
-              style={{
-                padding: '0.75rem 2rem',
-                borderRadius: 50,
-                fontWeight: 700,
-                fontSize: '0.9rem',
-                border: 'none',
-                cursor: 'pointer',
-              }}
-            >
-              Give again now →
-            </button>
-          </div>
-        </div>
-      </section>
+      <Footer />
 
       {showGiveModal && (
         <div
