@@ -175,6 +175,48 @@ public class AuthController(
 
         return Ok(new { message = "Role assigned successfully.", email = user.Email, role = canonicalRole });
     }
+    //// SECURE END POINT TO CREATE A USER
+
+    [Authorize(Policy = AuthPolicies.AdminOnly)]
+    [HttpPost("create-user")]
+    public async Task<IActionResult> CreateUser([FromBody] CreateUserRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password) || string.IsNullOrWhiteSpace(request.Role))
+            return BadRequest(new { message = "Email, password, and role are required." });
+
+        var normalizedRole = request.Role.Trim();
+        var allowedRoles = new[] { AuthRoles.Admin, AuthRoles.Staff, AuthRoles.Donor };
+        if (!allowedRoles.Contains(normalizedRole, StringComparer.OrdinalIgnoreCase))
+            return BadRequest(new { message = "Role must be Admin, Staff, or Donor." });
+
+        var canonicalRole = allowedRoles.First(r => string.Equals(r, normalizedRole, StringComparison.OrdinalIgnoreCase));
+
+        var user = new ApplicationUser
+        {
+            UserName = request.Email.Trim(),
+            Email = request.Email.Trim(),
+            EmailConfirmed = true
+        };
+
+        var createResult = await userManager.CreateAsync(user, request.Password);
+        if (!createResult.Succeeded)
+        {
+            foreach (var error in createResult.Errors)
+                ModelState.AddModelError(error.Code, error.Description);
+            return ValidationProblem(ModelState);
+        }
+
+        var roleResult = await userManager.AddToRoleAsync(user, canonicalRole);
+        if (!roleResult.Succeeded)
+        {
+            await userManager.DeleteAsync(user);
+            foreach (var error in roleResult.Errors)
+                ModelState.AddModelError(error.Code, error.Description);
+            return ValidationProblem(ModelState);
+        }
+
+        return Ok(new { message = "User created successfully.", email = user.Email, role = canonicalRole });
+    }
 
     [Authorize(Policy = AuthPolicies.AdminOnly)]
     [HttpPost("assign-staff-partner")]
@@ -521,6 +563,16 @@ public class AuthController(
         string Email,
         [Range(1, int.MaxValue, ErrorMessage = "Partner is required.")]
         int PartnerId);
+
+    public record CreateUserRequest(
+        [Required(ErrorMessage = "Email is required.")]
+        [EmailAddress(ErrorMessage = "Enter a valid email address.")]
+        string Email,
+        [Required(ErrorMessage = "Password is required.")]
+        [MinLength(14, ErrorMessage = "Password must be at least 14 characters.")]
+        string Password,
+        [Required(ErrorMessage = "Role is required.")]
+        string Role);
     public record PasswordLoginRequest(
         [Required(ErrorMessage = "Email is required.")]
         [EmailAddress(ErrorMessage = "Enter a valid email address.")]
