@@ -5,6 +5,7 @@
       "name": "vite-dev",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
+      "cwd": "/Users/nataliecastro/Documents/intex/WinterIntex4-5/frontend",
       "port": 5173
     }
   ]
