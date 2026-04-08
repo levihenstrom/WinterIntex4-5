@@ -42,6 +42,8 @@ internal sealed class ResidentReadinessArtifactRecord
 /// <summary>API response for resident readiness (camelCase JSON via default serializer).</summary>
 public sealed class ResidentReadinessDto
 {
+    /// <summary>Numeric primary key from the residents table — null if the ML artifact has no matching resident row.</summary>
+    public int? ResidentId { get; init; }
     public string ResidentCode { get; init; } = "";
     public string? AsOfDate { get; init; }
     public double ReintegrationReadinessScore { get; init; }
@@ -54,8 +56,25 @@ public sealed class ResidentReadinessDto
     public IReadOnlyList<string>? TopPositiveFactorsShort { get; init; }
     public IReadOnlyList<string>? TopRiskFactorsShort { get; init; }
 
-    internal static ResidentReadinessDto FromArtifact(ResidentReadinessArtifactRecord r) => new()
+    internal ResidentReadinessDto WithResidentId(int? id) => new()
     {
+        ResidentId = id,
+        ResidentCode = ResidentCode,
+        AsOfDate = AsOfDate,
+        ReintegrationReadinessScore = ReintegrationReadinessScore,
+        ReadinessPercentileAmongCurrentResidents = ReadinessPercentileAmongCurrentResidents,
+        SupportPriorityRank = SupportPriorityRank,
+        OperationalBand = OperationalBand,
+        TopPositiveFactors = TopPositiveFactors,
+        TopRiskFactors = TopRiskFactors,
+        RawScoreNote = RawScoreNote,
+        TopPositiveFactorsShort = TopPositiveFactorsShort,
+        TopRiskFactorsShort = TopRiskFactorsShort,
+    };
+
+    internal static ResidentReadinessDto FromArtifact(ResidentReadinessArtifactRecord r, int? residentId = null) => new()
+    {
+        ResidentId = residentId,
         ResidentCode = r.ResidentCode,
         AsOfDate = r.AsOfDate,
         ReintegrationReadinessScore = r.ReintegrationReadinessScore,

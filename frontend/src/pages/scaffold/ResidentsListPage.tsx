@@ -1,8 +1,7 @@
-import { useEffect, useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useRef, useState, useMemo } from 'react';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
   deleteJson,
-  fetchJson,
   fetchPaged,
   postJson,
   putJson,
@@ -22,6 +21,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import DeleteConfirmModal from '../../components/DeleteConfirmModal';
 import AdminKpiStrip from '../../components/admin/AdminKpiStrip';
+import { ResidentProfileModal } from '../../components/admin/ResidentProfileModal';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -72,24 +72,6 @@ interface Resident {
   dateEnrolled: string | null;
   dateClosed: string | null;
   notesRestricted: string | null;
-}
-
-interface ResidentWithNav extends Resident {
-  safehouse?: { safehouseId: number; name?: string | null; safehouseCode?: string | null };
-}
-
-interface IncidentSummary {
-  incidentId: number;
-  safehouseId: number;
-  incidentDate: string | null;
-  incidentType: string | null;
-  severity: string | null;
-  description: string | null;
-  responseTaken: string | null;
-  resolved: boolean | null;
-  resolutionDate: string | null;
-  reportedBy: string | null;
-  followUpRequired: boolean | null;
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -302,11 +284,15 @@ export default function ResidentsListPage() {
   const { authSession } = useAuth();
   const canWrite = authSession.roles.includes('Admin') || authSession.roles.includes('Staff');
 
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  // URL-driven initial state — supports /admin/residents/:id and ?caseStatus=Active
+  const { id: urlId } = useParams<{ id?: string }>();
+  const [searchParams] = useSearchParams();
+
+  const [search, setSearch] = useState(() => searchParams.get('search') ?? '');
+  const [statusFilter, setStatusFilter] = useState(() => searchParams.get('caseStatus') ?? '');
   const [categoryFilter, setCategoryFilter] = useState('');
-  const [appliedSearch, setAppliedSearch] = useState('');
-  const [appliedStatus, setAppliedStatus] = useState('');
+  const [appliedSearch, setAppliedSearch] = useState(() => searchParams.get('search') ?? '');
+  const [appliedStatus, setAppliedStatus] = useState(() => searchParams.get('caseStatus') ?? '');
   const [appliedCategory, setAppliedCategory] = useState('');
 
   const [page, setPage] = useState(1);
@@ -324,9 +310,6 @@ export default function ResidentsListPage() {
   const [deleteBusy, setDeleteBusy] = useState(false);
 
   const [profileViewId, setProfileViewId] = useState<number | null>(null);
-  const [profileDetail, setProfileDetail] = useState<{ resident: ResidentWithNav; incidents: IncidentSummary[] } | null>(null);
-  const [profileLoading, setProfileLoading] = useState(false);
-  const [profileError, setProfileError] = useState<string | null>(null);
 
   const [sortCol, setSortCol] = useState<SortCol | null>(null);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
@@ -516,27 +499,24 @@ export default function ResidentsListPage() {
 
   function closeProfile() {
     setProfileViewId(null);
-    setProfileDetail(null);
-    setProfileError(null);
-    setProfileLoading(false);
   }
 
-  async function openProfile(residentId: number) {
+  function openProfile(residentId: number) {
     setProfileViewId(residentId);
-    setProfileLoading(true);
-    setProfileError(null);
-    setProfileDetail(null);
-    try {
-      const d = await fetchJson<{ resident: ResidentWithNav; incidents: IncidentSummary[] }>(
-        `/api/residents/${residentId}/detail`,
-      );
-      setProfileDetail(d);
-    } catch (e) {
-      setProfileError(e instanceof Error ? e.message : 'Could not load resident profile.');
-    } finally {
-      setProfileLoading(false);
-    }
   }
+
+  // Auto-open profile modal when navigated to /admin/residents/:id
+  const autoOpenedRef = useRef(false);
+  useEffect(() => {
+    if (!urlId || autoOpenedRef.current) return;
+    const numId = Number(urlId);
+    if (Number.isFinite(numId) && numId > 0) {
+      autoOpenedRef.current = true;
+      openProfile(numId);
+    }
+  // openProfile is stable within the component lifecycle
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlId]);
 
   const isEditing = editTarget !== null && editTarget !== 'new';
 
@@ -744,7 +724,7 @@ export default function ResidentsListPage() {
                             borderBottom: '1px solid #F1F5F9',
                             cursor: 'pointer',
                           }}
-                          onClick={() => void openProfile(r.residentId)}
+                          onClick={() => openProfile(r.residentId)}
                           title="Open full resident profile"
                         >
                           <td style={{ ...tdStyle, fontWeight: 700, color: '#1E3A5F' }}>{r.residentId}</td>
@@ -830,7 +810,7 @@ export default function ResidentsListPage() {
                                   <button
                                     type="button"
                                     className="dropdown-item"
-                                    onClick={() => void openProfile(r.residentId)}
+                                    onClick={() => openProfile(r.residentId)}
                                   >
                                     <i className="bi bi-person-vcard me-2 text-secondary" aria-hidden />
                                     Full profile
@@ -1148,159 +1128,7 @@ export default function ResidentsListPage() {
         </div>
       )}
 
-      {profileViewId !== null && (
-        <div className="modal d-block" style={{ backgroundColor: 'rgba(0,0,0,0.55)' }} role="dialog" aria-modal="true" aria-labelledby="residentProfileTitle">
-          <div className="modal-dialog modal-xl modal-dialog-scrollable modal-dialog-centered">
-            <div className="modal-content">
-              <div className="modal-header border-bottom">
-                <div>
-                  <h5 className="modal-title fw-bold text-dark mb-0" id="residentProfileTitle">
-                    Resident profile
-                  </h5>
-                  <p className="small text-muted mb-0">Database ID {profileViewId} · read-only summary for staff review</p>
-                </div>
-                <button type="button" className="btn-close" aria-label="Close" onClick={closeProfile} />
-              </div>
-              <div className="modal-body">
-                {profileLoading && <p className="text-muted">Loading full record…</p>}
-                {profileError && <div className="alert alert-danger">{profileError}</div>}
-                {profileDetail && (
-                  <>
-                    {(() => {
-                      const r = profileDetail.resident;
-                      const site =
-                        r.safehouse?.name?.trim() ||
-                        r.safehouse?.safehouseCode?.trim() ||
-                        `Safehouse #${r.safehouseId}`;
-                      const pairs = (label: string, val: string) => (
-                        <div key={label} className="col-md-6 col-lg-4 py-2 border-bottom">
-                          <div className="text-uppercase small text-muted fw-semibold" style={{ fontSize: 10, letterSpacing: '0.04em' }}>
-                            {label}
-                          </div>
-                          <div className="small text-break">{val}</div>
-                        </div>
-                      );
-                      const yn = (b: boolean | null | undefined) => (b ? 'Yes' : 'No');
-                      return (
-                        <>
-                          <h6 className="text-uppercase small fw-bold text-secondary mb-3">Identification &amp; placement</h6>
-                          <div className="row mb-4">
-                            {pairs('Resident ID (database)', String(r.residentId))}
-                            {pairs('Case control number', r.caseControlNo || '—')}
-                            {pairs('Internal code', r.internalCode || '—')}
-                            {pairs('Safehouse', site)}
-                            {pairs('Safehouse ID', String(r.safehouseId))}
-                            {pairs('Assigned social worker', r.assignedSocialWorker || '—')}
-                          </div>
-                          <h6 className="text-uppercase small fw-bold text-secondary mb-3">Case classification</h6>
-                          <div className="row mb-4">
-                            {pairs('Case status', r.caseStatus || '—')}
-                            {pairs('Case category', r.caseCategory || '—')}
-                            {pairs('Initial risk level', r.initialRiskLevel || '—')}
-                            {pairs('Current risk level', r.currentRiskLevel || '—')}
-                            {pairs('Sub-categories', SUB_CATS.filter((s) => r[s.key]).map((s) => s.label).join(', ') || '—')}
-                          </div>
-                          <h6 className="text-uppercase small fw-bold text-secondary mb-3">Demographics</h6>
-                          <div className="row mb-4">
-                            {pairs('Sex', r.sex || '—')}
-                            {pairs('Date of birth', fmtDate(r.dateOfBirth))}
-                            {pairs('Birth status', r.birthStatus || '—')}
-                            {pairs('Place of birth', r.placeOfBirth || '—')}
-                            {pairs('Religion', r.religion || '—')}
-                            {pairs('PWD', yn(r.isPwd))}
-                            {pairs('PWD type', r.pwdType || '—')}
-                            {pairs('Special needs', yn(r.hasSpecialNeeds))}
-                            {pairs('Special needs diagnosis', r.specialNeedsDiagnosis || '—')}
-                          </div>
-                          <h6 className="text-uppercase small fw-bold text-secondary mb-3">Family profile</h6>
-                          <div className="row mb-4">
-                            {pairs('4Ps beneficiary', yn(r.familyIs4ps))}
-                            {pairs('Solo parent household', yn(r.familySoloParent))}
-                            {pairs('Indigenous group', yn(r.familyIndigenous))}
-                            {pairs('Parent with disability', yn(r.familyParentPwd))}
-                            {pairs('Informal settler', yn(r.familyInformalSettler))}
-                          </div>
-                          <h6 className="text-uppercase small fw-bold text-secondary mb-3">Admission &amp; referral</h6>
-                          <div className="row mb-4">
-                            {pairs('Date of admission', fmtDate(r.dateOfAdmission))}
-                            {pairs('Age upon admission', r.ageUponAdmission || '—')}
-                            {pairs('Present age', r.presentAge || '—')}
-                            {pairs('Length of stay', r.lengthOfStay || '—')}
-                            {pairs('Referral source', r.referralSource || '—')}
-                            {pairs('Referring agency / person', r.referringAgencyPerson || '—')}
-                            {pairs('Date enrolled', fmtDate(r.dateEnrolled))}
-                            {pairs('Date closed', fmtDate(r.dateClosed))}
-                            <div className="col-12 py-2 border-bottom">
-                              <div className="text-uppercase small text-muted fw-semibold" style={{ fontSize: 10, letterSpacing: '0.04em' }}>
-                                Initial case assessment
-                              </div>
-                              <div className="small text-break">{r.initialCaseAssessment?.trim() || '—'}</div>
-                            </div>
-                          </div>
-                          <h6 className="text-uppercase small fw-bold text-secondary mb-3">Reintegration</h6>
-                          <div className="row mb-4">
-                            {pairs('Reintegration type', r.reintegrationType || '—')}
-                            {pairs('Reintegration status', r.reintegrationStatus || '—')}
-                          </div>
-                          <h6 className="text-uppercase small fw-bold text-secondary mb-3">Restricted notes</h6>
-                          <p className="small text-break border rounded p-3 bg-light">{r.notesRestricted?.trim() || '—'}</p>
-                        </>
-                      );
-                    })()}
-                    <h6 className="text-uppercase small fw-bold text-secondary mb-3 mt-4">Incident reports</h6>
-                    {profileDetail.incidents.length === 0 ? (
-                      <p className="small text-muted">No incident reports on file for this resident.</p>
-                    ) : (
-                      <div className="table-responsive border rounded">
-                        <table className="table table-sm table-striped mb-0 small">
-                          <thead className="table-light">
-                            <tr>
-                              <th>Date</th>
-                              <th>Type</th>
-                              <th>Severity</th>
-                              <th>Resolved</th>
-                              <th>Resolution date</th>
-                              <th>Follow-up</th>
-                              <th>Reported by</th>
-                              <th>Description</th>
-                              <th>Response taken</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {profileDetail.incidents.map((inc) => (
-                              <tr key={inc.incidentId}>
-                                <td className="text-nowrap">{fmtDate(inc.incidentDate)}</td>
-                                <td>{inc.incidentType || '—'}</td>
-                                <td>{inc.severity || '—'}</td>
-                                <td>{inc.resolved === true ? 'Yes' : inc.resolved === false ? 'No' : '—'}</td>
-                                <td className="text-nowrap">{fmtDate(inc.resolutionDate)}</td>
-                                <td>{inc.followUpRequired === true ? 'Yes' : inc.followUpRequired === false ? 'No' : '—'}</td>
-                                <td>{inc.reportedBy || '—'}</td>
-                                <td style={{ maxWidth: 220 }}>{inc.description?.trim() || '—'}</td>
-                                <td style={{ maxWidth: 220 }}>{inc.responseTaken?.trim() || '—'}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-              <div className="modal-footer border-top">
-                {profileDetail && canWrite ? (
-                  <button type="button" className="btn btn-primary" onClick={() => { closeProfile(); openEdit(profileDetail.resident); }}>
-                    Edit this resident
-                  </button>
-                ) : null}
-                <button type="button" className="btn btn-outline-secondary" onClick={closeProfile}>
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <ResidentProfileModal residentId={profileViewId} onClose={closeProfile} onEditResident={openEdit} />
 
       {/* Readiness factors (read-only overlay; does not affect CRUD) */}
       {mlFactorsFor && (

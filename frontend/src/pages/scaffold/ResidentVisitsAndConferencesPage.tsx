@@ -85,7 +85,17 @@ function Badge({ label, bg, text }: { label: string; bg: string; text: string })
 
 // ── KPI Strip ─────────────────────────────────────────────────────────────────
 
-function VisitKpiStrip({ items }: { items: HomeVisitation[] }) {
+type VisitQuickFilter = 'followUp' | 'safety' | 'emergency' | null;
+
+function VisitKpiStrip({
+  items,
+  quickFilter,
+  onFilterToggle,
+}: {
+  items: HomeVisitation[];
+  quickFilter: VisitQuickFilter;
+  onFilterToggle: (f: NonNullable<VisitQuickFilter>) => void;
+}) {
   const total = items.length;
   const safety = items.filter((v) => v.safetyConcernsNoted).length;
   const followUp = items.filter((v) => v.followUpNeeded).length;
@@ -96,9 +106,21 @@ function VisitKpiStrip({ items }: { items: HomeVisitation[] }) {
     <AdminKpiStrip
       items={[
         { label: 'Visits on page', value: String(total), accent: '#1E3A5F', icon: 'house-door' },
-        { label: 'Safety concerns', value: String(safety), accent: '#991B1B', icon: 'exclamation-triangle' },
-        { label: 'Follow-ups needed', value: String(followUp), accent: '#854D0E', icon: 'pin-map' },
-        { label: 'Emergency visits', value: String(emergency), accent: '#DC2626', icon: 'lightning-charge' },
+        {
+          label: safety > 0 && quickFilter === 'safety' ? 'Safety concerns (filtered) ✕' : 'Safety concerns',
+          value: String(safety), accent: '#991B1B', icon: 'exclamation-triangle',
+          onClick: () => onFilterToggle('safety'),
+        },
+        {
+          label: followUp > 0 && quickFilter === 'followUp' ? 'Follow-ups needed (filtered) ✕' : 'Follow-ups needed',
+          value: String(followUp), accent: '#854D0E', icon: 'pin-map',
+          onClick: () => onFilterToggle('followUp'),
+        },
+        {
+          label: emergency > 0 && quickFilter === 'emergency' ? 'Emergency visits (filtered) ✕' : 'Emergency visits',
+          value: String(emergency), accent: '#DC2626', icon: 'lightning-charge',
+          onClick: () => onFilterToggle('emergency'),
+        },
         { label: 'Cooperative families', value: String(cooperative), accent: '#166534', icon: 'people' },
       ]}
     />
@@ -205,6 +227,11 @@ export default function ResidentVisitsAndConferencesPage() {
   const [visitTypeFilter, setVisitTypeFilter] = useState('');
   const [visitSortCol, setVisitSortCol] = useState<VisitSortCol | null>(null);
   const [visitSortDir, setVisitSortDir] = useState<'asc' | 'desc'>('asc');
+  const [quickFilter, setQuickFilter] = useState<VisitQuickFilter>(null);
+
+  function toggleQuickFilter(f: NonNullable<VisitQuickFilter>) {
+    setQuickFilter((prev) => prev === f ? null : f);
+  }
 
   // ── Case Conferences state ────────────────────────────────────────────────────
   const [confPage, setConfPage] = useState(1);
@@ -248,6 +275,9 @@ export default function ResidentVisitsAndConferencesPage() {
   const filteredVisits = useMemo(() => {
     let items = visitData?.items ?? [];
     if (visitTypeFilter) items = items.filter(v => v.visitType === visitTypeFilter);
+    if (quickFilter === 'followUp') items = items.filter(v => v.followUpNeeded === true);
+    else if (quickFilter === 'safety') items = items.filter(v => v.safetyConcernsNoted === true);
+    else if (quickFilter === 'emergency') items = items.filter(v => v.visitType === 'Emergency');
     if (visitSortCol) {
       items = [...items].sort((a, b) => compareValues(
         a[visitSortCol] as string | number | boolean | null,
@@ -256,7 +286,7 @@ export default function ResidentVisitsAndConferencesPage() {
       ));
     }
     return items;
-  }, [visitData?.items, visitTypeFilter, visitSortCol, visitSortDir]);
+  }, [visitData?.items, visitTypeFilter, quickFilter, visitSortCol, visitSortDir]);
 
   // ── Conference sort ───────────────────────────────────────────────────────────
   function handleConfSort(col: ConfSortCol) {
@@ -395,7 +425,21 @@ export default function ResidentVisitsAndConferencesPage() {
         </div>
 
         {/* KPI Strip */}
-        {visitData && <VisitKpiStrip items={visitData.items} />}
+        {visitData && (
+          <>
+            <VisitKpiStrip items={visitData.items} quickFilter={quickFilter} onFilterToggle={toggleQuickFilter} />
+            {quickFilter && (
+              <div className="d-flex align-items-center gap-2 mb-3" style={{ fontSize: 13 }}>
+                <span className="badge rounded-pill" style={{ background: '#1E3A5F', color: 'white' }}>
+                  Filtered: {quickFilter === 'followUp' ? 'Follow-ups needed' : quickFilter === 'safety' ? 'Safety concerns' : 'Emergency visits'}
+                </span>
+                <button type="button" className="btn btn-sm btn-link p-0 text-muted" style={{ fontSize: 12 }} onClick={() => setQuickFilter(null)}>
+                  Clear filter ✕
+                </button>
+              </div>
+            )}
+          </>
+        )}
 
         {/* Visit type filter pills */}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
