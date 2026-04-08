@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import GoogleIcon from '../components/hw/GoogleIcon';
 import {
@@ -37,21 +37,6 @@ function LoginPage() {
   useEffect(() => {
     void loadExternalProviders();
   }, []);
-
-  useEffect(() => {
-    if (isLoading || !isAuthenticated) return;
-    if (searchParams.get('externalError')) return;
-    navigate(resolvePostLoginPath(fromPathname, authSession.roles), {
-      replace: true,
-    });
-  }, [
-    isLoading,
-    isAuthenticated,
-    authSession.roles,
-    fromPathname,
-    navigate,
-    searchParams,
-  ]);
 
   async function loadExternalProviders() {
     try {
@@ -120,6 +105,28 @@ function LoginPage() {
   function handleExternalLogin(providerName: string) {
     window.location.assign(
       buildExternalLoginUrl(providerName, resolvePostLoginPath(fromPathname, []))
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="hw-auth-shell d-flex align-items-center justify-content-center min-vh-100">
+        <div className="text-center text-secondary">
+          <div className="spinner-border text-primary mb-2" role="status">
+            <span className="visually-hidden">Loading…</span>
+          </div>
+          <p className="small mb-0">Checking your session…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isAuthenticated && !searchParams.get('externalError')) {
+    return (
+      <Navigate
+        to={resolvePostLoginPath(fromPathname, authSession.roles)}
+        replace
+      />
     );
   }
 

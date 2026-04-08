@@ -143,20 +143,34 @@ function PrivacyPage() {
               Cookies and similar technologies
             </h2>
             <p>
-              This site uses only essential cookies and closely related browser
-              storage technologies required for security and core functionality.
-              These technologies help us:
+              We use browser cookies and local storage under two tiers you select in the
+              on-screen banner:
             </p>
             <ul className="mb-3">
-              <li>Keep users signed in securely.</li>
-              <li>Support multi-factor authentication and secure session recovery.</li>
-              <li>Complete external sign-in flows such as Google authentication.</li>
-              <li>Remember whether you have acknowledged the cookie notice.</li>
+              <li>
+                <strong>Necessary only</strong> — authentication cookies, security-related
+                storage, and a small record of your consent choice. This includes data needed
+                to stay signed in and to complete Google or other external login. If you use
+                password sign-in, the app may mirror session information in local storage so
+                the experience works reliably across browsers (including some mobile
+                browsers that restrict cookies).
+              </li>
+              <li>
+                <strong>Accept all</strong> — everything in “Necessary only,” plus optional
+                preferences we may save under keys beginning with{' '}
+                <code className="small">intex-optional-</code> (for example dismissing tips).
+                Choosing “Necessary only” removes any existing optional preference keys from
+                this browser.
+              </li>
             </ul>
+            <p className="mb-3">
+              We do not use advertising or analytics cookies. External providers (such as
+              Google) may set their own cookies when you use their sign-in button; their
+              policies apply to those technologies.
+            </p>
             <p>
-              You can block cookies through your browser settings, but some parts
-              of the site, including login and security features, may no longer
-              function correctly.
+              You can block cookies through your browser settings, but some parts of the
+              site, including login and security features, may no longer function correctly.
             </p>
 
             <h2 className="h4 fw-bold mt-4 mb-3" style={sectionHeadingStyle}>
