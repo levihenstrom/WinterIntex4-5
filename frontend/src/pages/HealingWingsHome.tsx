@@ -101,7 +101,7 @@ function ImpactBar({
     <section id="impact" className="relative z-20 mx-auto max-w-7xl w-[92%] -mt-20 sm:-mt-24 lg:-mt-28 bg-[#1E3A5F]/75 backdrop-blur-xl rounded-[2rem] shadow-2xl border border-white/20">
       <div className="py-10 px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-white/20 gap-y-10 lg:gap-y-0 text-center">
-          <MetricCard target={residentsServed} label="children Served" />
+          <MetricCard target={residentsServed} suffix="+" label="children Served" />
           <MetricCard target={safehousesActive} label="Safe Homes" />
           <MetricCard target={reintegrationRatePct} suffix="%" label="Reintegration Rate" />
           <MetricCard target={yearsOfImpact} label="Years of Impact" />
