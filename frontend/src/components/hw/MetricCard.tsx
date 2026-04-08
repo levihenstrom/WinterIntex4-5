@@ -5,6 +5,8 @@ interface MetricCardProps {
   suffix?: string;
   prefix?: string;
   label: string;
+  /** Plain-language line for public dashboards (e.g. Impact page). */
+  description?: string;
   duration?: number;
 }
 
@@ -13,6 +15,7 @@ export default function MetricCard({
   suffix = '',
   prefix = '',
   label,
+  description,
   duration = 2000,
 }: MetricCardProps) {
   const [count, setCount] = useState(0);
@@ -50,6 +53,11 @@ export default function MetricCard({
       <span className="mt-3 text-xs uppercase tracking-widest font-semibold" style={{ color: '#5eead4' }}>
         {label}
       </span>
+      {description && (
+        <p className="mt-2 mb-0 max-w-[14rem] mx-auto text-[0.65rem] leading-snug font-normal normal-case tracking-normal text-white/55">
+          {description}
+        </p>
+      )}
     </div>
   );
 }
