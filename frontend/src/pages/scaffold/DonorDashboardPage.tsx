@@ -186,11 +186,14 @@ function KpiStripPlaceholder() {
   );
 }
 
+const LEDGER_PAGE_SIZE = 10;
+
 /* ── Main Page Component ─────────────────────────────────────── */
 export default function DonorDashboardPage() {
   const [donations, setDonations] = useState<DonationMine[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [ledgerPage, setLedgerPage] = useState(1);
 
   const loadDonations = useCallback((opts?: { silent?: boolean }) => {
     if (!opts?.silent) {
@@ -466,7 +469,10 @@ export default function DonorDashboardPage() {
                   <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.95rem', color: '#64748b', margin: 0 }}>
                     No financial transactions found on your account.
                   </p>
-                ) : (
+                ) : (() => {
+                  const ledgerTotalPages = Math.max(1, Math.ceil(donations.length / LEDGER_PAGE_SIZE));
+                  const ledgerRows = donations.slice((ledgerPage - 1) * LEDGER_PAGE_SIZE, ledgerPage * LEDGER_PAGE_SIZE);
+                  return (
                   <DashboardCard title="Donation ledger" sub="Your gifts and initiatives" titleId="donation-ledger-heading">
                     <div style={{ margin: '-1.4rem -1.5rem 0', overflowX: 'auto' }}>
                       <table
@@ -510,7 +516,7 @@ export default function DonorDashboardPage() {
                           </tr>
                         </thead>
                         <tbody>
-                          {donations.map((d) => (
+                          {ledgerRows.map((d) => (
                             <tr key={d.donationId} style={{ borderBottom: '1px solid #f8fafc' }}>
                               <td style={{ fontFamily: 'Inter, sans-serif', padding: '1rem 1.25rem', color: '#64748b', fontSize: '0.9rem' }}>
                                 {formatDate(d.donationDate)}
@@ -605,8 +611,30 @@ export default function DonorDashboardPage() {
                         </tbody>
                       </table>
                     </div>
+                    {ledgerTotalPages > 1 && (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 1.5rem 0.25rem', borderTop: '1px solid #f1f5f9', marginTop: '0.5rem' }}>
+                        <button
+                          onClick={() => setLedgerPage((p) => p - 1)}
+                          disabled={ledgerPage <= 1}
+                          style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.8rem', fontWeight: 600, color: ledgerPage <= 1 ? '#cbd5e1' : '#1E3A5F', background: 'none', border: 'none', cursor: ledgerPage <= 1 ? 'default' : 'pointer', padding: '0.35rem 0.75rem', borderRadius: 8 }}
+                        >
+                          ← Prev
+                        </button>
+                        <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.75rem', color: '#94a3b8' }}>
+                          Page {ledgerPage} of {ledgerTotalPages}
+                        </span>
+                        <button
+                          onClick={() => setLedgerPage((p) => p + 1)}
+                          disabled={ledgerPage >= ledgerTotalPages}
+                          style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.8rem', fontWeight: 600, color: ledgerPage >= ledgerTotalPages ? '#cbd5e1' : '#1E3A5F', background: 'none', border: 'none', cursor: ledgerPage >= ledgerTotalPages ? 'default' : 'pointer', padding: '0.35rem 0.75rem', borderRadius: 8 }}
+                        >
+                          Next →
+                        </button>
+                      </div>
+                    )}
                   </DashboardCard>
-                )}
+                  );
+                })()}
               </section>
             </div>
           )}

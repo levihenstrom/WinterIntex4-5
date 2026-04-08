@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
 const SOCIAL_ICONS = {
   Instagram: (
@@ -26,6 +27,9 @@ const SOCIAL_ICONS = {
 };
 
 export default function Footer() {
+  const { authSession } = useAuth();
+  const isStaff = authSession.roles.includes('Admin') || authSession.roles.includes('Staff');
+
   return (
     <footer id="footer" style={{ background: '#1E3A5F' }} className="text-white pt-16 pb-8">
       <div className="max-w-7xl mx-auto px-6 lg:px-10">
@@ -44,21 +48,23 @@ export default function Footer() {
             <p className="text-white/50 text-sm leading-relaxed mb-6">
               Restoring hope. Rebuilding lives. — Serving girls who are survivors of trafficking and abuse in the Philippines.
             </p>
-            <div className="flex gap-4">
-              {Object.entries(SOCIAL_ICONS).map(([name, icon]) => (
-                <a
-                  key={name}
-                  href="#"
-                  aria-label={name}
-                  className="text-white/40 no-underline transition-colors"
-                  style={{ transition: 'color 0.2s' }}
-                  onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = '#0D9488')}
-                  onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = '')}
-                >
-                  {icon}
-                </a>
-              ))}
-            </div>
+            {!isStaff && (
+              <div className="flex gap-4">
+                {Object.entries(SOCIAL_ICONS).map(([name, icon]) => (
+                  <a
+                    key={name}
+                    href="#"
+                    aria-label={name}
+                    className="text-white/40 no-underline transition-colors"
+                    style={{ transition: 'color 0.2s' }}
+                    onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = '#0D9488')}
+                    onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = '')}
+                  >
+                    {icon}
+                  </a>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Col 2: Quick Links */}
@@ -93,15 +99,11 @@ export default function Footer() {
           <div>
             <h4 className="text-white font-semibold text-sm uppercase tracking-widest mb-5">Contact</h4>
             <ul className="space-y-3">
-              <li className="text-white/50 text-sm leading-relaxed">
-                123 Sampaguita Street<br />Manila, Philippines 1000
-              </li>
               <li>
                 <a href="mailto:info@healingwings.org" className="text-white/50 text-sm no-underline transition-colors hover:text-white">
                   info@healingwings.org
                 </a>
               </li>
-              <li className="text-white/50 text-sm">+63 2 XXXX XXXX</li>
             </ul>
           </div>
         </div>
