@@ -59,10 +59,21 @@ export default function NavBar() {
   // ── Dropdown menu (desktop) ─────────────────────────────────────────────────
   const dropdownMenu = dropdownOpen && (
     <div className="absolute right-0 top-[calc(100%+8px)] bg-white/95 backdrop-blur-3xl rounded-2xl shadow-[0_16px_50px_rgba(30,58,95,0.15)] min-w-[250px] z-[3000] overflow-hidden border border-stone-200/60 p-1.5 flex flex-col hw-fade-in translate-y-1 transition-all duration-300">
-      {/* Email header */}
-      <div className="px-4 py-3.5 border-b border-stone-100 bg-stone-50/50 rounded-xl mb-1.5">
+      {/* Email and Role header */}
+      <div className="px-4 py-3.5 border-b border-stone-100 bg-stone-50/50 rounded-xl mb-1.5 flex flex-col gap-1">
         <p className="m-0 text-[9px] text-stone-400 font-extrabold uppercase tracking-[0.15em]">Signed in as</p>
-        <p className="mt-0.5 mb-0 text-xs text-[#1E3A5F] font-bold break-all tracking-tight">{authSession.email}</p>
+        <p className="mt-0.5 mb-1 text-xs text-[#1E3A5F] font-bold break-all tracking-tight">{authSession.email}</p>
+        
+        {/* Role display */}
+        {authSession.roles && authSession.roles.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {authSession.roles.map(role => (
+              <span key={role} className="bg-[#0D9488]/10 text-[#0D9488] text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider">
+                {role}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Dark / Light mode toggle */}
@@ -307,10 +318,21 @@ export default function NavBar() {
           <div className="mt-5 flex flex-col gap-1">
             {isLoading ? null : isAuthenticated ? (
               <>
-                {/* Email */}
-                <div className="bg-white/10 backdrop-blur-md rounded-xl p-3.5 mb-1.5 border border-white/5 shadow-[inset_0_2px_10px_rgba(255,255,255,0.05)]">
+                {/* Email and Role */}
+                <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 mb-2 border border-white/5 shadow-[inset_0_2px_10px_rgba(255,255,255,0.05)] flex flex-col gap-1">
                   <p className="m-0 text-[10px] text-white/50 font-extrabold uppercase tracking-[0.15em]">Signed in as</p>
-                  <p className="mt-1 mb-0 text-sm text-white font-semibold break-all tracking-tight">{authSession.email}</p>
+                  <p className="mt-1 mb-1 text-sm text-white font-semibold break-all tracking-tight">{authSession.email}</p>
+                  
+                  {/* Role display */}
+                  {authSession.roles && authSession.roles.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {authSession.roles.map(role => (
+                        <span key={role} className="bg-white/20 text-white text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider backdrop-blur-sm border border-white/10">
+                          {role}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Dark mode toggle */}
