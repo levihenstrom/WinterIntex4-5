@@ -24,15 +24,9 @@ public sealed class MlSocialController(MlSocialProxyService proxy) : ControllerB
         if (!ModelState.IsValid)
             return ValidationProblem(ModelState);
 
-        if (!proxy.IsConfigured)
-        {
-            return StatusCode(StatusCodes.Status503ServiceUnavailable, new ProblemDetails
-            {
-                Title = "Social ML inference service is not configured.",
-                Detail = "Set MlInferenceService:BaseUrl to the FastAPI base URL (see server documentation).",
-                Status = StatusCodes.Status503ServiceUnavailable,
-            });
-        }
+        var configBlock = proxy.GetBlockingConfigurationProblem();
+        if (configBlock is not null)
+            return StatusCode(configBlock.Status ?? StatusCodes.Status503ServiceUnavailable, configBlock);
 
         try
         {

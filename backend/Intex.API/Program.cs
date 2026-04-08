@@ -84,28 +84,46 @@ builder.Services.AddOptions<MlInferenceServiceOptions>()
     .ValidateOnStart();
 builder.Services.AddSingleton<Microsoft.Extensions.Options.IValidateOptions<MlInferenceServiceOptions>, MlInferenceServiceOptionsValidator>();
 
-builder.Services.AddSingleton<MlArtifactService>();
-builder.Services.AddHttpClient<MlSocialProxyService>((sp, client) =>
+// Local dev: user secrets / env sometimes leave BaseUrl empty; still allow FastAPI on 8001 without manual edits.
+builder.Services.PostConfigure<MlInferenceServiceOptions>(opts =>
 {
-    var opt = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<MlInferenceServiceOptions>>().Value;
-    var url = opt.BaseUrl?.Trim();
-    if (string.IsNullOrEmpty(url))
-        return;
-
-    if (!Uri.TryCreate(url.EndsWith('/') ? url : url + "/", UriKind.Absolute, out var baseUri))
-        return;
-
-    client.BaseAddress = baseUri;
-    client.Timeout = TimeSpan.FromSeconds(Math.Clamp(opt.TimeoutSeconds, 1, 300));
-
-    if (!string.IsNullOrWhiteSpace(opt.ApiKey))
-    {
-        var headerName = string.IsNullOrWhiteSpace(opt.ApiKeyHeaderName)
-            ? "X-ML-Service-Key"
-            : opt.ApiKeyHeaderName.Trim();
-        client.DefaultRequestHeaders.TryAddWithoutValidation(headerName, opt.ApiKey);
-    }
+    if (string.IsNullOrWhiteSpace(opts.BaseUrl) && builder.Environment.IsDevelopment())
+        opts.BaseUrl = MlInferenceBaseUrlHelper.DevelopmentFallbackBaseUrl;
 });
+
+builder.Services.AddSingleton<MlArtifactService>();
+builder.Services.AddHttpClient<MlSocialProxyService>()
+    .ConfigureHttpClient((sp, client) =>
+    {
+        var opt = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<MlInferenceServiceOptions>>().Value;
+        var log = sp.GetRequiredService<ILogger<MlSocialProxyService>>();
+
+        if (string.IsNullOrWhiteSpace(opt.BaseUrl?.Trim()))
+        {
+            log.LogInformation(
+                "MlInferenceService:BaseUrl is not set; live social ML proxy is disabled (environment {Environment}).",
+                sp.GetRequiredService<IHostEnvironment>().EnvironmentName);
+            return;
+        }
+
+        if (!MlInferenceBaseUrlHelper.TryCreateHttpClientBaseUri(opt.BaseUrl, out var baseUri))
+        {
+            log.LogWarning(
+                "MlInferenceService:BaseUrl is not a valid http(s) URL; live social ML proxy is disabled.");
+            return;
+        }
+
+        client.BaseAddress = baseUri;
+        client.Timeout = TimeSpan.FromSeconds(Math.Clamp(opt.TimeoutSeconds, 1, 300));
+
+        if (!string.IsNullOrWhiteSpace(opt.ApiKey))
+        {
+            var headerName = string.IsNullOrWhiteSpace(opt.ApiKeyHeaderName)
+                ? "X-ML-Service-Key"
+                : opt.ApiKeyHeaderName.Trim();
+            client.DefaultRequestHeaders.TryAddWithoutValidation(headerName, opt.ApiKey);
+        }
+    });
 
 static bool IsSqliteConnectionString(string? connectionString) =>
     !string.IsNullOrWhiteSpace(connectionString)
@@ -247,6 +265,29 @@ builder.Services.AddHsts(options =>
 });
 
 var app = builder.Build();
+
+{
+    var mlOpt = app.Services.GetRequiredService<Microsoft.Extensions.Options.IOptions<MlInferenceServiceOptions>>().Value;
+    var log = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Intex.API.Startup");
+    if (MlInferenceBaseUrlHelper.TryCreateHttpClientBaseUri(mlOpt.BaseUrl, out var mlUri))
+    {
+        log.LogInformation(
+            "MlInferenceService: live social proxy enabled → upstream host {Host} (environment {Environment}).",
+            mlUri!.Host,
+            app.Environment.EnvironmentName);
+    }
+    else if (string.IsNullOrWhiteSpace(mlOpt.BaseUrl?.Trim()))
+    {
+        log.LogInformation(
+            "MlInferenceService: BaseUrl not set; live social ML disabled (environment {Environment}).",
+            app.Environment.EnvironmentName);
+    }
+    else
+    {
+        log.LogWarning(
+            "MlInferenceService: BaseUrl is set but is not a valid http(s) URL; live social ML disabled.");
+    }
+}
 
 // Apply Identity + App domain migrations; optional CSV seed after migrate when DB is empty (see Intex:SeedCsvAfterMigrate).
 using (var scope = app.Services.CreateScope())
