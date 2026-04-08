@@ -399,7 +399,7 @@ export default function DonorDashboardPage() {
 
           {!loading && !error && donations && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-              {/* ── Impact by category (ReportCard-style pills) ── */}
+              {/* ── Impact by category (segmented allocation bar) ── */}
               <section aria-labelledby="impact-by-category-heading">
                 <h2
                   id="impact-by-category-heading"
@@ -421,86 +421,78 @@ export default function DonorDashboardPage() {
                     Your generosity will fuel measurable change across our programs.
                   </p>
                 ) : (
-                  <div
-                    style={{
-                      width: '100%',
-                      boxSizing: 'border-box',
-                      padding: '1.25rem',
-                      background: '#fafaf9',
-                      border: '1px solid #f1f5f9',
-                      borderRadius: 16,
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: 'grid',
-                        width: '100%',
-                        boxSizing: 'border-box',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))',
-                        gap: '1rem',
-                      }}
-                    >
-                      {programImpact.map((row, idx) => {
-                        const pal = CATEGORY_PILL_STYLES[idx % CATEGORY_PILL_STYLES.length];
-                        return (
-                          <div
-                            key={row.label}
-                            style={{
-                              background: pal.bg,
-                              border: `1px solid ${pal.border}`,
-                              borderRadius: 16,
-                              padding: '1.75rem 1.5rem',
-                              textAlign: 'center',
-                              minHeight: 168,
-                              display: 'flex',
-                              flexDirection: 'column',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              boxSizing: 'border-box',
-                            }}
-                          >
-                            <div
-                              style={{
-                                fontFamily: 'Poppins, sans-serif',
-                                fontWeight: 800,
-                                fontSize: 'clamp(1.35rem, 3.2vw, 2rem)',
-                                color: pal.color,
-                                lineHeight: 1.15,
-                                wordBreak: 'break-word',
-                              }}
-                            >
-                              {formatMoney(row.totalAmount)}
-                            </div>
-                            <div
-                              style={{
-                                fontFamily: 'Inter, sans-serif',
-                                fontSize: '0.8rem',
-                                fontWeight: 700,
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.08em',
-                                color: pal.color,
-                                opacity: 0.88,
-                                marginTop: 12,
-                                maxWidth: '100%',
-                              }}
-                            >
-                              {row.label}
-                            </div>
-                            <div
-                              style={{
-                                fontFamily: 'Inter, sans-serif',
-                                fontSize: '0.85rem',
-                                color: '#64748b',
-                                marginTop: 10,
-                              }}
-                            >
-                              {row.giftCount} gift{row.giftCount === 1 ? '' : 's'}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
+                  (() => {
+                    const totalAllocated = programImpact.reduce((sum, row) => sum + row.totalAmount, 0);
+                    return (
+                      <div
+                        style={{
+                          width: '100%',
+                          boxSizing: 'border-box',
+                          padding: '1.25rem',
+                          background: '#fafaf9',
+                          border: '1px solid #f1f5f9',
+                          borderRadius: 16,
+                        }}
+                      >
+                        <div
+                          role="img"
+                          aria-label="Segmented bar chart of donation allocation by category"
+                          style={{
+                            display: 'flex',
+                            width: '100%',
+                            height: 32,
+                            overflow: 'hidden',
+                            borderRadius: 999,
+                            border: '1px solid #E2E8F0',
+                            background: '#fff',
+                          }}
+                        >
+                          {programImpact.map((row, idx) => {
+                            const pal = CATEGORY_PILL_STYLES[idx % CATEGORY_PILL_STYLES.length];
+                            const pct = totalAllocated > 0 ? (row.totalAmount / totalAllocated) * 100 : 0;
+                            return (
+                              <div
+                                key={row.label}
+                                title={`${row.label}: ${formatMoney(row.totalAmount)} (${pct.toFixed(1)}%)`}
+                                style={{
+                                  width: `${pct}%`,
+                                  background: pal.color,
+                                  minWidth: pct > 0 ? 8 : 0,
+                                }}
+                              />
+                            );
+                          })}
+                        </div>
+
+                        <div style={{ marginTop: 12, display: 'grid', gap: 8 }}>
+                          {programImpact.map((row, idx) => {
+                            const pal = CATEGORY_PILL_STYLES[idx % CATEGORY_PILL_STYLES.length];
+                            const pct = totalAllocated > 0 ? (row.totalAmount / totalAllocated) * 100 : 0;
+                            return (
+                              <div
+                                key={`${row.label}-legend`}
+                                style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto auto', gap: 10, alignItems: 'center' }}
+                              >
+                                <span
+                                  aria-hidden="true"
+                                  style={{ width: 10, height: 10, borderRadius: 999, background: pal.color }}
+                                />
+                                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.88rem', color: '#334155' }}>
+                                  {row.label}
+                                </span>
+                                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.82rem', color: '#64748b' }}>
+                                  {pct.toFixed(1)}%
+                                </span>
+                                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.88rem', fontWeight: 700, color: '#1E3A5F' }}>
+                                  {formatMoney(row.totalAmount)}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })()
                 )}
               </section>
 
