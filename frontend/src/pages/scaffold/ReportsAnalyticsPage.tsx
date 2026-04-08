@@ -443,8 +443,8 @@ export default function ReportsAnalyticsPage() {
                     <LineChart data={monthChartData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
                       <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                      <YAxis tickFormatter={(v) => fmtMoney(Number(v))} width={88} tick={{ fontSize: 10 }} />
-                      <Tooltip formatter={(v) => fmtMoney(Number(v ?? 0))} labelStyle={{ color: '#334155' }} />
+                      <YAxis tickFormatter={(v: any) => fmtMoney(Number(v))} width={88} tick={{ fontSize: 10 }} />
+                      <Tooltip formatter={(v: any) => fmtMoney(Number(v ?? 0))} labelStyle={{ color: '#334155' }} />
                       <Line type="monotone" dataKey="amount" name="Amount" stroke="#0D9488" strokeWidth={2} dot={{ r: 3 }} />
                     </LineChart>
                   </ResponsiveContainer>
@@ -458,9 +458,9 @@ export default function ReportsAnalyticsPage() {
                     <ResponsiveContainer>
                       <BarChart data={donData.byDonationType.map((x) => ({ name: x.name, amount: Number(x.amount) }))} layout="vertical">
                         <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                        <XAxis type="number" tickFormatter={(v) => fmtMoney(Number(v))} />
+                        <XAxis type="number" tickFormatter={(v: any) => fmtMoney(Number(v))} />
                         <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 11 }} />
-                        <Tooltip formatter={(v) => fmtMoney(Number(v ?? 0))} />
+                        <Tooltip formatter={(v: any) => fmtMoney(Number(v ?? 0))} />
                         <Bar dataKey="amount" name="Amount" radius={[0, 4, 4, 0]}>
                           {donData.byDonationType.map((_, i) => (
                             <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
@@ -477,8 +477,8 @@ export default function ReportsAnalyticsPage() {
                       <BarChart data={donData.bySupporterType.map((x) => ({ name: x.name, amount: Number(x.amount) }))}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
                         <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-                        <YAxis tickFormatter={(v) => fmtMoney(Number(v))} width={72} />
-                        <Tooltip formatter={(v) => fmtMoney(Number(v ?? 0))} />
+                        <YAxis tickFormatter={(v: any) => fmtMoney(Number(v))} width={72} />
+                        <Tooltip formatter={(v: any) => fmtMoney(Number(v ?? 0))} />
                         <Bar dataKey="amount" fill="#1E3A5F" radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
@@ -494,8 +494,8 @@ export default function ReportsAnalyticsPage() {
                       <BarChart data={donData.byProgramArea.map((x) => ({ name: x.name, amount: Number(x.amount) }))}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
                         <XAxis dataKey="name" interval={0} angle={-20} textAnchor="end" height={70} tick={{ fontSize: 10 }} />
-                        <YAxis tickFormatter={(v) => fmtMoney(Number(v))} width={80} />
-                        <Tooltip formatter={(v) => fmtMoney(Number(v ?? 0))} />
+                        <YAxis tickFormatter={(v: any) => fmtMoney(Number(v))} width={80} />
+                        <Tooltip formatter={(v: any) => fmtMoney(Number(v ?? 0))} />
                         <Bar dataKey="amount" fill="#7C3AED" radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
@@ -508,8 +508,8 @@ export default function ReportsAnalyticsPage() {
                       <BarChart data={donData.bySafehouse.map((x) => ({ name: x.safehouseName, amount: Number(x.amount) }))}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
                         <XAxis dataKey="name" interval={0} angle={-18} textAnchor="end" height={72} tick={{ fontSize: 10 }} />
-                        <YAxis tickFormatter={(v) => fmtMoney(Number(v))} width={80} />
-                        <Tooltip formatter={(v) => fmtMoney(Number(v ?? 0))} />
+                        <YAxis tickFormatter={(v: any) => fmtMoney(Number(v))} width={80} />
+                        <Tooltip formatter={(v: any) => fmtMoney(Number(v ?? 0))} />
                         <Bar dataKey="amount" fill="#D97706" radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>

@@ -120,11 +120,11 @@ function QuickLink({ to, icon, title, description }: QuickLinkProps) {
           border: '1px solid rgba(107,33,168,0.08)',
           transition: 'border-color 0.2s, background 0.2s',
         }}
-        onMouseEnter={(e) => {
+        onMouseEnter={(e: React.MouseEvent) => {
           (e.currentTarget as HTMLElement).style.borderColor = 'var(--hw-purple-soft)';
           (e.currentTarget as HTMLElement).style.background = 'var(--hw-bg-lavender)';
         }}
-        onMouseLeave={(e) => {
+        onMouseLeave={(e: React.MouseEvent) => {
           (e.currentTarget as HTMLElement).style.borderColor = 'rgba(107,33,168,0.08)';
           (e.currentTarget as HTMLElement).style.background = 'var(--hw-bg-white)';
         }}

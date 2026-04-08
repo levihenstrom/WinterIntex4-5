@@ -286,7 +286,7 @@ export default function ImpactPage() {
                     <defs><linearGradient id="gDon" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#D97706" stopOpacity={0.18}/><stop offset="95%" stopColor="#D97706" stopOpacity={0}/></linearGradient></defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                     <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <YAxis tickFormatter={v => `$${v/1000}K`} tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={46} />
+                    <YAxis tickFormatter={(v: any) => `$${v/1000}K`} tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={46} />
                     <Tooltip {...TT} itemStyle={{ color: '#D97706' }} formatter={(v: any) => [`$${v.toLocaleString()}`, 'Donations']} />
                     <Area type="monotone" dataKey="donations" stroke="#D97706" strokeWidth={2.5} fill="url(#gDon)" dot={{ r: 4, fill: '#D97706', strokeWidth: 0 }} activeDot={{ r: 6 }} />
                   </AreaChart>
@@ -310,7 +310,7 @@ export default function ImpactPage() {
                   <LineChart data={chartData} margin={{ top: 5, right: 8, left: 0, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                     <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <YAxis domain={[80, 92]} tickFormatter={v => `${v}%`} tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={40} />
+                    <YAxis domain={[80, 92]} tickFormatter={(v: any) => `${v}%`} tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={40} />
                     <Tooltip {...TT} itemStyle={{ color: '#0D9488' }} formatter={(v: any) => [`${v}%`, 'Rate']} />
                     <Line type="monotone" dataKey="reintegrationRate" stroke="#0D9488" strokeWidth={2.5} dot={{ r: 5, fill: '#0D9488', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 7 }} />
                   </LineChart>
@@ -345,7 +345,7 @@ export default function ImpactPage() {
                   <defs><linearGradient id="gDon2" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#D97706" stopOpacity={0.18}/><stop offset="95%" stopColor="#D97706" stopOpacity={0}/></linearGradient></defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                   <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={false} tickLine={false} />
-                  <YAxis tickFormatter={v => `$${v/1000}K`} tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={false} tickLine={false} width={50} />
+                  <YAxis tickFormatter={(v: any) => `$${v/1000}K`} tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={false} tickLine={false} width={50} />
                   <Tooltip {...TT} itemStyle={{ color: '#D97706' }} formatter={(v: any) => [`$${v.toLocaleString()}`, 'Donations']} />
                   <Area type="monotone" dataKey="donations" stroke="#D97706" strokeWidth={3} fill="url(#gDon2)" dot={{ r: 5, fill: '#D97706', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 7 }} />
                 </AreaChart>
@@ -379,7 +379,7 @@ export default function ImpactPage() {
                   <LineChart data={chartData} margin={{ top: 5, right: 8, left: 0, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                     <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <YAxis domain={[80, 92]} tickFormatter={v => `${v}%`} tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={40} />
+                    <YAxis domain={[80, 92]} tickFormatter={(v: any) => `${v}%`} tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={40} />
                     <Tooltip {...TT} itemStyle={{ color: '#0D9488' }} formatter={(v: any) => [`${v}%`, 'Rate']} />
                     <Line type="monotone" dataKey="reintegrationRate" stroke="#0D9488" strokeWidth={3} dot={{ r: 5, fill: '#0D9488', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 7 }} />
                   </LineChart>
@@ -406,7 +406,7 @@ export default function ImpactPage() {
                   <defs><linearGradient id="gVol" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#7C3AED" stopOpacity={0.15}/><stop offset="95%" stopColor="#7C3AED" stopOpacity={0}/></linearGradient></defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                   <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={false} tickLine={false} />
-                  <YAxis tickFormatter={v => `${(v/1000).toFixed(0)}K`} tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={false} tickLine={false} width={38} />
+                  <YAxis tickFormatter={(v: any) => `${(v/1000).toFixed(0)}K`} tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={false} tickLine={false} width={38} />
                   <Tooltip {...TT} itemStyle={{ color: '#7C3AED' }} formatter={(v: any) => [v.toLocaleString(), 'Hours']} />
                   <Area type="monotone" dataKey="volunteerHours" stroke="#7C3AED" strokeWidth={3} fill="url(#gVol)" dot={{ r: 5, fill: '#7C3AED', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 7 }} />
                 </AreaChart>

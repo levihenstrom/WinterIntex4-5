@@ -150,7 +150,7 @@ export default function NavBar() {
               <NavLink
                 key={link.label}
                 to={link.to}
-                className={({ isActive }) =>
+                className={({ isActive }: { isActive: boolean }) =>
                   'text-sm font-medium no-underline transition-colors ' +
                   (isActive ? 'text-white' : 'text-white/75 hover:text-white')
                 }
@@ -271,7 +271,7 @@ export default function NavBar() {
                 key={link.label}
                 to={link.to}
                 onClick={() => setMenuOpen(false)}
-                className={({ isActive }) =>
+                className={({ isActive }: { isActive: boolean }) =>
                   'block py-3 font-medium text-sm border-b border-white/10 no-underline transition-colors ' +
                   (isActive ? 'text-white' : 'text-white/75 hover:text-white')
                 }
