@@ -22,9 +22,7 @@ const metricBox = (accent: string): React.CSSProperties => ({
   border: `1px solid ${accent}35`,
 });
 
-/**
- * Live social post recommendations via POST /api/ml/social/recommend (Python ML proxy).
- */
+/** Ranked post ideas from the social recommendation service (same API as the admin dashboard widget). */
 export default function SocialMediaSuggestPage() {
   const [goal, setGoal] = useState<MlGoal>('donations');
   const [contentTopic, setContentTopic] = useState('');
@@ -99,11 +97,11 @@ export default function SocialMediaSuggestPage() {
                 lineHeight: 1.2,
               }}
             >
-              Social post recommender
+              Recommended next posts
             </h1>
             <p className="text-muted mb-0" style={{ fontSize: 14, maxWidth: 640 }}>
-              Live recommendations from the trained engagement model (served via the .NET API). Adjust goals and
-              optional constraints, then run the model to see ranked post ideas.
+              Get ranked post ideas based on past performance patterns. Choose your goal and optional constraints,
+              then see suggested formats and topics—use results as a starting point, not a guarantee.
             </p>
           </div>
           <Link
@@ -130,7 +128,7 @@ export default function SocialMediaSuggestPage() {
 
         <div style={{ ...cardStyle, marginBottom: 24 }}>
           <h2 className="h6 fw-bold mb-3" style={{ color: '#1E3A5F' }}>
-            Request
+            What to optimize for
           </h2>
           <form onSubmit={(e) => void handleSubmit(e)}>
             <div className="row g-3">
@@ -148,8 +146,14 @@ export default function SocialMediaSuggestPage() {
                 </select>
               </div>
               <div className="col-md-4">
-                <label className="form-label small fw-semibold text-muted">Top K</label>
+                <label
+                  className="form-label small fw-semibold text-muted"
+                  htmlFor="social-suggest-num-suggestions"
+                >
+                  Number of suggestions
+                </label>
                 <input
+                  id="social-suggest-num-suggestions"
                   type="number"
                   min={1}
                   max={50}
@@ -157,7 +161,11 @@ export default function SocialMediaSuggestPage() {
                   value={topK}
                   onChange={(e) => setTopK(Number(e.target.value))}
                   disabled={loading}
+                  aria-describedby="social-suggest-num-suggestions-hint"
                 />
+                <div id="social-suggest-num-suggestions-hint" className="form-text text-muted small">
+                  Choose how many post ideas you want to see.
+                </div>
               </div>
               <div className="col-md-4 d-flex align-items-end">
                 <button
@@ -166,7 +174,7 @@ export default function SocialMediaSuggestPage() {
                   style={{ background: '#0D9488', border: 'none', padding: '10px 16px', borderRadius: 8 }}
                   disabled={loading}
                 >
-                  {loading ? 'Running model…' : 'Get recommendations'}
+                  {loading ? 'Getting recommendations…' : 'Get recommendations'}
                 </button>
               </div>
               <div className="col-md-6">
@@ -244,7 +252,7 @@ export default function SocialMediaSuggestPage() {
             <div className="spinner-border text-secondary mb-3" role="status" aria-label="Loading">
               <span className="visually-hidden">Loading…</span>
             </div>
-            <p className="fw-semibold fs-6 mb-0">Loading recommendation…</p>
+            <p className="fw-semibold fs-6 mb-0">Loading suggestions…</p>
           </div>
         )}
 
@@ -272,12 +280,12 @@ export default function SocialMediaSuggestPage() {
                 {result.recommendations.length !== 1 ? 's' : ''}
               </h2>
               <span className="small text-muted">
-                Goal: <strong>{result.goal}</strong> · topK={result.topK}
+                Goal: <strong>{result.goal}</strong> · {result.topK} suggestion{result.topK !== 1 ? 's' : ''} requested
               </span>
             </div>
 
             {result.recommendations.length === 0 ? (
-              <p className="text-muted mb-0">The model returned no rows. Try different inputs or topK.</p>
+              <p className="text-muted mb-0">No suggestions matched. Try different constraints or number of suggestions.</p>
             ) : (
               <div className="d-flex flex-column gap-4">
                 {result.recommendations.map((rec, idx) => (
@@ -325,28 +333,30 @@ export default function SocialMediaSuggestPage() {
                         </div>
                       </div>
                       <div style={metricBox('#1D4ED8')}>
-                        <div className="small text-muted text-uppercase fw-bold mb-1">Engagement (pred.)</div>
+                        <div className="small text-muted text-uppercase fw-bold mb-1">Est. engagement</div>
                         <div className="fw-bold tabular-nums" style={{ color: '#1E40AF' }}>
                           {(rec.predictedEngagementRate * 100).toFixed(1)}%
                         </div>
                       </div>
                       <div style={metricBox('#D97706')}>
-                        <div className="small text-muted text-uppercase fw-bold mb-1">P(any referral)</div>
+                        <div className="small text-muted text-uppercase fw-bold mb-1">Est. gift-link rate</div>
                         <div className="fw-bold tabular-nums" style={{ color: '#B45309' }}>
                           {(rec.predictedPAnyReferral * 100).toFixed(0)}%
                         </div>
                       </div>
                       <div style={metricBox('#059669')}>
-                        <div className="small text-muted text-uppercase fw-bold mb-1">Referrals (pred.)</div>
+                        <div className="small text-muted text-uppercase fw-bold mb-1">Est. referrals</div>
                         <div className="fw-bold tabular-nums" style={{ color: '#047857' }}>
                           {rec.predictedReferralsCount != null
                             ? Number(rec.predictedReferralsCount).toFixed(1)
                             : '—'}
                         </div>
                       </div>
-                      <div style={metricBox('#64748B')}>
-                        <div className="small text-muted text-uppercase fw-bold mb-1">Ranking score</div>
-                        <div className="fw-bold tabular-nums" style={{ color: '#334155' }}>
+                      <div style={{ ...metricBox('#64748B'), opacity: 0.92 }}>
+                        <div className="small text-muted text-uppercase fw-bold mb-1" style={{ fontSize: 10 }}>
+                          Sort score
+                        </div>
+                        <div className="tabular-nums" style={{ color: '#64748B', fontSize: 14, fontWeight: 600 }}>
                           {Number(rec.rankingScore).toFixed(3)}
                         </div>
                       </div>

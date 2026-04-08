@@ -5,6 +5,7 @@ import DeleteConfirmModal from '../../components/DeleteConfirmModal';
 import { ErrorState, LoadingState } from '../../components/common/AsyncStatus';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import { buildDonorMlMap, getCurrentDonorScores, type DonorChurnRow } from '../../lib/mlApi';
+import { formatDonorOutreachSummary } from '../../lib/mlDisplayHelpers';
 
 /* ── API shape (camelCase from ASP.NET) ─────────────────────── */
 interface SupporterApi {
@@ -183,7 +184,7 @@ export default function SupportersListPage() {
         setDonorMlById(buildDonorMlMap(donorMlRows));
       } catch (mlErr) {
         setDonorMlById(new Map());
-        setMlLoadError(mlErr instanceof Error ? mlErr.message : 'Donor ML scores unavailable.');
+        setMlLoadError(mlErr instanceof Error ? mlErr.message : 'Donor insight data unavailable.');
       }
 
       let sum = 0;
@@ -377,7 +378,7 @@ export default function SupportersListPage() {
         {error && <ErrorState message={error} />}
         {mlLoadError && !loading && (
           <div className="alert alert-secondary small mb-3" role="status">
-            {mlLoadError} Churn overlays are hidden until ML data loads.
+            {mlLoadError} Churn risk overlays are hidden until insight data loads.
           </div>
         )}
 
@@ -397,9 +398,9 @@ export default function SupportersListPage() {
                   color: '#7F1D1D',
                 }}
               >
-                <strong>ML at-risk donors:</strong> {mlCriticalOrHighCount} supporter
+                <strong>Donors at risk:</strong> {mlCriticalOrHighCount} supporter
                 {mlCriticalOrHighCount !== 1 ? 's' : ''} scored Critical or High churn risk (
-                {donorMlById.size} total with ML scores).
+                {donorMlById.size} total scored).
               </div>
             )}
 
@@ -469,9 +470,9 @@ export default function SupportersListPage() {
                   cursor: donorMlById.size === 0 ? 'not-allowed' : 'pointer',
                   opacity: donorMlById.size === 0 ? 0.5 : 1,
                 }}
-                title="Sort by ML outreach priority (lower rank = reach out first)"
+                title="Sort by outreach priority (lower rank = reach out first)"
               >
-                {sortByMlRisk ? '✓ ML risk sort' : 'Sort by ML risk'}
+                {sortByMlRisk ? '✓ Outreach priority sort' : 'Sort by outreach priority'}
               </button>
               <button
                 type="button"
@@ -760,7 +761,7 @@ export default function SupportersListPage() {
                             <Badge label={labelForType(s.supporterType)} bg={tc.bg} text={tc.text} />
                             <Badge label={s.status ?? '—'} bg={sc.bg} text={sc.text} />
                             {dm && churnColors && (
-                              <Badge label={`Churn: ${dm.riskBand}`} bg={churnColors.bg} text={churnColors.text} />
+                              <Badge label={`Lapse risk: ${dm.riskBand}`} bg={churnColors.bg} text={churnColors.text} />
                             )}
                           </div>
                         </div>
@@ -777,16 +778,18 @@ export default function SupportersListPage() {
                             color: '#78350F',
                           }}
                         >
-                          <div className="fw-semibold">Donor ML (supporter #{s.supporterId})</div>
-                          <div>
-                            Outreach priority rank <strong>#{dm.outreachPriorityRank}</strong> · score{' '}
-                            {Number(dm.churnRiskScore).toFixed(2)}
+                          <div className="fw-semibold">Donor insights</div>
+                          <div className="small">
+                            {formatDonorOutreachSummary(dm.riskBand, dm.outreachPriorityRank)}
                           </div>
                           {dm.topDrivers?.[0] && (
                             <div style={{ marginTop: 4, color: '#92400E' }} title={dm.topDrivers.join(' · ')}>
-                              Driver: {dm.topDrivers[0]}
+                              Top signal: {dm.topDrivers[0]}
                             </div>
                           )}
+                          <div className="text-muted mt-1" style={{ fontSize: 10 }}>
+                            Model score: {Number(dm.churnRiskScore).toFixed(2)} (for staff reference)
+                          </div>
                           {(dm.riskBand === 'Critical' || dm.riskBand === 'High') && (
                             <div style={{ marginTop: 6, fontWeight: 700, color: '#991B1B' }}>
                               High risk of lapsing — consider outreach

@@ -144,7 +144,7 @@ export function formatLiveSocialMlUserMessage(message: string): string {
     lower.includes('did not respond') ||
     lower.includes('could not complete')
   ) {
-    return 'Live recommendation service is temporarily unavailable. Ensure the ML service is running (e.g. uvicorn ml_service.main:app --port 8001 from the repo root) and try again.';
+    return 'Live recommendation service is temporarily unavailable. If you are on the dev team, ensure the recommendation service is running (e.g. uvicorn ml_service.main:app --port 8001 from the repo root) and try again.';
   }
   return m;
 }

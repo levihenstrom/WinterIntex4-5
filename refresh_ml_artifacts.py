@@ -6,13 +6,13 @@ Run from the repository root (WinterIntex4-5)::
 
     python3 refresh_ml_artifacts.py
 
-Equivalent (from ``ml_pipeline``)::
+Equivalent (from ``ml-pipelines``)::
 
-    cd ml_pipeline && PYTHONPATH=. python3 -m ml_backend_export.run_all_backend_exports
+    cd ml-pipelines && PYTHONPATH=. python3 -m ml_backend_export.run_all_backend_exports
 
 Or from repo root::
 
-    PYTHONPATH=ml_pipeline python3 -m ml_backend_export.run_all_backend_exports
+    PYTHONPATH=ml-pipelines python3 -m ml_backend_export.run_all_backend_exports
 """
 
 from __future__ import annotations
@@ -21,7 +21,7 @@ import sys
 from pathlib import Path
 
 _ROOT = Path(__file__).resolve().parent
-sys.path.insert(0, str(_ROOT / "ml_pipeline"))
+sys.path.insert(0, str(_ROOT / "ml-pipelines"))
 
 from ml_backend_export.run_all_backend_exports import main
 

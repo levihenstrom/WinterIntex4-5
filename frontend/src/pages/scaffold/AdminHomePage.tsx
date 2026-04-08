@@ -3,12 +3,17 @@ import { Link } from 'react-router-dom';
 import { fetchPaged, type PagedResult } from '../../lib/apiClient';
 import {
   getAtRiskDonors,
+  getResidentCurrentScores,
   getResidentPriority,
   recommendSocialPost,
   type DonorChurnRow,
   type ResidentMlScoreRow,
   type SocialRecommendResponse,
 } from '../../lib/mlApi';
+import {
+  formatDonorOutreachSummary,
+  formatResidentPriorityRank,
+} from '../../lib/mlDisplayHelpers';
 import { useAuth } from '../../context/AuthContext';
 import { ErrorState, LoadingState } from '../../components/common/AsyncStatus';
 import 'bootstrap-icons/font/bootstrap-icons.css';
@@ -159,7 +164,7 @@ function fmtDonationMoney(n: number | null | undefined, currency = 'PHP') {
   }
 }
 
-// ── ML dashboard widgets (isolated fetch/error so one failure does not block others) ──
+// ── Insights dashboard widgets (isolated fetch/error so one failure does not block others) ──
 
 function MlSectionCard({
   title,
@@ -175,7 +180,7 @@ function MlSectionCard({
       <div className="card border-0 shadow-sm rounded-3 h-100">
         <div className="card-body d-flex flex-column">
           <p className="hw-eyebrow mb-2" style={{ color: 'var(--hw-teal)' }}>
-            ML insights
+            Insights
           </p>
           <h3 className="h6 fw-semibold mb-3" style={{ color: 'var(--hw-navy)' }}>
             {title}
@@ -198,23 +203,26 @@ function MlSectionCard({
 
 function ResidentsNeedingAttentionWidget() {
   const [rows, setRows] = useState<ResidentMlScoreRow[] | null>(null);
+  const [totalScored, setTotalScored] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    getResidentPriority(10)
-      .then((r) => {
+    Promise.all([getResidentPriority(10), getResidentCurrentScores()])
+      .then(([priorityRows, allScored]) => {
         if (!cancelled) {
-          setRows(r);
+          setRows(priorityRows);
+          setTotalScored(allScored.length);
           setErr(null);
         }
       })
       .catch((e: Error) => {
         if (!cancelled) {
-          setErr(e.message || 'Could not load ML priority list.');
+          setErr(e.message || 'Could not load resident priority list.');
           setRows(null);
+          setTotalScored(null);
         }
       })
       .finally(() => {
@@ -228,7 +236,7 @@ function ResidentsNeedingAttentionWidget() {
   if (loading) return <LoadingState message="Loading ML insights…" size="compact" />;
   if (err) return <ErrorState message={err} />;
   if (!rows?.length) {
-    return <p className="text-muted mb-0">No ML readiness rows returned.</p>;
+    return <p className="text-muted mb-0">No resident priority list returned.</p>;
   }
 
   return (
@@ -237,18 +245,14 @@ function ResidentsNeedingAttentionWidget() {
         <li key={r.residentCode} className="mb-2 pb-2 border-bottom border-light">
           <div className="fw-semibold" style={{ color: 'var(--hw-navy)' }}>
             {r.residentCode}
-            <span className="text-muted fw-normal ms-1">· rank {r.supportPriorityRank}</span>
           </div>
-          <div className="text-muted">{r.operationalBand}</div>
-          <div className="text-muted">
-            Readiness %ile:{' '}
-            {r.readinessPercentileAmongCurrentResidents != null
-              ? `${Number(r.readinessPercentileAmongCurrentResidents).toFixed(1)}%`
-              : '—'}
+          <div className="text-muted small">
+            {formatResidentPriorityRank(r.supportPriorityRank, totalScored)}
           </div>
+          <div className="text-muted small">{r.operationalBand}</div>
           {r.topRiskFactors?.[0] && (
             <div className="text-truncate" title={r.topRiskFactors[0]} style={{ fontSize: 12, color: '#64748B' }}>
-              Risk: {r.topRiskFactors[0]}
+              Factor: {r.topRiskFactors[0]}
             </div>
           )}
         </li>
@@ -289,7 +293,7 @@ function AtRiskDonorsWidget() {
   if (loading) return <LoadingState message="Loading ML insights…" size="compact" />;
   if (err) return <ErrorState message={err} />;
   if (!rows?.length) {
-    return <p className="text-muted mb-0">No donor churn scores returned.</p>;
+    return <p className="text-muted mb-0">No at-risk donor list returned.</p>;
   }
 
   return (
@@ -299,9 +303,7 @@ function AtRiskDonorsWidget() {
           <div className="fw-semibold" style={{ color: 'var(--hw-navy)' }}>
             {d.displayName || `Supporter #${d.supporterId}`}
           </div>
-          <div className="text-muted">
-            {d.riskBand} · outreach rank {d.outreachPriorityRank} · score {Number(d.churnRiskScore).toFixed(2)}
-          </div>
+          <div className="text-muted small">{formatDonorOutreachSummary(d.riskBand, d.outreachPriorityRank)}</div>
           {d.topDrivers?.[0] && (
             <div className="text-truncate" title={d.topDrivers[0]} style={{ fontSize: 12, color: '#64748B' }}>
               {d.topDrivers[0]}
@@ -330,7 +332,7 @@ function BestNextPostWidget() {
       })
       .catch((e: Error) => {
         if (!cancelled) {
-          setErr(e.message || 'Social ML service unavailable.');
+          setErr(e.message || 'Recommendations are temporarily unavailable.');
           setData(null);
         }
       })
@@ -360,9 +362,9 @@ function BestNextPostWidget() {
       <div className="text-muted small">
         {rec.mediaType} · {rec.postHour}:00 · topic: {rec.contentTopic || '—'}
       </div>
-      <div className="small mt-2">
-        P(referral):{' '}
-        <strong>{(rec.predictedPAnyReferral * 100).toFixed(0)}%</strong>
+      <div className="small mt-2 text-muted">
+        Estimated chance of a gift-linked referral:{' '}
+        <strong className="text-body">{(rec.predictedPAnyReferral * 100).toFixed(0)}%</strong>
       </div>
       <p className="small text-muted mt-2 mb-0" style={{ lineHeight: 1.45 }}>
         {rec.whyRecommended}
@@ -484,9 +486,9 @@ export default function AdminHomePage() {
           />
         </div>
 
-        {/* ML insights — staff-only API; failures are contained per widget */}
+        {/* Priority & insights — staff-only API; failures are contained per widget */}
         <div className="mb-5">
-          <p className="hw-eyebrow mb-3">Machine learning</p>
+          <p className="hw-eyebrow mb-3">Priority &amp; insights</p>
           <div className="row g-3">
             <MlSectionCard
               title="Residents needing attention"
@@ -495,13 +497,13 @@ export default function AdminHomePage() {
               <ResidentsNeedingAttentionWidget />
             </MlSectionCard>
             <MlSectionCard
-              title="At-risk donors"
+              title="Donors at risk"
               footerLink={{ to: '/admin/donations', label: 'Open supporters' }}
             >
               <AtRiskDonorsWidget />
             </MlSectionCard>
             <MlSectionCard
-              title="Best next post (live model)"
+              title="Recommended next post"
               footerLink={{ to: '/admin/social-media/suggest', label: 'Explore recommendations' }}
             >
               <BestNextPostWidget />
