@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { deleteJson, fetchAllPaged, postJson, putJson } from '../../lib/apiClient';
 import AdminKpiStrip from '../../components/admin/AdminKpiStrip';
 import DeleteConfirmModal from '../../components/DeleteConfirmModal';
@@ -732,7 +733,8 @@ export default function SupportersListPage() {
                           {initials}
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div
+                          <Link
+                            to={`/admin/donations/contributions?supporter=${s.supporterId}`}
                             style={{
                               fontWeight: 700,
                               color: '#1E3A5F',
@@ -740,10 +742,13 @@ export default function SupportersListPage() {
                               whiteSpace: 'nowrap',
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',
+                              display: 'block',
+                              textDecoration: 'none',
                             }}
+                            title={`View ${display}'s donations`}
                           >
                             {display}
-                          </div>
+                          </Link>
                           {s.organizationName && (
                             <div
                               style={{

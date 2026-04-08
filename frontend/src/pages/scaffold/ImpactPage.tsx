@@ -338,6 +338,22 @@ export default function ImpactPage() {
         </div>
       </div>
 
+      {/* ── KPI plain-language descriptions ── */}
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0.75rem 1.5rem 0' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 0 }}>
+          {[
+            'survivors currently receiving safe housing and support',
+            'lives transformed through our programs',
+            'hours of community service dedicated to healing',
+            'invested in survivor recovery programs',
+          ].map((desc, i) => (
+            <div key={i} style={{ textAlign: 'center', padding: '0 0.5rem' }}>
+              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.72rem', color: '#94a3b8', margin: 0, lineHeight: 1.5 }}>{desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* ── Tabs ── */}
       <div style={{ maxWidth: 1100, margin: '2.5rem auto 0', padding: '0 1.5rem' }}>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>

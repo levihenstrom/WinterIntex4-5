@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { fetchAllPaged } from '../../lib/apiClient';
+import { fetchAllPaged, postJson } from '../../lib/apiClient';
 import AdminKpiStrip from '../../components/admin/AdminKpiStrip';
 import { ErrorState, LoadingState } from '../../components/common/AsyncStatus';
 import 'bootstrap-icons/font/bootstrap-icons.css';
@@ -149,6 +149,69 @@ export default function AllocationsPage() {
     return () => window.removeEventListener('keydown', onKey);
   }, [detailRow]);
 
+  // ── Create Allocation Modal state ──
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    donationId: '',
+    amountAllocated: '',
+    programArea: '',
+    safehouseId: '',
+    allocationDate: new Date().toISOString().slice(0, 10),
+    allocationNotes: '',
+  });
+  const [createSaving, setCreateSaving] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [createSuccess, setCreateSuccess] = useState(false);
+
+  function resetCreateForm() {
+    setCreateForm({
+      donationId: '',
+      amountAllocated: '',
+      programArea: '',
+      safehouseId: '',
+      allocationDate: new Date().toISOString().slice(0, 10),
+      allocationNotes: '',
+    });
+    setCreateError(null);
+    setCreateSuccess(false);
+  }
+
+  async function handleCreateSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setCreateSaving(true);
+    setCreateError(null);
+    try {
+      await postJson('/api/donation-allocations', {
+        donationId: Number(createForm.donationId),
+        amountAllocated: Number(createForm.amountAllocated),
+        programArea: createForm.programArea.trim(),
+        safehouseId: Number(createForm.safehouseId),
+        allocationDate: createForm.allocationDate,
+        allocationNotes: createForm.allocationNotes.trim() || null,
+      });
+      setCreateSuccess(true);
+      setShowCreateModal(false);
+      resetCreateForm();
+      // Refresh the list
+      setLoading(true);
+      fetchAllPaged<DonationAllocationRow>('/api/donation-allocations', 200)
+        .then((data) => setRows(data))
+        .catch((err: Error) => setError(err.message))
+        .finally(() => setLoading(false));
+    } catch (err) {
+      setCreateError(err instanceof Error ? err.message : 'Failed to create allocation.');
+    } finally {
+      setCreateSaving(false);
+    }
+  }
+
+  useEffect(() => {
+    if (createSuccess) {
+      const t = setTimeout(() => setCreateSuccess(false), 3000);
+      return () => clearTimeout(t);
+    }
+  }, [createSuccess]);
+
   return (
     <div className="py-4" style={{ background: 'var(--hw-bg-gray)', minHeight: '100%' }}>
       <div className="container-xl">
@@ -178,10 +241,35 @@ export default function AllocationsPage() {
           >
             Donation allocations
           </h1>
-          <p className="text-muted mb-0" style={{ fontSize: 14 }}>
-            Live data from your database: gifts routed to safehouses and program areas (staff scope applies).
-          </p>
+          <div className="d-flex justify-content-between align-items-start">
+            <p className="text-muted mb-0" style={{ fontSize: 14 }}>
+              Live data from your database: gifts routed to safehouses and program areas (staff scope applies).
+            </p>
+            <button
+              type="button"
+              onClick={() => { resetCreateForm(); setShowCreateModal(true); }}
+              style={{
+                background: '#1E3A5F',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 8,
+                padding: '9px 20px',
+                fontWeight: 600,
+                fontSize: 13,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              + New Allocation
+            </button>
+          </div>
         </div>
+
+        {createSuccess && (
+          <div className="alert alert-success py-2 small mb-3" role="status">
+            Allocation created successfully.
+          </div>
+        )}
 
         {loading && <LoadingState message="Loading allocations…" />}
         {error && <ErrorState message={error} />}
@@ -432,6 +520,102 @@ export default function AllocationsPage() {
               </div>
             )}
           </>
+        )}
+
+        {/* Create Allocation Modal */}
+        {showCreateModal && (
+          <div className="modal d-block" style={{ backgroundColor: 'rgba(0,0,0,0.55)' }} role="dialog" aria-modal="true" aria-labelledby="createAllocTitle">
+            <div className="modal-dialog modal-dialog-centered modal-lg">
+              <div className="modal-content">
+                <div className="modal-header border-bottom">
+                  <h5 className="modal-title fw-bold text-dark mb-0" id="createAllocTitle">
+                    New Allocation
+                  </h5>
+                  <button type="button" className="btn-close" aria-label="Close" onClick={() => setShowCreateModal(false)} />
+                </div>
+                <form onSubmit={(e) => void handleCreateSubmit(e)}>
+                  <div className="modal-body">
+                    {createError && <div className="alert alert-danger py-2 small">{createError}</div>}
+                    <div className="row g-3">
+                      <div className="col-md-6">
+                        <label className="form-label small fw-semibold">Donation ID *</label>
+                        <input
+                          type="number"
+                          required
+                          className="form-control form-control-sm"
+                          value={createForm.donationId}
+                          onChange={(e) => setCreateForm((f) => ({ ...f, donationId: e.target.value }))}
+                        />
+                      </div>
+                      <div className="col-md-6">
+                        <label className="form-label small fw-semibold">Amount Allocated *</label>
+                        <input
+                          type="number"
+                          required
+                          step="0.01"
+                          min="0"
+                          className="form-control form-control-sm"
+                          value={createForm.amountAllocated}
+                          onChange={(e) => setCreateForm((f) => ({ ...f, amountAllocated: e.target.value }))}
+                        />
+                      </div>
+                      <div className="col-md-6">
+                        <label className="form-label small fw-semibold">Program Area *</label>
+                        <input
+                          type="text"
+                          required
+                          className="form-control form-control-sm"
+                          value={createForm.programArea}
+                          onChange={(e) => setCreateForm((f) => ({ ...f, programArea: e.target.value }))}
+                        />
+                      </div>
+                      <div className="col-md-6">
+                        <label className="form-label small fw-semibold">Safehouse ID</label>
+                        <input
+                          type="number"
+                          className="form-control form-control-sm"
+                          value={createForm.safehouseId}
+                          onChange={(e) => setCreateForm((f) => ({ ...f, safehouseId: e.target.value }))}
+                        />
+                      </div>
+                      <div className="col-md-6">
+                        <label className="form-label small fw-semibold">Allocation Date *</label>
+                        <input
+                          type="date"
+                          required
+                          className="form-control form-control-sm"
+                          value={createForm.allocationDate}
+                          onChange={(e) => setCreateForm((f) => ({ ...f, allocationDate: e.target.value }))}
+                        />
+                      </div>
+                      <div className="col-12">
+                        <label className="form-label small fw-semibold">Notes</label>
+                        <textarea
+                          className="form-control form-control-sm"
+                          rows={3}
+                          value={createForm.allocationNotes}
+                          onChange={(e) => setCreateForm((f) => ({ ...f, allocationNotes: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="modal-footer border-top">
+                    <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => setShowCreateModal(false)}>
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="btn btn-sm"
+                      disabled={createSaving}
+                      style={{ background: '#1E3A5F', color: '#fff' }}
+                    >
+                      {createSaving ? 'Saving...' : 'Create Allocation'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>

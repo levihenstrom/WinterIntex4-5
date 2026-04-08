@@ -10,6 +10,7 @@ import {
   BarChart,
   Bar,
   Cell,
+  Legend,
 } from 'recharts';
 import { fetchJson } from '../../lib/apiClient';
 import { ErrorState, LoadingState } from '../../components/common/AsyncStatus';
@@ -441,24 +442,6 @@ export default function ReportsAnalyticsPage() {
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16, marginBottom: 20 }}>
                 <div style={card}>
-                  <h3 style={{ fontSize: 15, color: '#1E3A5F', marginBottom: 12 }}>By contribution type</h3>
-                  <div style={{ width: '100%', height: 260 }}>
-                    <ResponsiveContainer>
-                      <BarChart data={donData.byDonationType.map((x) => ({ name: x.name, amount: Number(x.amount) }))} layout="vertical">
-                        <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                        <XAxis type="number" tickFormatter={(v: any) => fmtMoney(Number(v))} />
-                        <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 11 }} />
-                        <Tooltip formatter={(v: any) => fmtMoney(Number(v ?? 0))} />
-                        <Bar dataKey="amount" name="Amount" radius={[0, 4, 4, 0]}>
-                          {donData.byDonationType.map((_, i) => (
-                            <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                          ))}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-                <div style={card}>
                   <h3 style={{ fontSize: 15, color: '#1E3A5F', marginBottom: 12 }}>By donor segment</h3>
                   <div style={{ width: '100%', height: 260 }}>
                     <ResponsiveContainer>
@@ -539,18 +522,12 @@ export default function ReportsAnalyticsPage() {
 
           {outData && !outLoading && (
             <>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 14, marginBottom: 28 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14, marginBottom: 28 }}>
                 <div style={{ ...card, borderTop: '4px solid #0D9488' }}>
                   <div style={{ fontSize: 12, fontWeight: 700, color: '#0D9488', marginBottom: 6 }}>Caring</div>
                   <div style={{ fontSize: 13, color: '#475569', marginBottom: 8 }}>{outData.annualAccomplishment.caring.label}</div>
                   <div style={{ fontSize: 22, fontWeight: 700, color: '#1E293B' }}>{outData.annualAccomplishment.caring.serviceUnits.toLocaleString()} service units</div>
                   <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.5, marginTop: 10, marginBottom: 0 }}>{outData.annualAccomplishment.caring.detail}</p>
-                </div>
-                <div style={{ ...card, borderTop: '4px solid #7C3AED' }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: '#7C3AED', marginBottom: 6 }}>Healing</div>
-                  <div style={{ fontSize: 13, color: '#475569', marginBottom: 8 }}>{outData.annualAccomplishment.healing.label}</div>
-                  <div style={{ fontSize: 22, fontWeight: 700, color: '#1E293B' }}>{outData.annualAccomplishment.healing.serviceUnits.toLocaleString()} health records</div>
-                  <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.5, marginTop: 10, marginBottom: 0 }}>{outData.annualAccomplishment.healing.detail}</p>
                 </div>
                 <div style={{ ...card, borderTop: '4px solid #D97706' }}>
                   <div style={{ fontSize: 12, fontWeight: 700, color: '#D97706', marginBottom: 6 }}>Teaching</div>
@@ -633,6 +610,35 @@ export default function ReportsAnalyticsPage() {
               <p style={{ color: '#64748B', fontSize: 14, marginBottom: 16 }}>
                 Side-by-side view of census, reintegration, learning progress, and health scores by safehouse.
               </p>
+
+              {/* Safehouse Performance Comparison Chart */}
+              {outData.safehouseRows.length > 0 && (
+                <div style={{ ...card, marginBottom: 20 }}>
+                  <h3 style={{ fontFamily: 'Poppins, sans-serif', fontSize: 17, color: '#1E3A5F', marginBottom: 4 }}>Safehouse Performance Comparison</h3>
+                  <p style={{ fontSize: 13, color: '#64748B', marginBottom: 16 }}>Residents served and reintegration success rate by safehouse.</p>
+                  <div style={{ width: '100%', height: 320 }}>
+                    <ResponsiveContainer>
+                      <BarChart
+                        data={outData.safehouseRows.map((r) => ({
+                          name: r.safehouseName,
+                          residents: r.reintegrationAttempted,
+                          successRate: r.reintegrationSuccessRate ?? 0,
+                        }))}
+                        margin={{ top: 5, right: 16, left: 0, bottom: 0 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                        <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                        <YAxis yAxisId="left" tick={{ fontSize: 11 }} />
+                        <YAxis yAxisId="right" orientation="right" tickFormatter={(v: number) => `${v}%`} domain={[0, 100]} tick={{ fontSize: 11 }} />
+                        <Tooltip formatter={(v: number, name: string) => [name === 'successRate' ? `${v}%` : v, name === 'successRate' ? 'Success Rate' : 'Residents Served']} />
+                        <Legend wrapperStyle={{ fontSize: 12 }} />
+                        <Bar yAxisId="left" dataKey="residents" name="Residents Served" fill="#1E3A5F" radius={[4, 4, 0, 0]} />
+                        <Bar yAxisId="right" dataKey="successRate" name="Success Rate (%)" fill="#0D9488" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              )}
 
               <div style={card}>
                 <div style={{ overflowX: 'auto' }}>

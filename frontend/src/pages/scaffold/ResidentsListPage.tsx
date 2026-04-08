@@ -802,6 +802,12 @@ export default function ResidentsListPage() {
                                     Full profile
                                   </button>
                                 </li>
+                                <li>
+                                  <Link className="dropdown-item" to={`/admin/residents/${r.residentId}`}>
+                                    <i className="bi bi-box-arrow-up-right me-2 text-secondary" aria-hidden />
+                                    View Profile
+                                  </Link>
+                                </li>
                                 {canWrite ? (
                                   <li>
                                     <button type="button" className="dropdown-item" onClick={() => openEdit(r)}>

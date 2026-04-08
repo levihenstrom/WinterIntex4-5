@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { deleteJson, fetchAllPaged, postJson } from '../../lib/apiClient';
 import AdminKpiStrip from '../../components/admin/AdminKpiStrip';
 import DeleteConfirmModal from '../../components/DeleteConfirmModal';
@@ -48,6 +49,8 @@ function fmtDetailDate(iso: string | null | undefined): string {
 
 export default function ContributionsPage() {
   const PAGE_SIZE = 20;
+  const [searchParams, setSearchParams] = useSearchParams();
+  const supporterParam = searchParams.get('supporter');
   const [donations, setDonations] = useState<DonationRow[]>([]);
   const [supporters, setSupporters] = useState<SupporterOpt[]>([]);
   const [loading, setLoading] = useState(true);
@@ -100,7 +103,9 @@ export default function ContributionsPage() {
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
+    const supId = supporterParam ? Number(supporterParam) : null;
     return donations.filter((d) => {
+      if (supId != null && d.supporterId !== supId) return false;
       const matchType = typeFilter === 'All' || (d.donationType ?? '') === typeFilter;
       const name = supporterName(d.supporter ?? undefined).toLowerCase();
       const matchSearch =
@@ -110,7 +115,7 @@ export default function ContributionsPage() {
         String(d.donationId).includes(q);
       return matchType && matchSearch;
     });
-  }, [donations, typeFilter, search]);
+  }, [donations, typeFilter, search, supporterParam]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageRows = useMemo(
@@ -239,6 +244,30 @@ export default function ContributionsPage() {
 
         {loading && <LoadingState message="Loading contributions…" />}
         {error && <ErrorState message={error} />}
+
+        {supporterParam && !loading && (
+          <div
+            className="d-flex align-items-center gap-2 mb-3 px-3 py-2 rounded-2"
+            style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', fontSize: 13 }}
+          >
+            <i className="bi bi-funnel-fill" style={{ color: '#1E40AF' }} />
+            <span style={{ color: '#1E3A5F' }}>
+              Filtered to supporter <strong>#{supporterParam}</strong>
+              {(() => {
+                const s = supporters.find((x) => x.supporterId === Number(supporterParam));
+                return s ? ` (${supporterName(s)})` : '';
+              })()}
+            </span>
+            <button
+              type="button"
+              className="btn btn-sm btn-link text-decoration-none p-0 ms-auto"
+              style={{ color: '#1E40AF', fontWeight: 600 }}
+              onClick={() => setSearchParams({})}
+            >
+              Clear filter
+            </button>
+          </div>
+        )}
 
         {!loading && (
           <>

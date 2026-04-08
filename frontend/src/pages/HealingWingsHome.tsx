@@ -138,7 +138,7 @@ function MissionSection() {
                 HealingWings provides safe homes and professional rehabilitation services for girl survivors of sexual abuse and trafficking, helping them successfully reintegrate into family life and society. With residential shelters serving girls aged 8 to 18, we work alongside local authorities and social welfare agencies to rescue, shelter, and restore.
               </p>
               <p>
-                 The children are rescued by the local police department or anti-trafficking agents who refer the children through the Department of Social Welfare and Development (DSWD) to Lighthouse Sanctuary. The social worker in the sanctuary will assist the child in transitioning into their new environment.
+                 The children are rescued by the local police department or anti-trafficking agents who refer the children through the Department of Social Welfare and Development (DSWD) to Safehouse Sanctuary. The social worker in the sanctuary will assist the child in transitioning into their new environment.
 
               </p>
             </div>

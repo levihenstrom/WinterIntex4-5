@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { fetchPaged, type PagedResult } from '../../lib/apiClient';
+import { fetchJson, fetchPaged, type PagedResult } from '../../lib/apiClient';
 import {
   getAtRiskDonors,
   getResidentCurrentScores,
@@ -388,11 +388,46 @@ function BestNextPostWidget() {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
+interface LiveStats {
+  totalResidents: number;
+  successfulReintegrations: number;
+  safehousesActive: number;
+  donationsRaisedTotal: number;
+  volunteerHoursTotal: number;
+  reintegrationRatePct: number;
+}
+
 export default function AdminHomePage() {
   const { authSession } = useAuth();
 
   const [recentDonations, setRecentDonations] = useState<PagedResult<RecentDonationRow> | null>(null);
   const [recentError, setRecentError] = useState(false);
+  const [liveStats, setLiveStats] = useState<LiveStats | null>(null);
+  const [alertRows, setAlertRows] = useState<ResidentMlScoreRow[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchJson<LiveStats>('/api/public-impact/live-stats')
+      .then((s) => { if (!cancelled) setLiveStats(s); })
+      .catch(() => { /* optional */ });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    getResidentCurrentScores()
+      .then((scores) => {
+        if (!cancelled) {
+          const highPriority = scores
+            .filter((s) => s.supportPriorityRank <= 2)
+            .sort((a, b) => a.supportPriorityRank - b.supportPriorityRank)
+            .slice(0, 5);
+          setAlertRows(highPriority);
+        }
+      })
+      .catch(() => { /* optional */ });
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -462,6 +497,91 @@ export default function AdminHomePage() {
             )}
           </p>
         </div>
+
+        {/* North Star OKR Card */}
+        {liveStats && (
+          <div
+            className="mb-4 rounded-3 p-4"
+            style={{
+              background: '#1E3A5F',
+              color: '#fff',
+            }}
+          >
+            <div className="d-flex align-items-center gap-3 flex-wrap">
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', opacity: 0.7, marginBottom: 4 }}>
+                  North Star Metric
+                </div>
+                <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 900, fontSize: 'clamp(2rem, 4vw, 3rem)', lineHeight: 1 }}>
+                  {liveStats.reintegrationRatePct}%
+                </div>
+                <div style={{ fontSize: 14, marginTop: 6, opacity: 0.85 }}>
+                  Reintegration Success Rate
+                </div>
+                <div style={{ fontSize: 13, opacity: 0.6, marginTop: 2 }}>
+                  residents successfully reintegrated into society
+                </div>
+                <div style={{ fontSize: 12, opacity: 0.5, marginTop: 8, fontStyle: 'italic' }}>
+                  Every percentage point represents a life transformed.
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* High-Priority Alerts */}
+        {alertRows.length > 0 && (
+          <div
+            className="mb-4 rounded-3 p-3"
+            style={{
+              background: '#fff',
+              border: '1px solid #FEE2E2',
+              boxShadow: '0 2px 8px rgba(220,38,38,0.08)',
+            }}
+          >
+            <div className="d-flex justify-content-between align-items-center mb-2">
+              <h6 className="fw-bold mb-0" style={{ color: '#991B1B', fontSize: 14 }}>
+                <i className="bi bi-exclamation-triangle-fill me-2" />
+                Priority Alerts
+              </h6>
+              <Link to="/admin/residents" className="small fw-semibold text-decoration-none" style={{ color: '#6B21A8' }}>
+                View all →
+              </Link>
+            </div>
+            <div className="d-flex flex-wrap gap-2">
+              {alertRows.map((r) => (
+                <div
+                  key={r.residentCode}
+                  className="d-flex align-items-center gap-2 rounded-pill px-3 py-1"
+                  style={{
+                    background: r.supportPriorityRank === 1 ? '#FEE2E2' : '#FEF3C7',
+                    border: `1px solid ${r.supportPriorityRank === 1 ? '#FECACA' : '#FDE68A'}`,
+                    fontSize: 12,
+                  }}
+                >
+                  <span
+                    className="badge rounded-pill"
+                    style={{
+                      background: r.supportPriorityRank === 1 ? '#DC2626' : '#D97706',
+                      color: '#fff',
+                      fontSize: 10,
+                    }}
+                  >
+                    {r.supportPriorityRank === 1 ? 'High Risk' : 'Elevated Risk'}
+                  </span>
+                  <span style={{ fontWeight: 600, color: '#1E293B' }}>{r.residentCode}</span>
+                  {r.operationalBand && (
+                    <span style={{ color: '#64748B' }}>· {r.operationalBand}</span>
+                  )}
+                </div>
+              ))}
+            </div>
+            <div className="mt-2" style={{ fontSize: 11, color: '#94A3B8' }}>
+              <i className="bi bi-calendar-check me-1" />
+              Reminder: Check conference schedules for residents who haven't had a review recently.
+            </div>
+          </div>
+        )}
 
         {/* Metric cards */}
         <div className="row g-3 mb-5">

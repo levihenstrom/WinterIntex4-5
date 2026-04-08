@@ -36,6 +36,8 @@ import ResidentVisitsAndConferencesPage from './pages/scaffold/ResidentVisitsAnd
 import SocialMediaHistoryPage from './pages/scaffold/SocialMediaHistoryPage';
 import SocialMediaSuggestPage from './pages/scaffold/SocialMediaSuggestPage';
 import ReportsAnalyticsPage from './pages/scaffold/ReportsAnalyticsPage';
+import ResidentDetailPage from './pages/scaffold/ResidentDetailPage';
+import MLInsightsPage from './pages/scaffold/MLInsightsPage';
 import UserManagerPage from './pages/scaffold/UserManagerPage';
 import OAuthCallbackPage from './pages/OAuthCallbackPage';
 
@@ -177,6 +179,7 @@ function App() {
               <Route path="donations/contributions" element={<ContributionsPage />} />
               <Route path="donations/allocations" element={<AllocationsPage />} />
               <Route path="residents" element={<ResidentsListPage />} />
+              <Route path="residents/:id" element={<ResidentDetailPage />} />
               <Route path="residents/process-recordings" element={<ProcessRecordingPage />} />
               <Route path="residents/visits-conferences" element={<ResidentVisitsAndConferencesPage />} />
               <Route path="residents/:id/process" element={<ProcessRecordingPage />} />
@@ -198,6 +201,7 @@ function App() {
                 }
               />
               <Route path="reports" element={<ReportsAnalyticsPage />} />
+              <Route path="ml-insights" element={<MLInsightsPage />} />
               <Route
                 path="user-manager"
                 element={
