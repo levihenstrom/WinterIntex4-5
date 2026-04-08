@@ -187,16 +187,35 @@ export default function ContributionsPage() {
   }
 
   return (
-    <div style={{ background: '#F8FAFC', minHeight: '100vh', padding: '32px 0' }}>
-      <div className="container">
-        <div style={{ marginBottom: 28 }}>
-          <span style={{ fontSize: 12, fontWeight: 700, color: '#0D9488', letterSpacing: 2, textTransform: 'uppercase' }}>
+    <div className="py-4" style={{ background: 'var(--hw-bg-gray)', minHeight: '100%' }}>
+      <div className="container-xl">
+        <div className="mb-5">
+          <span
+            style={{
+              display: 'block',
+              fontSize: 12,
+              fontWeight: 700,
+              color: '#0D9488',
+              letterSpacing: 2,
+              textTransform: 'uppercase',
+              marginBottom: 8,
+            }}
+          >
             Donors &amp; Contributions
           </span>
-          <h1 style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: 28, color: '#1E3A5F', marginBottom: 4 }}>
+          <h1
+            style={{
+              fontFamily: 'Poppins, sans-serif',
+              fontWeight: 700,
+              fontSize: 28,
+              color: '#1E3A5F',
+              marginBottom: 8,
+              lineHeight: 1.2,
+            }}
+          >
             Contribution activity
           </h1>
-          <p style={{ color: '#64748B', fontSize: 14, marginBottom: 0 }}>
+          <p className="text-muted mb-0" style={{ fontSize: 14 }}>
             Monetary, in-kind, time, and other gift types stored in the database (same data as reports and donor history).
           </p>
         </div>
@@ -248,7 +267,7 @@ export default function ContributionsPage() {
                 borderRadius: 12,
                 padding: '16px 20px',
                 border: '1px solid #E2E8F0',
-                boxShadow: '0 2px 8px rgba(30,58,95,0.05)',
+                boxShadow: '0 2px 8px rgba(30,58,95,0.06)',
                 marginBottom: 20,
                 display: 'flex',
                 flexWrap: 'wrap',
@@ -310,7 +329,7 @@ export default function ContributionsPage() {
                   background: '#fff',
                   borderRadius: 12,
                   padding: 24,
-                  border: '1px solid #CBD5E1',
+                  border: '1px solid #E2E8F0',
                   marginBottom: 24,
                   boxShadow: '0 4px 16px rgba(30,58,95,0.08)',
                 }}
@@ -404,7 +423,7 @@ export default function ContributionsPage() {
               </div>
             )}
 
-            <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #E2E8F0', overflow: 'hidden' }}>
+            <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(30,58,95,0.06)', overflow: 'hidden' }}>
               <div style={{ overflowX: 'auto' }}>
                 <table className="table table-sm table-hover mb-0" style={{ fontSize: 13 }}>
                   <thead className="table-light">

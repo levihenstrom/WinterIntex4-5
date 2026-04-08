@@ -9,10 +9,10 @@ import {
 
 const cardStyle: React.CSSProperties = {
   background: '#fff',
-  borderRadius: 14,
+  borderRadius: 12,
   padding: '28px 32px',
   border: '1px solid #E2E8F0',
-  boxShadow: '0 2px 12px rgba(30,58,95,0.06)',
+  boxShadow: '0 2px 8px rgba(30,58,95,0.06)',
 };
 
 const metricBox = (accent: string): React.CSSProperties => ({
@@ -72,26 +72,19 @@ export default function SocialMediaSuggestPage() {
   }
 
   return (
-    <div style={{ background: '#F8FAFC', minHeight: '100vh', padding: '32px 0' }}>
-      <div className="container">
-        <div
-          style={{
-            marginBottom: 28,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-start',
-            flexWrap: 'wrap',
-            gap: 16,
-          }}
-        >
+    <div className="py-4" style={{ background: 'var(--hw-bg-gray)', minHeight: '100%' }}>
+      <div className="container-xl">
+        <div className="mb-5 d-flex justify-content-between align-items-end flex-wrap gap-3">
           <div>
             <span
               style={{
+                display: 'block',
                 fontSize: 12,
                 fontWeight: 700,
                 color: '#0D9488',
                 letterSpacing: 2,
                 textTransform: 'uppercase',
+                marginBottom: 8,
               }}
             >
               Outreach &amp; Communication
@@ -102,12 +95,13 @@ export default function SocialMediaSuggestPage() {
                 fontWeight: 700,
                 fontSize: 28,
                 color: '#1E3A5F',
-                marginBottom: 4,
+                marginBottom: 8,
+                lineHeight: 1.2,
               }}
             >
               Social post recommender
             </h1>
-            <p style={{ color: '#64748B', fontSize: 14, marginBottom: 0, maxWidth: 640 }}>
+            <p className="text-muted mb-0" style={{ fontSize: 14, maxWidth: 640 }}>
               Live recommendations from the trained engagement model (served via the .NET API). Adjust goals and
               optional constraints, then run the model to see ranked post ideas.
             </p>
@@ -115,16 +109,21 @@ export default function SocialMediaSuggestPage() {
           <Link
             to="/admin/social-media"
             style={{
-              background: 'none',
+              background: '#fff',
               color: '#1E3A5F',
               textDecoration: 'none',
-              borderRadius: 8,
-              border: '1px solid #CBD5E1',
-              padding: '10px 18px',
+              borderRadius: 12,
+              border: '1px solid #E2E8F0',
+              padding: '12px 24px',
               fontWeight: 600,
               fontSize: 14,
+              boxShadow: '0 2px 8px rgba(30,58,95,0.06)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 10,
             }}
           >
+            <i className="bi bi-clock-history fs-5" />
             Post history
           </Link>
         </div>

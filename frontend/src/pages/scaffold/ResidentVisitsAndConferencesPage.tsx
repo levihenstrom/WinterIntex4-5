@@ -333,18 +333,39 @@ export default function ResidentVisitsAndConferencesPage() {
 
   // ── Render ────────────────────────────────────────────────────────────────────
   return (
-    <div style={{ background: '#F8FAFC', minHeight: '100vh', padding: '32px 0' }}>
-      <div className="container">
+    <div className="py-4" style={{ background: 'var(--hw-bg-gray)', minHeight: '100%' }}>
+      <div className="container-xl">
 
         {/* ── Section: Home Visitations ───────────────────────────────────────── */}
-        <div style={{ marginBottom: 28, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
+        <div className="mb-5 d-flex justify-content-between align-items-end flex-wrap gap-3">
           <div>
-            <span style={{ fontSize: 12, fontWeight: 700, color: '#0D9488', letterSpacing: 2, textTransform: 'uppercase' }}>Case Management</span>
-            <h1 style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: 28, color: '#1E3A5F', marginBottom: 4 }}>
-              <i className="bi bi-calendar-event me-2" style={{ color: '#0D9488' }} aria-hidden />
+            <span
+              style={{
+                display: 'block',
+                fontSize: 12,
+                fontWeight: 700,
+                color: '#0D9488',
+                letterSpacing: 2,
+                textTransform: 'uppercase',
+                marginBottom: 8,
+              }}
+            >
+              Case Management
+            </span>
+            <h1
+              style={{
+                fontFamily: 'Poppins, sans-serif',
+                fontWeight: 700,
+                fontSize: 28,
+                color: '#1E3A5F',
+                marginBottom: 8,
+                lineHeight: 1.2,
+              }}
+            >
+              <i className="bi bi-calendar-event me-3" style={{ color: '#0D9488' }} aria-hidden />
               Visits &amp; conferences
             </h1>
-            <p style={{ color: '#64748B', fontSize: 14, marginBottom: 0 }}>
+            <p className="text-muted mb-0" style={{ fontSize: 14 }}>
               {visitData ? `${visitData.totalCount} visit${visitData.totalCount !== 1 ? 's' : ''} logged` : 'Loading visits…'}
             </p>
           </div>
@@ -353,12 +374,21 @@ export default function ResidentVisitsAndConferencesPage() {
               type="button"
               onClick={openCreate}
               style={{
-                background: '#1E3A5F', color: '#fff', border: 'none', borderRadius: 8,
-                padding: '10px 22px', fontWeight: 600, fontSize: 14, cursor: 'pointer',
-                display: 'inline-flex', alignItems: 'center', gap: 8,
+                background: '#1E3A5F',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 12,
+                padding: '12px 24px',
+                fontWeight: 600,
+                fontSize: 14,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 10,
+                boxShadow: '0 4px 12px rgba(30,58,95,0.15)',
               }}
             >
-              <i className="bi bi-house-add" aria-hidden />
+              <i className="bi bi-house-add fs-5" aria-hidden />
               Record visit
             </button>
           )}
@@ -393,8 +423,8 @@ export default function ResidentVisitsAndConferencesPage() {
 
         {/* Visits table */}
         <div style={{
-          background: '#fff', borderRadius: 14, border: '1px solid #E2E8F0',
-          boxShadow: '0 2px 12px rgba(30,58,95,0.06)', overflow: 'hidden', marginBottom: 40,
+          background: '#fff', borderRadius: 12, border: '1px solid #E2E8F0',
+          boxShadow: '0 2px 8px rgba(30,58,95,0.06)', overflow: 'hidden', marginBottom: 48,
         }}>
           {visitLoading ? (
             <div style={{ textAlign: 'center', padding: '48px 0', color: '#94A3B8' }}>
@@ -482,12 +512,32 @@ export default function ResidentVisitsAndConferencesPage() {
         </div>
 
         {/* ── Section: Upcoming Case Conferences ─────────────────────────────── */}
-        <div style={{ marginBottom: 20 }}>
-          <span style={{ fontSize: 12, fontWeight: 700, color: '#0D9488', letterSpacing: 2, textTransform: 'uppercase' }}>Scheduling</span>
-          <h2 style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: 22, color: '#1E3A5F', marginBottom: 4 }}>
+        <div className="mb-4">
+          <span
+            style={{
+              display: 'block',
+              fontSize: 12,
+              fontWeight: 700,
+              color: '#0D9488',
+              letterSpacing: 2,
+              textTransform: 'uppercase',
+              marginBottom: 8,
+            }}
+          >
+            Scheduling
+          </span>
+          <h2
+            style={{
+              fontFamily: 'Poppins, sans-serif',
+              fontWeight: 700,
+              fontSize: 22,
+              color: '#1E3A5F',
+              marginBottom: 8,
+            }}
+          >
             Upcoming Case Conferences
           </h2>
-          <p style={{ color: '#64748B', fontSize: 13, marginBottom: 0 }}>
+          <p className="text-muted mb-0" style={{ fontSize: 13 }}>
             Pulled from intervention plans with a scheduled conference date.
           </p>
         </div>
@@ -499,8 +549,8 @@ export default function ResidentVisitsAndConferencesPage() {
         )}
 
         <div style={{
-          background: '#fff', borderRadius: 14, border: '1px solid #E2E8F0',
-          boxShadow: '0 2px 12px rgba(30,58,95,0.06)', overflow: 'hidden',
+          background: '#fff', borderRadius: 12, border: '1px solid #E2E8F0',
+          boxShadow: '0 2px 8px rgba(30,58,95,0.06)', overflow: 'hidden',
         }}>
           {confLoading ? (
             <div style={{ textAlign: 'center', padding: '40px 0', color: '#94A3B8' }}>
