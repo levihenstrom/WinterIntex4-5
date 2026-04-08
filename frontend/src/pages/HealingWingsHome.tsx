@@ -26,31 +26,14 @@ function useFadeIn() {
 const HERO_IMG = '/girls.avif';
 const MISSION_IMG = '/free.avif';
 
-interface PublicImpactSnapshot {
-  snapshotId: number;
-  snapshotDate?: string | null;
-  metricPayloadJson?: string | null;
-}
-
-interface PublicMetricPayload {
-  residents_served?: number;
-  safehouses_active?: number;
-  reintegration_rate_pct?: number;
-  total_residents?: number;
-}
-
-function parsePublicMetricPayload(raw: string | null | undefined): PublicMetricPayload {
-  if (!raw) return {};
-  try {
-    return JSON.parse(raw) as PublicMetricPayload;
-  } catch {
-    try {
-      // Support legacy single-quoted payload rows.
-      return JSON.parse(raw.replace(/'/g, '"')) as PublicMetricPayload;
-    } catch {
-      return {};
-    }
-  }
+interface PublicLiveStats {
+  totalResidents: number;
+  successfulReintegrations: number;
+  safehousesActive: number;
+  donationsRaisedTotal: number;
+  volunteerHoursTotal: number;
+  reintegrationRatePct: number;
+  oldestAdmissionYear?: number | null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -451,37 +434,24 @@ export default function HealingWingsHome() {
 
   useEffect(() => {
     let cancelled = false;
-    fetchJson<PublicImpactSnapshot[]>('/api/public-impact/snapshots')
-      .then((rows) => {
-        if (cancelled || rows.length === 0) return;
-        const latest = [...rows].sort((a, b) => {
-          const ad = a.snapshotDate ? new Date(a.snapshotDate).getTime() : 0;
-          const bd = b.snapshotDate ? new Date(b.snapshotDate).getTime() : 0;
-          return bd - ad;
-        })[0];
-
-        const parsed = parsePublicMetricPayload(latest.metricPayloadJson);
-
-        const years = new Set(
-          rows
-            .map((r) => (r.snapshotDate ? new Date(r.snapshotDate).getFullYear() : null))
-            .filter((y): y is number => y != null && Number.isFinite(y)),
-        ).size;
-
-        setImpactKpis((prev) => ({
-          residentsServed: Number(parsed.residents_served ?? parsed.total_residents ?? prev.residentsServed) || prev.residentsServed,
-          safehousesActive: Number(parsed.safehouses_active ?? prev.safehousesActive) || prev.safehousesActive,
-          reintegrationRatePct: Number(parsed.reintegration_rate_pct ?? prev.reintegrationRatePct) || prev.reintegrationRatePct,
-          yearsOfImpact: years > 0 ? years : prev.yearsOfImpact,
-        }));
+    fetchJson<PublicLiveStats>('/api/public-impact/live-stats')
+      .then((s) => {
+        if (cancelled) return;
+        const yearsOfImpact = s.oldestAdmissionYear
+          ? Math.max(1, new Date().getFullYear() - s.oldestAdmissionYear + 1)
+          : impactKpis.yearsOfImpact;
+        setImpactKpis({
+          residentsServed: s.totalResidents || impactKpis.residentsServed,
+          safehousesActive: s.safehousesActive || impactKpis.safehousesActive,
+          reintegrationRatePct: s.reintegrationRatePct || impactKpis.reintegrationRatePct,
+          yearsOfImpact,
+        });
       })
       .catch(() => {
-        // Keep defaults when public impact snapshots are unavailable.
+        // Keep defaults when live stats are unavailable.
       });
-
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
