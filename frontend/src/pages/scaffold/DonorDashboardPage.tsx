@@ -273,16 +273,18 @@ export default function DonorDashboardPage() {
     setGiveError(null);
     setGiveSuccess(null);
     try {
-      await postJson<DonationMine>('/api/donations', {
-        donationType: 'Monetary',
+      await postJson<DonationMine>('/api/donations/demo-gift', {
         amount,
-        estimatedValue: amount,
-        currencyCode: 'PHP',
+        donationType: 'Monetary',
         campaignName: giveForm.campaign.trim() || null,
-        notes: giveForm.note.trim() || null,
-        donationDate: new Date().toISOString(),
-        isRecurring: giveForm.giftType === 'Recurring monthly',
-        channelSource: 'DonorPortal',
+        currencyCode: 'PHP',
+        notes:
+          (giveForm.note.trim() || null) ??
+          undefined,
+        impactUnit:
+          giveForm.giftType === 'Recurring monthly'
+            ? 'Recurring monthly commitment'
+            : undefined,
       });
       setGiveSuccess('Thank you! Your donation was recorded successfully.');
       await loadDonations({ silent: true });
