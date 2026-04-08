@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { fetchPaged } from '../../lib/apiClient';
 import NavBar from '../../components/hw/NavBar';
 import MetricCard from '../../components/hw/MetricCard';
+import 'bootstrap-icons/font/bootstrap-icons.css';
 
 /* ── Types ───────────────────────────────────────────────────── */
 interface DonationAllocationApi {

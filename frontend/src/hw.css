@@ -409,19 +409,60 @@
 /* ── Cookie consent banner (CookieConsentBanner + CookieConsentContext) ─ */
 .hw-cookie-banner {
   position: fixed;
-  inset-inline: 1rem;
-  bottom: 1rem;
+  inset-inline: 0.75rem;
+  bottom: 0.75rem;
   z-index: 1050;
   display: grid;
-  gap: 1rem;
+  gap: 1.1rem;
   align-items: center;
-  padding: 1.25rem 1.5rem;
+  padding: 1.35rem 1.5rem;
   border-radius: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: color-mix(in srgb, var(--hw-navy) 92%, black);
+  border: 2px solid rgba(245, 158, 11, 0.45);
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--hw-navy) 94%, #0f172a) 0%,
+    color-mix(in srgb, var(--hw-navy) 88%, black) 100%
+  );
   color: #f8f9fa;
   font-family: var(--hw-font-body);
-  box-shadow: 0 12px 40px rgba(30, 58, 95, 0.35);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 16px 48px rgba(15, 23, 42, 0.55);
+}
+
+.hw-cookie-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  justify-content: flex-end;
+}
+
+.hw-cookie-btn {
+  border-radius: 999px;
+  padding: 0.55rem 1.15rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  border: none;
+  cursor: pointer;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+.hw-cookie-btn:hover {
+  transform: translateY(-1px);
+}
+
+.hw-cookie-btn-primary {
+  background: linear-gradient(135deg, var(--hw-magenta) 0%, #be185d 100%);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(190, 24, 93, 0.35);
+}
+
+.hw-cookie-btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: #f8fafc;
+  border: 1px solid rgba(255, 255, 255, 0.28);
 }
 
 .hw-cookie-banner a {
@@ -449,10 +490,46 @@
 
 @media (min-width: 768px) {
   .hw-cookie-banner {
-    inset-inline: auto 2rem;
-    max-width: 34rem;
-    grid-template-columns: 1fr auto;
+    inset-inline: auto 1.5rem;
+    max-width: 28rem;
+    grid-template-columns: 1fr;
   }
+
+  .hw-cookie-actions {
+    justify-content: flex-start;
+  }
+}
+
+.hw-input.hw-input--invalid {
+  border-color: #dc2626 !important;
+  box-shadow:
+    0 0 0 1px rgba(220, 38, 38, 0.35),
+    0 0 20px rgba(220, 38, 38, 0.2);
+}
+
+.hw-pwd-rules {
+  font-size: 0.8rem;
+  margin-top: 0.35rem;
+}
+
+.hw-pwd-rule {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.25rem;
+  color: #64748b;
+}
+
+.hw-pwd-rule:last-child {
+  margin-bottom: 0;
+}
+
+.hw-pwd-rule--ok {
+  color: #059669;
+}
+
+.hw-pwd-rule--bad {
+  color: #b91c1c;
 }
 
 /* ── Mission Custom Styles (Editorial Layout) ───────────────── */
