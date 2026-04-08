@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 using Scalar.AspNetCore;
+using Microsoft.AspNetCore.Authentication;
 
 var builder = WebApplication.CreateBuilder(args);
 var isDevelopment = builder.Environment.IsDevelopment();
@@ -78,6 +79,7 @@ if (!isDevelopment)
     builder.Services.AddHostedService<IdentityBootstrapHostedService>();
 }
 builder.Services.AddScoped<StaffScopeResolver>();
+builder.Services.AddSingleton<RefreshTokenStore>();
 
 builder.Services.AddOptions<MlInferenceServiceOptions>()
     .Bind(builder.Configuration.GetSection(MlInferenceServiceOptions.SectionName))
@@ -179,6 +181,32 @@ builder.Services.AddDbContext<AuthIdentityDbContext>(options =>
 builder.Services.AddIdentityApiEndpoints<ApplicationUser>()
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<AuthIdentityDbContext>();
+
+builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultScheme = RefreshTokenAuthenticationHandler.CombinedSchemeName;
+        options.DefaultAuthenticateScheme = RefreshTokenAuthenticationHandler.CombinedSchemeName;
+        options.DefaultChallengeScheme = RefreshTokenAuthenticationHandler.CombinedSchemeName;
+    })
+    .AddPolicyScheme(
+        RefreshTokenAuthenticationHandler.CombinedSchemeName,
+        "Identity cookie or refresh token",
+        options =>
+        {
+            options.ForwardDefaultSelector = context =>
+            {
+                var hasBearerToken = context.Request.Headers.Authorization
+                    .ToString()
+                    .StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase);
+
+                return hasBearerToken
+                    ? RefreshTokenAuthenticationHandler.SchemeName
+                    : IdentityConstants.ApplicationScheme;
+            };
+        })
+    .AddScheme<AuthenticationSchemeOptions, RefreshTokenAuthenticationHandler>(
+        RefreshTokenAuthenticationHandler.SchemeName,
+        _ => { });
 
 // Google OAuth (only if configured)
 if (!string.IsNullOrEmpty(googleClientId) && !string.IsNullOrEmpty(googleClientSecret))

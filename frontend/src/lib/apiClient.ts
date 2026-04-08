@@ -1,4 +1,5 @@
 import { API_BASE_URL as apiBaseUrl } from './apiBaseUrl';
+import { getStoredRefreshToken } from './authAPI';
 
 export interface PagedResult<T> {
   page: number;
@@ -35,6 +36,15 @@ async function readApiError(response: Response): Promise<string> {
   return text;
 }
 
+function createAuthHeaders(): HeadersInit | undefined {
+  const refreshToken = getStoredRefreshToken();
+  if (!refreshToken) return undefined;
+
+  return {
+    Authorization: `Bearer ${refreshToken}`,
+  };
+}
+
 /** Fetches a paged resource. Throws on non-2xx with the API error detail. */
 export async function fetchPaged<T>(
   path: string,
@@ -47,7 +57,10 @@ export async function fetchPaged<T>(
     if (v !== undefined && v !== null && v !== '') params.set(k, String(v));
   }
   const url = `${apiBaseUrl}${path}?${params}`;
-  const response = await fetch(url, { credentials: 'include' });
+  const response = await fetch(url, {
+    credentials: 'include',
+    headers: createAuthHeaders(),
+  });
   if (!response.ok) {
     throw new Error(await readApiError(response));
   }
@@ -71,7 +84,10 @@ export async function fetchAllPaged<T>(
 
 /** Fetches a single JSON resource (no pagination). */
 export async function fetchJson<T>(path: string): Promise<T> {
-  const response = await fetch(`${apiBaseUrl}${path}`, { credentials: 'include' });
+  const response = await fetch(`${apiBaseUrl}${path}`, {
+    credentials: 'include',
+    headers: createAuthHeaders(),
+  });
   if (!response.ok) {
     throw new Error(await readApiError(response));
   }
@@ -82,6 +98,7 @@ export async function deleteJson(path: string): Promise<void> {
   const response = await fetch(`${apiBaseUrl}${path}`, {
     method: 'DELETE',
     credentials: 'include',
+    headers: createAuthHeaders(),
   });
 
   if (!response.ok) {
@@ -94,7 +111,10 @@ export async function postJson<T>(path: string, body: unknown): Promise<T> {
   const response = await fetch(`${apiBaseUrl}${path}`, {
     method: 'POST',
     credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...createAuthHeaders(),
+    },
     body: JSON.stringify(body),
   });
   if (!response.ok) throw new Error(await readApiError(response));
@@ -106,7 +126,10 @@ export async function putJson(path: string, body: unknown): Promise<void> {
   const response = await fetch(`${apiBaseUrl}${path}`, {
     method: 'PUT',
     credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...createAuthHeaders(),
+    },
     body: JSON.stringify(body),
   });
   if (!response.ok) throw new Error(await readApiError(response));
