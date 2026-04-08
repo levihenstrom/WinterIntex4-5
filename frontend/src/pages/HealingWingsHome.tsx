@@ -190,58 +190,6 @@ function MissionSection() {
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Section 7 — How You Can Help
-// ─────────────────────────────────────────────────────────────────────────────
-function BoardOfDirectorsSection() {
-  const ref = useFadeIn();
-  
-  const directors = [
-    { name: 'Board Member', role: 'Executive Director', image: '/director.jpeg' },
-    { name: 'Board Member', role: 'Executive Director', image: '/director1.png' },
-    { name: 'Board Member', role: 'Executive Director', image: '/director2.jpeg' },
-    { name: 'Board Member', role: 'Executive Director', image: '/directors.jpeg' },
-  ];
-
-  return (
-    <section className="p-20 hw-bg-white">
-      <SectionContainer>
-        <div className="text-center mb-16 hw-fade-in" ref={ref}>
-          <span className="hw-eyebrow">Leadership</span>
-          <h2 className="hw-heading mt-3 text-3xl md:text-5xl font-extrabold tracking-tight">
-            Board of Directors
-          </h2>
-          <p className="text-stone-500 max-w-2xl mx-auto mt-6 text-lg">
-            Meet the dedicated individuals guiding our mission to restore hope and rebuild lives for children in need.
-          </p>
-        </div>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-8 max-w-6xl mx-auto">
-          {directors.map((dir, i) => (
-            <div key={i} className="flex flex-col items-center text-center group">
-              <div className="w-56 h-56 lg:w-48 lg:h-48 mb-6 overflow-hidden rounded-full border-4 border-white shadow-2xl relative">
-                <img 
-                  src={dir.image} 
-                  alt={dir.name} 
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                />
-                <div className="absolute inset-0 bg-[#1E3A5F]/0 group-hover:bg-[#1E3A5F]/10 transition-colors duration-300 rounded-full" />
-              </div>
-              <h3 className="text-xl font-bold text-stone-900 mb-1" style={{ fontFamily: 'var(--hw-font-heading)' }}>
-                {dir.name}
-              </h3>
-              <p className="text-sky-600 font-bold text-sm tracking-widest uppercase">
-                {dir.role}
-              </p>
-            </div>
-          ))}
-        </div>
-      </SectionContainer>
-    </section>
-  );
-}
-
-
-// ─────────────────────────────────────────────────────────────────────────────
 // ─────────────────────────────────────────────────────────────────────────────
 // Section 8 — Donation CTA Banner (Legacy/Redesigned to "Broken Grid")
 function DonationBanner() {
@@ -464,7 +412,6 @@ export default function HealingWingsHome() {
       <ImpactBar />
       <MissionSection />
       <CarouselPillarsSection />
-      <BoardOfDirectorsSection />
       <DonationBanner />
       <DonorWallSection />
       <Footer />
