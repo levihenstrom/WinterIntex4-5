@@ -87,13 +87,13 @@ export default function UserManagerPage() {
       {/* Page header */}
       <div style={{ marginBottom: '1.75rem' }}>
         <p style={{ margin: 0, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 2, color: '#0D9488' }}>
-          ADMINISTRACIÓN
+          ADMINISTRATION
         </p>
         <h1 style={{ margin: '4px 0 6px', fontSize: '1.9rem', fontWeight: 800, color: '#1E3A5F', fontFamily: 'Poppins, sans-serif' }}>
           User Manager
         </h1>
         <p style={{ margin: 0, color: '#6B7280', fontSize: 14 }}>
-          Gestiona los roles de todos los usuarios registrados. Solo los administradores pueden cambiar roles.
+          Manage the roles of all registered users. Only administrators can change roles.
         </p>
       </div>
 
@@ -111,7 +111,7 @@ export default function UserManagerPage() {
               <input
                 type="text"
                 className="form-control"
-                placeholder="Buscar por correo..."
+                placeholder="Search by email..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 style={{ paddingLeft: 36, borderRadius: 10, border: '1px solid #E5E7EB', fontSize: 14 }}
@@ -120,7 +120,7 @@ export default function UserManagerPage() {
 
             <span style={{ color: '#6B7280', fontSize: 13, whiteSpace: 'nowrap' }}>
               <i className="bi bi-people me-1" />
-              {filtered.length} {filtered.length === 1 ? 'usuario' : 'usuarios'}
+              {filtered.length} {filtered.length === 1 ? 'user' : 'users'}
             </span>
 
             <button
@@ -154,7 +154,7 @@ export default function UserManagerPage() {
           {loading ? (
             <div style={{ textAlign: 'center', padding: '4rem 0', color: '#9CA3AF' }}>
               <div className="spinner-border spinner-border-sm me-2" role="status" />
-              Cargando usuarios...
+              Loading users...
             </div>
           ) : error ? (
             <div style={{ textAlign: 'center', padding: '4rem 0', color: '#DC2626' }}>
@@ -165,7 +165,7 @@ export default function UserManagerPage() {
                 onClick={loadUsers}
                 style={{ marginTop: 12, background: '#1E3A5F', color: 'white', border: 'none', borderRadius: 8, padding: '8px 20px', cursor: 'pointer', fontSize: 13 }}
               >
-                Reintentar
+                Retry
               </button>
             </div>
           ) : filtered.length === 0 ? (
@@ -179,13 +179,13 @@ export default function UserManagerPage() {
                 <thead>
                   <tr style={{ borderBottom: '2px solid #f0f0f0' }}>
                     <th style={{ fontWeight: 700, color: '#6B7280', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, padding: '10px 16px', background: 'transparent', border: 'none' }}>
-                      Correo electrónico
+                      Email
                     </th>
                     <th style={{ fontWeight: 700, color: '#6B7280', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, padding: '10px 16px', background: 'transparent', border: 'none' }}>
-                      Rol actual
+                      Current Role
                     </th>
                     <th style={{ fontWeight: 700, color: '#6B7280', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, padding: '10px 16px', background: 'transparent', border: 'none', width: 300 }}>
-                      Cambiar rol
+                      Change Role
                     </th>
                   </tr>
                 </thead>
@@ -265,12 +265,12 @@ export default function UserManagerPage() {
                               {isSaving ? (
                                 <>
                                   <span className="spinner-border spinner-border-sm" role="status" />
-                                  Guardando...
+                                  Saving...
                                 </>
                               ) : (
                                 <>
                                   <i className="bi bi-check2" />
-                                  Aplicar
+                                  Apply
                                 </>
                               )}
                             </button>
