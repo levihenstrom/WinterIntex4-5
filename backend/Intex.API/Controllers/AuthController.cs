@@ -111,6 +111,28 @@ public class AuthController(
 
         return Ok(new { message = "Registration successful.", assignedRole = AuthRoles.Donor });
     }
+// user for the user manager
+    [Authorize(Policy = AuthPolicies.AdminOnly)]
+    [HttpGet("users")]
+    public async Task<IActionResult> GetAllUsers()
+    {
+        var users = await userManager.Users
+            .OrderBy(u => u.Email)
+            .ToListAsync();
+
+        var result = new List<object>();
+        foreach (var user in users)
+        {
+            var roles = await userManager.GetRolesAsync(user);
+            result.Add(new
+            {
+                email = user.Email,
+                roles = roles.OrderBy(r => r).ToArray()
+            });
+        }
+
+        return Ok(result);
+    }
 
     [Authorize(Policy = AuthPolicies.AdminOnly)]
     [HttpPost("assign-role")]

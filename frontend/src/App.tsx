@@ -33,6 +33,7 @@ import ResidentVisitsAndConferencesPage from './pages/scaffold/ResidentVisitsAnd
 import SocialMediaHistoryPage from './pages/scaffold/SocialMediaHistoryPage';
 import SocialMediaSuggestPage from './pages/scaffold/SocialMediaSuggestPage';
 import ReportsAnalyticsPage from './pages/scaffold/ReportsAnalyticsPage';
+import UserManagerPage from './pages/scaffold/UserManagerPage';
 import OAuthCallbackPage from './pages/OAuthCallbackPage';
 
 // Auth pages — same fixed NavBar as the landing page (see NavBar.tsx)
@@ -142,6 +143,14 @@ function App() {
                 }
               />
               <Route path="reports" element={<ReportsAnalyticsPage />} />
+              <Route
+                path="user-manager"
+                element={
+                  <RequireAuth role="Admin">
+                    <UserManagerPage />
+                  </RequireAuth>
+                }
+              />
               <Route path="reports/donations" element={<Navigate to="/admin/reports" replace />} />
               <Route path="reports/outcomes" element={<Navigate to="/admin/reports" replace />} />
             </Route>
