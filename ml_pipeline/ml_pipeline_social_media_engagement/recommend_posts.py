@@ -60,26 +60,40 @@ def _minmax(s: pd.Series) -> pd.Series:
     return (s - lo) / (hi - lo)
 
 
-def _load_artifacts() -> tuple[dict[str, Any], Any, Any, Any]:
-    meta_path = config.SERIALIZED_DIR / "social_media_engagement_metadata.json"
+def _load_artifacts_at(serialized_dir: Path) -> tuple[dict[str, Any], Any, Any, Any]:
+    meta_path = serialized_dir / "social_media_engagement_metadata.json"
     if not meta_path.is_file():
-        raise FileNotFoundError("Missing social_media_engagement_metadata.json. Run run_all first.")
+        raise FileNotFoundError(f"Missing social_media_engagement_metadata.json under {serialized_dir}")
     with open(meta_path, encoding="utf-8") as f:
         meta = json.load(f)
-    eng = joblib.load(config.SERIALIZED_DIR / "engagement_rate_pipeline.joblib")
-    clf = joblib.load(config.SERIALIZED_DIR / "any_referral_classifier_pipeline.joblib")
+    eng = joblib.load(serialized_dir / "engagement_rate_pipeline.joblib")
+    clf = joblib.load(serialized_dir / "any_referral_classifier_pipeline.joblib")
     ref = None
-    ref_path = config.SERIALIZED_DIR / "donation_referrals_count_pipeline.joblib"
+    ref_path = serialized_dir / "donation_referrals_count_pipeline.joblib"
     if ref_path.is_file():
         ref = joblib.load(ref_path)
     return meta, eng, clf, ref
 
 
-def _default_feature_template(meta: dict[str, Any], raw: pd.DataFrame) -> dict[str, Any]:
+def _load_dval_at(serialized_dir: Path) -> Any | None:
+    p = serialized_dir / "donation_value_log1p_pipeline.joblib"
+    if p.is_file():
+        return joblib.load(p)
+    return None
+
+
+def _load_artifacts() -> tuple[dict[str, Any], Any, Any, Any]:
+    return _load_artifacts_at(config.SERIALIZED_DIR)
+
+
+def _default_feature_template(
+    meta: dict[str, Any], raw: pd.DataFrame, serialized_dir: Path | None = None
+) -> dict[str, Any]:
     """
     Use sample payload when available, otherwise derive medians/modes from raw.
     """
-    sample_path = config.SERIALIZED_DIR / "sample_payload_input.json"
+    sdir = serialized_dir or config.SERIALIZED_DIR
+    sample_path = sdir / "sample_payload_input.json"
     if sample_path.is_file():
         with open(sample_path, encoding="utf-8") as f:
             payload = json.load(f)
@@ -209,10 +223,175 @@ def _explain_row(row: pd.Series, goal: str) -> str:
     return "; ".join(notes)
 
 
+class SocialRecommenderSession:
+    """
+    Hold loaded pipelines + historical CSV for repeated inference (e.g. FastAPI startup).
+
+    Pass ``session=...`` into :func:`recommend_next_post` to avoid reloading joblibs per request.
+    """
+
+    def __init__(
+        self,
+        serialized_dir: Path,
+        social_posts_csv: Path,
+        goal_weights: dict[str, dict[str, float]] | None = None,
+    ):
+        self.serialized_dir = Path(serialized_dir).resolve()
+        self.social_posts_csv = Path(social_posts_csv).resolve()
+        if not self.social_posts_csv.is_file():
+            raise FileNotFoundError(f"Social media CSV not found: {self.social_posts_csv}")
+        self.meta, self.eng_model, self.any_ref_model, self.ref_model = _load_artifacts_at(self.serialized_dir)
+        self.dval_model = _load_dval_at(self.serialized_dir)
+        self.raw = load_social_media_posts(self.social_posts_csv)
+        self.goal_weights: dict[str, dict[str, float]] = (
+            {k: dict(v) for k, v in goal_weights.items()} if goal_weights is not None else {k: dict(v) for k, v in GOAL_WEIGHTS.items()}
+        )
+
+    def recommend_next_post(
+        self,
+        goal: str,
+        fixed_inputs: dict[str, Any] | None = None,
+        top_k: int = 3,
+    ) -> tuple[pd.DataFrame, list[dict[str, Any]]]:
+        goal_key = goal.strip().lower()
+        if goal_key not in self.goal_weights:
+            raise ValueError(f"goal must be one of {sorted(self.goal_weights)}")
+
+        base = _default_feature_template(self.meta, self.raw, self.serialized_dir)
+        grid = _candidate_grid(self.raw, fixed_inputs)
+
+        rows: list[dict[str, Any]] = []
+        for vals in product(
+            grid["platform"],
+            grid["post_type"],
+            grid["media_type"],
+            grid["post_hour"],
+            grid["has_call_to_action"],
+            grid["call_to_action_type"],
+            grid["features_resident_story"],
+            grid["content_topic"],
+        ):
+            candidate = {
+                "platform": vals[0],
+                "post_type": vals[1],
+                "media_type": str(vals[2]),
+                "post_hour": int(vals[3]),
+                "has_call_to_action": float(vals[4]),
+                "call_to_action_type": str(vals[5]),
+                "features_resident_story": float(vals[6]),
+                "content_topic": str(vals[7]),
+            }
+            feat = _apply_fixed_and_derive(base, candidate, fixed_inputs)
+            rows.append(feat)
+
+        cand = pd.DataFrame(rows)
+        cand = cand.drop_duplicates().reset_index(drop=True)
+
+        use_cols = self.meta["numeric_features"] + self.meta["categorical_features"]
+        for c in use_cols:
+            if c not in cand.columns:
+                cand[c] = np.nan
+        X = cand[use_cols]
+
+        cand["predicted_engagement_rate"] = self.eng_model.predict(X).astype(float)
+        if hasattr(self.any_ref_model, "predict_proba"):
+            cand["predicted_p_any_referral"] = self.any_ref_model.predict_proba(X)[:, 1].astype(float)
+        else:
+            cand["predicted_p_any_referral"] = self.any_ref_model.predict(X).astype(float)
+        if self.ref_model is not None:
+            cand["predicted_referrals_count"] = self.ref_model.predict(X).astype(float)
+        else:
+            cand["predicted_referrals_count"] = np.nan
+
+        cand["eng_norm"] = _minmax(cand["predicted_engagement_rate"])
+        cand["p_any_norm"] = _minmax(cand["predicted_p_any_referral"])
+        if cand["predicted_referrals_count"].notna().any():
+            cand["ref_count_norm"] = _minmax(cand["predicted_referrals_count"])
+        else:
+            cand["ref_count_norm"] = 0.0
+
+        w = dict(self.goal_weights[goal_key])
+        if cand["predicted_referrals_count"].isna().all():
+            w["engagement"] += w["referrals_count"] * 0.4
+            w["p_any_referral"] += w["referrals_count"] * 0.6
+            w["referrals_count"] = 0.0
+
+        cand["ranking_score"] = (
+            w["engagement"] * cand["eng_norm"]
+            + w["p_any_referral"] * cand["p_any_norm"]
+            + w["referrals_count"] * cand["ref_count_norm"]
+        )
+
+        keep_cols = [
+            "platform",
+            "post_type",
+            "media_type",
+            "post_hour",
+            "content_topic",
+            "has_call_to_action",
+            "call_to_action_type",
+            "features_resident_story",
+            "predicted_engagement_rate",
+            "predicted_p_any_referral",
+            "predicted_referrals_count",
+            "ranking_score",
+        ]
+        out = cand.sort_values("ranking_score", ascending=False).head(max(int(top_k), 1)).copy()
+        out["goal"] = goal_key
+        out["why_recommended"] = out.apply(lambda r: _explain_row(r, goal_key), axis=1)
+
+        out["predicted_engagement_rate"] = out["predicted_engagement_rate"].round(4)
+        out["predicted_p_any_referral"] = out["predicted_p_any_referral"].round(4)
+        out["predicted_referrals_count"] = out["predicted_referrals_count"].round(2)
+        out["ranking_score"] = out["ranking_score"].round(4)
+
+        out = out[keep_cols + ["goal", "why_recommended"]]
+        return out.reset_index(drop=True), out.to_dict(orient="records")
+
+    def evaluate_post_configuration(self, fixed_inputs: dict[str, Any]) -> dict[str, Any]:
+        """Single-row predictions for a concrete post feature dict (after template + derive)."""
+        base = _default_feature_template(self.meta, self.raw, self.serialized_dir)
+        x = _apply_fixed_and_derive(base, {}, fixed_inputs)
+        use_cols = self.meta["numeric_features"] + self.meta["categorical_features"]
+        X = pd.DataFrame([x])
+        for c in use_cols:
+            if c not in X.columns:
+                X[c] = np.nan
+        X = X[use_cols]
+
+        pe = float(self.eng_model.predict(X)[0])
+        if hasattr(self.any_ref_model, "predict_proba"):
+            pany = float(self.any_ref_model.predict_proba(X)[0, 1])
+        else:
+            pany = float(self.any_ref_model.predict(X)[0])
+        ref_count: float | None
+        if self.ref_model is not None:
+            ref_count = float(self.ref_model.predict(X)[0])
+        else:
+            ref_count = None
+        dval_php: float | None
+        if self.dval_model is not None:
+            dval_php = float(np.expm1(self.dval_model.predict(X)[0]))
+        else:
+            dval_php = None
+
+        return {
+            "predicted_engagement_rate": round(pe, 4),
+            "predicted_p_any_referral": round(pany, 4),
+            "predicted_referrals_count": None if ref_count is None else round(ref_count, 2),
+            "predicted_estimated_donation_value_php": None if dval_php is None else round(dval_php, 2),
+        }
+
+
 def recommend_next_post(
     goal: str,
     fixed_inputs: dict[str, Any] | None = None,
     top_k: int = 3,
+    *,
+    session: SocialRecommenderSession | None = None,
+    serialized_dir: Path | None = None,
+    social_posts_csv: Path | None = None,
+    goal_weights: dict[str, dict[str, float]] | None = None,
 ) -> tuple[pd.DataFrame, list[dict[str, Any]]]:
     """
     Generate and rank candidate next-post configurations.
@@ -225,105 +404,21 @@ def recommend_next_post(
         Optional dict to lock any model features (e.g. {"platform":"Instagram","media_type":"Video","month":7}).
     top_k:
         Number of recommendations to return.
+    session:
+        Pre-loaded :class:`SocialRecommenderSession` (recommended for APIs).
+    serialized_dir:
+        Override pipeline ``serialized_models`` path (used if ``session`` is None).
+    social_posts_csv:
+        Override training CSV used for candidate grids / feature template (if ``session`` is None).
+    goal_weights:
+        Override default goal weights (if ``session`` is None).
     """
-    goal_key = goal.strip().lower()
-    if goal_key not in GOAL_WEIGHTS:
-        raise ValueError(f"goal must be one of {sorted(GOAL_WEIGHTS)}")
-
-    meta, eng_model, any_ref_model, ref_model = _load_artifacts()
-    raw = load_social_media_posts(config.DEFAULT_SOCIAL_CSV)
-    base = _default_feature_template(meta, raw)
-    grid = _candidate_grid(raw, fixed_inputs)
-
-    rows: list[dict[str, Any]] = []
-    for vals in product(
-        grid["platform"],
-        grid["post_type"],
-        grid["media_type"],
-        grid["post_hour"],
-        grid["has_call_to_action"],
-        grid["call_to_action_type"],
-        grid["features_resident_story"],
-        grid["content_topic"],
-    ):
-        candidate = {
-            "platform": vals[0],
-            "post_type": vals[1],
-            "media_type": str(vals[2]),
-            "post_hour": int(vals[3]),
-            "has_call_to_action": float(vals[4]),
-            "call_to_action_type": str(vals[5]),
-            "features_resident_story": float(vals[6]),
-            "content_topic": str(vals[7]),
-        }
-        feat = _apply_fixed_and_derive(base, candidate, fixed_inputs)
-        rows.append(feat)
-
-    cand = pd.DataFrame(rows)
-    # Deduplicate after fixed overrides / derived fields
-    cand = cand.drop_duplicates().reset_index(drop=True)
-
-    use_cols = meta["numeric_features"] + meta["categorical_features"]
-    for c in use_cols:
-        if c not in cand.columns:
-            cand[c] = np.nan
-    X = cand[use_cols]
-
-    cand["predicted_engagement_rate"] = eng_model.predict(X).astype(float)
-    if hasattr(any_ref_model, "predict_proba"):
-        cand["predicted_p_any_referral"] = any_ref_model.predict_proba(X)[:, 1].astype(float)
-    else:
-        cand["predicted_p_any_referral"] = any_ref_model.predict(X).astype(float)
-    if ref_model is not None:
-        cand["predicted_referrals_count"] = ref_model.predict(X).astype(float)
-    else:
-        cand["predicted_referrals_count"] = np.nan
-
-    cand["eng_norm"] = _minmax(cand["predicted_engagement_rate"])
-    cand["p_any_norm"] = _minmax(cand["predicted_p_any_referral"])
-    if cand["predicted_referrals_count"].notna().any():
-        cand["ref_count_norm"] = _minmax(cand["predicted_referrals_count"])
-    else:
-        cand["ref_count_norm"] = 0.0
-
-    w = dict(GOAL_WEIGHTS[goal_key])
-    if cand["predicted_referrals_count"].isna().all():
-        w["engagement"] += w["referrals_count"] * 0.4
-        w["p_any_referral"] += w["referrals_count"] * 0.6
-        w["referrals_count"] = 0.0
-
-    cand["ranking_score"] = (
-        w["engagement"] * cand["eng_norm"]
-        + w["p_any_referral"] * cand["p_any_norm"]
-        + w["referrals_count"] * cand["ref_count_norm"]
-    )
-
-    keep_cols = [
-        "platform",
-        "post_type",
-        "media_type",
-        "post_hour",
-        "content_topic",
-        "has_call_to_action",
-        "call_to_action_type",
-        "features_resident_story",
-        "predicted_engagement_rate",
-        "predicted_p_any_referral",
-        "predicted_referrals_count",
-        "ranking_score",
-    ]
-    out = cand.sort_values("ranking_score", ascending=False).head(max(int(top_k), 1)).copy()
-    out["goal"] = goal_key
-    out["why_recommended"] = out.apply(lambda r: _explain_row(r, goal_key), axis=1)
-
-    # Pretty rounded values for display
-    out["predicted_engagement_rate"] = out["predicted_engagement_rate"].round(4)
-    out["predicted_p_any_referral"] = out["predicted_p_any_referral"].round(4)
-    out["predicted_referrals_count"] = out["predicted_referrals_count"].round(2)
-    out["ranking_score"] = out["ranking_score"].round(4)
-
-    out = out[keep_cols + ["goal", "why_recommended"]]
-    return out.reset_index(drop=True), out.to_dict(orient="records")
+    if session is not None:
+        return session.recommend_next_post(goal, fixed_inputs, top_k)
+    sdir = Path(serialized_dir) if serialized_dir is not None else config.SERIALIZED_DIR
+    csv = Path(social_posts_csv) if social_posts_csv is not None else config.DEFAULT_SOCIAL_CSV
+    sess = SocialRecommenderSession(sdir, csv, goal_weights=goal_weights)
+    return sess.recommend_next_post(goal, fixed_inputs, top_k)
 
 
 def save_recommendations_outputs(

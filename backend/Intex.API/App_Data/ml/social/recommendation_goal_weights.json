@@ -1,0 +1,17 @@
+{
+  "awareness": {
+    "engagement": 0.75,
+    "p_any_referral": 0.2,
+    "referrals_count": 0.05
+  },
+  "donations": {
+    "engagement": 0.1,
+    "p_any_referral": 0.55,
+    "referrals_count": 0.35
+  },
+  "mixed": {
+    "engagement": 0.4,
+    "p_any_referral": 0.35,
+    "referrals_count": 0.25
+  }
+}

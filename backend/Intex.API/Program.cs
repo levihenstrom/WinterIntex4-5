@@ -4,6 +4,8 @@ using Intex.API.Authorization;
 using Intex.API.Data;
 using Microsoft.AspNetCore.Identity;
 using Intex.API.Infrastructure;
+using Intex.API.Options;
+using Intex.API.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authorization;
@@ -76,6 +78,34 @@ if (!isDevelopment)
     builder.Services.AddHostedService<IdentityBootstrapHostedService>();
 }
 builder.Services.AddScoped<StaffScopeResolver>();
+
+builder.Services.AddOptions<MlInferenceServiceOptions>()
+    .Bind(builder.Configuration.GetSection(MlInferenceServiceOptions.SectionName))
+    .ValidateOnStart();
+builder.Services.AddSingleton<Microsoft.Extensions.Options.IValidateOptions<MlInferenceServiceOptions>, MlInferenceServiceOptionsValidator>();
+
+builder.Services.AddSingleton<MlArtifactService>();
+builder.Services.AddHttpClient<MlSocialProxyService>((sp, client) =>
+{
+    var opt = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<MlInferenceServiceOptions>>().Value;
+    var url = opt.BaseUrl?.Trim();
+    if (string.IsNullOrEmpty(url))
+        return;
+
+    if (!Uri.TryCreate(url.EndsWith('/') ? url : url + "/", UriKind.Absolute, out var baseUri))
+        return;
+
+    client.BaseAddress = baseUri;
+    client.Timeout = TimeSpan.FromSeconds(Math.Clamp(opt.TimeoutSeconds, 1, 300));
+
+    if (!string.IsNullOrWhiteSpace(opt.ApiKey))
+    {
+        var headerName = string.IsNullOrWhiteSpace(opt.ApiKeyHeaderName)
+            ? "X-ML-Service-Key"
+            : opt.ApiKeyHeaderName.Trim();
+        client.DefaultRequestHeaders.TryAddWithoutValidation(headerName, opt.ApiKey);
+    }
+});
 
 static bool IsSqliteConnectionString(string? connectionString) =>
     !string.IsNullOrWhiteSpace(connectionString)

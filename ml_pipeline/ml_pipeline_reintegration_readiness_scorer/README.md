@@ -146,8 +146,11 @@ python3 -m ml_pipeline_reintegration_readiness_scorer.score_all_current_resident
 | Final model feature importance (aggregated) | `outputs/final_model_feature_importance.csv` |
 | OOF threshold search grid | `outputs/threshold_search_oof.csv` |
 | ROC / PR / calibration plots | `outputs/holdout_roc_curve.png`, `holdout_pr_curve.png`, `holdout_calibration_curve.png` |
-| Current-resident batch scores & top-K priority | `outputs/current_resident_scores.*`, `outputs/top_10_priority_residents.*`, `current_resident_scores_dashboard.json` (after `score_all_current_residents`) |
+| Current-resident batch scores & top-K priority | `outputs/current_resident_scores.*`, `outputs/top_*_priority_residents.*`, `current_resident_scores_dashboard.json` (after `score_all_current_residents`) |
+| **Backend JSON (stable schema for .NET)** | `backend/Intex.API/App_Data/ml/reintegration/current_resident_scores.json`, `top_10_priority_residents.json`, `current_resident_scores_dashboard.json` (written automatically when scoring runs with `PYTHONPATH` including `ml_pipeline`) |
 | Sample API I/O | `sample_readiness_input.json`, `sample_readiness_output.json` |
+
+See `ml_backend_export/README.md` for path constants and field names.
 
 ## Local explanations (how direction is computed)
 
