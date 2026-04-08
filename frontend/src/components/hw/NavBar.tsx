@@ -54,6 +54,7 @@ export default function NavBar() {
     const next = !darkMode;
     setDarkMode(next);
     document.documentElement.classList.toggle('dark', next);
+    document.documentElement.setAttribute('data-bs-theme', next ? 'dark' : 'light');
   }
 
   // ── Dropdown menu (desktop) ─────────────────────────────────────────────────
