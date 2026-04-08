@@ -18,7 +18,11 @@ import {
   passwordMeetsPolicy,
   passwordMeetsUniqueChars,
 } from '../lib/passwordPolicy';
-import 'bootstrap-icons/font/bootstrap-icons.css';
+
+
+// ── Background image (mission-aligned: children & community) ──────────────────
+const BG_URL =
+  'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=1920&q=80';
 
 function PasswordRule({ ok, children }: { ok: boolean; children: React.ReactNode }) {
   return (
@@ -44,18 +48,13 @@ function RegisterPage() {
 
   const lenOk = passwordMeetsMinLength(password);
   const uniqueOk = passwordMeetsUniqueChars(password);
-  const confirmMismatch =
-    confirmTouched && confirmPassword.length > 0 && confirmPassword !== password;
-  const passwordShowInvalid =
-    passwordTouched && password.length > 0 && !passwordMeetsPolicy(password);
+  const confirmMismatch = confirmTouched && confirmPassword.length > 0 && confirmPassword !== password;
+  const passwordShowInvalid = passwordTouched && password.length > 0 && !passwordMeetsPolicy(password);
 
   useEffect(() => {
     void (async () => {
-      try {
-        setExternalProviders(await getExternalProviders());
-      } catch {
-        setExternalProviders([]);
-      }
+      try { setExternalProviders(await getExternalProviders()); }
+      catch { setExternalProviders([]); }
     })();
   }, []);
 
@@ -70,14 +69,12 @@ function RegisterPage() {
       setErrorMessage(`Password must be at least ${PASSWORD_MIN_LENGTH} characters and meet all rules below.`);
       return;
     }
-
     if (password !== confirmPassword) {
       setErrorMessage('Passwords must match.');
       return;
     }
 
     setIsSubmitting(true);
-
     try {
       await registerUser(email, password);
       setSuccessMessage('Registration succeeded. You can log in now.');
@@ -95,12 +92,12 @@ function RegisterPage() {
 
   if (isLoading) {
     return (
-      <div className="hw-auth-shell d-flex align-items-center justify-content-center min-vh-100">
-        <div className="text-center text-secondary">
-          <div className="spinner-border text-primary mb-2" role="status">
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0f2744' }}>
+        <div className="text-center">
+          <div className="spinner-border mb-2" role="status" style={{ color: '#0D9488' }}>
             <span className="visually-hidden">Loading…</span>
           </div>
-          <p className="small mb-0">Checking your session…</p>
+          <p className="small mb-0" style={{ color: 'rgba(255,255,255,0.6)' }}>Checking your session…</p>
         </div>
       </div>
     );
@@ -110,45 +107,103 @@ function RegisterPage() {
     return <Navigate to={resolvePostLoginPath(undefined, authSession.roles)} replace />;
   }
 
-  const formValid =
-    passwordMeetsPolicy(password) && password === confirmPassword && email.trim().length > 0;
+  const formValid = passwordMeetsPolicy(password) && password === confirmPassword && email.trim().length > 0;
 
   return (
-    <div className="hw-auth-shell">
-      <div className="container py-4 py-md-5">
-        <div className="row justify-content-center">
-          <div className="col-12 col-sm-10 col-md-8 col-lg-5 col-xl-4">
-            <div className="hw-auth-card p-4 p-md-5">
-              <p className="hw-eyebrow mb-2">Account</p>
-              <h1 className="hw-heading hw-heading-font h3 mb-2">Sign up</h1>
-              <p className="text-secondary small mb-4">
-                Email and password, or a provider when available.
-              </p>
+    <>
+      {/* ── Full-bleed blurred background ── */}
+      <div style={{
+        position: 'fixed', inset: 0, zIndex: -2,
+        backgroundImage: `url(${BG_URL})`,
+        backgroundSize: 'cover', backgroundPosition: 'center 30%',
+        filter: 'blur(6px)',
+        transform: 'scale(1.08)',
+      }} />
+      {/* ── Dark gradient overlay ── */}
+      <div style={{
+        position: 'fixed', inset: 0, zIndex: -1,
+        background: 'rgba(15,39,68,0.82)',
+      }} />
+
+      {/* ── Page content ── */}
+      <div style={{
+        minHeight: 'calc(100vh - 4rem)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '2.5rem 1rem',
+      }}>
+        <div style={{ width: '100%', maxWidth: 460 }}>
+
+          {/* ── Auth card ── */}
+          <div style={{
+            background: 'rgba(255,255,255,0.97)',
+            borderRadius: 20,
+            boxShadow: '0 30px 90px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.1)',
+            overflow: 'hidden',
+          }}>
+
+            {/* Card top accent bar */}
+            <div style={{ height: 4, background: 'linear-gradient(90deg, #0D9488 0%, #6B21A8 100%)' }} />
+
+            <div style={{ padding: '2.5rem 2.5rem 2rem' }}>
+
+              {/* Brand mark */}
+              <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                  <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                    <path d="M14 26C14 26 3 19 3 11C3 7.13 6.13 4 10 4C11.9 4 13.6 4.78 14 5C14.4 4.78 16.1 4 18 4C21.87 4 25 7.13 25 11C25 19 14 26 14 26Z" fill="#0D9488" opacity="0.9" />
+                    <path d="M14 26C14 26 7 17 7 11C7 8.24 9.24 6 12 6C13.1 6 14 6.45 14 6.45V26Z" fill="#5eead4" opacity="0.5" />
+                  </svg>
+                  <span style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 800, fontSize: 18, color: '#1E3A5F', letterSpacing: '-0.3px' }}>
+                    HealingWings
+                  </span>
+                </div>
+                <p style={{ margin: 0, fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 2, color: '#0D9488', marginBottom: 6 }}>
+                  Join us
+                </p>
+                <h1 style={{ margin: 0, fontSize: '1.65rem', fontWeight: 800, color: '#1E3A5F', fontFamily: 'Poppins, sans-serif' }}>
+                  Create your account
+                </h1>
+                <p style={{ margin: '6px 0 0', fontSize: 14, color: '#6B7280' }}>
+                  Be part of something that truly matters.
+                </p>
+              </div>
+
+              {/* ── Inspiring message ── */}
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(13,148,136,0.07) 0%, rgba(107,33,168,0.07) 100%)',
+                border: '1px solid rgba(13,148,136,0.2)',
+                borderLeft: '3.5px solid #0D9488',
+                borderRadius: '0 12px 12px 0',
+                padding: '14px 18px',
+                marginBottom: '1.75rem',
+              }}>
+                <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                  <svg width="18" height="18" viewBox="0 0 28 28" fill="none" style={{ flexShrink: 0, marginTop: 2 }}>
+                    <path d="M14 26C14 26 3 19 3 11C3 7.13 6.13 4 10 4C11.9 4 13.6 4.78 14 5C14.4 4.78 16.1 4 18 4C21.87 4 25 7.13 25 11C25 19 14 26 14 26Z" fill="#0D9488" />
+                  </svg>
+                  <p style={{ margin: 0, fontSize: 13.5, color: '#374151', lineHeight: 1.65 }}>
+                    Creating your account will give you personalized updates on how you are{' '}
+                    <strong style={{ color: '#1E3A5F' }}>helping change the lives of these children</strong>.
+                  </p>
+                </div>
+              </div>
+
+              {/* ── Registration form ── */}
               <form onSubmit={handleSubmit} noValidate>
                 <div className="mb-3">
-                  <label className="hw-label" htmlFor="email">
-                    Email
-                  </label>
+                  <label className="hw-label" htmlFor="email">Email</label>
                   <input
-                    id="email"
-                    type="email"
-                    className="hw-input"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    autoComplete="email"
+                    id="email" type="email" className="hw-input"
+                    value={email} onChange={(e) => setEmail(e.target.value)}
+                    required autoComplete="email"
                   />
                 </div>
                 <div className="mb-2">
-                  <label className="hw-label" htmlFor="password">
-                    Password
-                  </label>
+                  <label className="hw-label" htmlFor="password">Password</label>
                   <input
-                    id="password"
-                    type="password"
+                    id="password" type="password"
                     className={`hw-input${passwordShowInvalid ? ' hw-input--invalid' : ''}`}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    value={password} onChange={(e) => setPassword(e.target.value)}
                     onBlur={() => setPasswordTouched(true)}
                     autoComplete="new-password"
                     aria-invalid={passwordShowInvalid}
@@ -160,87 +215,80 @@ function RegisterPage() {
                     </PasswordRule>
                     <PasswordRule ok={uniqueOk}>
                       At least {PASSWORD_MIN_UNIQUE_CHARS} distinct character
-                      {PASSWORD_MIN_UNIQUE_CHARS === 1 ? '' : 's'} (currently{' '}
-                      {countUniqueChars(password)})
+                      {PASSWORD_MIN_UNIQUE_CHARS === 1 ? '' : 's'} (currently {countUniqueChars(password)})
                     </PasswordRule>
                   </div>
-                  {passwordShowInvalid ? (
+                  {passwordShowInvalid && (
                     <p className="text-danger small mt-2 mb-0" role="alert">
-                      Password must satisfy every rule above (same requirements as the server).
+                      Password must satisfy every rule above.
                     </p>
-                  ) : null}
+                  )}
                 </div>
                 <div className="mb-4">
-                  <label className="hw-label" htmlFor="confirmPassword">
-                    Confirm password
-                  </label>
+                  <label className="hw-label" htmlFor="confirmPassword">Confirm password</label>
                   <input
-                    id="confirmPassword"
-                    type="password"
+                    id="confirmPassword" type="password"
                     className={`hw-input${confirmMismatch ? ' hw-input--invalid' : ''}`}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
                     onBlur={() => setConfirmTouched(true)}
                     autoComplete="new-password"
                     aria-invalid={confirmMismatch}
                   />
-                  {confirmMismatch ? (
-                    <p className="text-danger small mt-2 mb-0" role="alert">
-                      Passwords must match.
-                    </p>
-                  ) : null}
+                  {confirmMismatch && (
+                    <p className="text-danger small mt-2 mb-0" role="alert">Passwords must match.</p>
+                  )}
                 </div>
-                {errorMessage ? (
-                  <div className="hw-alert-error mb-3" role="alert">
-                    {errorMessage}
-                  </div>
-                ) : null}
-                {successMessage ? (
-                  <div className="hw-alert-success mb-3" role="alert">
-                    {successMessage}
-                  </div>
-                ) : null}
+
+                {errorMessage && (
+                  <div className="hw-alert-error mb-3" role="alert">{errorMessage}</div>
+                )}
+                {successMessage && (
+                  <div className="hw-alert-success mb-3" role="alert">{successMessage}</div>
+                )}
+
                 <button
                   type="submit"
-                  className="hw-btn-magenta w-100 py-2 rounded-3 fw-semibold"
+                  className="hw-btn-magenta w-100 rounded-3 fw-semibold"
+                  style={{ padding: '0.7rem 1rem', fontSize: 15 }}
                   disabled={isSubmitting || !formValid}
                 >
-                  {isSubmitting ? 'Signing up...' : 'Sign up'}
+                  {isSubmitting ? (
+                    <><span className="spinner-border spinner-border-sm me-2" role="status" />Creating account…</>
+                  ) : 'Create account'}
                 </button>
               </form>
 
-              {externalProviders.length > 0 ? (
+              {/* ── External providers ── */}
+              {externalProviders.length > 0 && (
                 <>
                   <div className="hw-divider-or">or sign up with</div>
                   <div className="d-grid gap-2">
                     {externalProviders.map((provider) => (
-                      <button
-                        key={provider.name}
-                        type="button"
-                        className="hw-btn-external"
-                        onClick={() => handleExternalLogin(provider.name)}
-                      >
-                        {provider.displayName.toLowerCase() === 'google' ? (
-                          <GoogleIcon />
-                        ) : null}
+                      <button key={provider.name} type="button" className="hw-btn-external"
+                        onClick={() => handleExternalLogin(provider.name)}>
+                        {provider.displayName.toLowerCase() === 'google' && <GoogleIcon />}
                         Sign up with {provider.displayName}
                       </button>
                     ))}
                   </div>
                 </>
-              ) : null}
+              )}
 
-              <p className="hw-auth-footer-hint mb-0">
+              {/* ── Footer hint ── */}
+              <p style={{ textAlign: 'center', fontSize: 13.5, color: '#6B7280', marginTop: '1.5rem', marginBottom: 0 }}>
                 Already have an account?{' '}
-                <Link className="hw-link" to="/login">
-                  Sign in
-                </Link>
+                <Link className="hw-link" to="/login">Sign in</Link>
               </p>
             </div>
           </div>
+
+          {/* ── Below-card tagline ── */}
+          <p style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: 13, color: 'rgba(255,255,255,0.55)', letterSpacing: 0.3 }}>
+            Empowering children. Restoring hope. Rebuilding lives.
+          </p>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
