@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { fetchAllPaged } from '../../lib/apiClient';
 import AdminKpiStrip from '../../components/admin/AdminKpiStrip';
+import { ErrorState, LoadingState } from '../../components/common/AsyncStatus';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
 interface DonationAllocationRow {
@@ -37,6 +38,7 @@ function fmtAllocDate(iso: string | null | undefined): string {
 }
 
 export default function AllocationsPage() {
+  const PAGE_SIZE = 20;
   const [rows, setRows] = useState<DonationAllocationRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -44,6 +46,7 @@ export default function AllocationsPage() {
   const [programFilter, setProgramFilter] = useState('All');
   const [search, setSearch] = useState('');
   const [detailRow, setDetailRow] = useState<DonationAllocationRow | null>(null);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     let cancelled = false;
@@ -90,6 +93,20 @@ export default function AllocationsPage() {
       return matchSh && matchPr && matchSearch;
     });
   }, [rows, safehouseFilter, programFilter, search]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const pageRows = useMemo(
+    () => filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [filtered, page],
+  );
+
+  useEffect(() => {
+    setPage(1);
+  }, [safehouseFilter, programFilter, search]);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
 
   const bySafehouse = useMemo(() => {
     const map = new Map<string, number>();
@@ -166,8 +183,8 @@ export default function AllocationsPage() {
           </p>
         </div>
 
-        {loading && <p className="text-muted">Loading allocations…</p>}
-        {error && <div className="alert alert-danger">{error}</div>}
+        {loading && <LoadingState message="Loading allocations…" />}
+        {error && <ErrorState message={error} />}
 
         {!loading && !error && (
           <>
@@ -266,7 +283,7 @@ export default function AllocationsPage() {
                 ))}
               </select>
               <div style={{ marginLeft: 'auto', fontSize: 12, color: '#64748B' }}>
-                <strong style={{ color: '#1E3A5F' }}>{fmtMoney(totalFiltered)}</strong> filtered
+                <strong style={{ color: '#1E3A5F' }}>{fmtMoney(totalFiltered)}</strong> filtered · page {page} of {totalPages}
               </div>
             </div>
 
@@ -288,10 +305,9 @@ export default function AllocationsPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {filtered.map((a, i) => (
+                      {pageRows.map((a, i) => (
                         <tr
                           key={a.allocationId}
-                          role="button"
                           tabIndex={0}
                           title="View allocation details"
                           style={{
@@ -328,8 +344,33 @@ export default function AllocationsPage() {
               )}
             </div>
 
-            <div style={{ marginTop: 12, fontSize: 12, color: '#94A3B8', textAlign: 'right' }}>
-              Showing {filtered.length} of {rows.length} allocation rows
+            <div className="d-flex justify-content-between align-items-center mt-3">
+              <div style={{ fontSize: 12, color: '#94A3B8' }}>
+                Showing {pageRows.length} of {filtered.length} filtered allocation rows
+              </div>
+              {filtered.length > 0 && (
+                <div className="d-flex align-items-center gap-2">
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-secondary"
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page <= 1}
+                  >
+                    Prev
+                  </button>
+                  <span style={{ fontSize: 12, color: '#64748B', minWidth: 120, textAlign: 'center' }}>
+                    Page {page} of {totalPages}
+                  </span>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-secondary"
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={page >= totalPages}
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
             </div>
 
             {detailRow && (

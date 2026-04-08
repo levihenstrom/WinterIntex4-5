@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { deleteJson, fetchAllPaged, postJson, putJson } from '../../lib/apiClient';
 import AdminKpiStrip from '../../components/admin/AdminKpiStrip';
 import DeleteConfirmModal from '../../components/DeleteConfirmModal';
+import { ErrorState, LoadingState } from '../../components/common/AsyncStatus';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import { buildDonorMlMap, getCurrentDonorScores, type DonorChurnRow } from '../../lib/mlApi';
 
@@ -144,6 +145,7 @@ const emptyForm: FormState = {
 
 /* ── Main Page ───────────────────────────────────────────────── */
 export default function SupportersListPage() {
+  const PAGE_SIZE = 20;
   const [supporters, setSupporters] = useState<SupporterApi[]>([]);
   const [monetaryTotalPhp, setMonetaryTotalPhp] = useState(0);
   const [bySupporter, setBySupporter] = useState<Map<number, { totalPhp: number; lastGift: string | null }>>(
@@ -164,6 +166,7 @@ export default function SupportersListPage() {
   /** Full row from API when editing — merged into PUT so we do not null optional columns. */
   const [editSource, setEditSource] = useState<SupporterApi | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ id: number; label: string } | null>(null);
+  const [page, setPage] = useState(1);
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -235,6 +238,20 @@ export default function SupportersListPage() {
       return (a.displayName ?? '').localeCompare(b.displayName ?? '');
     });
   }, [filtered, sortByMlRisk, donorMlById]);
+
+  const totalPages = Math.max(1, Math.ceil(displayedSupporters.length / PAGE_SIZE));
+  const pagedSupporters = useMemo(
+    () => displayedSupporters.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [displayedSupporters, page],
+  );
+
+  useEffect(() => {
+    setPage(1);
+  }, [typeFilter, statusFilter, search, sortByMlRisk]);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
 
   const mlCriticalOrHighCount = useMemo(
     () =>
@@ -356,12 +373,8 @@ export default function SupportersListPage() {
           </p>
         </div>
 
-        {loading && <p className="text-muted">Loading supporters…</p>}
-        {error && (
-          <div className="alert alert-warning" role="alert">
-            {error}
-          </div>
-        )}
+        {loading && <LoadingState message="Loading supporters…" />}
+        {error && <ErrorState message={error} />}
         {mlLoadError && !loading && (
           <div className="alert alert-secondary small mb-3" role="status">
             {mlLoadError} Churn overlays are hidden until ML data loads.
@@ -407,6 +420,7 @@ export default function SupportersListPage() {
               <input
                 type="text"
                 placeholder="Search by name, org or email…"
+                  aria-label="Search supporters by name, organization, or email"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 style={{
@@ -415,11 +429,11 @@ export default function SupportersListPage() {
                   borderRadius: 8,
                   border: '1px solid #CBD5E1',
                   fontSize: 13,
-                  outline: 'none',
                 }}
               />
               <select
                 value={typeFilter}
+                aria-label="Filter supporters by type"
                 onChange={(e) => setTypeFilter(e.target.value)}
                 style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, background: '#fff' }}
               >
@@ -432,6 +446,7 @@ export default function SupportersListPage() {
               </select>
               <select
                 value={statusFilter}
+                aria-label="Filter supporters by status"
                 onChange={(e) => setStatusFilter(e.target.value)}
                 style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, background: '#fff' }}
               >
@@ -478,7 +493,7 @@ export default function SupportersListPage() {
                 {showForm ? 'Cancel' : 'New supporter'}
               </button>
               <span style={{ fontSize: 12, color: '#94A3B8', marginLeft: 'auto' }}>
-                {displayedSupporters.length} of {supporters.length} supporters
+                {displayedSupporters.length} of {supporters.length} supporters · page {page} of {totalPages}
               </span>
             </div>
 
@@ -668,7 +683,7 @@ export default function SupportersListPage() {
                   }
                 `}</style>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
-                {displayedSupporters.map((s) => {
+                {pagedSupporters.map((s) => {
                   const st = s.supporterType ?? '';
                   const tc = TYPE_COLORS[st] ?? { bg: '#F1F5F9', text: '#475569' };
                   const sc = STATUS_COLORS[s.status ?? ''] ?? STATUS_COLORS.Inactive;
@@ -882,6 +897,29 @@ export default function SupportersListPage() {
                   );
                 })}
                 </div>
+                {displayedSupporters.length > 0 && (
+                  <div className="d-flex justify-content-end align-items-center gap-2 mt-3">
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-secondary"
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      disabled={page <= 1}
+                    >
+                      Prev
+                    </button>
+                    <span style={{ fontSize: 12, color: '#64748B', minWidth: 120, textAlign: 'center' }}>
+                      Page {page} of {totalPages}
+                    </span>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-secondary"
+                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={page >= totalPages}
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
               </>
             )}
           </>

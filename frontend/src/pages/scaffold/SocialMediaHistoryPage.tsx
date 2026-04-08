@@ -370,7 +370,6 @@ export default function SocialMediaHistoryPage() {
                       return (
                         <tr
                           key={row.postId}
-                          role="button"
                           tabIndex={0}
                           title="View full post details"
                           style={{

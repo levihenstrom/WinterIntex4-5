@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { fetchPaged } from '../../lib/apiClient';
 import NavBar from '../../components/hw/NavBar';
 import MetricCard from '../../components/hw/MetricCard';
-import 'bootstrap-icons/font/bootstrap-icons.css';
+import { ErrorState, LoadingState } from '../../components/common/AsyncStatus';
 
 /* ── Types ───────────────────────────────────────────────────── */
 interface DonationAllocationApi {
@@ -309,36 +309,11 @@ export default function DonorDashboardPage() {
       <main id="donor-dashboard-main">
         <div style={{ maxWidth: CONTENT_MAX, margin: '0 auto', padding: '2rem 1.5rem 5rem' }}>
           {loading && (
-            <div style={{ padding: '3rem 0', textAlign: 'center' }} role="status" aria-live="polite" aria-busy="true">
-              <div
-                className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-[#1E3A5F] border-t-transparent mb-4"
-                aria-hidden="true"
-              />
-              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.14em', color: '#94a3b8', textTransform: 'uppercase', margin: 0 }}>
-                Loading your giving data…
-              </p>
-            </div>
+            <LoadingState message="Loading your giving data…" />
           )}
 
           {error && (
-            <div
-              className="hw-alert-error shadow-sm p-8 text-center"
-              role="alert"
-              style={{ borderRadius: 16, maxWidth: 560, margin: '0 auto' }}
-            >
-              <div className="w-14 h-14 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4" aria-hidden="true">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="m15 9-6 6M9 9l6 6" />
-                </svg>
-              </div>
-              <h2 className="font-extrabold text-lg mb-1 text-[#991B1B]" style={{ fontFamily: 'Poppins, sans-serif' }}>
-                Unable to load dashboard
-              </h2>
-              <p className="text-red-700/80 mb-0" style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem' }}>
-                {error}
-              </p>
-            </div>
+            <ErrorState message={error} />
           )}
 
           {!loading && !error && donations && (

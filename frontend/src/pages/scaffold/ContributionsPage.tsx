@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { deleteJson, fetchAllPaged, postJson } from '../../lib/apiClient';
 import AdminKpiStrip from '../../components/admin/AdminKpiStrip';
 import DeleteConfirmModal from '../../components/DeleteConfirmModal';
+import { ErrorState, LoadingState } from '../../components/common/AsyncStatus';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
 
@@ -46,6 +47,7 @@ function fmtDetailDate(iso: string | null | undefined): string {
 }
 
 export default function ContributionsPage() {
+  const PAGE_SIZE = 20;
   const [donations, setDonations] = useState<DonationRow[]>([]);
   const [supporters, setSupporters] = useState<SupporterOpt[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,6 +67,7 @@ export default function ContributionsPage() {
   });
   const [detailDonation, setDetailDonation] = useState<DonationRow | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+  const [page, setPage] = useState(1);
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -108,6 +111,20 @@ export default function ContributionsPage() {
       return matchType && matchSearch;
     });
   }, [donations, typeFilter, search]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const pageRows = useMemo(
+    () => filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [filtered, page],
+  );
+
+  useEffect(() => {
+    setPage(1);
+  }, [typeFilter, search]);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
 
   const kpis = useMemo(() => {
     const monetary = donations.filter((d) => d.donationType === 'Monetary');
@@ -220,12 +237,8 @@ export default function ContributionsPage() {
           </p>
         </div>
 
-        {loading && <p className="text-muted">Loading contributions…</p>}
-        {error && (
-          <div className="alert alert-warning" role="alert">
-            {error}
-          </div>
-        )}
+        {loading && <LoadingState message="Loading contributions…" />}
+        {error && <ErrorState message={error} />}
 
         {!loading && (
           <>
@@ -278,6 +291,7 @@ export default function ContributionsPage() {
               <input
                 type="text"
                 placeholder="Search supporter, campaign, or ID…"
+                aria-label="Search contributions by supporter, campaign, or gift ID"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 style={{ flex: '1 1 200px', padding: '8px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13 }}
@@ -298,7 +312,9 @@ export default function ContributionsPage() {
               >
                 {showForm ? 'Cancel' : 'Record contribution'}
               </button>
-              <span style={{ fontSize: 12, color: '#94A3B8', marginLeft: 'auto' }}>{filtered.length} rows</span>
+              <span style={{ fontSize: 12, color: '#94A3B8', marginLeft: 'auto' }}>
+                {filtered.length} rows · page {page} of {totalPages}
+              </span>
             </div>
 
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
@@ -437,10 +453,9 @@ export default function ContributionsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filtered.map((d) => (
+                    {pageRows.map((d) => (
                       <tr
                         key={d.donationId}
-                        role="button"
                         tabIndex={0}
                         style={{ cursor: 'pointer' }}
                         onClick={() => setDetailDonation(d)}
@@ -470,6 +485,29 @@ export default function ContributionsPage() {
                 </table>
               </div>
             </div>
+            {filtered.length > 0 && (
+              <div className="d-flex justify-content-end align-items-center gap-2 mt-3">
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-secondary"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page <= 1}
+                >
+                  Prev
+                </button>
+                <span style={{ fontSize: 12, color: '#64748B', minWidth: 120, textAlign: 'center' }}>
+                  Page {page} of {totalPages}
+                </span>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-secondary"
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page >= totalPages}
+                >
+                  Next
+                </button>
+              </div>
+            )}
 
             {detailDonation && (
               <div className="modal d-block" style={{ backgroundColor: 'rgba(0,0,0,0.55)' }} role="dialog" aria-modal="true" aria-labelledby="contribDetailTitle">
