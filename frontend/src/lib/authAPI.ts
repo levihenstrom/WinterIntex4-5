@@ -13,6 +13,7 @@ export interface PasswordLoginResult {
   userName: string | null;
   email: string | null;
   roles: string[];
+  refreshToken?: string;
 }
 
 async function readApiError(

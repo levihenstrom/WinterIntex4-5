@@ -8,6 +8,7 @@ import {
   completeTwoFactorLogin,
   getExternalProviders,
   loginUser,
+  storeSession,
   type ExternalAuthProvider,
 } from '../lib/authAPI';
 import { resolvePostLoginPath } from '../lib/authRedirect';
@@ -53,7 +54,14 @@ function LoginPage() {
         setRecoveryCode('');
         return;
       }
-      await refreshAuthState();
+      const session = {
+        isAuthenticated: result.isAuthenticated,
+        userName: result.userName,
+        email: result.email,
+        roles: result.roles,
+      };
+      storeSession(session, result.refreshToken);
+      await refreshAuthState({ session });
       navigate(resolvePostLoginPath(fromPathname, result.roles), { replace: true });
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Unable to log in.');
@@ -70,7 +78,14 @@ function LoginPage() {
       const result = await completeTwoFactorLogin(
         rememberMe, twoFactorCode || undefined, recoveryCode || undefined
       );
-      await refreshAuthState();
+      const session = {
+        isAuthenticated: result.isAuthenticated,
+        userName: result.userName,
+        email: result.email,
+        roles: result.roles,
+      };
+      storeSession(session, result.refreshToken);
+      await refreshAuthState({ session });
       navigate(resolvePostLoginPath(fromPathname, result.roles), { replace: true });
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Unable to verify MFA.');

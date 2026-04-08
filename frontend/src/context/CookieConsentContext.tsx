@@ -3,10 +3,11 @@ import type { ReactNode } from 'react';
 
 /**
  * GDPR-oriented consent: distinguish strictly necessary vs optional storage.
- * - `necessary`: remember choice; auth/session storage still used where required for the product.
+ * - `necessary`: remember choice in a browser-readable cookie; auth/session storage still used where required.
  * - `all`: same + optional `intex-optional-*` localStorage keys are allowed; choosing necessary clears those keys.
  */
-const STORAGE_KEY = 'intex-cookie-consent';
+const CONSENT_COOKIE_NAME = 'cookie_consent';
+const LEGACY_STORAGE_KEY = 'intex-cookie-consent';
 
 export type CookieConsentChoice = 'necessary' | 'all';
 
@@ -28,13 +29,23 @@ const CookieConsentContext = createContext<CookieConsentContextValue | undefined
 
 function readInitialChoice(): CookieConsentChoice | null {
   if (typeof window === 'undefined') return null;
-  const v = window.localStorage.getItem(STORAGE_KEY);
-  if (v === 'necessary' || v === 'all') return v;
-  if (v === 'acknowledged') {
-    window.localStorage.setItem(STORAGE_KEY, 'necessary');
-    return 'necessary';
-  }
+
+  const cookies = document.cookie.split(';').map((part) => part.trim());
+  const consentCookie = cookies.find((part) => part.startsWith(`${CONSENT_COOKIE_NAME}=`));
+  const cookieValue = consentCookie?.slice(`${CONSENT_COOKIE_NAME}=`.length);
+
+  if (cookieValue === 'accepted') return 'all';
+  if (cookieValue === 'declined') return 'necessary';
+
+  // Clear any previous localStorage-backed consent so state comes from cookies only.
+  window.localStorage.removeItem(LEGACY_STORAGE_KEY);
   return null;
+}
+
+function writeConsentCookie(value: 'accepted' | 'declined'): void {
+  const expires = new Date();
+  expires.setFullYear(expires.getFullYear() + 1);
+  document.cookie = `${CONSENT_COOKIE_NAME}=${value}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
 }
 
 function clearOptionalLocalStorage(): void {
@@ -51,7 +62,8 @@ export function CookieConsentProvider({ children }: { children: ReactNode }) {
   const [choice, setChoice] = useState<CookieConsentChoice | null>(readInitialChoice);
 
   const persist = useCallback((next: CookieConsentChoice) => {
-    window.localStorage.setItem(STORAGE_KEY, next);
+    writeConsentCookie(next === 'all' ? 'accepted' : 'declined');
+    window.localStorage.removeItem(LEGACY_STORAGE_KEY);
     setChoice(next);
     if (next === 'necessary') {
       clearOptionalLocalStorage();
@@ -88,14 +100,13 @@ export function useCookieConsent() {
 /** Store UI prefs only when user accepted optional cookies (call from components). */
 export function setOptionalLocalStorage(key: string, value: string): boolean {
   if (typeof window === 'undefined') return false;
-  const tier = window.localStorage.getItem(STORAGE_KEY);
-  if (tier !== 'all') return false;
+  if (readInitialChoice() !== 'all') return false;
   window.localStorage.setItem(`${OPTIONAL_KEY_PREFIX}${key}`, value);
   return true;
 }
 
 export function getOptionalLocalStorage(key: string): string | null {
   if (typeof window === 'undefined') return null;
-  if (window.localStorage.getItem(STORAGE_KEY) !== 'all') return null;
+  if (readInitialChoice() !== 'all') return null;
   return window.localStorage.getItem(`${OPTIONAL_KEY_PREFIX}${key}`);
 }

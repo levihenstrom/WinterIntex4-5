@@ -605,13 +605,21 @@ public class AuthController(
             .OrderBy(r => r)
             .ToArray();
 
+        string? refreshToken = null;
+        if (!requiresTwoFactor)
+        {
+            refreshToken = GenerateToken();
+            _pendingTokens[refreshToken] = (user.Id, DateTime.UtcNow.AddDays(7));
+        }
+
         return new
         {
             requiresTwoFactor,
             isAuthenticated = !requiresTwoFactor,
             userName = user.UserName,
             email = user.Email,
-            roles
+            roles,
+            refreshToken
         };
     }
 }
