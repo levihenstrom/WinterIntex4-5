@@ -240,18 +240,26 @@ function ResidentsNeedingAttentionWidget() {
     <ul className="list-unstyled mb-0" style={{ maxHeight: 220, overflowY: 'auto' }}>
       {rows.slice(0, 8).map((r) => (
         <li key={r.residentCode} className="mb-2 pb-2 border-bottom border-light">
-          <div className="fw-semibold" style={{ color: 'var(--hw-navy)' }}>
-            {r.residentCode}
-          </div>
-          <div className="text-muted small">
-            {formatResidentPriorityRank(r.supportPriorityRank, totalScored)}
-          </div>
-          <div className="text-muted small">{r.operationalBand}</div>
-          {r.topRiskFactors?.[0] && (
-            <div className="text-truncate" title={r.topRiskFactors[0]} style={{ fontSize: 12, color: '#64748B' }}>
-              Factor: {r.topRiskFactors[0]}
+          <Link
+            to="/admin/residents"
+            className="text-decoration-none d-block rounded px-2 py-1"
+            style={{ transition: 'background 0.15s' }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--hw-bg-lavender)'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = ''; }}
+          >
+            <div className="fw-semibold" style={{ color: 'var(--hw-navy)' }}>
+              {r.residentCode}
             </div>
-          )}
+            <div className="text-muted small">
+              {formatResidentPriorityRank(r.supportPriorityRank, totalScored)}
+            </div>
+            <div className="text-muted small">{r.operationalBand}</div>
+            {r.topRiskFactors?.[0] && (
+              <div className="text-truncate" title={r.topRiskFactors[0]} style={{ fontSize: 12, color: '#64748B' }}>
+                Factor: {r.topRiskFactors[0]}
+              </div>
+            )}
+          </Link>
         </li>
       ))}
     </ul>
@@ -297,15 +305,23 @@ function AtRiskDonorsWidget() {
     <ul className="list-unstyled mb-0" style={{ maxHeight: 220, overflowY: 'auto' }}>
       {rows.slice(0, 8).map((d) => (
         <li key={d.supporterId} className="mb-2 pb-2 border-bottom border-light">
-          <div className="fw-semibold" style={{ color: 'var(--hw-navy)' }}>
-            {d.displayName || `Supporter #${d.supporterId}`}
-          </div>
-          <div className="text-muted small">{formatDonorOutreachSummary(d.riskBand, d.outreachPriorityRank)}</div>
-          {d.topDrivers?.[0] && (
-            <div className="text-truncate" title={d.topDrivers[0]} style={{ fontSize: 12, color: '#64748B' }}>
-              {d.topDrivers[0]}
+          <Link
+            to="/admin/donations"
+            className="text-decoration-none d-block rounded px-2 py-1"
+            style={{ transition: 'background 0.15s' }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--hw-bg-lavender)'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = ''; }}
+          >
+            <div className="fw-semibold" style={{ color: 'var(--hw-navy)' }}>
+              {d.displayName || `Supporter #${d.supporterId}`}
             </div>
-          )}
+            <div className="text-muted small">{formatDonorOutreachSummary(d.riskBand, d.outreachPriorityRank)}</div>
+            {d.topDrivers?.[0] && (
+              <div className="text-truncate" title={d.topDrivers[0]} style={{ fontSize: 12, color: '#64748B' }}>
+                {d.topDrivers[0]}
+              </div>
+            )}
+          </Link>
         </li>
       ))}
     </ul>
@@ -574,11 +590,13 @@ export default function AdminHomePage() {
 
         {/* Upcoming conferences banner */}
         {!upcomingConfs.loading && !upcomingConfs.error && (upcomingConfs.count ?? 0) > 0 && (
-          <div
-            className="rounded-3 d-flex align-items-center gap-3 px-4 py-3 mb-5"
+          <Link
+            to="/admin/residents/visits-conferences"
+            className="text-decoration-none rounded-3 d-flex align-items-center gap-3 px-4 py-3 mb-5"
             style={{
               background: 'linear-gradient(135deg, var(--hw-teal) 0%, var(--hw-purple) 100%)',
               color: 'white',
+              cursor: 'pointer',
             }}
           >
             <i className="bi bi-calendar-event" style={{ fontSize: '1.5rem' }} />
@@ -590,8 +608,7 @@ export default function AdminHomePage() {
                 Review scheduled conferences in the Visits &amp; conferences tab.
               </p>
             </div>
-            <Link
-              to="/admin/residents/visits-conferences"
+            <span
               className="btn btn-sm ms-auto fw-semibold"
               style={{
                 background: 'rgba(255,255,255,0.2)',
@@ -601,8 +618,8 @@ export default function AdminHomePage() {
               }}
             >
               View →
-            </Link>
-          </div>
+            </span>
+          </Link>
         )}
 
         {/* Quick links */}
