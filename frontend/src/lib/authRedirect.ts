@@ -14,6 +14,10 @@ export function getDefaultPathForRoles(roles: string[]): string {
     return '/donor/dashboard';
   }
 
+  // On native (Capacitor) there's no public landing page — fall back to login
+  if (typeof window !== 'undefined' && window.location.protocol === 'capacitor:') {
+    return '/login';
+  }
   return '/';
 }
 

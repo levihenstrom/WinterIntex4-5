@@ -6,6 +6,7 @@ import {
   Link,
   useLocation,
 } from 'react-router-dom';
+import { Capacitor } from '@capacitor/core';
 import { useEffect } from 'react';
 import { AuthProvider } from './context/AuthContext';
 import { CookieConsentProvider } from './context/CookieConsentContext';
@@ -110,7 +111,15 @@ function App() {
           <RouteTitleManager />
           <Routes>
             {/* Public routes */}
-            <Route path="/" element={<HealingWingsHome />} />
+            {/* On iOS (Capacitor) skip the marketing landing page and go straight to login */}
+            <Route
+              path="/"
+              element={
+                Capacitor.isNativePlatform()
+                  ? <Navigate to="/login" replace />
+                  : <HealingWingsHome />
+              }
+            />
             <Route path="/impact" element={<ImpactPage />} />
             <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
             <Route path="/login" element={<AuthLayout><LoginPage /></AuthLayout>} />
@@ -198,7 +207,8 @@ function App() {
               <Route path="reports/outcomes" element={<Navigate to="/admin/reports" replace />} />
             </Route>
           </Routes>
-          <CookieConsentBanner />
+          {/* Cookie consent is a web/GDPR concern — suppress inside the native iOS app */}
+          {!Capacitor.isNativePlatform() && <CookieConsentBanner />}
         </Router>
       </AuthProvider>
     </CookieConsentProvider>
