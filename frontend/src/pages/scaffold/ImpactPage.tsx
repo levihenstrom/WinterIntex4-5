@@ -193,11 +193,23 @@ function ReportCard({ snap, featured = false }: { snap: ImpactSnapshot; featured
 const TABS = ['Overview', 'Donations', 'Residents', 'Volunteers', 'Reports'] as const;
 type Tab = typeof TABS[number];
 
+/* ── Live stats ──────────────────────────────────────────────── */
+interface LiveStats {
+  totalResidents: number;
+  successfulReintegrations: number;
+  safehousesActive: number;
+  donationsRaisedTotal: number;
+  volunteerHoursTotal: number;
+  reintegrationRatePct: number;
+  oldestAdmissionYear?: number | null;
+}
+
 /* ── Page ────────────────────────────────────────────────────── */
 export default function ImpactPage() {
   const [tab, setTab] = useState<Tab>('Overview');
   const [snapshots, setSnapshots] = useState<ImpactSnapshot[]>([]);
   const [impactLoadError, setImpactLoadError] = useState<string | null>(null);
+  const [liveStats, setLiveStats] = useState<LiveStats | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -211,6 +223,14 @@ export default function ImpactPage() {
           setSnapshots([]);
         }
       });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchJson<LiveStats>('/api/public-impact/live-stats')
+      .then((s) => { if (!cancelled) setLiveStats(s); })
+      .catch(() => { /* keep null — KPI strip falls back to snapshot aggregates */ });
     return () => { cancelled = true; };
   }, []);
 
@@ -284,10 +304,31 @@ export default function ImpactPage() {
         <div style={{ marginTop: -44, background: 'rgba(30,58,95,0.92)', backdropFilter: 'blur(14px)', borderRadius: 20, border: '1px solid rgba(255,255,255,0.13)', boxShadow: '0 20px 60px rgba(30,58,95,0.28)', position: 'relative', zIndex: 10 }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)' }}>
             {[
-              { target: maxResidents, suffix: '+', label: 'Residents Served' },
-              { target: totalReint,   suffix: '',  label: 'Reintegrations' },
-              { target: Math.round(totalHours / 1000),    suffix: 'K', label: 'Volunteer Hours' },
-              { target: Math.round(totalDonations / 1000), prefix: '$', suffix: 'K', label: 'Donations Raised' },
+              {
+                target: liveStats?.totalResidents ?? maxResidents,
+                suffix: '+',
+                label: 'Residents Served',
+              },
+              {
+                target: liveStats?.successfulReintegrations ?? totalReint,
+                suffix: '',
+                label: 'Reintegrations',
+              },
+              {
+                target: liveStats
+                  ? Math.round(liveStats.volunteerHoursTotal / 1000)
+                  : Math.round(totalHours / 1000),
+                suffix: 'K',
+                label: 'Volunteer Hours',
+              },
+              {
+                target: liveStats
+                  ? Math.round(Number(liveStats.donationsRaisedTotal) / 1000)
+                  : Math.round(totalDonations / 1000),
+                prefix: '$',
+                suffix: 'K',
+                label: 'Donations Raised',
+              },
             ].map((kpi, i) => (
               <div key={kpi.label} style={{ borderRight: i < 3 ? '1px solid rgba(255,255,255,0.1)' : 'none' }}>
                 <MetricCard target={kpi.target} suffix={kpi.suffix} prefix={kpi.prefix} label={kpi.label} />
