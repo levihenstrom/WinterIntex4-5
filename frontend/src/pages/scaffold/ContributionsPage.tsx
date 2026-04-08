@@ -3,6 +3,7 @@ import { deleteJson, fetchAllPaged, postJson } from '../../lib/apiClient';
 import AdminKpiStrip from '../../components/admin/AdminKpiStrip';
 import DeleteConfirmModal from '../../components/DeleteConfirmModal';
 import { ErrorState, LoadingState } from '../../components/common/AsyncStatus';
+import { CURRENCY_RATE_NOTE, formatAmountMaybePhpAndUsd } from '../../lib/currency';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
 
@@ -25,14 +26,6 @@ interface DonationRow {
   notes?: string | null;
   impactUnit?: string | null;
   supporter?: SupporterOpt | null;
-}
-
-function fmtMoney(n: number, currency = 'PHP') {
-  try {
-    return new Intl.NumberFormat('en-PH', { style: 'currency', currency, maximumFractionDigits: 0 }).format(n);
-  } catch {
-    return `${currency} ${n.toFixed(0)}`;
-  }
 }
 
 function supporterName(s: SupporterOpt | null | undefined): string {
@@ -235,6 +228,9 @@ export default function ContributionsPage() {
           <p className="text-muted mb-0" style={{ fontSize: 14 }}>
             Monetary, in-kind, time, and other gift types stored in the database (same data as reports and donor history).
           </p>
+          <p className="text-muted small mt-2 mb-0" style={{ fontSize: 13 }}>
+            {CURRENCY_RATE_NOTE}
+          </p>
         </div>
 
         {loading && <LoadingState message="Loading contributions…" />}
@@ -246,7 +242,7 @@ export default function ContributionsPage() {
               items={[
                 {
                   label: 'Monetary total (PHP)',
-                  value: fmtMoney(kpis.monetarySum),
+                  value: formatAmountMaybePhpAndUsd(kpis.monetarySum, 'PHP'),
                   sub: 'Monetary gift rows only',
                   accent: '#059669',
                   icon: 'cash-stack',
@@ -476,7 +472,11 @@ export default function ContributionsPage() {
                         <td className="fw-semibold">{supporterName(d.supporter ?? undefined)}</td>
                         <td>{d.donationType ?? '—'}</td>
                         <td>
-                          {d.amount != null ? fmtMoney(Number(d.amount), d.currencyCode ?? 'PHP') : d.estimatedValue != null ? String(d.estimatedValue) : '—'}
+                          {d.amount != null
+                            ? formatAmountMaybePhpAndUsd(Number(d.amount), d.currencyCode ?? 'PHP')
+                            : d.estimatedValue != null
+                              ? String(d.estimatedValue)
+                              : '—'}
                         </td>
                         <td>{d.campaignName ?? '—'}</td>
                       </tr>
@@ -528,7 +528,12 @@ export default function ContributionsPage() {
                           ['Supporter', `${supporterName(detailDonation.supporter ?? undefined)} (ID ${detailDonation.supporterId})`],
                           ['Gift type', detailDonation.donationType ?? '—'],
                           ['Donation date', fmtDetailDate(detailDonation.donationDate)],
-                          ['Amount', detailDonation.amount != null ? fmtMoney(Number(detailDonation.amount), detailDonation.currencyCode ?? 'PHP') : '—'],
+                          [
+                            'Amount',
+                            detailDonation.amount != null
+                              ? formatAmountMaybePhpAndUsd(Number(detailDonation.amount), detailDonation.currencyCode ?? 'PHP')
+                              : '—',
+                          ],
                           ['Estimated value', detailDonation.estimatedValue != null ? String(detailDonation.estimatedValue) : '—'],
                           ['Currency', detailDonation.currencyCode ?? '—'],
                           ['Campaign', detailDonation.campaignName ?? '—'],

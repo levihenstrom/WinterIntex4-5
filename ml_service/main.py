@@ -4,6 +4,7 @@ Social ML inference API — live post recommendations using App_Data/ml/social a
 
 from __future__ import annotations
 
+import hmac
 import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -26,7 +27,12 @@ from ml_service.schemas import (
     RecommendResponse,
     SocialOptionsResponse,
 )
-from ml_service.settings import social_artifact_dir, social_posts_csv
+from ml_service.settings import (
+    ml_service_api_key,
+    ml_service_api_key_header_name,
+    social_artifact_dir,
+    social_posts_csv,
+)
 
 
 def _ensure_ml_pipeline_on_path() -> Path:
@@ -67,6 +73,24 @@ app = FastAPI(
     description="Live social post recommendations (trained artifacts under App_Data/ml/social).",
     lifespan=lifespan,
 )
+
+
+@app.middleware("http")
+async def optional_ml_service_api_key(request: Request, call_next):
+    """Optional shared secret for POST /social/recommend only (Azure / private networking)."""
+    expected = ml_service_api_key()
+    if expected and request.method == "POST":
+        path = request.url.path
+        if path == "/social/recommend" or path.rstrip("/") == "/social/recommend":
+            header = request.headers.get(ml_service_api_key_header_name())
+            a = (header or "").encode("utf-8")
+            b = expected.encode("utf-8")
+            if not hmac.compare_digest(a, b):
+                return JSONResponse(
+                    status_code=401,
+                    content={"detail": "Invalid or missing ML service API key."},
+                )
+    return await call_next(request)
 
 
 @app.exception_handler(ValueError)

@@ -38,4 +38,16 @@ Everyone signs in with their own account. The **role** on that account decides w
 
 ---
 
+## ML artifacts (bundled JSON / models)
+
+Staff-facing ML features read exported files from `backend/Intex.API/App_Data/ml/`. To regenerate them locally from CSV under `data/lighthouse_csv_v7/`, run from the repo root:
+
+```bash
+python3 refresh_ml_artifacts.py
+```
+
+Nightly automation and manual **Actions** runs are described in [`docs/ML_NIGHTLY_REFRESH.md`](docs/ML_NIGHTLY_REFRESH.md).
+
+---
+
 *This repository also contains internal technical notes (for example `plan.md`, `claude.md`) for the development team; they are not required reading for understanding the product from a client or user perspective.*

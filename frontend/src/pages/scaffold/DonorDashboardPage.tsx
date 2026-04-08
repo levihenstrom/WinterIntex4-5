@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { fetchPaged, postJson } from '../../lib/apiClient';
 import NavBar from '../../components/hw/NavBar';
+import Footer from '../../components/hw/Footer';
 import MetricCard from '../../components/hw/MetricCard';
 import { ErrorState, LoadingState } from '../../components/common/AsyncStatus';
+import { formatAmountMaybePhpAndUsd, formatPhpAndUsd } from '../../lib/currency';
 
 /* ── Types ───────────────────────────────────────────────────── */
 interface DonationAllocationApi {
@@ -42,16 +44,6 @@ async function fetchAllDonationsMine(): Promise<DonationMine[]> {
     page += 1;
   }
   return items;
-}
-
-function formatMoney(amount: number | null | undefined, currencyCode = 'PHP'): string {
-  if (amount == null) return '—';
-  const code = currencyCode && currencyCode.length === 3 ? currencyCode : 'PHP';
-  try {
-    return new Intl.NumberFormat('en-PH', { style: 'currency', currency: code, maximumFractionDigits: 0 }).format(amount);
-  } catch {
-    return `${code} ${amount.toFixed(0)}`;
-  }
 }
 
 function formatDate(iso: string | null | undefined): string {
@@ -328,31 +320,65 @@ export default function DonorDashboardPage() {
           paddingRight: '1.5rem',
         }}
       >
-        <div ref={heroRef} className="hw-fade-in" style={{ maxWidth: CONTENT_MAX, margin: '0 auto' }}>
-          <span className="hw-eyebrow">Supporter Portal</span>
-          <h1
-            style={{
-              fontFamily: 'Poppins, sans-serif',
-              fontWeight: 900,
-              fontSize: 'clamp(2.2rem, 5vw, 3.4rem)',
-              color: '#fff',
-              margin: '0.5rem 0 0.75rem',
-              lineHeight: 1.1,
-            }}
-          >
-            Your Giving & Impact
-          </h1>
-          <p
-            style={{
-              color: 'rgba(255,255,255,0.65)',
-              fontSize: '1.05rem',
-              maxWidth: 520,
-              lineHeight: 1.65,
-              margin: '0 0 1.5rem',
-            }}
-          >
-            Because of your generosity, we provide safe housing and restorative care. Thank you for being part of the HealingWings mission.
-          </p>
+        <div
+          ref={heroRef}
+          className="hw-fade-in"
+          style={{
+            maxWidth: CONTENT_MAX,
+            margin: '0 auto',
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '1.75rem 2rem',
+          }}
+        >
+          <div style={{ flex: '1 1 280px', minWidth: 0, maxWidth: 560 }}>
+            <span className="hw-eyebrow">Supporter Portal</span>
+            <h1
+              style={{
+                fontFamily: 'Poppins, sans-serif',
+                fontWeight: 900,
+                fontSize: 'clamp(2.2rem, 5vw, 3.4rem)',
+                color: '#fff',
+                margin: '0.5rem 0 0.75rem',
+                lineHeight: 1.1,
+              }}
+            >
+              Your Giving & Impact
+            </h1>
+            <p
+              style={{
+                color: 'rgba(255,255,255,0.65)',
+                fontSize: '1.05rem',
+                lineHeight: 1.65,
+                margin: 0,
+              }}
+            >
+              Because of your generosity, we provide safe housing and restorative care. Thank you for being part of the HealingWings mission.
+            </p>
+          </div>
+          <div style={{ flex: '0 0 auto', marginLeft: 'auto' }}>
+            <button
+              type="button"
+              onClick={() => {
+                resetGiveForm();
+                setShowGiveModal(true);
+              }}
+              className="hw-btn-magenta"
+              style={{
+                padding: '1rem 2.5rem',
+                borderRadius: 50,
+                fontWeight: 700,
+                fontSize: 'clamp(1rem, 2vw, 1.15rem)',
+                border: 'none',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Give again now →
+            </button>
+          </div>
         </div>
       </section>
 
@@ -378,7 +404,12 @@ export default function DonorDashboardPage() {
                 <MetricCard target={totals.count} label="Gifts" />
               </div>
               <div style={{ borderRight: '1px solid rgba(255,255,255,0.1)' }}>
-                <MetricCard target={impactTotalTarget} prefix="₱" label="Total impact (PHP)" />
+                <MetricCard
+                  target={impactTotalTarget}
+                  prefix=""
+                  label="Total impact"
+                  staticDisplay={formatPhpAndUsd(impactTotalTarget)}
+                />
               </div>
               <div>
                 <MetricCard target={programImpact.length} label="Areas funded" />
@@ -548,7 +579,7 @@ export default function DonorDashboardPage() {
                               {hoveredCategory.label}
                             </div>
                             <div style={{ marginTop: 6, fontFamily: 'Poppins, sans-serif', fontWeight: 800, fontSize: '1.1rem', color: '#1E3A5F' }}>
-                              {formatMoney(hoveredCategory.totalAmount)}
+                              {formatPhpAndUsd(hoveredCategory.totalAmount)}
                             </div>
                             <div style={{ marginTop: 4, fontFamily: 'Inter, sans-serif', fontSize: '0.84rem', color: '#64748b' }}>
                               {totalAllocated > 0 ? ((hoveredCategory.totalAmount / totalAllocated) * 100).toFixed(1) : '0.0'}% of total allocation · {hoveredCategory.giftCount} gift{hoveredCategory.giftCount === 1 ? '' : 's'}
@@ -676,7 +707,7 @@ export default function DonorDashboardPage() {
                               </td>
                               <td style={{ padding: '1rem 1.25rem' }}>
                                 <span style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 800, fontSize: '1.05rem', color: '#1E3A5F' }}>
-                                  {formatMoney(d.amount, d.currencyCode ?? 'PHP')}
+                                  {formatAmountMaybePhpAndUsd(d.amount, d.currencyCode ?? 'PHP')}
                                 </span>
                                 <span
                                   style={{
@@ -794,46 +825,7 @@ export default function DonorDashboardPage() {
         </div>
       </main>
 
-      {/* ── CTA (ImpactPage bottom band) ── */}
-      <section style={{ background: 'linear-gradient(135deg, #1E3A5F 0%, #0f2744 100%)', padding: '4rem 1.5rem' }} aria-label="Continue giving">
-        <div style={{ maxWidth: 640, margin: '0 auto', textAlign: 'center' }}>
-          <span className="hw-eyebrow">Make a difference</span>
-          <h2
-            style={{
-              fontFamily: 'Poppins, sans-serif',
-              fontWeight: 900,
-              fontSize: 'clamp(1.5rem, 3vw, 2rem)',
-              color: '#fff',
-              margin: '0.6rem 0 0.75rem',
-            }}
-          >
-            Continue your legacy of giving
-          </h2>
-          <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '1rem', lineHeight: 1.65, marginBottom: '2rem' }}>
-            Your support expands outreach and brings hope to more individuals we serve.
-          </p>
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <button
-              type="button"
-              onClick={() => {
-                resetGiveForm();
-                setShowGiveModal(true);
-              }}
-              className="hw-btn-magenta"
-              style={{
-                padding: '0.75rem 2rem',
-                borderRadius: 50,
-                fontWeight: 700,
-                fontSize: '0.9rem',
-                border: 'none',
-                cursor: 'pointer',
-              }}
-            >
-              Give again now →
-            </button>
-          </div>
-        </div>
-      </section>
+      <Footer />
 
       {showGiveModal && (
         <div

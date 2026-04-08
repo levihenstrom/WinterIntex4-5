@@ -9,11 +9,13 @@ Donation value: log1p target, same regressors as engagement.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Any
 
 import numpy as np
 import pandas as pd
 from sklearn.base import clone
+from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import (
     GradientBoostingClassifier,
     GradientBoostingRegressor,
@@ -36,11 +38,14 @@ def _compare_regressors(
     num: list[str],
     cat: list[str],
     random_state: int,
+    *,
+    preprocess_builder: Callable[[list[str], list[str]], ColumnTransformer] | None = None,
 ) -> dict[str, Any]:
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=config.TEST_SIZE, random_state=random_state
     )
-    prep = build_preprocess(num, cat)
+    prep_fn = preprocess_builder or build_preprocess
+    prep = prep_fn(num, cat)
     models = {
         "ridge": RidgeCV(alphas=np.asarray(config.RIDGE_ALPHAS, dtype=float), cv=None),
         "random_forest": RandomForestRegressor(
@@ -89,11 +94,14 @@ def _compare_classifiers(
     num: list[str],
     cat: list[str],
     random_state: int,
+    *,
+    preprocess_builder: Callable[[list[str], list[str]], ColumnTransformer] | None = None,
 ) -> dict[str, Any]:
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=config.TEST_SIZE, random_state=random_state, stratify=y
     )
-    prep = build_preprocess(num, cat)
+    prep_fn = preprocess_builder or build_preprocess
+    prep = prep_fn(num, cat)
     models = {
         "logistic": LogisticRegression(max_iter=2000, class_weight="balanced", random_state=random_state),
         "random_forest": RandomForestClassifier(
@@ -142,24 +150,29 @@ def _compare_classifiers(
     }
 
 
-def run_predictive_suite(df: pd.DataFrame, meta: dict) -> dict[str, Any]:
+def run_predictive_suite(
+    df: pd.DataFrame,
+    meta: dict,
+    *,
+    preprocess_builder: Callable[[list[str], list[str]], ColumnTransformer] | None = None,
+) -> dict[str, Any]:
     num, cat = meta["numeric_features"], meta["categorical_features"]
     rs = config.RANDOM_STATE
     out: dict[str, Any] = {}
 
     X_e, y_e = get_X_y(df, meta, meta["target_engagement"])
-    out["engagement"] = _compare_regressors(X_e, y_e, num, cat, rs)
+    out["engagement"] = _compare_regressors(X_e, y_e, num, cat, rs, preprocess_builder=preprocess_builder)
 
     X_r, y_r = get_X_y(df, meta, meta["target_referrals"])
-    out["referrals_count"] = _compare_regressors(X_r, y_r, num, cat, rs)
+    out["referrals_count"] = _compare_regressors(X_r, y_r, num, cat, rs, preprocess_builder=preprocess_builder)
 
     y_log = np.log1p(df.loc[X_r.index, meta["target_donation_value"]].clip(lower=0).astype(float).values)
-    out["donation_value_log1p"] = _compare_regressors(X_r, y_log, num, cat, rs)
+    out["donation_value_log1p"] = _compare_regressors(X_r, y_log, num, cat, rs, preprocess_builder=preprocess_builder)
 
     X_b, y_b = get_X_y(df, meta, meta["target_referrals_binary"])
-    out["any_referral"] = _compare_classifiers(X_b, y_b.astype(int), num, cat, rs)
+    out["any_referral"] = _compare_classifiers(X_b, y_b.astype(int), num, cat, rs, preprocess_builder=preprocess_builder)
 
     X_h, y_h = get_X_y(df, meta, meta["target_referrals_high_median"])
-    out["referrals_ge_median"] = _compare_classifiers(X_h, y_h.astype(int), num, cat, rs)
+    out["referrals_ge_median"] = _compare_classifiers(X_h, y_h.astype(int), num, cat, rs, preprocess_builder=preprocess_builder)
 
     return out

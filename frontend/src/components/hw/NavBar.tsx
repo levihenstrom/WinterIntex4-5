@@ -2,7 +2,6 @@ import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import HealingWingsLogo from './HealingWingsLogo';
-import 'bootstrap-icons/font/bootstrap-icons.css';
 
 const NAV_LINKS = [
   { label: 'Home', hash: '#hero' },
@@ -71,16 +70,28 @@ export default function NavBar() {
 
       {/* User Manager — Admin only */}
       {isAdmin && (
-        <Link
-          to="/admin/user-manager"
-          onClick={() => setDropdownOpen(false)}
-          className="w-full bg-transparent border-none cursor-pointer px-4 py-2.5 flex items-center gap-3 text-[13px] text-[#1E3A5F] font-semibold text-left rounded-xl hover:bg-violet-50 transition-colors no-underline"
-        >
-          <span className="w-7 h-7 rounded-full bg-violet-100 flex items-center justify-center flex-shrink-0 text-[#6B21A8]">
-            <i className="bi bi-shield-lock-fill text-[13px]" />
-          </span>
-          User Manager
-        </Link>
+        <>
+          <Link
+            to="/admin/user-manager"
+            onClick={() => setDropdownOpen(false)}
+            className="w-full bg-transparent border-none cursor-pointer px-4 py-2.5 flex items-center gap-3 text-[13px] text-[#1E3A5F] font-semibold text-left rounded-xl hover:bg-violet-50 transition-colors no-underline"
+          >
+            <span className="w-7 h-7 rounded-full bg-violet-100 flex items-center justify-center flex-shrink-0 text-[#6B21A8]">
+              <i className="bi bi-shield-lock-fill text-[13px]" />
+            </span>
+            User Manager
+          </Link>
+          <Link
+            to="/admin/volunteer-submissions"
+            onClick={() => setDropdownOpen(false)}
+            className="w-full bg-transparent border-none cursor-pointer px-4 py-2.5 flex items-center gap-3 text-[13px] text-[#1E3A5F] font-semibold text-left rounded-xl hover:bg-teal-50 transition-colors no-underline"
+          >
+            <span className="w-7 h-7 rounded-full bg-teal-100 flex items-center justify-center flex-shrink-0 text-[#0D9488]">
+              <i className="bi bi-person-lines-fill text-[13px]" />
+            </span>
+            Volunteer Submissions
+          </Link>
+        </>
       )}
 
       <div className="h-[1px] bg-stone-100 my-1 mx-2" />
@@ -160,13 +171,13 @@ export default function NavBar() {
                     {link.label}
                   </Link>
                 ) : (
-                  <a
+                  <Link
                     key={link.label}
-                    href={sectionHref(link.hash!)}
+                    to={{ pathname: '/', hash: link.hash }}
                     className="text-sm font-medium text-white/75 hover:text-white transition-colors no-underline"
                   >
                     {link.label}
-                  </a>
+                  </Link>
                 )
               )}
               {isAuthenticated && (
@@ -302,14 +313,14 @@ export default function NavBar() {
                     {link.label}
                   </Link>
                 ) : (
-                  <a
+                  <Link
                     key={link.label}
-                    href={sectionHref(link.hash!)}
+                    to={{ pathname: '/', hash: link.hash }}
                     onClick={() => setMenuOpen(false)}
                     className="block py-3 text-white/75 hover:text-white font-medium text-sm border-b border-white/10 no-underline transition-colors"
                   >
                     {link.label}
-                  </a>
+                  </Link>
                 )
               )}
               {isAuthenticated && (

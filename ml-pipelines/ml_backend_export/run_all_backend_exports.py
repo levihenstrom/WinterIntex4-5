@@ -22,6 +22,9 @@ Regenerate all backend-local ML artifacts for Intex.API (``App_Data/ml``).
 Optional env: ``INTEX_REPO_ROOT`` — absolute path to repo root if the checkout is not
 next to ``ml-pipelines`` as usual.
 
+Exit status: **0** on success; **1** if required output files are missing or empty after the run
+(for the sections that were executed); **2** for CLI usage errors.
+
 Options::
 
     --skip-reintegration   Do not run resident scoring (only donors + social)
@@ -64,6 +67,54 @@ def _warn_if_user_paths(label: str, obj: Any) -> None:
         print(f"  WARNING [{label}]: found {len(bad)} string(s) resembling absolute user paths — review content.")
 
 
+# Files the full export is expected to produce (JSON and packaged docs). Social .joblib copies
+# are optional until training artifacts exist under ml_pipeline_social_media_engagement/serialized_models/.
+REQUIRED_BACKEND_ML_FILES: tuple[tuple[str, str], ...] = (
+    ("reintegration", "current_resident_scores.json"),
+    ("reintegration", "top_10_priority_residents.json"),
+    ("reintegration", "current_resident_scores_dashboard.json"),
+    ("donors", "current_donor_scores.json"),
+    ("donors", "top_at_risk_donors.json"),
+    ("donors", "high_priority_outreach_donors.json"),
+    ("donors", "donor_churn_backend_export_metadata.json"),
+    ("social", "social_recommender_manifest.json"),
+    ("social", "recommendation_goal_weights.json"),
+    ("social", "social_media_engagement_metadata.json"),
+    ("social", "sample_payload_input.json"),
+    ("social", "sample_prediction_output.json"),
+)
+
+
+def required_backend_files_for_run(do_re: bool, do_donors: bool, do_social: bool) -> tuple[tuple[str, str], ...]:
+    """Subset of ``REQUIRED_BACKEND_ML_FILES`` matching the export sections that ran."""
+    out: list[tuple[str, str]] = []
+    for sub, name in REQUIRED_BACKEND_ML_FILES:
+        if sub == "reintegration" and not do_re:
+            continue
+        if sub == "donors" and not do_donors:
+            continue
+        if sub == "social" and not do_social:
+            continue
+        out.append((sub, name))
+    return tuple(out)
+
+
+def validate_required_backend_artifacts(
+    backend_root: Path,
+    required: tuple[tuple[str, str], ...] | None = None,
+) -> list[str]:
+    """Return missing or empty required paths (e.g. ``reintegration/foo.json``)."""
+    specs = required if required is not None else REQUIRED_BACKEND_ML_FILES
+    missing: list[str] = []
+    for sub, name in specs:
+        p = backend_root / sub / name
+        if not p.is_file():
+            missing.append(f"{sub}/{name}")
+        elif p.stat().st_size == 0:
+            missing.append(f"{sub}/{name} (empty file)")
+    return missing
+
+
 def _print_validation(backend_root: Path) -> None:
     print("\n=== Backend ML artifact validation ===\n")
     areas: list[tuple[str, list[str]]] = [
@@ -96,6 +147,17 @@ def _print_validation(backend_root: Path) -> None:
                 "social_media_engagement_metadata.json",
                 "sample_payload_input.json",
                 "sample_prediction_output.json",
+                "engagement_rate_pipeline.onnx",
+                "any_referral_classifier_pipeline.onnx",
+                "donation_referrals_count_pipeline.onnx",
+                "donation_value_log1p_pipeline.onnx",
+                "social_onnx_export_metadata.json",
+                "engagement_rate_pipeline_full.onnx",
+                "any_referral_classifier_pipeline_full.onnx",
+                "donation_referrals_count_pipeline_full.onnx",
+                "donation_value_log1p_pipeline_full.onnx",
+                "social_net_preprocessing_spec.json",
+                "social_onnx_full_pipeline_metadata.json",
             ],
         ),
     ]
@@ -176,8 +238,33 @@ def main(argv: list[str] | None = None) -> int:
         sinfo = package_social_backend_artifacts()
         print(f"Social: copied {len(sinfo['copied'])} files; missing source: {sinfo['missing']}")
         print(f"  manifest: {sinfo['manifest_path']}")
+        ox = sinfo.get("onnx_export") or {}
+        if ox.get("ok"):
+            print(
+                f"  onnx: exported estimators → {ox.get('sidecar')} "
+                f"(n_transformed={ox.get('n_transformed_features')})",
+            )
+        elif ox.get("attempted") and not ox.get("ok"):
+            print(f"  onnx: export failed — {ox.get('error', 'unknown error')}")
+        fx = sinfo.get("full_pipeline_onnx") or {}
+        if fx.get("ok"):
+            print(f"  onnx full pipeline: wrote {fx.get('metadata_path')} (set INTEX_SOCIAL_FULL_PIPELINE_ONNX=1)")
+        elif fx.get("attempted") and not fx.get("ok"):
+            print(f"  onnx full pipeline: failed — {fx.get('error', 'unknown error')}")
 
     _print_validation(BACKEND_ML_ROOT)
+
+    required_now = required_backend_files_for_run(do_re, do_donors, do_social)
+    missing = validate_required_backend_artifacts(BACKEND_ML_ROOT, required_now)
+    print("\n=== Required artifact check ===\n")
+    if missing:
+        print("FAILED — missing or empty required files:")
+        for m in missing:
+            print(f"  - {m}")
+        return 1
+    print(
+        f"OK — all {len(required_now)} required JSON / packaged files for this run are present.\n",
+    )
     return 0
 
 

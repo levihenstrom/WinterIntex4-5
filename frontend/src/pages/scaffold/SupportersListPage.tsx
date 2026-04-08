@@ -7,6 +7,7 @@ import { ErrorState, LoadingState } from '../../components/common/AsyncStatus';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import { buildDonorMlMap, getCurrentDonorScores, type DonorChurnRow } from '../../lib/mlApi';
 import { formatDonorOutreachSummary } from '../../lib/mlDisplayHelpers';
+import { formatPhpAndUsd } from '../../lib/currency';
 
 /* ── API shape (camelCase from ASP.NET) ─────────────────────── */
 interface SupporterApi {
@@ -72,14 +73,6 @@ function supporterDisplayLabel(s: SupporterApi): string {
   return (s.displayName ?? s.organizationName ?? `#${s.supporterId}`).trim();
 }
 
-function fmtMoneyPhp(n: number) {
-  try {
-    return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(n);
-  } catch {
-    return `PHP ${n.toFixed(0)}`;
-  }
-}
-
 function Badge({ label, bg, text }: { label: string; bg: string; text: string }) {
   return (
     <span
@@ -116,7 +109,13 @@ function SupporterKpiStrip({
         { label: 'Active', value: String(active), sub: 'status in database', accent: '#059669', icon: 'person-check' },
         { label: 'Monetary donors', value: String(monetary), accent: '#0D9488', icon: 'cash-stack' },
         { label: 'Volunteers', value: String(volunteers), accent: '#2563EB', icon: 'heart' },
-        { label: 'Monetary gifts (PHP)', value: fmtMoneyPhp(monetaryTotalPhp), sub: 'loaded gifts total', accent: '#7C3AED', icon: 'wallet2' },
+        {
+          label: 'Monetary gifts (PHP)',
+          value: formatPhpAndUsd(monetaryTotalPhp),
+          sub: 'loaded gifts total',
+          accent: '#7C3AED',
+          icon: 'wallet2',
+        },
       ]}
     />
   );
@@ -818,6 +817,25 @@ export default function SupportersListPage() {
                         </div>
                       )}
 
+                      {!loading &&
+                        !mlLoadError &&
+                        s.supporterType === 'MonetaryDonor' &&
+                        !dm &&
+                        donorMlById.size > 0 && (
+                          <div
+                            className="text-muted small"
+                            style={{
+                              fontSize: 11,
+                              padding: '8px 10px',
+                              background: '#F8FAFC',
+                              borderRadius: 8,
+                              border: '1px solid #E2E8F0',
+                            }}
+                          >
+                            No donor outreach score — no qualifying monetary gift on file for retention scoring.
+                          </div>
+                        )}
+
                       <div style={{ fontSize: 12, color: '#475569', display: 'flex', flexDirection: 'column', gap: 4 }}>
                         {s.email && (
                           <span className="text-break">
@@ -850,7 +868,7 @@ export default function SupportersListPage() {
                         {aggRow && aggRow.totalPhp > 0 && (
                           <span style={{ color: '#166534', fontWeight: 600 }}>
                             <i className="bi bi-wallet2 me-1" aria-hidden />
-                            {fmtMoneyPhp(aggRow.totalPhp)} monetary (tracked)
+                            {formatPhpAndUsd(aggRow.totalPhp)} monetary (tracked)
                           </span>
                         )}
                         {aggRow?.lastGift && (

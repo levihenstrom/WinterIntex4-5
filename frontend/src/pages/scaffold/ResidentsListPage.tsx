@@ -135,6 +135,14 @@ const RISK_COLORS: Record<string, { bg: string; text: string }> = {
   Critical: { bg: '#1E293B', text: '#F8FAFC' },
 };
 
+/** Table "Risk level" from ML readiness percentile: higher readiness → lower displayed risk. */
+function getRiskFromReadiness(percentile: number | null | undefined): string {
+  if (percentile == null) return 'N/A';
+  if (percentile >= 75) return 'Low';
+  if (percentile >= 40) return 'Medium';
+  return 'High';
+}
+
 function Badge({ label, bg, text }: { label: string; bg: string; text: string }) {
   return (
     <span style={{
@@ -407,6 +415,19 @@ export default function ResidentsListPage() {
       });
     }
 
+    if (sortCol === 'currentRiskLevel') {
+      const pct = (r: Resident) =>
+        mlByKey.get(normalizeResidentMlKey(r.internalCode))?.readinessPercentileAmongCurrentResidents;
+      return [...data.items].sort((a, b) => {
+        const va = pct(a);
+        const vb = pct(b);
+        if (va == null && vb == null) return 0;
+        if (va == null) return 1;
+        if (vb == null) return -1;
+        return sortDir === 'asc' ? va - vb : vb - va;
+      });
+    }
+
     return [...data.items].sort((a, b) =>
       compareValues(
         a[sortCol as keyof Resident] as string | number | null,
@@ -662,7 +683,13 @@ export default function ResidentsListPage() {
                       <th style={thStyle} onClick={() => handleSort('caseStatus')}>Case status{sortArrow('caseStatus', sortCol, sortDir)}</th>
                       <th style={thStyle} onClick={() => handleSort('safehouseId')}>Safehouse ID{sortArrow('safehouseId', sortCol, sortDir)}</th>
                       <th style={thStyle} onClick={() => handleSort('assignedSocialWorker')}>Social worker{sortArrow('assignedSocialWorker', sortCol, sortDir)}</th>
-                      <th style={thStyle} onClick={() => handleSort('currentRiskLevel')}>Risk level{sortArrow('currentRiskLevel', sortCol, sortDir)}</th>
+                      <th
+                        style={thStyle}
+                        onClick={() => handleSort('currentRiskLevel')}
+                        title="Derived from relative readiness percentile (higher readiness → lower risk). Not the database risk field."
+                      >
+                        Risk level{sortArrow('currentRiskLevel', sortCol, sortDir)}
+                      </th>
                       <th
                         style={thStyle}
                         onClick={() => handleSort('mlReadinessPct')}
@@ -684,8 +711,11 @@ export default function ResidentsListPage() {
                   <tbody>
                     {sortedItems.map((r, i) => {
                       const sCfg = STATUS_COLORS[r.caseStatus ?? ''] ?? { bg: '#F1F5F9', text: '#64748B' };
-                      const rCfg = RISK_COLORS[r.currentRiskLevel ?? ''];
                       const mlRow = mlByKey.get(normalizeResidentMlKey(r.internalCode));
+                      const readinessPct = mlRow?.readinessPercentileAmongCurrentResidents;
+                      const derivedRiskLabel = getRiskFromReadiness(readinessPct);
+                      const rCfg =
+                        derivedRiskLabel !== 'N/A' ? RISK_COLORS[derivedRiskLabel] : undefined;
                       return (
                         <tr
                           key={r.residentId}
@@ -709,9 +739,13 @@ export default function ResidentsListPage() {
                           <td style={tdStyle}>{r.safehouseId}</td>
                           <td style={{ ...tdStyle, color: '#475569' }}>{r.assignedSocialWorker || '—'}</td>
                           <td style={tdStyle}>
-                            {rCfg
-                              ? <Badge label={r.currentRiskLevel!} bg={rCfg.bg} text={rCfg.text} />
-                              : <span style={{ color: '#94A3B8' }}>—</span>}
+                            {mlLoading ? (
+                              <span style={{ color: '#94A3B8' }}>…</span>
+                            ) : rCfg ? (
+                              <Badge label={derivedRiskLabel} bg={rCfg.bg} text={rCfg.text} />
+                            ) : (
+                              <span style={{ color: '#94A3B8' }}>{derivedRiskLabel}</span>
+                            )}
                           </td>
                           <td
                             style={{ ...tdStyle, color: '#475569', whiteSpace: 'nowrap' }}

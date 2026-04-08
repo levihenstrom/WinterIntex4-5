@@ -211,6 +211,27 @@ def build_modeling_frame(raw: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, Any
     return df, meta
 
 
+def apply_categorical_onnx_sentinel(
+    df: pd.DataFrame,
+    categorical_features: list[str],
+    *,
+    sentinel: str | None = None,
+) -> pd.DataFrame:
+    """
+    Replace NaN/NA in categorical columns with a string token so ``SimpleImputer`` can use
+    ``missing_values=<sentinel>`` (ONNX-friendly). Default matches ``preprocess_onnx.CAT_ONNX_MISSING``.
+    """
+    from .preprocess_onnx import CAT_ONNX_MISSING as _default_sentinel
+
+    tok = sentinel if sentinel is not None else _default_sentinel
+    out = df.copy()
+    for c in categorical_features:
+        if c not in out.columns:
+            continue
+        out[c] = out[c].fillna(tok).astype(str)
+    return out
+
+
 def get_X_y(
     df: pd.DataFrame,
     meta: dict[str, Any],

@@ -60,6 +60,15 @@ Open **`social_media_engagement.ipynb`** (set working directory to `ml_pipeline`
 | Post planner recommendations | `outputs/sample_recommendations_*.csv/.json` |
 | **Backend / service bundle** | `backend/Intex.API/App_Data/ml/social/` — after `run_all`, refresh from repo root: `python3 refresh_ml_artifacts.py --social-only`, or from `ml_pipeline`: `PYTHONPATH=. python3 -m ml_backend_export.run_all_backend_exports --social-only`. See `ml_backend_export/README.md`. |
 
+### ONNX (parallel export; joblib remains primary)
+
+- **Active runtime today:** FastAPI + `recommend_posts` still load **`.joblib`** full sklearn Pipelines (preprocessing + model). **`.onnx` files are optional** artifacts for a future in-process **.NET ONNX Runtime** path.
+- **Estimator-only ONNX (default refresh):** `PYTHONPATH=. python3 -m ml_pipeline_social_media_engagement.export_onnx` writes `*_pipeline.onnx` plus `social_onnx_export_metadata.json` (default: `serialized_models/`). The normal social refresh runs the same export into `App_Data/ml/social/` after copying joblibs. Each graph is the **final estimator** with one **float32** tensor `X` shaped `[batch, 102]` = output of the **production** joblib `prep.transform(...)`.
+- **Full-graph ONNX (optional, retrains):** `PYTHONPATH=. python3 -m ml_pipeline_social_media_engagement.full_pipeline_onnx_export --output-dir …/social` retrains with `preprocess_onnx` (categorical sentinel `__MISSING__` + **no** `max_categories` on `OneHotEncoder` so skl2onnx accepts the graph) and writes `*_pipeline_full.onnx`, `social_net_preprocessing_spec.json`, and `social_onnx_full_pipeline_metadata.json`. **Not the same weights** as production joblib. To run during `refresh_ml_artifacts.py`, set **`INTEX_SOCIAL_FULL_PIPELINE_ONNX=1`** (slow).
+- **ONNX Runtime CPU caveat:** Full-graph models often **fail to load** on stock `onnxruntime` CPU (`Imputer` / ML ops). Conversion is still useful for inspection, custom runtimes, or **.NET** if kernels exist; otherwise implement prep using `social_net_preprocessing_spec.json` and keep using **estimator-only** `.onnx` + 102-d vectors.
+- **Referral classifier (estimator-only path):** joblib uses `CalibratedClassifierCV`; estimator ONNX uses fold-0 inner GB (**uncalibrated**). Full-graph ONNX classifier is also **uncalibrated**.
+- **Manifest:** `social_recommender_manifest.json` gains `onnx_*` fields; optional `onnx_full_pipeline` when the env flag is used. Joblib consumers unchanged.
+
 ## Web app integration (ideas)
 
 - **Planning dashboard:** show predicted **engagement_rate**, **P(any referral)**, and optional **expected referrals** / **donation value** for a draft post (platform, type, hour, topic, CTA, boost fields).

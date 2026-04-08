@@ -9,6 +9,19 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Intex.API.Controllers;
 
+// DTO for volunteer applications (public endpoint, no auth)
+public record VolunteerApplicationDto(
+    string FirstName,
+    string LastName,
+    string Email,
+    string? Phone,
+    string? OrganizationName,
+    string? RelationshipType,
+    string? Region,
+    string? Country,
+    string? AcquisitionChannel
+);
+
 [ApiController]
 [Route("api/supporters")]
 public class SupportersController(AppDbContext db, StaffScopeResolver scopeResolver) : ControllerBase
@@ -92,5 +105,104 @@ public class SupportersController(AppDbContext db, StaffScopeResolver scopeResol
         db.Supporters.Remove(entity);
         await db.SaveChangesAsync(cancellationToken);
         return NoContent();
+    }
+
+    // ── Volunteer Application Flow ────────────────────────────────────────────
+
+    /// <summary>Check whether an email is already in the supporters table.</summary>
+    [AllowAnonymous]
+    [HttpGet("check-email")]
+    public async Task<IActionResult> CheckEmail([FromQuery] string email, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            return BadRequest(new { message = "Email is required." });
+
+        var exists = await db.Supporters
+            .AsNoTracking()
+            .AnyAsync(s => s.Email == email.Trim().ToLower(), cancellationToken);
+
+        return Ok(new { exists });
+    }
+
+    /// <summary>Public endpoint — submit a volunteer application (stored as PendingVolunteer).</summary>
+    [AllowAnonymous]
+    [HttpPost("volunteer-apply")]
+    public async Task<IActionResult> VolunteerApply([FromBody] VolunteerApplicationDto dto, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(dto.FirstName) ||
+            string.IsNullOrWhiteSpace(dto.LastName)  ||
+            string.IsNullOrWhiteSpace(dto.Email))
+            return BadRequest(new { message = "First name, last name and email are required." });
+
+        var emailLower = dto.Email.Trim().ToLower();
+        var exists = await db.Supporters.AnyAsync(s => s.Email == emailLower, cancellationToken);
+        if (exists)
+            return Conflict(new { message = "You are already registered as a supporter on our site." });
+
+        var supporter = new Supporter
+        {
+            SupporterType    = "Volunteer",
+            FirstName        = dto.FirstName.Trim(),
+            LastName         = dto.LastName.Trim(),
+            DisplayName      = $"{dto.FirstName.Trim()} {dto.LastName.Trim()}",
+            OrganizationName = dto.OrganizationName?.Trim(),
+            RelationshipType = dto.RelationshipType?.Trim(),
+            Region           = dto.Region?.Trim(),
+            Country          = dto.Country?.Trim(),
+            Email            = emailLower,
+            Phone            = dto.Phone?.Trim(),
+            AcquisitionChannel = dto.AcquisitionChannel?.Trim(),
+            Status           = "PendingVolunteer",
+            CreatedAt        = DateTime.UtcNow,
+            FirstDonationDate = null,
+        };
+
+        db.Supporters.Add(supporter);
+        await db.SaveChangesAsync(cancellationToken);
+        return Ok(new { message = "Application submitted successfully.", supporterId = supporter.SupporterId });
+    }
+
+    /// <summary>Admin — list all pending volunteer applications.</summary>
+    [Authorize(Policy = AuthPolicies.AdminOnly)]
+    [HttpGet("pending-volunteers")]
+    public async Task<IActionResult> GetPendingVolunteers(CancellationToken cancellationToken)
+    {
+        var pending = await db.Supporters
+            .AsNoTracking()
+            .Where(s => s.Status == "PendingVolunteer")
+            .OrderByDescending(s => s.CreatedAt)
+            .ToListAsync(cancellationToken);
+
+        return Ok(pending);
+    }
+
+    /// <summary>Admin — approve a pending volunteer (sets status to Active).</summary>
+    [Authorize(Policy = AuthPolicies.AdminOnly)]
+    [HttpPost("{id:int}/approve-volunteer")]
+    public async Task<IActionResult> ApproveVolunteer(int id, CancellationToken cancellationToken)
+    {
+        var entity = await db.Supporters.FindAsync([id], cancellationToken);
+        if (entity is null) return NotFound();
+        if (entity.Status != "PendingVolunteer")
+            return BadRequest(new { message = "This record is not a pending volunteer application." });
+
+        entity.Status = "Active";
+        await db.SaveChangesAsync(cancellationToken);
+        return Ok(new { message = "Volunteer approved and added to supporters." });
+    }
+
+    /// <summary>Admin — reject and delete a pending volunteer application.</summary>
+    [Authorize(Policy = AuthPolicies.AdminOnly)]
+    [HttpDelete("{id:int}/reject-volunteer")]
+    public async Task<IActionResult> RejectVolunteer(int id, CancellationToken cancellationToken)
+    {
+        var entity = await db.Supporters.FindAsync([id], cancellationToken);
+        if (entity is null) return NotFound();
+        if (entity.Status != "PendingVolunteer")
+            return BadRequest(new { message = "This record is not a pending volunteer application." });
+
+        db.Supporters.Remove(entity);
+        await db.SaveChangesAsync(cancellationToken);
+        return Ok(new { message = "Application rejected." });
     }
 }

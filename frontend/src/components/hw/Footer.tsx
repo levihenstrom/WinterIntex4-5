@@ -43,16 +43,18 @@ const SOCIAL_LINKS = [
   },
 ];
 
+// Use { pathname, hash } so React Router handles navigation client-side
+// and ScrollToTop in App.tsx can detect the hash and scroll correctly.
 const QUICK_LINKS = [
-  { label: 'Home', href: '/', scrollTop: true },
-  { label: 'About Us', href: '/#mission' },
-  { label: 'Impact', href: '/impact' },
-  { label: 'Stories', href: '/stories' },
+  { label: 'Home',     to: { pathname: '/', hash: '' } },
+  { label: 'About Us', to: { pathname: '/', hash: '#mission' } },
+  { label: 'Impact',   to: { pathname: '/impact', hash: '' } },
+  { label: 'Stories',  to: { pathname: '/stories', hash: '' } },
 ];
 
 const GET_INVOLVED_LINKS = [
-  { label: 'Donate', href: '/#donate' },
-  { label: 'Volunteer', href: '/volunteer', scrollTop: true },
+  { label: 'Donate',    to: { pathname: '/', hash: '#donate' } },
+  { label: 'Volunteer', to: { pathname: '/volunteer', hash: '' } },
 ];
 
 export default function Footer() {
@@ -100,21 +102,11 @@ export default function Footer() {
           <div>
             <h4 className="text-white font-semibold text-sm uppercase tracking-widest mb-2">Quick Links</h4>
             <ul className="space-y-3">
-              {QUICK_LINKS.map(({ label, href, scrollTop }) => (
+              {QUICK_LINKS.map(({ label, to }) => (
                 <li key={label}>
-                  {!href.includes('#') ? (
-                    <Link
-                      to={href}
-                      onClick={scrollTop ? () => window.scrollTo(0, 0) : undefined}
-                      className="text-white/50 text-sm no-underline hover:text-white transition-colors"
-                    >
-                      {label}
-                    </Link>
-                  ) : (
-                    <a href={href} className="text-white/50 text-sm no-underline hover:text-white transition-colors">
-                      {label}
-                    </a>
-                  )}
+                  <Link to={to} className="text-white/50 text-sm no-underline hover:text-white transition-colors">
+                    {label}
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -124,21 +116,11 @@ export default function Footer() {
           <div>
             <h4 className="text-white font-semibold text-sm uppercase tracking-widest mb-2">Get Involved</h4>
             <ul className="space-y-3">
-              {GET_INVOLVED_LINKS.map(({ label, href, scrollTop }) => (
+              {GET_INVOLVED_LINKS.map(({ label, to }) => (
                 <li key={label}>
-                  {!href.includes('#') ? (
-                    <Link
-                      to={href}
-                      onClick={scrollTop ? () => window.scrollTo(0, 0) : undefined}
-                      className="text-white/50 text-sm no-underline hover:text-white transition-colors"
-                    >
-                      {label}
-                    </Link>
-                  ) : (
-                    <a href={href} className="text-white/50 text-sm no-underline hover:text-white transition-colors">
-                      {label}
-                    </a>
-                  )}
+                  <Link to={to} className="text-white/50 text-sm no-underline hover:text-white transition-colors">
+                    {label}
+                  </Link>
                 </li>
               ))}
             </ul>

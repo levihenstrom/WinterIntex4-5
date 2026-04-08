@@ -4,6 +4,10 @@ Backend JSON for donor churn / outreach prioritization.
 Uses a documented **heuristic** from ``supporters.csv`` + ``donations.csv`` so exports always work
 for Phase 1. When a trained ``donor_churn_pipeline.joblib`` exists and is wired to this module,
 replace the heuristic path while keeping the same output field names.
+
+**Donor universe:** Only supporters with at least one qualifying donation are scored:
+``donation_type == "Monetary"`` and ``amount`` is non-null. Volunteers and other non-donor
+supporter types are excluded unless they have such a gift on file.
 """
 
 from __future__ import annotations
@@ -17,6 +21,13 @@ import pandas as pd
 
 from .io_utils import write_json_atomic
 from .paths import DONORS_BACKEND_DIR, LIGHTHOUSE_DATA_DIR, ensure_backend_ml_dirs
+
+DONOR_ELIGIBILITY_RULE = (
+    "Supporters included only if they have ≥1 donation row with donation_type='Monetary' "
+    "and a non-null amount (same rule as the donor-retention cohort)."
+)
+
+
 def _json_safe(obj: Any) -> Any:
     if isinstance(obj, dict):
         return {k: _json_safe(v) for k, v in obj.items()}
@@ -45,11 +56,13 @@ def _heuristic_churn_frame(data_dir: Path) -> pd.DataFrame:
     """
     Heuristic churn risk [0,1]: higher = more likely to need retention outreach.
 
+    **Population:** Only supporters with ≥1 qualifying monetary gift (see module docstring).
+    Rows are joined to ``supporters.csv`` for ``display_name`` only after eligibility is set.
+
     Rule (documented):
     - reference_date = max monetary donation date in file (proxy for "as of" data freshness).
     - days_since_last_monetary: larger gap => higher risk component.
     - inverse lifetime monetary sum (log scale): lower giving => slight risk bump.
-    - Supporters with no monetary history: moderate risk (0.45) — still visible for triage.
 
     This is NOT the notebook's supervised model; train + export joblib for production parity.
     """
@@ -57,15 +70,29 @@ def _heuristic_churn_frame(data_dir: Path) -> pd.DataFrame:
     don = pd.read_csv(data_dir / "donations.csv")
     don["donation_date"] = pd.to_datetime(don["donation_date"], errors="coerce")
     mon = don[don["donation_type"].astype(str).str.strip().eq("Monetary")].copy()
+    mon["amount_num"] = pd.to_numeric(mon["amount"], errors="coerce")
+    mon = mon[mon["amount_num"].notna()].copy()
+    if mon.empty:
+        return pd.DataFrame(
+            columns=[
+                "supporter_id",
+                "display_name",
+                "last_monetary",
+                "monetary_sum",
+                "days_since_last_monetary",
+                "churn_risk_score",
+            ]
+        )
+
     ref = mon["donation_date"].max()
     if pd.isna(ref):
         ref = pd.Timestamp.utcnow()
 
     last_m = mon.groupby("supporter_id")["donation_date"].max().rename("last_monetary")
-    sum_m = mon.groupby("supporter_id")["amount"].apply(lambda s: pd.to_numeric(s, errors="coerce").fillna(0).sum()).rename(
-        "monetary_sum"
-    )
-    feats = sup[["supporter_id", "display_name"]].copy()
+    sum_m = mon.groupby("supporter_id")["amount_num"].sum().rename("monetary_sum")
+
+    eligible_ids = pd.Index(mon["supporter_id"].dropna().unique())
+    feats = sup[sup["supporter_id"].isin(eligible_ids)][["supporter_id", "display_name"]].copy()
     feats = feats.merge(last_m, on="supporter_id", how="left")
     feats = feats.merge(sum_m, on="supporter_id", how="left")
     feats["days_since_last_monetary"] = (ref - feats["last_monetary"]).dt.days
@@ -78,9 +105,6 @@ def _heuristic_churn_frame(data_dir: Path) -> pd.DataFrame:
     ms_norm = 1.0 - (ms - ms.min()) / (ms.max() - ms.min() + 1e-9)
     raw = 0.65 * gap_score + 0.35 * ms_norm
     feats["churn_risk_score"] = raw.clip(0, 1)
-    feats.loc[feats["last_monetary"].isna(), "churn_risk_score"] = feats.loc[
-        feats["last_monetary"].isna(), "churn_risk_score"
-    ].clip(lower=0.45)
 
     return feats
 
@@ -110,6 +134,22 @@ def build_donor_backend_tables(
 ) -> tuple[tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]], dict[str, Any]]:
     data_dir = data_dir or LIGHTHOUSE_DATA_DIR
     df = _heuristic_churn_frame(data_dir)
+    if df.empty:
+        meta_empty: dict[str, Any] = {
+            "export_mode": "heuristic",
+            "donor_eligibility_rule": DONOR_ELIGIBILITY_RULE,
+            "note": (
+                "No qualifying monetary donations in the extract; donor churn JSON lists are empty. "
+                "When donor_churn_pipeline.joblib is wired, keep the same eligibility rule."
+            ),
+            "high_priority_outreach_rule": "N/A — no scored donors",
+            "high_priority_outreach_fallback": None,
+            "n_supporters": 0,
+            "n_scored_donors": 0,
+            "n_outreach_queue": 0,
+        }
+        return ([], [], []), meta_empty
+
     df = df.sort_values("churn_risk_score", ascending=False).reset_index(drop=True)
     df["outreach_priority_rank"] = range(1, len(df) + 1)
     df["risk_band"] = df["churn_risk_score"].map(_risk_band)
@@ -147,13 +187,16 @@ def build_donor_backend_tables(
 
     meta = {
         "export_mode": "heuristic",
+        "donor_eligibility_rule": DONOR_ELIGIBILITY_RULE,
         "note": (
             "churn_risk_score is a recency + lifetime-giving heuristic until donor_churn_pipeline.joblib "
-            "is trained (see donor_retention_churn.ipynb) and wired to this export."
+            "is trained (see donor_retention_churn.ipynb) and wired to this export. "
+            "Scores apply only to the donor-eligible cohort (qualifying monetary gifts), not all supporters."
         ),
         "high_priority_outreach_rule": primary_rule,
         "high_priority_outreach_fallback": outreach_fallback_note,
         "n_supporters": len(df),
+        "n_scored_donors": len(df),
         "n_outreach_queue": len(outreach),
     }
 
