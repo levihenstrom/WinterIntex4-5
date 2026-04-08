@@ -301,6 +301,13 @@ def score_all_current_residents(
     with open(outputs_dir / "current_resident_scores_dashboard.json", "w", encoding="utf-8") as f:
         json.dump(_json_safe(dashboard), f, indent=2, default=str)
 
+    try:
+        from ml_backend_export.reintegration_backend import write_reintegration_backend_json
+
+        write_reintegration_backend_json(full_df)
+    except ImportError:
+        pass
+
     return full_df, top_priority_df, compression_diag
 
 
@@ -361,6 +368,18 @@ def _print_summary(
         "current_resident_scores_dashboard.json",
     ):
         print(f"  {outputs_dir / name}")
+    try:
+        from ml_backend_export.paths import REINTEGRATION_BACKEND_DIR
+
+        print("  Backend (App_Data/ml/reintegration/):")
+        for bn in (
+            "current_resident_scores.json",
+            "top_10_priority_residents.json",
+            "current_resident_scores_dashboard.json",
+        ):
+            print(f"    {REINTEGRATION_BACKEND_DIR / bn}")
+    except ImportError:
+        pass
 
 
 def main() -> None:

@@ -1,6 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchPaged, type PagedResult } from '../../lib/apiClient';
+import {
+  getAtRiskDonors,
+  getResidentPriority,
+  recommendSocialPost,
+  type DonorChurnRow,
+  type ResidentMlScoreRow,
+  type SocialRecommendResponse,
+} from '../../lib/mlApi';
 import { useAuth } from '../../context/AuthContext';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
@@ -150,6 +158,230 @@ function fmtDonationMoney(n: number | null | undefined, currency = 'PHP') {
   }
 }
 
+// ── ML dashboard widgets (isolated fetch/error so one failure does not block others) ──
+
+function MlSectionCard({
+  title,
+  children,
+  footerLink,
+}: {
+  title: string;
+  children: ReactNode;
+  footerLink?: { to: string; label: string };
+}) {
+  return (
+    <div className="col-12 col-lg-4">
+      <div className="card border-0 shadow-sm rounded-3 h-100">
+        <div className="card-body d-flex flex-column">
+          <p className="hw-eyebrow mb-2" style={{ color: 'var(--hw-teal)' }}>
+            ML insights
+          </p>
+          <h3 className="h6 fw-semibold mb-3" style={{ color: 'var(--hw-navy)' }}>
+            {title}
+          </h3>
+          <div className="flex-grow-1 small">{children}</div>
+          {footerLink && (
+            <Link
+              to={footerLink.to}
+              className="small fw-semibold text-decoration-none mt-3"
+              style={{ color: 'var(--hw-purple)' }}
+            >
+              {footerLink.label} →
+            </Link>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ResidentsNeedingAttentionWidget() {
+  const [rows, setRows] = useState<ResidentMlScoreRow[] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    getResidentPriority(10)
+      .then((r) => {
+        if (!cancelled) {
+          setRows(r);
+          setErr(null);
+        }
+      })
+      .catch((e: Error) => {
+        if (!cancelled) {
+          setErr(e.message || 'Could not load ML priority list.');
+          setRows(null);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (loading) {
+    return <p className="text-muted mb-0">Loading…</p>;
+  }
+  if (err) {
+    return <p className="text-danger mb-0">{err}</p>;
+  }
+  if (!rows?.length) {
+    return <p className="text-muted mb-0">No ML readiness rows returned.</p>;
+  }
+
+  return (
+    <ul className="list-unstyled mb-0" style={{ maxHeight: 220, overflowY: 'auto' }}>
+      {rows.slice(0, 8).map((r) => (
+        <li key={r.residentCode} className="mb-2 pb-2 border-bottom border-light">
+          <div className="fw-semibold" style={{ color: 'var(--hw-navy)' }}>
+            {r.residentCode}
+            <span className="text-muted fw-normal ms-1">· rank {r.supportPriorityRank}</span>
+          </div>
+          <div className="text-muted">{r.operationalBand}</div>
+          <div className="text-muted">
+            Readiness %ile:{' '}
+            {r.readinessPercentileAmongCurrentResidents != null
+              ? `${Number(r.readinessPercentileAmongCurrentResidents).toFixed(1)}%`
+              : '—'}
+          </div>
+          {r.topRiskFactors?.[0] && (
+            <div className="text-truncate" title={r.topRiskFactors[0]} style={{ fontSize: 12, color: '#64748B' }}>
+              Risk: {r.topRiskFactors[0]}
+            </div>
+          )}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function AtRiskDonorsWidget() {
+  const [rows, setRows] = useState<DonorChurnRow[] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    getAtRiskDonors(10)
+      .then((r) => {
+        if (!cancelled) {
+          setRows(r);
+          setErr(null);
+        }
+      })
+      .catch((e: Error) => {
+        if (!cancelled) {
+          setErr(e.message || 'Could not load at-risk donors.');
+          setRows(null);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (loading) {
+    return <p className="text-muted mb-0">Loading…</p>;
+  }
+  if (err) {
+    return <p className="text-danger mb-0">{err}</p>;
+  }
+  if (!rows?.length) {
+    return <p className="text-muted mb-0">No donor churn scores returned.</p>;
+  }
+
+  return (
+    <ul className="list-unstyled mb-0" style={{ maxHeight: 220, overflowY: 'auto' }}>
+      {rows.slice(0, 8).map((d) => (
+        <li key={d.supporterId} className="mb-2 pb-2 border-bottom border-light">
+          <div className="fw-semibold" style={{ color: 'var(--hw-navy)' }}>
+            {d.displayName || `Supporter #${d.supporterId}`}
+          </div>
+          <div className="text-muted">
+            {d.riskBand} · outreach rank {d.outreachPriorityRank} · score {Number(d.churnRiskScore).toFixed(2)}
+          </div>
+          {d.topDrivers?.[0] && (
+            <div className="text-truncate" title={d.topDrivers[0]} style={{ fontSize: 12, color: '#64748B' }}>
+              {d.topDrivers[0]}
+            </div>
+          )}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function BestNextPostWidget() {
+  const [data, setData] = useState<SocialRecommendResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    recommendSocialPost({ goal: 'donations', topK: 1 })
+      .then((r) => {
+        if (!cancelled) {
+          setData(r);
+          setErr(null);
+        }
+      })
+      .catch((e: Error) => {
+        if (!cancelled) {
+          setErr(e.message || 'Social ML service unavailable.');
+          setData(null);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (loading) {
+    return <p className="text-muted mb-0">Loading…</p>;
+  }
+  if (err) {
+    return <p className="text-danger mb-0">{err}</p>;
+  }
+  const rec = data?.recommendations?.[0];
+  if (!rec) {
+    return <p className="text-muted mb-0">No recommendation returned.</p>;
+  }
+
+  return (
+    <div>
+      <div className="mb-1">
+        <span className="fw-semibold" style={{ color: 'var(--hw-navy)' }}>
+          {rec.platform}
+        </span>
+        <span className="text-muted"> · {rec.postType}</span>
+      </div>
+      <div className="text-muted small">
+        {rec.mediaType} · {rec.postHour}:00 · topic: {rec.contentTopic || '—'}
+      </div>
+      <div className="small mt-2">
+        P(referral):{' '}
+        <strong>{(rec.predictedPAnyReferral * 100).toFixed(0)}%</strong>
+      </div>
+      <p className="small text-muted mt-2 mb-0" style={{ lineHeight: 1.45 }}>
+        {rec.whyRecommended}
+      </p>
+    </div>
+  );
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function AdminHomePage() {
@@ -261,6 +493,31 @@ export default function AdminHomePage() {
             icon="house-door"
             linkTo="/admin/residents/visits-conferences"
           />
+        </div>
+
+        {/* ML insights — staff-only API; failures are contained per widget */}
+        <div className="mb-5">
+          <p className="hw-eyebrow mb-3">Machine learning</p>
+          <div className="row g-3">
+            <MlSectionCard
+              title="Residents needing attention"
+              footerLink={{ to: '/admin/residents', label: 'Open caseload' }}
+            >
+              <ResidentsNeedingAttentionWidget />
+            </MlSectionCard>
+            <MlSectionCard
+              title="At-risk donors"
+              footerLink={{ to: '/admin/donations', label: 'Open supporters' }}
+            >
+              <AtRiskDonorsWidget />
+            </MlSectionCard>
+            <MlSectionCard
+              title="Best next post (live model)"
+              footerLink={{ to: '/admin/social-media/suggest', label: 'Explore recommendations' }}
+            >
+              <BestNextPostWidget />
+            </MlSectionCard>
+          </div>
         </div>
 
         {/* Recent donations */}
