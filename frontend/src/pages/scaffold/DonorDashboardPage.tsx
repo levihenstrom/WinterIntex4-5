@@ -329,32 +329,45 @@ export default function DonorDashboardPage() {
           paddingRight: '1.5rem',
         }}
       >
-        <div ref={heroRef} className="hw-fade-in" style={{ maxWidth: CONTENT_MAX, margin: '0 auto' }}>
-          <span className="hw-eyebrow">Supporter Portal</span>
-          <h1
-            style={{
-              fontFamily: 'Poppins, sans-serif',
-              fontWeight: 900,
-              fontSize: 'clamp(2.2rem, 5vw, 3.4rem)',
-              color: '#fff',
-              margin: '0.5rem 0 0.75rem',
-              lineHeight: 1.1,
-            }}
-          >
-            Your Giving & Impact
-          </h1>
-          <p
-            style={{
-              color: 'rgba(255,255,255,0.65)',
-              fontSize: '1.05rem',
-              maxWidth: 520,
-              lineHeight: 1.65,
-              margin: '0 0 1.5rem',
-            }}
-          >
-            Because of your generosity, we provide safe housing and restorative care. Thank you for being part of the HealingWings mission.
-          </p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12 }}>
+        <div
+          ref={heroRef}
+          className="hw-fade-in"
+          style={{
+            maxWidth: CONTENT_MAX,
+            margin: '0 auto',
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '1.75rem 2rem',
+          }}
+        >
+          <div style={{ flex: '1 1 280px', minWidth: 0, maxWidth: 560 }}>
+            <span className="hw-eyebrow">Supporter Portal</span>
+            <h1
+              style={{
+                fontFamily: 'Poppins, sans-serif',
+                fontWeight: 900,
+                fontSize: 'clamp(2.2rem, 5vw, 3.4rem)',
+                color: '#fff',
+                margin: '0.5rem 0 0.75rem',
+                lineHeight: 1.1,
+              }}
+            >
+              Your Giving & Impact
+            </h1>
+            <p
+              style={{
+                color: 'rgba(255,255,255,0.65)',
+                fontSize: '1.05rem',
+                lineHeight: 1.65,
+                margin: 0,
+              }}
+            >
+              Because of your generosity, we provide safe housing and restorative care. Thank you for being part of the HealingWings mission.
+            </p>
+          </div>
+          <div style={{ flex: '0 0 auto', marginLeft: 'auto' }}>
             <button
               type="button"
               onClick={() => {
@@ -363,12 +376,13 @@ export default function DonorDashboardPage() {
               }}
               className="hw-btn-magenta"
               style={{
-                padding: '0.75rem 2rem',
+                padding: '1rem 2.5rem',
                 borderRadius: 50,
                 fontWeight: 700,
-                fontSize: '0.9rem',
+                fontSize: 'clamp(1rem, 2vw, 1.15rem)',
                 border: 'none',
                 cursor: 'pointer',
+                whiteSpace: 'nowrap',
               }}
             >
               Give again now →
