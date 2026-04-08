@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
-import { fetchPaged, postJson } from '../../lib/apiClient';
+import { fetchPaged } from '../../lib/apiClient';
 import SectionContainer from '../../components/hw/SectionContainer';
 
 /* ── Types ───────────────────────────────────────────────────── */
@@ -126,18 +126,33 @@ function useFadeIn() {
 function StatBox({ label, value, color, bg, border, delay }: { label: string; value: string; color: string; bg: string; border: string; delay?: string }) {
   const ref = useFadeIn();
   return (
-    <div ref={ref} className={`hw-fade-in ${delay}`} style={{ background: bg, border: `1px solid ${border}`, borderRadius: 20, padding: '1.25rem 1rem', textAlign: 'center', boxShadow: '0 4px 15px rgba(30,58,95,0.03)' }}>
-      <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 900, fontSize: '2.4rem', color, lineHeight: 1, letterSpacing: '-0.03em' }}>{value}</div>
-      <div style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color, opacity: 0.55, marginTop: 10 }}>{label}</div>
+    <div
+      ref={ref}
+      className={`hw-fade-in ${delay}`}
+      role="group"
+      aria-label={`${label}: ${value}`}
+      style={{ background: bg, border: `1px solid ${border}`, borderRadius: 20, padding: '1.25rem 1rem', textAlign: 'center', boxShadow: '0 4px 15px rgba(30,58,95,0.03)' }}
+    >
+      <div aria-hidden="true">
+        <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 900, fontSize: '2.4rem', color, lineHeight: 1, letterSpacing: '-0.03em' }}>{value}</div>
+        <div style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color, opacity: 0.55, marginTop: 10 }}>{label}</div>
+      </div>
     </div>
   );
 }
 
-function Card({ title, className = "", children }: { title: string; className?: string; children: React.ReactNode }) {
+function Card({ title, titleId, className = "", children }: { title: string; titleId?: string; className?: string; children: React.ReactNode }) {
   const ref = useFadeIn();
+  const flush = className.includes('p-0');
   return (
     <div ref={ref} className={`hw-fade-in bg-white rounded-[2rem] border border-stone-200 shadow-sm p-8 lg:p-10 ${className}`} style={{ boxShadow: '0 10px 40px rgba(30,58,95,0.03)' }}>
-      <p style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 800, color: '#1E3A5F', fontSize: '1.25rem', marginBottom: '2rem', letterSpacing: '-0.01em' }}>{title}</p>
+      <h3
+        id={titleId}
+        className={flush ? 'px-8 pt-8' : undefined}
+        style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 800, color: '#1E3A5F', fontSize: '1.25rem', marginBottom: flush ? '1.25rem' : '2rem', letterSpacing: '-0.01em' }}
+      >
+        {title}
+      </h3>
       {children}
     </div>
   );
@@ -176,13 +191,6 @@ export default function DonorDashboardPage() {
   const [donations, setDonations] = useState<DonationMine[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [demoAmount, setDemoAmount] = useState('');
-  const [demoCampaign, setDemoCampaign] = useState('');
-  const [demoNotes, setDemoNotes] = useState('');
-  const [demoSubmitting, setDemoSubmitting] = useState(false);
-  const [demoError, setDemoError] = useState<string | null>(null);
-  const [demoSuccess, setDemoSuccess] = useState<string | null>(null);
-
   const loadDonations = useCallback((opts?: { silent?: boolean }) => {
     if (!opts?.silent) {
       setLoading(true);
@@ -215,48 +223,21 @@ export default function DonorDashboardPage() {
 
   const programImpact = useMemo(() => (donations ? buildProgramImpact(donations) : []), [donations]);
 
-  async function handleDemoGift(e: React.FormEvent) {
-    e.preventDefault();
-    const n = Number(demoAmount);
-    if (!Number.isFinite(n) || n <= 0) {
-      setDemoError('Enter a positive amount.');
-      return;
-    }
-    setDemoSubmitting(true);
-    setDemoError(null);
-    setDemoSuccess(null);
-    try {
-      await postJson<DonationMine>('/api/donations/demo-gift', {
-        amount: n,
-        currencyCode: 'PHP',
-        campaignName: demoCampaign.trim() || undefined,
-        notes: demoNotes.trim() || undefined,
-        donationType: 'Monetary',
-      });
-      setDemoAmount('');
-      setDemoCampaign('');
-      setDemoNotes('');
-      setDemoSuccess('Demo gift recorded. It will appear in your ledger below.');
-      await loadDonations({ silent: true });
-    } catch (err) {
-      setDemoError(err instanceof Error ? err.message : 'Could not record demo gift.');
-    } finally {
-      setDemoSubmitting(false);
-    }
-  }
-
   const heroRef = useFadeIn();
 
   return (
     <div style={{ fontFamily: 'var(--hw-font-body)', background: '#f8fafc', minHeight: '100vh' }}>
       {/* ── Hero ── */}
-      <section style={{ background: 'linear-gradient(135deg, #1E3A5F 0%, #0f2744 100%)', paddingTop: '6rem', paddingBottom: '9rem', paddingLeft: '1.5rem', paddingRight: '1.5rem', textAlign: 'center' }}>
+      <section
+        aria-label="Donor dashboard introduction"
+        style={{ background: 'linear-gradient(135deg, #1E3A5F 0%, #0f2744 100%)', paddingTop: '6rem', paddingBottom: '9rem', paddingLeft: '1.5rem', paddingRight: '1.5rem', textAlign: 'center' }}
+      >
         <div ref={heroRef} className="hw-fade-in" style={{ maxWidth: 900, margin: '0 auto' }}>
           <span className="hw-eyebrow" style={{ color: '#5eead4', fontSize: '0.8rem' }}>Supporter Portal</span>
           <h1 style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 900, fontSize: 'clamp(2.5rem, 6vw, 4rem)', color: '#fff', margin: '1rem 0 1.5rem', lineHeight: 1, letterSpacing: '-0.03em' }}>
             Your Giving & Impact
           </h1>
-          <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '1.25rem', maxWidth: 700, lineHeight: 1.6, margin: '0 auto' }}>
+          <p style={{ color: 'rgba(255,255,255,0.82)', fontSize: '1.25rem', maxWidth: 700, lineHeight: 1.6, margin: '0 auto' }}>
             Because of your generosity, we are able to provide safe housing and restorative care to those who need it most.
             Thank you for being part of the HealingWings mission.
           </p>
@@ -282,74 +263,21 @@ export default function DonorDashboardPage() {
             color="#D97706" bg="#fff" border="#fde68a" delay="hw-delay-300"
           />
         </div>
-
-        <div className="mt-8 max-w-2xl mx-auto rounded-[2rem] border border-stone-200 bg-white p-8 shadow-sm">
-          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[#0D9488] mb-2">Classroom demo</p>
-          <h3 className="font-extrabold text-xl text-[#1E3A5F] mb-2 tracking-tight">Record a demo gift</h3>
-          <p className="text-stone-500 text-sm mb-6">
-            Simulates a donation without a payment processor. Saved to the database and listed in your history.
-          </p>
-          <form onSubmit={(e) => void handleDemoGift(e)} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-1.5">Amount (PHP) *</label>
-                <input
-                  type="number"
-                  min="1"
-                  step="1"
-                  required
-                  value={demoAmount}
-                  onChange={(e) => setDemoAmount(e.target.value)}
-                  className="w-full rounded-xl border border-stone-200 px-4 py-3 text-[#1E3A5F] font-semibold"
-                  placeholder="500"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-1.5">Campaign (optional)</label>
-                <input
-                  type="text"
-                  value={demoCampaign}
-                  onChange={(e) => setDemoCampaign(e.target.value)}
-                  className="w-full rounded-xl border border-stone-200 px-4 py-3"
-                  placeholder="e.g. Safehouse fund"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-1.5">Note (optional)</label>
-              <input
-                type="text"
-                value={demoNotes}
-                onChange={(e) => setDemoNotes(e.target.value)}
-                className="w-full rounded-xl border border-stone-200 px-4 py-3"
-                placeholder="Shown on your receipt line"
-              />
-            </div>
-            {demoError && <p className="text-sm text-red-600 font-medium">{demoError}</p>}
-            {demoSuccess && <p className="text-sm text-[#0D9488] font-medium">{demoSuccess}</p>}
-            <button
-              type="submit"
-              disabled={demoSubmitting}
-              className="w-full sm:w-auto rounded-full bg-[#1E3A5F] text-white font-extrabold px-10 py-3.5 shadow-lg hover:opacity-95 disabled:opacity-50"
-            >
-              {demoSubmitting ? 'Saving…' : 'Submit demo gift'}
-            </button>
-          </form>
-        </div>
       </SectionContainer>
 
+      <main id="donor-dashboard-main">
       <SectionContainer className="py-20 lg:py-28">
         {loading && (
-          <div className="py-24 text-center">
-            <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-[#1E3A5F] border-t-transparent mb-6"></div>
+          <div className="py-24 text-center" role="status" aria-live="polite" aria-busy="true">
+            <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-[#1E3A5F] border-t-transparent mb-6" aria-hidden="true" />
             <p className="text-stone-400 font-bold uppercase tracking-[0.2em] text-xs">Synchronizing your giving data...</p>
           </div>
         )}
 
         {error && (
           <div className="hw-alert-error max-w-2xl mx-auto shadow-xl p-10 text-center" role="alert" style={{ borderRadius: '2rem' }}>
-            <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10" /><path d="m15 9-6 6M9 9l6 6" /></svg>
+            <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6" aria-hidden="true">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true"><circle cx="12" cy="12" r="10" /><path d="m15 9-6 6M9 9l6 6" /></svg>
             </div>
             <h3 className="font-extrabold text-xl mb-2 text-[#991B1B]">Unable to load dashboard</h3>
             <p className="text-red-700/70">{error}</p>
@@ -359,9 +287,9 @@ export default function DonorDashboardPage() {
         {!loading && !error && donations && (
           <div className="space-y-32">
             {/* ── Program Area Impact ── */}
-            <section>
+            <section aria-labelledby="impact-by-category-heading">
               <div className="mb-12 text-left">
-                <h2 className="hw-heading-font mt-2 text-3xl font-black md:text-4xl text-[#6B21A8] tracking-tight">Impact by Category</h2>
+                <h2 id="impact-by-category-heading" className="hw-heading-font mt-2 text-3xl font-black md:text-4xl text-[#6B21A8] tracking-tight">Impact by Category</h2>
               </div>
 
               {programImpact.length === 0 ? (
@@ -369,7 +297,7 @@ export default function DonorDashboardPage() {
                   <p className="text-stone-400 font-medium italic m-0 text-lg">Your generosity will fuel measurable change across our programs.</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
                   {programImpact.map((row, idx) => (
                     <ProgramImpactCard
                       key={row.label}
@@ -382,9 +310,9 @@ export default function DonorDashboardPage() {
             </section>
 
             {/* ── History Table ── */}
-            <section>
+            <section aria-labelledby="stewardship-record-heading">
               <div className="mb-10 text-left">
-                <h2 className="hw-heading-font mt-2 text-3xl font-black md:text-4xl text-[#6B21A8] tracking-tight">Stewardship Record</h2>
+                <h2 id="stewardship-record-heading" className="hw-heading-font mt-2 text-3xl font-black md:text-4xl text-[#6B21A8] tracking-tight">Stewardship Record</h2>
               </div>
 
               {donations.length === 0 ? (
@@ -392,9 +320,24 @@ export default function DonorDashboardPage() {
                   <p className="text-stone-400 font-medium text-lg italic">No financial transactions found on your account.</p>
                 </div>
               ) : (
-                <Card title="Donation Ledger" className="overflow-hidden p-0 lg:p-0 border-none">
-                  <div className="overflow-x-auto">
-                    <table className="w-full border-collapse text-left">
+                <Card title="Donation Ledger" titleId="donation-ledger-heading" className="overflow-hidden p-0 lg:p-0 border-none">
+                  <div className="overflow-x-auto relative">
+                    <table className="w-full border-collapse text-left" aria-labelledby="donation-ledger-heading">
+                      <caption
+                        style={{
+                          position: 'absolute',
+                          width: 1,
+                          height: 1,
+                          padding: 0,
+                          margin: -1,
+                          overflow: 'hidden',
+                          clip: 'rect(0,0,0,0)',
+                          whiteSpace: 'nowrap',
+                          border: 0,
+                        }}
+                      >
+                        Your donations with date, amount, initiative, and plan type
+                      </caption>
                       <thead>
                         <tr className="bg-stone-50/50 border-b border-stone-100">
                           <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.25em] text-stone-400">Date</th>
@@ -422,7 +365,7 @@ export default function DonorDashboardPage() {
                             <td className="px-8 py-7 text-center">
                               {d.isRecurring ? (
                                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-violet-100 text-[#6B21A8] text-[10px] font-black uppercase tracking-widest">
-                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" /><polyline points="21 3 21 8 16 8" /></svg>
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" /><polyline points="21 3 21 8 16 8" /></svg>
                                   Recurring
                                 </span>
                               ) : (
@@ -442,10 +385,11 @@ export default function DonorDashboardPage() {
           </div>
         )}
       </SectionContainer>
+      </main>
 
       {/* ── Footer / CTA ── */}
-      <section className="py-28 bg-[#1E3A5F] relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10 pointer-events-none">
+      <section className="py-28 bg-[#1E3A5F] relative overflow-hidden" aria-label="Continue giving">
+        <div className="absolute inset-0 opacity-10 pointer-events-none" aria-hidden="true">
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white rounded-full blur-[120px]" />
           <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#5eead4] rounded-full blur-[100px]" />
         </div>
@@ -453,9 +397,15 @@ export default function DonorDashboardPage() {
           <h3 className="hw-heading-font text-4xl font-black mb-6 tracking-tight italic" style={{ color: '#5eead4' }}>
             Continue your legacy of giving.
           </h3>
-          <p className="text-white/60 text-xl mb-12 max-w-2xl mx-auto leading-relaxed font-medium">Your continued support allows us to expand our outreach and bring hope to even more individuals.</p>
+          <p className="text-xl mb-12 max-w-2xl mx-auto leading-relaxed font-medium" style={{ color: 'rgba(255,255,255,0.78)' }}>
+            Your continued support allows us to expand our outreach and bring hope to even more individuals.
+          </p>
           <div className="flex justify-center">
-            <a href="/#donate" className="hw-btn-magenta h-16 px-16 flex items-center justify-center rounded-full text-xl font-extrabold shadow-2xl hover:scale-105 transition-transform" style={{ minWidth: '280px' }}>
+            <a
+              href="/#donate"
+              className="hw-btn-magenta h-16 px-16 flex items-center justify-center rounded-full text-xl font-extrabold shadow-2xl hover:scale-105 transition-transform focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#5eead4]"
+              style={{ minWidth: '280px' }}
+            >
               Give Again Now →
             </a>
           </div>
