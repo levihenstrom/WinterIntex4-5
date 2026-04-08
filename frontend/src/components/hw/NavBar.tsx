@@ -2,7 +2,6 @@ import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import HealingWingsLogo from './HealingWingsLogo';
-import 'bootstrap-icons/font/bootstrap-icons.css';
 
 const NAV_LINKS = [
   { label: 'Home', hash: '#hero' },
