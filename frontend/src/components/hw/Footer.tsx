@@ -100,6 +100,10 @@ export default function Footer() {
               <li>
                 <a href="mailto:info@healingwings.org" className="text-white/50 text-sm no-underline transition-colors hover:text-white">
                   info@healingwings.org
+                  <br />
+                  +1 276 266 6654
+                  <br />
+                  
                 </a>
               </li>
             </ul>
