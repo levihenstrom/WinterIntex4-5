@@ -416,6 +416,23 @@ export default function DonorDashboardPage() {
                 >
                   Impact by category
                 </h2>
+                <p
+                  id="impact-by-category-hint"
+                  style={{
+                    margin: '-0.75rem 0 1rem',
+                    fontFamily: 'Inter, sans-serif',
+                    fontSize: '0.8rem',
+                    color: '#94a3b8',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                  }}
+                >
+                  <span aria-hidden="true" style={{ opacity: 0.85 }}>
+                    ⤷
+                  </span>
+                  Hover a colored segment to see amount, share, and gift count
+                </p>
 
                 {programImpact.length === 0 ? (
                   <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.95rem', color: '#64748b', margin: 0 }}>
@@ -437,40 +454,87 @@ export default function DonorDashboardPage() {
                       >
                         <div
                           role="img"
-                          aria-label="Segmented bar chart of donation allocation by category"
+                          aria-labelledby="impact-by-category-heading"
+                          aria-describedby="impact-by-category-hint"
+                          aria-label="Segmented bar chart of donation allocation by category; hover a segment for details"
                           onMouseLeave={() => setHoveredCategory(null)}
                           style={{
                             display: 'flex',
                             width: '100%',
-                            height: 32,
+                            height: 40,
                             overflow: 'hidden',
                             borderRadius: 999,
                             border: '1px solid #E2E8F0',
                             background: '#fff',
+                            boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.12)',
                           }}
                         >
                           {programImpact.map((row, idx) => {
                             const pal = CATEGORY_PILL_STYLES[idx % CATEGORY_PILL_STYLES.length];
                             const pct = totalAllocated > 0 ? (row.totalAmount / totalAllocated) * 100 : 0;
+                            const showLabel = pct >= 14;
                             return (
                               <div
                                 key={row.label}
                                 onMouseEnter={() => setHoveredCategory(row)}
-                                title={`${row.label} - hover for details`}
-                                aria-label={`${row.label} segment`}
+                                title={`${row.label} — hover for full details`}
+                                aria-label={`${row.label}, ${pct.toFixed(0)} percent of allocation; hover for details`}
                                 style={{
                                   width: `${pct}%`,
                                   background: pal.color,
                                   minWidth: pct > 0 ? 8 : 0,
                                   cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  position: 'relative',
+                                  transition: 'filter 0.15s ease, box-shadow 0.15s ease',
+                                  boxShadow: hoveredCategory?.label === row.label ? 'inset 0 0 0 2px rgba(255,255,255,0.95)' : undefined,
+                                  filter: hoveredCategory?.label === row.label ? 'brightness(1.08)' : undefined,
                                 }}
-                              />
+                              >
+                                {showLabel && (
+                                  <span
+                                    aria-hidden="true"
+                                    style={{
+                                      fontFamily: 'Inter, sans-serif',
+                                      fontSize: 10,
+                                      fontWeight: 700,
+                                      color: 'rgba(255,255,255,0.92)',
+                                      textShadow: '0 1px 2px rgba(0,0,0,0.25)',
+                                      padding: '0 4px',
+                                      textAlign: 'center',
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis',
+                                      whiteSpace: 'nowrap',
+                                      maxWidth: '100%',
+                                    }}
+                                  >
+                                    {row.label.length > 14 ? `${row.label.slice(0, 12)}…` : row.label}
+                                  </span>
+                                )}
+                                {!showLabel && pct > 0 && (
+                                  <span
+                                    aria-hidden="true"
+                                    style={{
+                                      fontSize: 14,
+                                      color: 'rgba(255,255,255,0.85)',
+                                      textShadow: '0 1px 2px rgba(0,0,0,0.2)',
+                                      lineHeight: 1,
+                                    }}
+                                  >
+                                    ···
+                                  </span>
+                                )}
+                              </div>
                             );
                           })}
                         </div>
 
-                        {hoveredCategory && (
+                        {hoveredCategory ? (
                           <div
+                            role="status"
+                            aria-live="polite"
                             style={{
                               marginTop: 12,
                               background: '#ffffff',
@@ -488,6 +552,46 @@ export default function DonorDashboardPage() {
                             </div>
                             <div style={{ marginTop: 4, fontFamily: 'Inter, sans-serif', fontSize: '0.84rem', color: '#64748b' }}>
                               {totalAllocated > 0 ? ((hoveredCategory.totalAmount / totalAllocated) * 100).toFixed(1) : '0.0'}% of total allocation · {hoveredCategory.giftCount} gift{hoveredCategory.giftCount === 1 ? '' : 's'}
+                            </div>
+                          </div>
+                        ) : (
+                          <div
+                            style={{
+                              marginTop: 12,
+                              background: '#fafafa',
+                              border: '1px dashed #CBD5E1',
+                              borderRadius: 12,
+                              padding: '12px 14px',
+                              display: 'flex',
+                              alignItems: 'flex-start',
+                              gap: 10,
+                            }}
+                          >
+                            <span
+                              aria-hidden="true"
+                              style={{
+                                flexShrink: 0,
+                                width: 28,
+                                height: 28,
+                                borderRadius: 8,
+                                background: '#f1f5f9',
+                                border: '1px solid #e2e8f0',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: 14,
+                                color: '#64748b',
+                              }}
+                            >
+                              ⓘ
+                            </span>
+                            <div>
+                              <div style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.82rem', fontWeight: 600, color: '#475569' }}>
+                                Details on hover
+                              </div>
+                              <div style={{ marginTop: 4, fontFamily: 'Inter, sans-serif', fontSize: '0.8rem', color: '#94a3b8', lineHeight: 1.45 }}>
+                                Move your pointer over any segment in the bar above. The panel will show the full category name, total amount, percentage of your giving, and number of gifts.
+                              </div>
                             </div>
                           </div>
                         )}
