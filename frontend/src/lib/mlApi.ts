@@ -2,6 +2,7 @@ import { fetchJson, postJson } from './apiClient';
 
 /** Row from GET /api/ml/residents/current-scores or priority (camelCase from ASP.NET). */
 export interface ResidentMlScoreRow {
+  residentId?: number | null;
   residentCode: string;
   asOfDate?: string | null;
   reintegrationReadinessScore: number;
