@@ -31,9 +31,9 @@ from ml_service.settings import social_artifact_dir, social_posts_csv
 
 def _ensure_ml_pipeline_on_path() -> Path:
     root = Path(__file__).resolve().parent.parent
-    mlp = root / "ml_pipeline"
+    mlp = root / "ml-pipelines"
     if not mlp.is_dir():
-        raise RuntimeError(f"ml_pipeline directory not found at {mlp}")
+        raise RuntimeError(f"ml-pipelines directory not found at {mlp}")
     mlp_s = str(mlp)
     if mlp_s not in sys.path:
         sys.path.insert(0, mlp_s)

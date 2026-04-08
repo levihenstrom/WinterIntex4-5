@@ -14,6 +14,11 @@ import {
   normalizeResidentMlKey,
   type ResidentMlScoreRow,
 } from '../../lib/mlApi';
+import {
+  formatRelativeReadinessPercentile,
+  RESIDENT_RELATIVE_READINESS_HEADER,
+  RESIDENT_RELATIVE_READINESS_TITLE,
+} from '../../lib/mlDisplayHelpers';
 import { useAuth } from '../../context/AuthContext';
 import DeleteConfirmModal from '../../components/DeleteConfirmModal';
 import AdminKpiStrip from '../../components/admin/AdminKpiStrip';
@@ -645,7 +650,7 @@ export default function ResidentsListPage() {
               marginBottom: 16,
             }}
           >
-            ML readiness data unavailable: {mlError}. Table ML columns will show N/A.
+            Readiness insights unavailable: {mlError}. Related columns will show N/A.
           </div>
         )}
 
@@ -678,14 +683,21 @@ export default function ResidentsListPage() {
                       <th style={thStyle} onClick={() => handleSort('safehouseId')}>Safehouse ID{sortArrow('safehouseId', sortCol, sortDir)}</th>
                       <th style={thStyle} onClick={() => handleSort('assignedSocialWorker')}>Social worker{sortArrow('assignedSocialWorker', sortCol, sortDir)}</th>
                       <th style={thStyle} onClick={() => handleSort('currentRiskLevel')}>Risk level{sortArrow('currentRiskLevel', sortCol, sortDir)}</th>
-                      <th style={thStyle} onClick={() => handleSort('mlReadinessPct')}>
-                        ML %ile{sortArrow('mlReadinessPct', sortCol, sortDir)}
+                      <th
+                        style={thStyle}
+                        onClick={() => handleSort('mlReadinessPct')}
+                        title={RESIDENT_RELATIVE_READINESS_TITLE}
+                      >
+                        {RESIDENT_RELATIVE_READINESS_HEADER}
+                        {sortArrow('mlReadinessPct', sortCol, sortDir)}
                       </th>
-                      <th style={{ ...thStyle, cursor: 'default' }}>ML band</th>
+                      <th style={{ ...thStyle, cursor: 'default' }} title="Support priority tier from the readiness model">
+                        Priority band
+                      </th>
                       <th style={thStyle} onClick={() => handleSort('mlPriorityRank')}>
-                        ML pri.{sortArrow('mlPriorityRank', sortCol, sortDir)}
+                        Priority rank{sortArrow('mlPriorityRank', sortCol, sortDir)}
                       </th>
-                      <th style={{ ...thStyle, cursor: 'default' }}>ML factors</th>
+                      <th style={{ ...thStyle, cursor: 'default' }}>Factors</th>
                       <th style={{ ...thStyle, cursor: 'default' }}>Actions</th>
                     </tr>
                   </thead>
@@ -721,11 +733,21 @@ export default function ResidentsListPage() {
                               ? <Badge label={r.currentRiskLevel!} bg={rCfg.bg} text={rCfg.text} />
                               : <span style={{ color: '#94A3B8' }}>—</span>}
                           </td>
-                          <td style={{ ...tdStyle, color: '#475569', whiteSpace: 'nowrap' }}>
+                          <td
+                            style={{ ...tdStyle, color: '#475569', whiteSpace: 'nowrap' }}
+                            title={RESIDENT_RELATIVE_READINESS_TITLE}
+                          >
                             {mlLoading ? (
                               <span style={{ color: '#94A3B8' }}>…</span>
                             ) : mlRow?.readinessPercentileAmongCurrentResidents != null ? (
-                              `${Number(mlRow.readinessPercentileAmongCurrentResidents).toFixed(1)}%`
+                              <span>
+                                <span className="tabular-nums">
+                                  {formatRelativeReadinessPercentile(
+                                    mlRow.readinessPercentileAmongCurrentResidents,
+                                  )}
+                                </span>
+                                <span className="d-none d-xl-inline text-muted small ms-1">(peers)</span>
+                              </span>
                             ) : (
                               'N/A'
                             )}
@@ -1246,7 +1268,7 @@ export default function ResidentsListPage() {
         </div>
       )}
 
-      {/* ML factors (read-only overlay; does not affect CRUD) */}
+      {/* Readiness factors (read-only overlay; does not affect CRUD) */}
       {mlFactorsFor && (
         <div
           className="modal d-block"
@@ -1259,7 +1281,8 @@ export default function ResidentsListPage() {
             <div className="modal-content">
               <div className="modal-header" style={{ background: '#F5F3FF', borderBottom: '1px solid #E9D5FF' }}>
                 <h5 className="modal-title fw-bold" id="mlFactorsTitle" style={{ color: '#1E3A5F' }}>
-                  ML readiness — {mlFactorsFor.internalCode || mlFactorsFor.caseControlNo || `#${mlFactorsFor.residentId}`}
+                  Readiness insights —{' '}
+                  {mlFactorsFor.internalCode || mlFactorsFor.caseControlNo || `#${mlFactorsFor.residentId}`}
                 </h5>
                 <button type="button" className="btn-close" onClick={() => setMlFactorsFor(null)} aria-label="Close" />
               </div>
@@ -1267,10 +1290,22 @@ export default function ResidentsListPage() {
                 {(() => {
                   const row = mlByKey.get(normalizeResidentMlKey(mlFactorsFor.internalCode));
                   if (!row) {
-                    return <p className="text-muted mb-0">No ML row for this resident&apos;s internal code.</p>;
+                    return (
+                      <p className="text-muted mb-0">No readiness insight row for this resident&apos;s internal code.</p>
+                    );
                   }
                   return (
                     <>
+                      <p className="small text-muted mb-3">
+                        <strong>Relative readiness among current residents:</strong>{' '}
+                        {row.readinessPercentileAmongCurrentResidents != null
+                          ? formatRelativeReadinessPercentile(row.readinessPercentileAmongCurrentResidents)
+                          : '—'}
+                        {' · '}
+                        <strong>Priority rank:</strong> {row.supportPriorityRank}
+                        {' · '}
+                        <strong>Priority band:</strong> {row.operationalBand}
+                      </p>
                       {row.rawScoreNote && (
                         <p className="small text-muted border rounded p-2 bg-light mb-3">{row.rawScoreNote}</p>
                       )}

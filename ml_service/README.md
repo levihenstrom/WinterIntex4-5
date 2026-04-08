@@ -43,7 +43,7 @@ From the **repository root** (`WinterIntex4-5`), so `ml_service` is importable:
 cd /path/to/WinterIntex4-5
 python3 -m venv .venv-mlsvc && source .venv-mlsvc/bin/activate
 pip install -r ml_service/requirements.txt
-pip install -r ml_pipeline/requirements.txt
+pip install -r ml-pipelines/requirements.txt
 ```
 
 Start the API:
@@ -53,7 +53,7 @@ cd /path/to/WinterIntex4-5
 uvicorn ml_service.main:app --reload --port 8001
 ```
 
-The app prepends `ml_pipeline/` to `sys.path` so `ml_pipeline_social_media_engagement` imports resolve without installing packages.
+The app prepends `ml-pipelines/` to `sys.path` so `ml_pipeline_social_media_engagement` imports resolve without installing packages.
 
 ## Endpoints
 
