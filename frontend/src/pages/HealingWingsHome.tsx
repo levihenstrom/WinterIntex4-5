@@ -207,7 +207,7 @@ function MissionSection() {
               ))}
             </div>
             <a
-              href="#pillars"
+              href="#donate"
               className="hw-btn-magenta inline-flex items-center gap-2 px-7 py-3 rounded-full font-bold text-sm mt-8 no-underline"
             >
               How We Help →
