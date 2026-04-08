@@ -1,5 +1,5 @@
-import { useEffect, useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useRef, useState, useMemo } from 'react';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
   deleteJson,
   fetchJson,
@@ -294,11 +294,15 @@ export default function ResidentsListPage() {
   const { authSession } = useAuth();
   const canWrite = authSession.roles.includes('Admin') || authSession.roles.includes('Staff');
 
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  // URL-driven initial state — supports /admin/residents/:id and ?caseStatus=Active
+  const { id: urlId } = useParams<{ id?: string }>();
+  const [searchParams] = useSearchParams();
+
+  const [search, setSearch] = useState(() => searchParams.get('search') ?? '');
+  const [statusFilter, setStatusFilter] = useState(() => searchParams.get('caseStatus') ?? '');
   const [categoryFilter, setCategoryFilter] = useState('');
-  const [appliedSearch, setAppliedSearch] = useState('');
-  const [appliedStatus, setAppliedStatus] = useState('');
+  const [appliedSearch, setAppliedSearch] = useState(() => searchParams.get('search') ?? '');
+  const [appliedStatus, setAppliedStatus] = useState(() => searchParams.get('caseStatus') ?? '');
   const [appliedCategory, setAppliedCategory] = useState('');
 
   const [page, setPage] = useState(1);
@@ -516,6 +520,19 @@ export default function ResidentsListPage() {
       setProfileLoading(false);
     }
   }
+
+  // Auto-open profile modal when navigated to /admin/residents/:id
+  const autoOpenedRef = useRef(false);
+  useEffect(() => {
+    if (!urlId || autoOpenedRef.current) return;
+    const numId = Number(urlId);
+    if (Number.isFinite(numId) && numId > 0) {
+      autoOpenedRef.current = true;
+      void openProfile(numId);
+    }
+  // openProfile is stable within the component lifecycle
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlId]);
 
   const isEditing = editTarget !== null && editTarget !== 'new';
 

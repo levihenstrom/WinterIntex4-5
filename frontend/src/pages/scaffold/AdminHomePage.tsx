@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { fetchPaged, type PagedResult } from '../../lib/apiClient';
+import { fetchJson, fetchPaged, type PagedResult } from '../../lib/apiClient';
 import {
   getAtRiskDonors,
   getResidentCurrentScores,
@@ -238,30 +238,38 @@ function ResidentsNeedingAttentionWidget() {
 
   return (
     <ul className="list-unstyled mb-0" style={{ maxHeight: 220, overflowY: 'auto' }}>
-      {rows.slice(0, 8).map((r) => (
-        <li key={r.residentCode} className="mb-2 pb-2 border-bottom border-light">
-          <Link
-            to="/admin/residents"
-            className="text-decoration-none d-block rounded px-2 py-1"
-            style={{ transition: 'background 0.15s' }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--hw-bg-lavender)'; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = ''; }}
+      {rows.slice(0, 8).map((r) => {
+        const rank = r.supportPriorityRank ?? 99;
+        const severityColor = rank <= 3 ? '#dc2626' : rank <= 6 ? '#d97706' : '#cbd5e1';
+        return (
+          <li
+            key={r.residentCode}
+            className="mb-2 pb-2 border-bottom border-light"
+            style={{ borderLeft: `3px solid ${severityColor}`, paddingLeft: 8 }}
           >
-            <div className="fw-semibold" style={{ color: 'var(--hw-navy)' }}>
-              {r.residentCode}
-            </div>
-            <div className="text-muted small">
-              {formatResidentPriorityRank(r.supportPriorityRank, totalScored)}
-            </div>
-            <div className="text-muted small">{r.operationalBand}</div>
-            {r.topRiskFactors?.[0] && (
-              <div className="text-truncate" title={r.topRiskFactors[0]} style={{ fontSize: 12, color: '#64748B' }}>
-                Factor: {r.topRiskFactors[0]}
+            <Link
+              to={`/admin/residents?search=${encodeURIComponent(r.residentCode)}`}
+              className="text-decoration-none d-block rounded px-2 py-1"
+              style={{ transition: 'background 0.15s' }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--hw-bg-lavender)'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = ''; }}
+            >
+              <div className="fw-semibold" style={{ color: 'var(--hw-navy)' }}>
+                {r.residentCode}
               </div>
-            )}
-          </Link>
-        </li>
-      ))}
+              <div className="text-muted small">
+                {formatResidentPriorityRank(r.supportPriorityRank, totalScored)}
+              </div>
+              <div className="text-muted small">{r.operationalBand}</div>
+              {r.topRiskFactors?.[0] && (
+                <div className="text-truncate" title={r.topRiskFactors[0]} style={{ fontSize: 12, color: '#64748B' }}>
+                  Factor: {r.topRiskFactors[0]}
+                </div>
+              )}
+            </Link>
+          </li>
+        );
+      })}
     </ul>
   );
 }
@@ -388,8 +396,21 @@ function BestNextPostWidget() {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
+interface LiveStats {
+  successfulReintegrations: number;
+}
+
 export default function AdminHomePage() {
   const { authSession } = useAuth();
+
+  const [liveStats, setLiveStats] = useState<LiveStats | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetchJson<LiveStats>('/api/public-impact/live-stats')
+      .then((s) => { if (!cancelled) setLiveStats(s); })
+      .catch(() => { /* non-critical — OKR card shows — on error */ });
+    return () => { cancelled = true; };
+  }, []);
 
   const [recentDonations, setRecentDonations] = useState<PagedResult<RecentDonationRow> | null>(null);
   const [recentError, setRecentError] = useState(false);
@@ -463,6 +484,68 @@ export default function AdminHomePage() {
           </p>
         </div>
 
+        {/* OKR — Primary Success Metric */}
+        <div className="mb-4">
+          <Link to="/admin/residents?caseStatus=Closed" className="text-decoration-none">
+            <div
+              className="card border-0 shadow-sm rounded-3"
+              style={{
+                borderTop: '4px solid #D97706',
+                boxShadow: '0 4px 20px rgba(217,119,6,0.15)',
+                background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
+                transition: 'transform 0.15s, box-shadow 0.15s',
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
+                (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 28px rgba(217,119,6,0.22)';
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.transform = '';
+                (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 20px rgba(217,119,6,0.15)';
+              }}
+            >
+              <div className="card-body d-flex align-items-center gap-4 py-3 px-4">
+                <div
+                  className="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0"
+                  style={{ width: 56, height: 56, background: 'rgba(217,119,6,0.12)', fontSize: '1.6rem' }}
+                >
+                  <i className="bi bi-star-fill" style={{ color: '#D97706' }} />
+                </div>
+                <div className="flex-grow-1">
+                  <div className="d-flex align-items-center gap-2 mb-1">
+                    <span
+                      className="badge rounded-pill"
+                      style={{ background: '#D97706', color: 'white', fontSize: '0.62rem', letterSpacing: '0.1em', textTransform: 'uppercase' }}
+                    >
+                      ★ Primary Success Metric · OKR
+                    </span>
+                  </div>
+                  <div className="d-flex align-items-baseline gap-3">
+                    <span
+                      className="fw-bold"
+                      style={{ fontSize: '2.4rem', color: '#92400e', lineHeight: 1, fontFamily: 'Poppins, sans-serif' }}
+                    >
+                      {liveStats != null ? liveStats.successfulReintegrations : '—'}
+                    </span>
+                    <span className="fw-semibold" style={{ color: '#92400e', fontSize: '1rem' }}>
+                      Successful Reintegrations
+                    </span>
+                  </div>
+                  <p className="small mb-0 mt-1" style={{ color: '#78350f', maxWidth: 680 }}>
+                    Children who have completed their full reintegration plan and returned to a stable, safe life.
+                    Every program, staff hour, and donor dollar exists to move this number up — it is the ultimate measure of our mission's success.
+                  </p>
+                </div>
+                <div className="flex-shrink-0 d-none d-md-block text-end" style={{ minWidth: 140 }}>
+                  <p className="small fw-semibold mb-0" style={{ color: '#92400e' }}>
+                    OKR: Maximize children who successfully return to family or independent life
+                  </p>
+                </div>
+              </div>
+            </div>
+          </Link>
+        </div>
+
         {/* Metric cards */}
         <div className="row g-3 mb-5">
           <MetricCard
@@ -479,7 +562,7 @@ export default function AdminHomePage() {
             metric={activeResidents}
             accentColor="var(--hw-teal)"
             icon="clipboard-data"
-            linkTo="/admin/residents"
+            linkTo="/admin/residents?caseStatus=Active"
           />
           <MetricCard
             label="Counseling sessions logged"
