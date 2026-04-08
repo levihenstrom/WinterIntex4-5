@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using Intex.API.Contracts.Ml;
 using Intex.API.Options;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
 namespace Intex.API.Services;
@@ -27,8 +28,47 @@ public sealed class MlSocialProxyService(
         PropertyNameCaseInsensitive = true,
     };
 
-    public bool IsConfigured =>
-        !string.IsNullOrWhiteSpace(options.Value.BaseUrl);
+    /// <summary>
+    /// When non-null, the API should return this problem immediately (misconfiguration).
+    /// When null, outbound calls may proceed (upstream may still fail).
+    /// </summary>
+    public ProblemDetails? GetBlockingConfigurationProblem()
+    {
+        var raw = options.Value.BaseUrl?.Trim() ?? "";
+        if (raw.Length == 0)
+        {
+            return new ProblemDetails
+            {
+                Title = "Social ML inference service is not configured.",
+                Detail =
+                    "Set MlInferenceService:BaseUrl to your FastAPI root URL (e.g. http://127.0.0.1:8001 when running uvicorn locally).",
+                Status = StatusCodes.Status503ServiceUnavailable,
+            };
+        }
+
+        if (!MlInferenceBaseUrlHelper.TryCreateHttpClientBaseUri(options.Value.BaseUrl, out _))
+        {
+            return new ProblemDetails
+            {
+                Title = "Social ML BaseUrl is invalid.",
+                Detail = "MlInferenceService:BaseUrl must be an absolute http or https URL.",
+                Status = StatusCodes.Status503ServiceUnavailable,
+            };
+        }
+
+        if (httpClient.BaseAddress is null)
+        {
+            return new ProblemDetails
+            {
+                Title = "Social ML HTTP client is not initialized.",
+                Detail =
+                    "The server could not configure the outbound client for the ML service. Check MlInferenceService:BaseUrl and application logs.",
+                Status = StatusCodes.Status503ServiceUnavailable,
+            };
+        }
+
+        return null;
+    }
 
     /// <summary>
     /// Calls FastAPI <c>POST /social/recommend</c>. Throws <see cref="MlInferenceUpstreamException"/> for all failure modes
@@ -38,12 +78,12 @@ public sealed class MlSocialProxyService(
         SocialRecommendRequestDto request,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(options.Value.BaseUrl) || httpClient.BaseAddress is null)
+        if (httpClient.BaseAddress is null)
         {
             throw new MlInferenceUpstreamException(
                 StatusCodes.Status503ServiceUnavailable,
-                "Social ML inference service is not configured.",
-                "The server is not configured to call the inference service.");
+                "Social ML HTTP client is not initialized.",
+                "The live recommendation client is not configured. Check MlInferenceService:BaseUrl.");
         }
 
         var fixedDict = request.FixedInputs is null ? null : BuildFixedInputsExplicit(request.FixedInputs);

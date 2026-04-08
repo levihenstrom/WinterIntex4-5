@@ -119,8 +119,45 @@ export async function getDonorChurn(supporterId: number): Promise<DonorChurnRow>
   return fetchJson<DonorChurnRow>(`/api/ml/donors/${supporterId}/churn`);
 }
 
+/**
+ * Maps API ProblemDetails.detail text to friendlier copy when the failure is upstream (not missing config).
+ */
+export function formatLiveSocialMlUserMessage(message: string): string {
+  const m = message.trim();
+  if (!m) return 'Request failed.';
+  const lower = m.toLowerCase();
+  if (
+    lower.includes('mlinferenceservice') ||
+    lower.includes('not configured') ||
+    lower.includes('baseurl is invalid') ||
+    lower.includes('http client is not initialized')
+  ) {
+    return m;
+  }
+  if (
+    lower.includes('unavailable') ||
+    lower.includes('could not be reached') ||
+    lower.includes('timed out') ||
+    lower.includes('timeout') ||
+    lower.includes('try again later') ||
+    lower.includes('invalid response') ||
+    lower.includes('did not respond') ||
+    lower.includes('could not complete')
+  ) {
+    return 'Live recommendation service is temporarily unavailable. Ensure the ML service is running (e.g. uvicorn ml_service.main:app --port 8001 from the repo root) and try again.';
+  }
+  return m;
+}
+
 export async function recommendSocialPost(body: SocialRecommendRequest): Promise<SocialRecommendResponse> {
-  return postJson<SocialRecommendResponse>('/api/ml/social/recommend', body);
+  try {
+    return await postJson<SocialRecommendResponse>('/api/ml/social/recommend', body);
+  } catch (e) {
+    if (e instanceof Error) {
+      throw new Error(formatLiveSocialMlUserMessage(e.message));
+    }
+    throw e;
+  }
 }
 
 /** Optional: GET /api/ml/social/options — returns null if the route is not implemented (404). */
