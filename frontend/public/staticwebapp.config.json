@@ -1,4 +1,7 @@
 {
+  "globalHeaders": {
+    "Content-Security-Policy": "default-src 'self'; base-uri 'self'; frame-ancestors 'none'; object-src 'none'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; script-src 'self'; connect-src 'self' https://intex-group4-5-backend-dna7b3ddfvf8dxgb.centralus-01.azurewebsites.net"
+  },
   "navigationFallback": {
     "rewrite": "/index.html",
     "exclude": ["/assets/*", "*.css", "*.js", "*.svg", "*.ico", "/favicon.svg", "/icons.svg"]
