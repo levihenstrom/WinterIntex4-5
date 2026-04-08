@@ -35,7 +35,7 @@ function CookieConsentBanner() {
           <Link to="/privacy" className="text-reset">
             privacy policy
           </Link>{' '}
-          for details. Your choice is saved in local storage until you clear site data.
+          for details. Your choice is saved in a browser cookie until it expires or you clear site data.
         </p>
       </div>
       <div className="hw-cookie-actions">
