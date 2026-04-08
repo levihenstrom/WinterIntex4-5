@@ -2,15 +2,18 @@ import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import GoogleIcon from '../components/hw/GoogleIcon';
+import { useAuth } from '../context/AuthContext';
 import {
   buildExternalLoginUrl,
   getExternalProviders,
   registerUser,
   type ExternalAuthProvider,
 } from '../lib/authAPI';
+import { resolvePostLoginPath } from '../lib/authRedirect';
 
 function RegisterPage() {
   const navigate = useNavigate();
+  const { isAuthenticated, isLoading, authSession } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -30,6 +33,11 @@ function RegisterPage() {
       }
     })();
   }, []);
+
+  useEffect(() => {
+    if (isLoading || !isAuthenticated) return;
+    navigate(resolvePostLoginPath(undefined, authSession.roles), { replace: true });
+  }, [isLoading, isAuthenticated, authSession.roles, navigate]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

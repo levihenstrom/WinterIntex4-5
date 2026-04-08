@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { fetchPaged } from '../../lib/apiClient';
+import { fetchPaged, type PagedResult } from '../../lib/apiClient';
 import {
   getAtRiskDonors,
   getResidentPriority,
@@ -10,6 +10,7 @@ import {
   type SocialRecommendResponse,
 } from '../../lib/mlApi';
 import { useAuth } from '../../context/AuthContext';
+import 'bootstrap-icons/font/bootstrap-icons.css';
 
 interface MetricState {
   count: number | null;
@@ -72,7 +73,7 @@ function MetricCard({ label, sublabel, metric, accentColor, icon, linkTo }: Metr
                 fontSize: '1.5rem',
               }}
             >
-              {icon}
+              {icon.includes('bi-') ? <i className={icon} /> : <i className={`bi bi-${icon}`} />}
             </div>
             <div>
               <p className="hw-eyebrow mb-1" style={{ color: accentColor }}>
@@ -108,7 +109,56 @@ interface QuickLinkProps {
   description: string;
 }
 
-// ── ML dashboard widgets (isolated fetch/error) ───────────────────────────────
+function QuickLink({ to, icon, title, description }: QuickLinkProps) {
+  return (
+    <div className="col-12 col-md-6 col-lg-4">
+      <Link
+        to={to}
+        className="text-decoration-none d-flex align-items-start gap-3 p-3 rounded-3 h-100"
+        style={{
+          background: 'var(--hw-bg-white)',
+          border: '1px solid rgba(107,33,168,0.08)',
+          transition: 'border-color 0.2s, background 0.2s',
+        }}
+        onMouseEnter={(e) => {
+          (e.currentTarget as HTMLElement).style.borderColor = 'var(--hw-purple-soft)';
+          (e.currentTarget as HTMLElement).style.background = 'var(--hw-bg-lavender)';
+        }}
+        onMouseLeave={(e) => {
+          (e.currentTarget as HTMLElement).style.borderColor = 'rgba(107,33,168,0.08)';
+          (e.currentTarget as HTMLElement).style.background = 'var(--hw-bg-white)';
+        }}
+      >
+        <i className={icon.includes('bi-') ? icon : `bi bi-${icon}`} style={{ fontSize: '1.4rem', lineHeight: 1, marginTop: 2 }} />
+        <div>
+          <p className="fw-semibold mb-1" style={{ color: 'var(--hw-purple)' }}>{title}</p>
+          <p className="small text-muted mb-0">{description}</p>
+        </div>
+      </Link>
+    </div>
+  );
+}
+
+interface RecentDonationRow {
+  donationId: number;
+  donationDate?: string | null;
+  donationType?: string | null;
+  amount?: number | null;
+  currencyCode?: string | null;
+  campaignName?: string | null;
+  supporter?: { displayName?: string | null; organizationName?: string | null } | null;
+}
+
+function fmtDonationMoney(n: number | null | undefined, currency = 'PHP') {
+  if (n == null) return '—';
+  try {
+    return new Intl.NumberFormat('en-PH', { style: 'currency', currency, maximumFractionDigits: 0 }).format(n);
+  } catch {
+    return `${currency} ${n.toFixed(0)}`;
+  }
+}
+
+// ── ML dashboard widgets (isolated fetch/error so one failure does not block others) ──
 
 function MlSectionCard({
   title,
@@ -123,8 +173,12 @@ function MlSectionCard({
     <div className="col-12 col-lg-4">
       <div className="card border-0 shadow-sm rounded-3 h-100">
         <div className="card-body d-flex flex-column">
-          <p className="hw-eyebrow mb-2" style={{ color: 'var(--hw-teal)' }}>ML insights</p>
-          <h3 className="h6 fw-semibold mb-3" style={{ color: 'var(--hw-navy)' }}>{title}</h3>
+          <p className="hw-eyebrow mb-2" style={{ color: 'var(--hw-teal)' }}>
+            ML insights
+          </p>
+          <h3 className="h6 fw-semibold mb-3" style={{ color: 'var(--hw-navy)' }}>
+            {title}
+          </h3>
           <div className="flex-grow-1 small">{children}</div>
           {footerLink && (
             <Link
@@ -162,13 +216,23 @@ function ResidentsNeedingAttentionWidget() {
           setRows(null);
         }
       })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  if (loading) return <p className="text-muted mb-0">Loading…</p>;
-  if (err) return <p className="text-danger mb-0">{err}</p>;
-  if (!rows?.length) return <p className="text-muted mb-0">No ML readiness rows returned.</p>;
+  if (loading) {
+    return <p className="text-muted mb-0">Loading…</p>;
+  }
+  if (err) {
+    return <p className="text-danger mb-0">{err}</p>;
+  }
+  if (!rows?.length) {
+    return <p className="text-muted mb-0">No ML readiness rows returned.</p>;
+  }
 
   return (
     <ul className="list-unstyled mb-0" style={{ maxHeight: 220, overflowY: 'auto' }}>
@@ -217,13 +281,23 @@ function AtRiskDonorsWidget() {
           setRows(null);
         }
       })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  if (loading) return <p className="text-muted mb-0">Loading…</p>;
-  if (err) return <p className="text-danger mb-0">{err}</p>;
-  if (!rows?.length) return <p className="text-muted mb-0">No donor churn scores returned.</p>;
+  if (loading) {
+    return <p className="text-muted mb-0">Loading…</p>;
+  }
+  if (err) {
+    return <p className="text-danger mb-0">{err}</p>;
+  }
+  if (!rows?.length) {
+    return <p className="text-muted mb-0">No donor churn scores returned.</p>;
+  }
 
   return (
     <ul className="list-unstyled mb-0" style={{ maxHeight: 220, overflowY: 'auto' }}>
@@ -267,58 +341,43 @@ function BestNextPostWidget() {
           setData(null);
         }
       })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  if (loading) return <p className="text-muted mb-0">Loading…</p>;
-  if (err) return <p className="text-danger mb-0">{err}</p>;
+  if (loading) {
+    return <p className="text-muted mb-0">Loading…</p>;
+  }
+  if (err) {
+    return <p className="text-danger mb-0">{err}</p>;
+  }
   const rec = data?.recommendations?.[0];
-  if (!rec) return <p className="text-muted mb-0">No recommendation returned.</p>;
+  if (!rec) {
+    return <p className="text-muted mb-0">No recommendation returned.</p>;
+  }
 
   return (
     <div>
       <div className="mb-1">
-        <span className="fw-semibold" style={{ color: 'var(--hw-navy)' }}>{rec.platform}</span>
+        <span className="fw-semibold" style={{ color: 'var(--hw-navy)' }}>
+          {rec.platform}
+        </span>
         <span className="text-muted"> · {rec.postType}</span>
       </div>
       <div className="text-muted small">
         {rec.mediaType} · {rec.postHour}:00 · topic: {rec.contentTopic || '—'}
       </div>
       <div className="small mt-2">
-        P(referral): <strong>{(rec.predictedPAnyReferral * 100).toFixed(0)}%</strong>
+        P(referral):{' '}
+        <strong>{(rec.predictedPAnyReferral * 100).toFixed(0)}%</strong>
       </div>
-      <p className="small text-muted mt-2 mb-0" style={{ lineHeight: 1.45 }}>{rec.whyRecommended}</p>
-    </div>
-  );
-}
-
-function QuickLink({ to, icon, title, description }: QuickLinkProps) {
-  return (
-    <div className="col-12 col-md-6 col-lg-4">
-      <Link
-        to={to}
-        className="text-decoration-none d-flex align-items-start gap-3 p-3 rounded-3 h-100"
-        style={{
-          background: 'var(--hw-bg-white)',
-          border: '1px solid rgba(107,33,168,0.08)',
-          transition: 'border-color 0.2s, background 0.2s',
-        }}
-        onMouseEnter={(e) => {
-          (e.currentTarget as HTMLElement).style.borderColor = 'var(--hw-purple-soft)';
-          (e.currentTarget as HTMLElement).style.background = 'var(--hw-bg-lavender)';
-        }}
-        onMouseLeave={(e) => {
-          (e.currentTarget as HTMLElement).style.borderColor = 'rgba(107,33,168,0.08)';
-          (e.currentTarget as HTMLElement).style.background = 'var(--hw-bg-white)';
-        }}
-      >
-        <span style={{ fontSize: '1.4rem', lineHeight: 1, marginTop: 2 }}>{icon}</span>
-        <div>
-          <p className="fw-semibold mb-1" style={{ color: 'var(--hw-purple)' }}>{title}</p>
-          <p className="small text-muted mb-0">{description}</p>
-        </div>
-      </Link>
+      <p className="small text-muted mt-2 mb-0" style={{ lineHeight: 1.45 }}>
+        {rec.whyRecommended}
+      </p>
     </div>
   );
 }
@@ -327,6 +386,23 @@ function QuickLink({ to, icon, title, description }: QuickLinkProps) {
 
 export default function AdminHomePage() {
   const { authSession } = useAuth();
+
+  const [recentDonations, setRecentDonations] = useState<PagedResult<RecentDonationRow> | null>(null);
+  const [recentError, setRecentError] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchPaged<RecentDonationRow>('/api/donations', 1, 8)
+      .then((r) => {
+        if (!cancelled) setRecentDonations(r);
+      })
+      .catch(() => {
+        if (!cancelled) setRecentError(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const totalResidents   = useCount('/api/residents');
   const activeResidents  = useCount('/api/residents', { caseStatus: 'Active' });
@@ -338,11 +414,34 @@ export default function AdminHomePage() {
     <div className="py-4" style={{ background: 'var(--hw-bg-gray)', minHeight: '100%' }}>
       <div className="container-xl">
 
-        {/* Header */}
+        {/* Header — match other admin pages (Poppins, bold navy title) */}
         <div className="mb-5">
-          <p className="hw-eyebrow mb-1">Admin Portal</p>
-          <h1 className="hw-heading mb-1" style={{ fontSize: '2rem' }}>Dashboard</h1>
-          <p className="text-muted mb-0">
+          <span
+            style={{
+              display: 'block',
+              fontSize: 12,
+              fontWeight: 700,
+              color: '#0D9488',
+              letterSpacing: 2,
+              textTransform: 'uppercase',
+              marginBottom: 8,
+            }}
+          >
+            Administration
+          </span>
+          <h1
+            style={{
+              fontFamily: 'Poppins, sans-serif',
+              fontWeight: 700,
+              fontSize: 28,
+              color: '#1E3A5F',
+              marginBottom: 8,
+              lineHeight: 1.2,
+            }}
+          >
+            Dashboard
+          </h1>
+          <p className="text-muted mb-0" style={{ fontSize: 14 }}>
             Welcome back, <strong>{authSession.email}</strong>
             {authSession.roles.length > 0 && (
               <span className="ms-2">
@@ -367,7 +466,7 @@ export default function AdminHomePage() {
             sublabel="All Residents"
             metric={totalResidents}
             accentColor="var(--hw-purple)"
-            icon="👥"
+            icon="people"
             linkTo="/admin/residents"
           />
           <MetricCard
@@ -375,27 +474,28 @@ export default function AdminHomePage() {
             sublabel="Active Cases"
             metric={activeResidents}
             accentColor="var(--hw-teal)"
-            icon="📋"
+            icon="clipboard-data"
             linkTo="/admin/residents"
           />
           <MetricCard
             label="Counseling sessions logged"
-            sublabel="Process Recordings"
+            sublabel="Session notes"
             metric={totalSessions}
             accentColor="var(--hw-purple-light)"
-            icon="📝"
+            icon="file-earmark-text"
             linkTo="/admin/residents/process-recordings"
           />
           <MetricCard
             label="Home visits conducted"
-            sublabel="Home Visitations"
+            sublabel="Visits & conferences"
             metric={totalVisits}
             accentColor="var(--hw-amber)"
-            icon="🏠"
+            icon="house-door"
             linkTo="/admin/residents/visits-conferences"
           />
         </div>
 
+        {/* ML insights — staff-only API; failures are contained per widget */}
         <div className="mb-5">
           <p className="hw-eyebrow mb-3">Machine learning</p>
           <div className="row g-3">
@@ -420,6 +520,72 @@ export default function AdminHomePage() {
           </div>
         </div>
 
+        {/* Recent donations */}
+        <div className="mb-5">
+          <p className="hw-eyebrow mb-2">Fundraising</p>
+          <div className="card border-0 shadow-sm rounded-3 overflow-hidden">
+            <div className="card-body p-0">
+              <div className="d-flex align-items-center justify-content-between px-4 py-3 border-bottom" style={{ background: 'var(--hw-bg-lavender)' }}>
+                <span className="fw-semibold" style={{ color: 'var(--hw-navy)' }}>
+                  Recent donations
+                </span>
+                <Link to="/admin/donations/contributions" className="small fw-semibold text-decoration-none" style={{ color: 'var(--hw-purple)' }}>
+                  View all →
+                </Link>
+              </div>
+              {recentError && (
+                <div className="px-4 py-3 text-danger small">Could not load donations.</div>
+              )}
+              {!recentError && recentDonations === null && (
+                <div className="px-4 py-4 text-muted small">Loading…</div>
+              )}
+              {!recentError && recentDonations && recentDonations.items.length === 0 && (
+                <div className="px-4 py-4 text-muted small">No donation rows yet.</div>
+              )}
+              {!recentError && recentDonations && recentDonations.items.length > 0 && (
+                <div className="table-responsive">
+                  <table className="table table-sm table-hover mb-0 align-middle">
+                    <thead className="table-light">
+                      <tr>
+                        <th className="ps-4 small text-muted">Date</th>
+                        <th className="small text-muted">Supporter</th>
+                        <th className="small text-muted">Type</th>
+                        <th className="small text-muted">Amount</th>
+                        <th className="pe-4 small text-muted">Campaign</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {recentDonations.items.map((d) => {
+                        const name =
+                          d.supporter?.displayName?.trim() ||
+                          d.supporter?.organizationName?.trim() ||
+                          '—';
+                        return (
+                          <tr key={d.donationId}>
+                            <td className="ps-4 text-muted small">
+                              {d.donationDate
+                                ? new Date(d.donationDate).toLocaleDateString()
+                                : '—'}
+                            </td>
+                            <td className="fw-medium" style={{ color: 'var(--hw-navy)' }}>
+                              {name}
+                            </td>
+                            <td className="small">{d.donationType ?? '—'}</td>
+                            <td className="small tabular-nums">
+                              {fmtDonationMoney(d.amount != null ? Number(d.amount) : null, d.currencyCode ?? 'PHP')}
+                            </td>
+                            <td className="pe-4 small text-muted">{d.campaignName ?? '—'}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
         {/* Upcoming conferences banner */}
         {!upcomingConfs.loading && !upcomingConfs.error && (upcomingConfs.count ?? 0) > 0 && (
           <div
@@ -429,13 +595,13 @@ export default function AdminHomePage() {
               color: 'white',
             }}
           >
-            <span style={{ fontSize: '1.5rem' }}>📅</span>
+            <i className="bi bi-calendar-event" style={{ fontSize: '1.5rem' }} />
             <div>
               <p className="fw-semibold mb-0">
                 {upcomingConfs.count} upcoming case conference{upcomingConfs.count !== 1 ? 's' : ''}
               </p>
               <p className="small mb-0" style={{ opacity: 0.85 }}>
-                Review scheduled conferences in the Home Visits &amp; Conferences tab.
+                Review scheduled conferences in the Visits &amp; conferences tab.
               </p>
             </div>
             <Link
@@ -460,31 +626,31 @@ export default function AdminHomePage() {
         <div className="row g-3">
           <QuickLink
             to="/admin/residents"
-            icon="👥"
-            title="Caseload Inventory"
+            icon="people"
+            title="Residents"
             description="View, search, and manage all resident profiles."
           />
           <QuickLink
             to="/admin/residents/process-recordings"
-            icon="📝"
-            title="Process Recordings"
-            description="Log and review counseling session notes."
+            icon="file-earmark-text"
+            title="Session notes"
+            description="Record and review counseling session documentation."
           />
           <QuickLink
             to="/admin/residents/visits-conferences"
-            icon="🏠"
-            title="Home Visits &amp; Conferences"
-            description="Record field visits and view upcoming conferences."
+            icon="house-door"
+            title="Visits &amp; conferences"
+            description="Log home visits and see upcoming case conferences."
           />
           <QuickLink
             to="/admin/donations"
-            icon="💛"
+            icon="heart"
             title="Supporters"
             description="Manage donor profiles and contribution history."
           />
           <QuickLink
             to="/admin/reports"
-            icon="📊"
+            icon="bar-chart-fill"
             title="Reports &amp; Analytics"
             description="Giving trends, outcomes, site performance, and annual service summaries."
           />

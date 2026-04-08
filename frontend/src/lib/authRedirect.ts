@@ -1,4 +1,9 @@
-const NON_RETURNABLE_PATHS = new Set(['/login', '/register', '/logout']);
+const NON_RETURNABLE_PATHS = new Set([
+  '/login',
+  '/register',
+  '/logout',
+  '/oauth/callback',
+]);
 
 export function getDefaultPathForRoles(roles: string[]): string {
   if (roles.includes('Admin') || roles.includes('Staff')) {

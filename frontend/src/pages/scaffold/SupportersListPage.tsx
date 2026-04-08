@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { deleteJson, fetchAllPaged, postJson, putJson } from '../../lib/apiClient';
+import AdminKpiStrip from '../../components/admin/AdminKpiStrip';
+import 'bootstrap-icons/font/bootstrap-icons.css';
 import { buildDonorMlMap, getCurrentDonorScores, type DonorChurnRow } from '../../lib/mlApi';
 
+/* ── API shape (camelCase from ASP.NET) ─────────────────────── */
 interface SupporterApi {
   supporterId: number;
   supporterType?: string | null;
@@ -14,6 +17,8 @@ interface SupporterApi {
   status?: string | null;
   createdAt?: string | null;
   firstDonationDate?: string | null;
+  relationshipType?: string | null;
+  acquisitionChannel?: string | null;
 }
 
 interface DonationLite {
@@ -33,6 +38,7 @@ const TYPE_LABEL: Record<string, string> = {
 
 const TYPE_ORDER = ['MonetaryDonor', 'Volunteer', 'InKindDonor', 'SocialMediaAdvocate', 'PartnerOrganization'];
 
+/* ── Color helpers ───────────────────────────────────────────── */
 const TYPE_COLORS: Record<string, { bg: string; text: string }> = {
   MonetaryDonor: { bg: '#DCFCE7', text: '#166534' },
   Volunteer: { bg: '#DBEAFE', text: '#1E40AF' },
@@ -85,7 +91,7 @@ function Badge({ label, bg, text }: { label: string; bg: string; text: string })
   );
 }
 
-function StatStrip({
+function SupporterKpiStrip({
   supporters,
   monetaryTotalPhp,
 }: {
@@ -95,35 +101,16 @@ function StatStrip({
   const active = supporters.filter((s) => s.status === 'Active').length;
   const monetary = supporters.filter((s) => s.supporterType === 'MonetaryDonor').length;
   const volunteers = supporters.filter((s) => s.supporterType === 'Volunteer').length;
-
-  const stats = [
-    { label: 'Total Supporters', value: supporters.length, icon: '👥' },
-    { label: 'Active', value: active, icon: '✅' },
-    { label: 'Monetary Donors', value: monetary, icon: '💵' },
-    { label: 'Volunteers', value: volunteers, icon: '🤝' },
-    { label: 'Monetary gifts (PHP)', value: fmtMoneyPhp(monetaryTotalPhp), icon: '💰', isText: true },
-  ];
-
   return (
-    <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 24 }}>
-      {stats.map((s) => (
-        <div
-          key={s.label}
-          style={{
-            flex: '1 1 140px',
-            background: '#fff',
-            borderRadius: 12,
-            padding: '14px 16px',
-            border: '1px solid #E2E8F0',
-            boxShadow: '0 2px 8px rgba(30,58,95,0.06)',
-          }}
-        >
-          <div style={{ fontSize: 20, marginBottom: 4 }}>{s.icon}</div>
-          <div style={{ fontSize: 22, fontWeight: 700, color: '#1E3A5F' }}>{s.isText ? s.value : s.value}</div>
-          <div style={{ fontSize: 12, color: '#64748B', fontWeight: 500 }}>{s.label}</div>
-        </div>
-      ))}
-    </div>
+    <AdminKpiStrip
+      items={[
+        { label: 'Total supporters', value: String(supporters.length), accent: '#1E3A5F', icon: 'people' },
+        { label: 'Active', value: String(active), sub: 'status in database', accent: '#059669', icon: 'person-check' },
+        { label: 'Monetary donors', value: String(monetary), accent: '#0D9488', icon: 'cash-stack' },
+        { label: 'Volunteers', value: String(volunteers), accent: '#2563EB', icon: 'heart' },
+        { label: 'Monetary gifts (PHP)', value: fmtMoneyPhp(monetaryTotalPhp), sub: 'loaded gifts total', accent: '#7C3AED', icon: 'wallet2' },
+      ]}
+    />
   );
 }
 
@@ -150,23 +137,26 @@ const emptyForm: FormState = {
   status: 'Active',
 };
 
+/* ── Main Page ───────────────────────────────────────────────── */
 export default function SupportersListPage() {
   const [supporters, setSupporters] = useState<SupporterApi[]>([]);
   const [monetaryTotalPhp, setMonetaryTotalPhp] = useState(0);
   const [bySupporter, setBySupporter] = useState<Map<number, { totalPhp: number; lastGift: string | null }>>(
     () => new Map(),
   );
-  const [donorMlById, setDonorMlById] = useState<Map<number, DonorChurnRow>>(() => new Map());
-  const [mlLoadError, setMlLoadError] = useState<string | null>(null);
-  const [sortByMlRisk, setSortByMlRisk] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [typeFilter, setTypeFilter] = useState<string>('All');
   const [statusFilter, setStatusFilter] = useState<string>('All');
   const [search, setSearch] = useState('');
+  /** When true, sort list by ML outreach priority (lower rank = higher churn priority). */
+  const [sortByMlRisk, setSortByMlRisk] = useState(false);
+  const [donorMlById, setDonorMlById] = useState<Map<number, DonorChurnRow>>(() => new Map());
+  const [mlLoadError, setMlLoadError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm);
+  /** Full row from API when editing — merged into PUT so we do not null optional columns. */
   const [editSource, setEditSource] = useState<SupporterApi | null>(null);
 
   const reload = useCallback(async () => {
@@ -345,8 +335,7 @@ export default function SupportersListPage() {
             Supporter Profiles
           </h1>
           <p style={{ color: '#64748B', fontSize: 14, marginBottom: 0 }}>
-            Live data from <code>/api/supporters</code> with donor churn ML from <code>/api/ml/donors/current-scores</code>{' '}
-            (merge key: <code>supporterId</code>).
+            Data from the database (same records used in donations and allocations).
           </p>
         </div>
 
@@ -364,7 +353,7 @@ export default function SupportersListPage() {
 
         {!loading && (
           <>
-            <StatStrip supporters={supporters} monetaryTotalPhp={monetaryTotalPhp} />
+            <SupporterKpiStrip supporters={supporters} monetaryTotalPhp={monetaryTotalPhp} />
 
             {donorMlById.size > 0 && (
               <div
@@ -379,8 +368,8 @@ export default function SupportersListPage() {
                 }}
               >
                 <strong>ML at-risk donors:</strong> {mlCriticalOrHighCount} supporter
-                {mlCriticalOrHighCount !== 1 ? 's' : ''} scored Critical or High churn risk ({donorMlById.size} with ML
-                scores).
+                {mlCriticalOrHighCount !== 1 ? 's' : ''} scored Critical or High churn risk (
+                {donorMlById.size} total with ML scores). Merge key: <code>supporterId</code>.
               </div>
             )}
 
@@ -448,6 +437,7 @@ export default function SupportersListPage() {
                   cursor: donorMlById.size === 0 ? 'not-allowed' : 'pointer',
                   opacity: donorMlById.size === 0 ? 0.5 : 1,
                 }}
+                title="Sort by ML outreach priority (lower rank = reach out first)"
               >
                 {sortByMlRisk ? '✓ ML risk sort' : 'Sort by ML risk'}
               </button>
@@ -468,7 +458,7 @@ export default function SupportersListPage() {
                   cursor: 'pointer',
                 }}
               >
-                {showForm ? '✕ Cancel' : '+ New Supporter'}
+                {showForm ? 'Cancel' : 'New supporter'}
               </button>
               <span style={{ fontSize: 12, color: '#94A3B8', marginLeft: 'auto' }}>
                 {displayedSupporters.length} of {supporters.length} supporters
@@ -492,7 +482,9 @@ export default function SupportersListPage() {
                 <form onSubmit={(e) => void handleSaveSubmit(e)}>
                   <div className="row g-3">
                     <div className="col-md-4">
-                      <label className="small fw-semibold text-muted d-block mb-1">Full name *</label>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 }}>
+                        Full name *
+                      </label>
                       <input
                         required
                         value={form.displayName}
@@ -501,7 +493,9 @@ export default function SupportersListPage() {
                       />
                     </div>
                     <div className="col-md-4">
-                      <label className="small fw-semibold text-muted d-block mb-1">Organization</label>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 }}>
+                        Organization
+                      </label>
                       <input
                         value={form.organizationName}
                         onChange={(e) => setForm((f) => ({ ...f, organizationName: e.target.value }))}
@@ -509,7 +503,9 @@ export default function SupportersListPage() {
                       />
                     </div>
                     <div className="col-md-4">
-                      <label className="small fw-semibold text-muted d-block mb-1">Email</label>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 }}>
+                        Email
+                      </label>
                       <input
                         type="email"
                         value={form.email}
@@ -518,7 +514,9 @@ export default function SupportersListPage() {
                       />
                     </div>
                     <div className="col-md-3">
-                      <label className="small fw-semibold text-muted d-block mb-1">Phone</label>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 }}>
+                        Phone
+                      </label>
                       <input
                         value={form.phone}
                         onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
@@ -526,15 +524,20 @@ export default function SupportersListPage() {
                       />
                     </div>
                     <div className="col-md-3">
-                      <label className="small fw-semibold text-muted d-block mb-1">Region</label>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 }}>
+                        Region
+                      </label>
                       <input
                         value={form.region}
                         onChange={(e) => setForm((f) => ({ ...f, region: e.target.value }))}
                         style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13 }}
+                        placeholder="e.g. Luzon"
                       />
                     </div>
                     <div className="col-md-3">
-                      <label className="small fw-semibold text-muted d-block mb-1">Country</label>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 }}>
+                        Country
+                      </label>
                       <input
                         value={form.country}
                         onChange={(e) => setForm((f) => ({ ...f, country: e.target.value }))}
@@ -542,7 +545,9 @@ export default function SupportersListPage() {
                       />
                     </div>
                     <div className="col-md-3">
-                      <label className="small fw-semibold text-muted d-block mb-1">Type *</label>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 }}>
+                        Type *
+                      </label>
                       <select
                         required
                         value={form.supporterType}
@@ -557,7 +562,9 @@ export default function SupportersListPage() {
                       </select>
                     </div>
                     <div className="col-md-3">
-                      <label className="small fw-semibold text-muted d-block mb-1">Status *</label>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 }}>
+                        Status *
+                      </label>
                       <select
                         required
                         value={form.status}
@@ -616,11 +623,34 @@ export default function SupportersListPage() {
 
             {displayedSupporters.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '48px 0', color: '#94A3B8' }}>
-                <div style={{ fontSize: 40, marginBottom: 8 }}>🔍</div>
-                <p style={{ fontWeight: 600 }}>No supporters match your filters.</p>
+                <div className="mb-3" style={{ fontSize: 40 }}>
+                  <i className="bi bi-search" style={{ color: '#CBD5E1' }} aria-hidden />
+                </div>
+                <p className="fw-semibold mb-1">No supporters match your filters.</p>
+                <p className="small mb-0">Try clearing search or type filters.</p>
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
+              <>
+                <style>{`
+                  .supporter-card-netflix {
+                    position: relative;
+                    transition: transform 0.2s ease, box-shadow 0.2s ease;
+                  }
+                  .supporter-card-netflix:hover {
+                    transform: scale(1.03);
+                    z-index: 2;
+                    box-shadow: 0 12px 32px rgba(30, 58, 95, 0.14);
+                  }
+                  @media (prefers-reduced-motion: reduce) {
+                    .supporter-card-netflix {
+                      transition: box-shadow 0.2s ease;
+                    }
+                    .supporter-card-netflix:hover {
+                      transform: none;
+                    }
+                  }
+                `}</style>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
                 {displayedSupporters.map((s) => {
                   const st = s.supporterType ?? '';
                   const tc = TYPE_COLORS[st] ?? { bg: '#F1F5F9', text: '#475569' };
@@ -638,6 +668,7 @@ export default function SupportersListPage() {
                   return (
                     <div
                       key={s.supporterId}
+                      className="supporter-card-netflix"
                       style={{
                         background: '#fff',
                         borderRadius: 14,
@@ -714,9 +745,10 @@ export default function SupportersListPage() {
                             color: '#78350F',
                           }}
                         >
-                          <div className="fw-semibold">Donor ML (#{s.supporterId})</div>
+                          <div className="fw-semibold">Donor ML (supporter #{s.supporterId})</div>
                           <div>
-                            Outreach rank <strong>#{dm.outreachPriorityRank}</strong> · score {Number(dm.churnRiskScore).toFixed(2)}
+                            Outreach priority rank <strong>#{dm.outreachPriorityRank}</strong> · score{' '}
+                            {Number(dm.churnRiskScore).toFixed(2)}
                           </div>
                           {dm.topDrivers?.[0] && (
                             <div style={{ marginTop: 4, color: '#92400E' }} title={dm.topDrivers.join(' · ')}>
@@ -731,53 +763,104 @@ export default function SupportersListPage() {
                         </div>
                       )}
 
-                      <div style={{ fontSize: 12, color: '#475569', display: 'flex', flexDirection: 'column', gap: 3 }}>
-                        {s.email && <span>✉️ {s.email}</span>}
-                        {s.phone && <span>📞 {s.phone}</span>}
-                        <span>📍 {[s.region, s.country].filter(Boolean).join(', ') || '—'}</span>
+                      <div style={{ fontSize: 12, color: '#475569', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        {s.email && (
+                          <span className="text-break">
+                            <i className="bi bi-envelope me-1 text-secondary" aria-hidden />
+                            {s.email}
+                          </span>
+                        )}
+                        {s.phone && (
+                          <span>
+                            <i className="bi bi-telephone me-1 text-secondary" aria-hidden />
+                            {s.phone}
+                          </span>
+                        )}
+                        <span>
+                          <i className="bi bi-geo-alt me-1 text-secondary" aria-hidden />
+                          {[s.region, s.country].filter(Boolean).join(', ') || '—'}
+                        </span>
+                        <span className="text-muted small">ID {s.supporterId}</span>
+                        {s.createdAt && (
+                          <span>
+                            <i className="bi bi-calendar3 me-1 text-secondary" aria-hidden />
+                            Joined{' '}
+                            {new Date(s.createdAt).toLocaleDateString('en-GB', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric',
+                            })}
+                          </span>
+                        )}
                         {aggRow && aggRow.totalPhp > 0 && (
-                          <span style={{ color: '#166534', fontWeight: 600 }}>💵 {fmtMoneyPhp(aggRow.totalPhp)} monetary</span>
+                          <span style={{ color: '#166534', fontWeight: 600 }}>
+                            <i className="bi bi-wallet2 me-1" aria-hidden />
+                            {fmtMoneyPhp(aggRow.totalPhp)} monetary (tracked)
+                          </span>
+                        )}
+                        {aggRow?.lastGift && (
+                          <span style={{ color: '#94A3B8' }}>
+                            Last gift:{' '}
+                            {new Date(aggRow.lastGift).toLocaleDateString('en-GB', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric',
+                            })}
+                          </span>
+                        )}
+                        {!aggRow?.lastGift && s.firstDonationDate && (
+                          <span style={{ color: '#94A3B8' }}>
+                            First donation:{' '}
+                            {new Date(s.firstDonationDate).toLocaleDateString('en-GB', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric',
+                            })}
+                          </span>
                         )}
                       </div>
 
-                      <div style={{ borderTop: '1px solid #F1F5F9', paddingTop: 10, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-                        <button
-                          type="button"
-                          onClick={() => handleEdit(s)}
-                          style={{
-                            background: '#F1F5F9',
-                            border: 'none',
-                            borderRadius: 6,
-                            color: '#475569',
-                            fontSize: 12,
-                            fontWeight: 600,
-                            padding: '4px 12px',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => void handleDelete(s.supporterId)}
-                          style={{
-                            background: '#FEF2F2',
-                            border: 'none',
-                            borderRadius: 6,
-                            color: '#DC2626',
-                            fontSize: 12,
-                            fontWeight: 600,
-                            padding: '4px 12px',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          Delete
-                        </button>
+                      <div
+                        style={{ borderTop: '1px solid #F1F5F9', paddingTop: 10 }}
+                        className="d-flex justify-content-end"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="dropdown">
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-secondary dropdown-toggle"
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false"
+                            aria-label={`Actions for supporter ${s.supporterId}`}
+                          >
+                            Actions
+                          </button>
+                          <ul className="dropdown-menu dropdown-menu-end">
+                            <li>
+                              <button type="button" className="dropdown-item" onClick={() => handleEdit(s)}>
+                                Edit
+                              </button>
+                            </li>
+                            <li>
+                              <hr className="dropdown-divider" />
+                            </li>
+                            <li>
+                              <button
+                                type="button"
+                                className="dropdown-item text-danger"
+                                onClick={() => void handleDelete(s.supporterId)}
+                              >
+                                Delete
+                              </button>
+                            </li>
+                          </ul>
+                        </div>
                       </div>
                     </div>
                   );
                 })}
-              </div>
+                </div>
+              </>
             )}
           </>
         )}

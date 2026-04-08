@@ -22,7 +22,9 @@ const metricBox = (accent: string): React.CSSProperties => ({
   border: `1px solid ${accent}35`,
 });
 
-/** Live recommendations via POST /api/ml/social/recommend (.NET → FastAPI). */
+/**
+ * Live social post recommendations via POST /api/ml/social/recommend (Python ML proxy).
+ */
 export default function SocialMediaSuggestPage() {
   const [goal, setGoal] = useState<MlGoal>('donations');
   const [contentTopic, setContentTopic] = useState('');
@@ -106,8 +108,8 @@ export default function SocialMediaSuggestPage() {
               Social post recommender
             </h1>
             <p style={{ color: '#64748B', fontSize: 14, marginBottom: 0, maxWidth: 640 }}>
-              Interactive ML tool: the SPA calls the .NET API, which proxies to the Python FastAPI service using trained
-              artifacts.
+              Live recommendations from the trained engagement model (served via the .NET API). Adjust goals and
+              optional constraints, then run the model to see ranked post ideas.
             </p>
           </div>
           <Link
@@ -123,7 +125,7 @@ export default function SocialMediaSuggestPage() {
               fontSize: 14,
             }}
           >
-            ← Post history
+            Post history
           </Link>
         </div>
 
@@ -238,6 +240,15 @@ export default function SocialMediaSuggestPage() {
           </form>
         </div>
 
+        {loading && (
+          <div style={{ textAlign: 'center', padding: '32px 0', color: '#94A3B8' }}>
+            <div className="spinner-border text-secondary mb-3" role="status" aria-label="Loading">
+              <span className="visually-hidden">Loading…</span>
+            </div>
+            <p className="fw-semibold fs-6 mb-0">Loading recommendation…</p>
+          </div>
+        )}
+
         {error && (
           <div
             style={{
@@ -258,7 +269,8 @@ export default function SocialMediaSuggestPage() {
           <div style={cardStyle}>
             <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
               <h2 className="h6 fw-bold mb-0" style={{ color: '#1E3A5F' }}>
-                Top {result.recommendations.length} recommendation{result.recommendations.length !== 1 ? 's' : ''}
+                Top {result.recommendations.length} recommendation
+                {result.recommendations.length !== 1 ? 's' : ''}
               </h2>
               <span className="small text-muted">
                 Goal: <strong>{result.goal}</strong> · topK={result.topK}
@@ -266,7 +278,7 @@ export default function SocialMediaSuggestPage() {
             </div>
 
             {result.recommendations.length === 0 ? (
-              <p className="text-muted mb-0">No rows returned. Try different inputs.</p>
+              <p className="text-muted mb-0">The model returned no rows. Try different inputs or topK.</p>
             ) : (
               <div className="d-flex flex-column gap-4">
                 {result.recommendations.map((rec, idx) => (
@@ -279,8 +291,11 @@ export default function SocialMediaSuggestPage() {
                       background: '#FAFAFA',
                     }}
                   >
-                    <div className="d-flex align-items-center gap-2 mb-3 flex-wrap">
-                      <span className="badge rounded-pill" style={{ background: '#1E3A5F', color: '#fff', fontSize: 12 }}>
+                    <div className="d-flex align-items-center gap-2 mb-3">
+                      <span
+                        className="badge rounded-pill"
+                        style={{ background: '#1E3A5F', color: '#fff', fontSize: 12 }}
+                      >
                         #{idx + 1}
                       </span>
                       <span className="fw-bold" style={{ color: '#1E3A5F', fontSize: 18 }}>
@@ -325,7 +340,9 @@ export default function SocialMediaSuggestPage() {
                       <div style={metricBox('#059669')}>
                         <div className="small text-muted text-uppercase fw-bold mb-1">Referrals (pred.)</div>
                         <div className="fw-bold tabular-nums" style={{ color: '#047857' }}>
-                          {rec.predictedReferralsCount != null ? Number(rec.predictedReferralsCount).toFixed(1) : '—'}
+                          {rec.predictedReferralsCount != null
+                            ? Number(rec.predictedReferralsCount).toFixed(1)
+                            : '—'}
                         </div>
                       </div>
                       <div style={metricBox('#64748B')}>

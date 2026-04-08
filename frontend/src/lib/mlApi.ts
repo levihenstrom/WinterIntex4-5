@@ -70,7 +70,7 @@ export interface SocialRecommendResponse {
 
 /**
  * Join key: ML artifacts use `residentCode` (e.g. LS-0006). Caseload rows use `internalCode` for the same value.
- * Compare with trim + case-insensitive match.
+ * Always compare with trim + case-insensitive match.
  */
 export function normalizeResidentMlKey(code: string | null | undefined): string {
   return (code ?? '').trim().toUpperCase();
@@ -123,7 +123,7 @@ export async function recommendSocialPost(body: SocialRecommendRequest): Promise
   return postJson<SocialRecommendResponse>('/api/ml/social/recommend', body);
 }
 
-/** Optional: GET /api/ml/social/options — returns null if not implemented. */
+/** Optional: GET /api/ml/social/options — returns null if the route is not implemented (404). */
 export async function getSocialOptions(): Promise<unknown | null> {
   try {
     return await fetchJson<unknown>('/api/ml/social/options');

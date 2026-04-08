@@ -25,7 +25,11 @@ public class DonationAllocationsController(AppDbContext db, StaffScopeResolver s
     {
         var scope = await scopeResolver.GetForUserAsync(User, cancellationToken);
 
-        var query = db.DonationAllocations.AsNoTracking().AsQueryable();
+        var query = db.DonationAllocations.AsNoTracking()
+            .Include(a => a.Safehouse)
+            .Include(a => a.Donation)
+            .ThenInclude(d => d.Supporter)
+            .AsQueryable();
 
         // Staff scope: restrict to safehouses in the user's partner assignments.
         if (!scope.IsAdmin)
