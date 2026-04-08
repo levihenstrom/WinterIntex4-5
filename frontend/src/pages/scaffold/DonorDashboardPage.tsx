@@ -204,6 +204,7 @@ export default function DonorDashboardPage() {
   const [giveSuccess, setGiveSuccess] = useState<string | null>(null);
   const [giveError, setGiveError] = useState<string | null>(null);
   const [giveSubmitting, setGiveSubmitting] = useState(false);
+  const [hoveredCategory, setHoveredCategory] = useState<ProgramImpactRow | null>(null);
 
   const loadDonations = useCallback((opts?: { silent?: boolean }) => {
     if (!opts?.silent) {
@@ -437,6 +438,7 @@ export default function DonorDashboardPage() {
                         <div
                           role="img"
                           aria-label="Segmented bar chart of donation allocation by category"
+                          onMouseLeave={() => setHoveredCategory(null)}
                           style={{
                             display: 'flex',
                             width: '100%',
@@ -453,43 +455,40 @@ export default function DonorDashboardPage() {
                             return (
                               <div
                                 key={row.label}
-                                title={`${row.label}: ${formatMoney(row.totalAmount)} (${pct.toFixed(1)}%)`}
+                                onMouseEnter={() => setHoveredCategory(row)}
                                 style={{
                                   width: `${pct}%`,
                                   background: pal.color,
                                   minWidth: pct > 0 ? 8 : 0,
+                                  cursor: 'pointer',
                                 }}
                               />
                             );
                           })}
                         </div>
 
-                        <div style={{ marginTop: 12, display: 'grid', gap: 8 }}>
-                          {programImpact.map((row, idx) => {
-                            const pal = CATEGORY_PILL_STYLES[idx % CATEGORY_PILL_STYLES.length];
-                            const pct = totalAllocated > 0 ? (row.totalAmount / totalAllocated) * 100 : 0;
-                            return (
-                              <div
-                                key={`${row.label}-legend`}
-                                style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto auto', gap: 10, alignItems: 'center' }}
-                              >
-                                <span
-                                  aria-hidden="true"
-                                  style={{ width: 10, height: 10, borderRadius: 999, background: pal.color }}
-                                />
-                                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.88rem', color: '#334155' }}>
-                                  {row.label}
-                                </span>
-                                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.82rem', color: '#64748b' }}>
-                                  {pct.toFixed(1)}%
-                                </span>
-                                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.88rem', fontWeight: 700, color: '#1E3A5F' }}>
-                                  {formatMoney(row.totalAmount)}
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </div>
+                        {hoveredCategory && (
+                          <div
+                            style={{
+                              marginTop: 12,
+                              background: '#ffffff',
+                              border: '1px solid #E2E8F0',
+                              borderRadius: 12,
+                              padding: '10px 12px',
+                              boxShadow: '0 8px 24px rgba(30,58,95,0.08)',
+                            }}
+                          >
+                            <div style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.76rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#0D9488', fontWeight: 700 }}>
+                              {hoveredCategory.label}
+                            </div>
+                            <div style={{ marginTop: 6, fontFamily: 'Poppins, sans-serif', fontWeight: 800, fontSize: '1.1rem', color: '#1E3A5F' }}>
+                              {formatMoney(hoveredCategory.totalAmount)}
+                            </div>
+                            <div style={{ marginTop: 4, fontFamily: 'Inter, sans-serif', fontSize: '0.84rem', color: '#64748b' }}>
+                              {totalAllocated > 0 ? ((hoveredCategory.totalAmount / totalAllocated) * 100).toFixed(1) : '0.0'}% of total allocation · {hoveredCategory.giftCount} gift{hoveredCategory.giftCount === 1 ? '' : 's'}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     );
                   })()
