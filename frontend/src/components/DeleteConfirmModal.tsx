@@ -1,6 +1,8 @@
 interface DeleteConfirmModalProps {
   show: boolean;
   itemLabel: string;
+  /** Extra context shown under the main line (e.g. warnings about linked data). */
+  description?: string;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -8,6 +10,7 @@ interface DeleteConfirmModalProps {
 export default function DeleteConfirmModal({
   show,
   itemLabel,
+  description,
   onConfirm,
   onCancel,
 }: DeleteConfirmModalProps) {
@@ -35,8 +38,11 @@ export default function DeleteConfirmModal({
             />
           </div>
           <div className="modal-body">
-            Are you sure you want to delete <strong>{itemLabel}</strong>? This
-            action cannot be undone.
+            <p className="mb-2">
+              Are you sure you want to delete <strong>{itemLabel}</strong>? This action cannot be
+              undone.
+            </p>
+            {description ? <p className="text-secondary small mb-0">{description}</p> : null}
           </div>
           <div className="modal-footer">
             <button

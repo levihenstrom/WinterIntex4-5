@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { deleteJson, fetchAllPaged, postJson } from '../../lib/apiClient';
 import AdminKpiStrip from '../../components/admin/AdminKpiStrip';
+import DeleteConfirmModal from '../../components/DeleteConfirmModal';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
 
@@ -63,6 +64,7 @@ export default function ContributionsPage() {
     currencyCode: 'PHP',
   });
   const [detailDonation, setDetailDonation] = useState<DonationRow | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -173,11 +175,11 @@ export default function ContributionsPage() {
     }
   }
 
-  async function handleDelete(id: number) {
-    if (!window.confirm('Delete this contribution record?')) return;
+  async function performDeleteContribution(id: number) {
     try {
       await deleteJson(`/api/donations/${id}`);
       setDetailDonation(null);
+      setDeleteConfirmId(null);
       await reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Delete failed');
@@ -485,7 +487,11 @@ export default function ContributionsPage() {
                       </dl>
                     </div>
                     <div className="modal-footer border-top">
-                      <button type="button" className="btn btn-outline-danger" onClick={() => void handleDelete(detailDonation.donationId)}>
+                      <button
+                        type="button"
+                        className="btn btn-outline-danger"
+                        onClick={() => setDeleteConfirmId(detailDonation.donationId)}
+                      >
                         Delete record
                       </button>
                       <button type="button" className="btn btn-primary" onClick={() => setDetailDonation(null)}>
@@ -496,6 +502,20 @@ export default function ContributionsPage() {
                 </div>
               </div>
             )}
+
+            <DeleteConfirmModal
+              show={deleteConfirmId !== null}
+              itemLabel={
+                deleteConfirmId != null
+                  ? `contribution #${deleteConfirmId}`
+                  : ''
+              }
+              description="This removes the gift row from the database. Linked supporter records are not deleted."
+              onCancel={() => setDeleteConfirmId(null)}
+              onConfirm={() => {
+                if (deleteConfirmId != null) void performDeleteContribution(deleteConfirmId);
+              }}
+            />
           </>
         )}
       </div>

@@ -57,7 +57,7 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
             .Where(kvp => kvp.Value?.Errors.Count > 0)
             .ToDictionary(
                 kvp => kvp.Key,
-                kvp => kvp.Value!.Errors
+                kvp => kvp.Value!.Errorshttps://ambitious-sky-003eb8010.2.azurestaticapps.net/admin/home
                     .Select(error => string.IsNullOrWhiteSpace(error.ErrorMessage)
                         ? "The value is invalid."
                         : error.ErrorMessage)
