@@ -323,24 +323,35 @@ export default function SupportersListPage() {
   }
 
   return (
-    <div style={{ background: '#F8FAFC', minHeight: '100vh', padding: '32px 0' }}>
-      <div className="container">
-        <div style={{ marginBottom: 28 }}>
+    <div className="py-4" style={{ background: 'var(--hw-bg-gray)', minHeight: '100%' }}>
+      <div className="container-xl">
+        <div className="mb-5">
           <span
             style={{
+              display: 'block',
               fontSize: 12,
               fontWeight: 700,
               color: '#0D9488',
               letterSpacing: 2,
               textTransform: 'uppercase',
+              marginBottom: 8,
             }}
           >
             Donors &amp; Contributions
           </span>
-          <h1 style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: 28, color: '#1E3A5F', marginBottom: 4 }}>
+          <h1
+            style={{
+              fontFamily: 'Poppins, sans-serif',
+              fontWeight: 700,
+              fontSize: 28,
+              color: '#1E3A5F',
+              marginBottom: 8,
+              lineHeight: 1.2,
+            }}
+          >
             Supporter Profiles
           </h1>
-          <p style={{ color: '#64748B', fontSize: 14, marginBottom: 0 }}>
+          <p className="text-muted mb-0" style={{ fontSize: 14 }}>
             Data from the database (same records used in donations and allocations).
           </p>
         </div>

@@ -215,8 +215,7 @@ export default function NavBar() {
                   className="bi bi-person-circle"
                   style={{
                     fontSize: '2rem',
-                    color: '#ebebebff',
-                    filter: 'drop-shadow(0 0 6px rgba(249, 169, 21, 0.83))',
+                     color: '#ebebebff',
                     transition: 'filter 0.2s',
                   }}
                 />

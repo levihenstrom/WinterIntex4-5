@@ -13,11 +13,6 @@ import {
 } from 'recharts';
 import { fetchJson } from '../../lib/apiClient';
 
-const pageBg: React.CSSProperties = {
-  background: '#F8FAFC',
-  minHeight: '100vh',
-  padding: '28px 0 48px',
-};
 
 const card: React.CSSProperties = {
   background: '#fff',
@@ -266,7 +261,7 @@ export default function ReportsAnalyticsPage() {
   const loadingAny = donLoading || outLoading;
 
   return (
-    <div style={pageBg} className="reports-analytics-print-root">
+    <div className="py-4 reports-analytics-print-root" style={{ background: 'var(--hw-bg-gray)', minHeight: '100%' }}>
       <style>{`
         @media print {
           .no-print-reports { display: none !important; }
@@ -274,19 +269,8 @@ export default function ReportsAnalyticsPage() {
         }
       `}</style>
 
-      <div className="container">
-        <header
-          style={{
-            marginBottom: 32,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-start',
-            flexWrap: 'wrap',
-            gap: 16,
-            borderBottom: '1px solid #E2E8F0',
-            paddingBottom: 24,
-          }}
-        >
+      <div className="container-xl">
+        <header className="mb-5 border-bottom pb-4" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16, borderColor: '#E2E8F0' }}>
           <div>
             <span
               style={{
@@ -301,10 +285,19 @@ export default function ReportsAnalyticsPage() {
             >
               Administration
             </span>
-            <h1 style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: 28, color: '#1E3A5F', marginBottom: 10 }}>
+            <h1
+              style={{
+                fontFamily: 'Poppins, sans-serif',
+                fontWeight: 700,
+                fontSize: 28,
+                color: '#1E3A5F',
+                marginBottom: 8,
+                lineHeight: 1.2,
+            }}
+            >
               Reports &amp; Analytics
             </h1>
-            <p style={{ color: '#64748B', fontSize: 15, margin: 0, maxWidth: 640, lineHeight: 1.55 }}>
+            <p className="text-muted mb-0" style={{ fontSize: 14, maxWidth: 640 }}>
               Aggregated insights and trends for decision-making: giving over time, beneficiary and program outcomes, site-level
               performance, and reintegration results—organized alongside annual accomplishment themes (caring, healing, teaching)
               used in Philippine social welfare reporting.
