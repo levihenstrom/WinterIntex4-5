@@ -133,14 +133,35 @@ export default function AllocationsPage() {
   }, [detailRow]);
 
   return (
-    <div style={{ background: '#F8FAFC', minHeight: '100vh', padding: '32px 0' }}>
-      <div className="container">
-        <div style={{ marginBottom: 28 }}>
-          <span style={{ fontSize: 12, fontWeight: 700, color: '#0D9488', letterSpacing: 2, textTransform: 'uppercase' }}>Donors &amp; Contributions</span>
-          <h1 style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: 28, color: '#1E3A5F', marginBottom: 4 }}>
+    <div className="py-4" style={{ background: 'var(--hw-bg-gray)', minHeight: '100%' }}>
+      <div className="container-xl">
+        <div className="mb-5">
+          <span
+            style={{
+              display: 'block',
+              fontSize: 12,
+              fontWeight: 700,
+              color: '#0D9488',
+              letterSpacing: 2,
+              textTransform: 'uppercase',
+              marginBottom: 8,
+            }}
+          >
+            Donors &amp; Contributions
+          </span>
+          <h1
+            style={{
+              fontFamily: 'Poppins, sans-serif',
+              fontWeight: 700,
+              fontSize: 28,
+              color: '#1E3A5F',
+              marginBottom: 8,
+              lineHeight: 1.2,
+            }}
+          >
             Donation allocations
           </h1>
-          <p style={{ color: '#64748B', fontSize: 14, marginBottom: 0 }}>
+          <p className="text-muted mb-0" style={{ fontSize: 14 }}>
             Live data from your database: gifts routed to safehouses and program areas (staff scope applies).
           </p>
         </div>
@@ -165,7 +186,7 @@ export default function AllocationsPage() {
                   key={name}
                   style={{
                     background: '#fff',
-                    borderRadius: 14,
+                    borderRadius: 12,
                     padding: '18px 20px',
                     border: '1px solid #E2E8F0',
                     boxShadow: '0 2px 8px rgba(30,58,95,0.06)',
@@ -178,7 +199,7 @@ export default function AllocationsPage() {
               ))}
             </div>
 
-            <div style={{ background: '#fff', borderRadius: 14, padding: '20px 24px', border: '1px solid #E2E8F0', boxShadow: '0 2px 12px rgba(30,58,95,0.06)', marginBottom: 24 }}>
+            <div style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(30,58,95,0.06)', marginBottom: 24 }}>
               <h6 style={{ fontFamily: 'Poppins,sans-serif', fontWeight: 700, color: '#1E3A5F', marginBottom: 16 }}>By program area</h6>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {byProgram.map(([name, total]) => {
@@ -207,7 +228,7 @@ export default function AllocationsPage() {
                 borderRadius: 12,
                 padding: '16px 20px',
                 border: '1px solid #E2E8F0',
-                boxShadow: '0 2px 8px rgba(30,58,95,0.05)',
+                boxShadow: '0 2px 8px rgba(30,58,95,0.06)',
                 marginBottom: 20,
                 display: 'flex',
                 flexWrap: 'wrap',
@@ -249,7 +270,7 @@ export default function AllocationsPage() {
               </div>
             </div>
 
-            <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #E2E8F0', boxShadow: '0 2px 12px rgba(30,58,95,0.06)', overflow: 'hidden' }}>
+            <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(30,58,95,0.06)', overflow: 'hidden' }}>
               {filtered.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '48px 0', color: '#94A3B8' }}>
                   <p style={{ fontWeight: 600 }}>No allocations match your filters.</p>
