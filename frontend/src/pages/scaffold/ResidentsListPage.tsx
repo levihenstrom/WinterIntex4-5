@@ -516,18 +516,18 @@ export default function ResidentsListPage() {
 
   // ── Render ────────────────────────────────────────────────────────────────────
   return (
-    <div style={{ background: '#F8FAFC', minHeight: '100vh', padding: '32px 0' }}>
-      <div className="container">
+    <div className="py-4" style={{ background: 'var(--hw-bg-gray)', minHeight: '100%' }}>
+      <div className="container-xl">
 
         {/* Header */}
-        <div style={{ marginBottom: 28, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
+        <div className="mb-5" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
           <div>
-            <span style={{ fontSize: 12, fontWeight: 700, color: '#0D9488', letterSpacing: 2, textTransform: 'uppercase' }}>Case management</span>
-            <h1 style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: 28, color: '#1E3A5F', marginBottom: 4 }}>
+            <span style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#0D9488', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 }}>Case management</span>
+            <h1 style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: 28, color: '#1E3A5F', marginBottom: 8, lineHeight: 1.2 }}>
               <i className="bi bi-person-lines-fill me-2" style={{ color: '#0D9488' }} aria-hidden />
               Residents
             </h1>
-            <p style={{ color: '#64748B', fontSize: 14, marginBottom: 0, maxWidth: 720 }}>
+            <p className="text-muted mb-0" style={{ fontSize: 14, maxWidth: 720 }}>
               Track each girl through intake, counseling, education, health, and reintegration. Use the table for quick triage; open a row for the full
               case file and incident history.
               {data ? ` ${data.totalCount} resident${data.totalCount !== 1 ? 's' : ''} match your filters.` : ''}
