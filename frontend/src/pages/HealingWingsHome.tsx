@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react';
 import NavBar from '../components/hw/NavBar';
-import SectionContainer from '../components/hw/SectionContainer';
 import MetricCard from '../components/hw/MetricCard';
 import DonationWidget from '../components/hw/DonationWidget';
 import Footer from '../components/hw/Footer';
