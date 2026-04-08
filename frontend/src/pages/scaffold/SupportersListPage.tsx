@@ -224,7 +224,6 @@ export default function SupportersListPage() {
     [supporters, typeFilter, statusFilter, search],
   );
 
-  async function performDeleteSupporter(id: number) {
   const displayedSupporters = useMemo(() => {
     if (!sortByMlRisk) return filtered;
     return [...filtered].sort((a, b) => {
@@ -236,6 +235,7 @@ export default function SupportersListPage() {
       return (a.displayName ?? '').localeCompare(b.displayName ?? '');
     });
   }, [filtered, sortByMlRisk, donorMlById]);
+
   const mlCriticalOrHighCount = useMemo(
     () =>
       supporters.filter((s) => {
@@ -244,6 +244,7 @@ export default function SupportersListPage() {
       }).length,
     [supporters, donorMlById],
   );
+
   async function performDeleteSupporter(id: number) {
     try {
       await deleteJson(`/api/supporters/${id}`);
@@ -253,6 +254,7 @@ export default function SupportersListPage() {
       setError(e instanceof Error ? e.message : 'Delete failed');
     }
   }
+
   async function handleSaveSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
