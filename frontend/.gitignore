@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Capacitor / iOS build artifacts — keep ios/ folder tracked but ignore Xcode generated files
+ios/App/Pods/
+ios/App/App.xcworkspace/xcuserdata/
+ios/App/build/
+ios/App/DerivedData/
+ios/.DS_Store
