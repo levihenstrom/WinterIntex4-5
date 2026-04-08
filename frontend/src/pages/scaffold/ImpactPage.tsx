@@ -646,14 +646,9 @@ export default function ImpactPage() {
           <h2 style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 900, fontSize: 'clamp(1.5rem, 3vw, 2rem)', color: '#fff', margin: '0.6rem 0 0.75rem' }}>
             Your gift keeps safe homes open and healing within reach.
           </h2>
-          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1rem', lineHeight: 1.65, marginBottom: '2rem' }}>
+          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1rem', lineHeight: 1.65, marginBottom: 0 }}>
             Contributions fund shelter, counseling, education, and everyday care—so every girl we serve has a stable place to recover and grow.
           </p>
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <button type="button" className="hw-btn-ghost-white" style={{ padding: '0.75rem 2rem', borderRadius: 50, fontWeight: 600, fontSize: '0.9rem' }}>
-              Subscribe to Reports
-            </button>
-          </div>
         </div>
       </section>
 
