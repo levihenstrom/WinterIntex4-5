@@ -34,6 +34,11 @@ Override with `SOCIAL_POSTS_CSV` if needed.
 |----------|---------|
 | `SOCIAL_ARTIFACT_DIR` | `<repo>/backend/Intex.API/App_Data/ml/social` |
 | `SOCIAL_POSTS_CSV` | `<repo>/data/lighthouse_csv_v7/social_media_posts.csv` |
+| `PORT` | Used by Docker / process managers (uvicorn `--port`); default in container image `8000` |
+| `ML_SERVICE_API_KEY` | If set, `POST /social/recommend` requires this value in the header below; unset = no auth |
+| `ML_SERVICE_API_KEY_HEADER` | Header name for the key (default `X-ML-Service-Key`) |
+
+**Azure / Docker:** see [docs/ML_SERVICE_DEPLOYMENT.md](../docs/ML_SERVICE_DEPLOYMENT.md) for build/run commands, `MlInferenceService__BaseUrl`, and optional API key setup on the .NET side.
 
 ## Install & run
 
@@ -50,8 +55,17 @@ Start the API:
 
 ```bash
 cd /path/to/WinterIntex4-5
-uvicorn ml_service.main:app --reload --port 8001
+uvicorn ml_service.main:app --reload --host 0.0.0.0 --port 8001
 ```
+
+Docker (build from repo root):
+
+```bash
+docker build -f ml_service/Dockerfile -t intex-social-ml:latest .
+docker run --rm -p 8000:8000 intex-social-ml:latest
+```
+
+Details: [docs/ML_SERVICE_DEPLOYMENT.md](../docs/ML_SERVICE_DEPLOYMENT.md).
 
 The app prepends `ml-pipelines/` to `sys.path` so `ml_pipeline_social_media_engagement` imports resolve without installing packages.
 

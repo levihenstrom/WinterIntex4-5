@@ -4,6 +4,7 @@ import NavBar from '../../components/hw/NavBar';
 import Footer from '../../components/hw/Footer';
 import MetricCard from '../../components/hw/MetricCard';
 import { ErrorState, LoadingState } from '../../components/common/AsyncStatus';
+import { formatAmountMaybePhpAndUsd, formatPhpAndUsd } from '../../lib/currency';
 
 /* ── Types ───────────────────────────────────────────────────── */
 interface DonationAllocationApi {
@@ -43,16 +44,6 @@ async function fetchAllDonationsMine(): Promise<DonationMine[]> {
     page += 1;
   }
   return items;
-}
-
-function formatMoney(amount: number | null | undefined, currencyCode = 'PHP'): string {
-  if (amount == null) return '—';
-  const code = currencyCode && currencyCode.length === 3 ? currencyCode : 'PHP';
-  try {
-    return new Intl.NumberFormat('en-PH', { style: 'currency', currency: code, maximumFractionDigits: 0 }).format(amount);
-  } catch {
-    return `${code} ${amount.toFixed(0)}`;
-  }
 }
 
 function formatDate(iso: string | null | undefined): string {
@@ -413,7 +404,12 @@ export default function DonorDashboardPage() {
                 <MetricCard target={totals.count} label="Gifts" />
               </div>
               <div style={{ borderRight: '1px solid rgba(255,255,255,0.1)' }}>
-                <MetricCard target={impactTotalTarget} prefix="₱" label="Total impact (PHP)" />
+                <MetricCard
+                  target={impactTotalTarget}
+                  prefix=""
+                  label="Total impact"
+                  staticDisplay={formatPhpAndUsd(impactTotalTarget)}
+                />
               </div>
               <div>
                 <MetricCard target={programImpact.length} label="Areas funded" />
@@ -711,7 +707,7 @@ export default function DonorDashboardPage() {
                               </td>
                               <td style={{ padding: '1rem 1.25rem' }}>
                                 <span style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 800, fontSize: '1.05rem', color: '#1E3A5F' }}>
-                                  {formatMoney(d.amount, d.currencyCode ?? 'PHP')}
+                                  {formatAmountMaybePhpAndUsd(d.amount, d.currencyCode ?? 'PHP')}
                                 </span>
                                 <span
                                   style={{

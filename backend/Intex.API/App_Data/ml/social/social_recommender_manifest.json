@@ -100,8 +100,28 @@
     "engagement_rate": "engagement_rate_pipeline.joblib",
     "p_any_referral": "any_referral_classifier_pipeline.joblib"
   },
+  "onnx_classifier_note": "The saved joblib for p_any_referral is CalibratedClassifierCV (Platt-calibrated, CV-averaged). ONNX exports the **fold-0** underlying Pipeline's gradient boosting classifier on preprocessed X only (uncalibrated). Probabilities will **not** match the calibrated joblib model; rankings may be similar.",
+  "onnx_estimator_only_note": "Default production joblib pipelines: skl2onnx cannot convert the full ColumnTransformer because categorical SimpleImputer uses missing_values=float (np.nan) on strings (NotImplementedError). Mitigation: parallel path preprocess_onnx + categorical sentinel + OneHotEncoder without max_categories \u2014 see full_pipeline_onnx_export (retrains; skl2onnx conversion succeeds; onnxruntime CPU may still lack I",
+  "onnx_export_schema_version": 1,
+  "onnx_input_layout": {
+    "dtype": "float32",
+    "semantics": "Output of sklearn ColumnTransformer prep (same space as joblib pipelines).",
+    "shape": [
+      null,
+      102
+    ],
+    "tensor_name": "X"
+  },
+  "onnx_models": {
+    "donation_referrals_count": "donation_referrals_count_pipeline.onnx",
+    "donation_value_log1p": "donation_value_log1p_pipeline.onnx",
+    "engagement_rate": "engagement_rate_pipeline.onnx",
+    "p_any_referral": "any_referral_classifier_pipeline.onnx"
+  },
+  "onnx_sidecar_path": "social_onnx_export_metadata.json",
   "package": "ml_pipeline_social_media_engagement",
   "paths_relative_to_manifest_directory": true,
+  "preferred_runtime": "joblib",
   "preprocessing_note": "Each .joblib file is a sklearn Pipeline whose first step is ColumnTransformer (impute/scale/one-hot). Load metadata JSON for numeric_features + categorical_features; align column order before predict.",
   "recommendation_goal_weights_path": "recommendation_goal_weights.json",
   "sample_payload_path": "sample_payload_input.json",

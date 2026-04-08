@@ -1,10 +1,11 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { fetchPaged, type PagedResult } from '../../lib/apiClient';
+import { fetchJson, fetchPaged, type PagedResult } from '../../lib/apiClient';
 import {
   getAtRiskDonors,
   getResidentCurrentScores,
   getResidentPriority,
+  normalizeResidentMlKey,
   recommendSocialPost,
   type DonorChurnRow,
   type ResidentMlScoreRow,
@@ -12,6 +13,7 @@ import {
 } from '../../lib/mlApi';
 import {
   formatDonorOutreachSummary,
+  formatRelativeReadinessPercentile,
   formatResidentPriorityRank,
 } from '../../lib/mlDisplayHelpers';
 import { useAuth } from '../../context/AuthContext';
@@ -198,7 +200,11 @@ function MlSectionCard({
   );
 }
 
-function ResidentsNeedingAttentionWidget() {
+function ResidentsNeedingAttentionWidget({
+  onSelectResident,
+}: {
+  onSelectResident?: (row: ResidentMlScoreRow, totalScored: number | null) => void;
+}) {
   const [rows, setRows] = useState<ResidentMlScoreRow[] | null>(null);
   const [totalScored, setTotalScored] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -238,14 +244,21 @@ function ResidentsNeedingAttentionWidget() {
 
   return (
     <ul className="list-unstyled mb-0" style={{ maxHeight: 220, overflowY: 'auto' }}>
-      {rows.slice(0, 8).map((r) => (
-        <li key={r.residentCode} className="mb-2 pb-2 border-bottom border-light">
-          <Link
-            to="/admin/residents"
-            className="text-decoration-none d-block rounded px-2 py-1"
-            style={{ transition: 'background 0.15s' }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--hw-bg-lavender)'; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = ''; }}
+      {rows.slice(0, 8).map((r) =>
+        onSelectResident ? (
+          <li
+            key={r.residentCode}
+            role="button"
+            tabIndex={0}
+            className="mb-2 pb-2 border-bottom border-light"
+            style={{ cursor: 'pointer' }}
+            onClick={() => onSelectResident(r, totalScored)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onSelectResident(r, totalScored);
+              }
+            }}
           >
             <div className="fw-semibold" style={{ color: 'var(--hw-navy)' }}>
               {r.residentCode}
@@ -259,14 +272,45 @@ function ResidentsNeedingAttentionWidget() {
                 Factor: {r.topRiskFactors[0]}
               </div>
             )}
-          </Link>
-        </li>
-      ))}
+          </li>
+        ) : (
+          <li key={r.residentCode} className="mb-2 pb-2 border-bottom border-light">
+            <Link
+              to="/admin/residents"
+              className="text-decoration-none d-block rounded px-2 py-1"
+              style={{ transition: 'background 0.15s' }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.background = 'var(--hw-bg-lavender)';
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.background = '';
+              }}
+            >
+              <div className="fw-semibold" style={{ color: 'var(--hw-navy)' }}>
+                {r.residentCode}
+              </div>
+              <div className="text-muted small">
+                {formatResidentPriorityRank(r.supportPriorityRank, totalScored)}
+              </div>
+              <div className="text-muted small">{r.operationalBand}</div>
+              {r.topRiskFactors?.[0] && (
+                <div className="text-truncate" title={r.topRiskFactors[0]} style={{ fontSize: 12, color: '#64748B' }}>
+                  Factor: {r.topRiskFactors[0]}
+                </div>
+              )}
+            </Link>
+          </li>
+        ),
+      )}
     </ul>
   );
 }
 
-function AtRiskDonorsWidget() {
+function AtRiskDonorsWidget({
+  onSelectDonor,
+}: {
+  onSelectDonor?: (row: DonorChurnRow) => void;
+}) {
   const [rows, setRows] = useState<DonorChurnRow[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
@@ -303,14 +347,21 @@ function AtRiskDonorsWidget() {
 
   return (
     <ul className="list-unstyled mb-0" style={{ maxHeight: 220, overflowY: 'auto' }}>
-      {rows.slice(0, 8).map((d) => (
-        <li key={d.supporterId} className="mb-2 pb-2 border-bottom border-light">
-          <Link
-            to="/admin/donations"
-            className="text-decoration-none d-block rounded px-2 py-1"
-            style={{ transition: 'background 0.15s' }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--hw-bg-lavender)'; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = ''; }}
+      {rows.slice(0, 8).map((d) =>
+        onSelectDonor ? (
+          <li
+            key={d.supporterId}
+            role="button"
+            tabIndex={0}
+            className="mb-2 pb-2 border-bottom border-light"
+            style={{ cursor: 'pointer' }}
+            onClick={() => onSelectDonor(d)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onSelectDonor(d);
+              }
+            }}
           >
             <div className="fw-semibold" style={{ color: 'var(--hw-navy)' }}>
               {d.displayName || `Supporter #${d.supporterId}`}
@@ -321,9 +372,33 @@ function AtRiskDonorsWidget() {
                 {d.topDrivers[0]}
               </div>
             )}
-          </Link>
-        </li>
-      ))}
+          </li>
+        ) : (
+          <li key={d.supporterId} className="mb-2 pb-2 border-bottom border-light">
+            <Link
+              to="/admin/donations"
+              className="text-decoration-none d-block rounded px-2 py-1"
+              style={{ transition: 'background 0.15s' }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.background = 'var(--hw-bg-lavender)';
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.background = '';
+              }}
+            >
+              <div className="fw-semibold" style={{ color: 'var(--hw-navy)' }}>
+                {d.displayName || `Supporter #${d.supporterId}`}
+              </div>
+              <div className="text-muted small">{formatDonorOutreachSummary(d.riskBand, d.outreachPriorityRank)}</div>
+              {d.topDrivers?.[0] && (
+                <div className="text-truncate" title={d.topDrivers[0]} style={{ fontSize: 12, color: '#64748B' }}>
+                  {d.topDrivers[0]}
+                </div>
+              )}
+            </Link>
+          </li>
+        ),
+      )}
     </ul>
   );
 }
@@ -386,10 +461,364 @@ function BestNextPostWidget() {
   );
 }
 
+// ── Dashboard quick-profile modals (same-page overlay; list footers still link to full pages) ──
+
+interface ResidentSearchRow {
+  residentId: number;
+  internalCode?: string | null;
+  caseStatus?: string | null;
+  caseCategory?: string | null;
+  safehouseId?: number | null;
+  assignedSocialWorker?: string | null;
+}
+
+interface SupporterDetailRow {
+  supporterId: number;
+  supporterType?: string | null;
+  displayName?: string | null;
+  organizationName?: string | null;
+  status?: string | null;
+  firstDonationDate?: string | null;
+}
+
+interface DonationAmountRow {
+  amount?: number | null;
+  currencyCode?: string | null;
+  donationDate?: string | null;
+}
+
+function useModalDismiss(onClose: () => void, open: boolean) {
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [open, onClose]);
+}
+
+function AdminResidentQuickModal({
+  selection,
+  onClose,
+}: {
+  selection: { row: ResidentMlScoreRow; totalScored: number | null } | null;
+  onClose: () => void;
+}) {
+  const open = selection !== null;
+  useModalDismiss(onClose, open);
+
+  const [caseloadRow, setCaseloadRow] = useState<ResidentSearchRow | null>(null);
+  const [caseloadLoading, setCaseloadLoading] = useState(false);
+
+  useEffect(() => {
+    if (!selection) {
+      setCaseloadRow(null);
+      return;
+    }
+    let cancelled = false;
+    const code = selection.row.residentCode.trim();
+    setCaseloadLoading(true);
+    fetchPaged<ResidentSearchRow>('/api/residents', 1, 30, { search: code })
+      .then((page) => {
+        if (cancelled) return;
+        const key = normalizeResidentMlKey(code);
+        const hit = page.items.find(
+          (x) => normalizeResidentMlKey(x.internalCode ?? '') === key,
+        );
+        setCaseloadRow(hit ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) setCaseloadRow(null);
+      })
+      .finally(() => {
+        if (!cancelled) setCaseloadLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selection]);
+
+  if (!selection) return null;
+
+  const { row, totalScored } = selection;
+
+  return (
+    <div
+      className="modal d-block"
+      style={{ backgroundColor: 'rgba(0,0,0,0.55)' }}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="adminResidentQuickTitle"
+      onClick={onClose}
+    >
+      <div
+        className="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="modal-content">
+          <div className="modal-header" style={{ background: '#F5F3FF', borderBottom: '1px solid #E9D5FF' }}>
+            <h5 className="modal-title fw-bold mb-0" id="adminResidentQuickTitle" style={{ color: '#1E3A5F' }}>
+              Resident quick profile — {row.residentCode}
+            </h5>
+            <button type="button" className="btn-close" onClick={onClose} aria-label="Close" />
+          </div>
+          <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+            <p className="small text-muted mb-3">
+              <strong>Support priority:</strong> {formatResidentPriorityRank(row.supportPriorityRank, totalScored)}
+              {' · '}
+              <strong>Operational band:</strong> {row.operationalBand}
+              {' · '}
+              <strong>Relative readiness (percentile):</strong>{' '}
+              {row.readinessPercentileAmongCurrentResidents != null
+                ? formatRelativeReadinessPercentile(row.readinessPercentileAmongCurrentResidents)
+                : '—'}
+            </p>
+            {row.rawScoreNote && (
+              <p className="small text-muted border rounded p-2 bg-light mb-3">{row.rawScoreNote}</p>
+            )}
+            <p className="fw-semibold small text-success mb-2">Top positive factors</p>
+            <ul className="small mb-4">
+              {(row.topPositiveFactors ?? []).slice(0, 8).map((t, i) => (
+                <li key={`pos-${i}`}>{t}</li>
+              ))}
+              {(!row.topPositiveFactors || row.topPositiveFactors.length === 0) && (
+                <li className="text-muted">None listed</li>
+              )}
+            </ul>
+            <p className="fw-semibold small text-danger mb-2">Top risk factors</p>
+            <ul className="small mb-4">
+              {(row.topRiskFactors ?? []).slice(0, 8).map((t, i) => (
+                <li key={`risk-${i}`}>{t}</li>
+              ))}
+              {(!row.topRiskFactors || row.topRiskFactors.length === 0) && (
+                <li className="text-muted">None listed</li>
+              )}
+            </ul>
+            <p className="fw-semibold small mb-2" style={{ color: 'var(--hw-navy)' }}>
+              Caseload snapshot
+            </p>
+            {caseloadLoading && <p className="small text-muted mb-0">Loading caseload fields…</p>}
+            {!caseloadLoading && !caseloadRow && (
+              <p className="small text-muted mb-0">
+                No matching resident row found for this code (check permissions or spelling).
+              </p>
+            )}
+            {!caseloadLoading && caseloadRow && (
+              <ul className="small text-muted mb-0 ps-3">
+                <li>
+                  <strong className="text-body">Case status:</strong> {caseloadRow.caseStatus?.trim() || '—'}
+                </li>
+                <li>
+                  <strong className="text-body">Category:</strong> {caseloadRow.caseCategory?.trim() || '—'}
+                </li>
+                <li>
+                  <strong className="text-body">Safehouse:</strong>{' '}
+                  {caseloadRow.safehouseId != null && caseloadRow.safehouseId > 0
+                    ? `#${caseloadRow.safehouseId}`
+                    : '—'}
+                </li>
+                <li>
+                  <strong className="text-body">Assigned social worker:</strong>{' '}
+                  {caseloadRow.assignedSocialWorker?.trim() || '—'}
+                </li>
+              </ul>
+            )}
+          </div>
+          <div className="modal-footer" style={{ borderTop: '1px solid var(--hw-bg-lavender2)' }}>
+            <Link to="/admin/residents" className="btn btn-outline-primary btn-sm" onClick={onClose}>
+              Open full caseload
+            </Link>
+            <button type="button" className="btn btn-outline-secondary" onClick={onClose}>
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AdminDonorQuickModal({
+  selection,
+  onClose,
+}: {
+  selection: DonorChurnRow | null;
+  onClose: () => void;
+}) {
+  const open = selection !== null;
+  useModalDismiss(onClose, open);
+
+  const [supporter, setSupporter] = useState<SupporterDetailRow | null>(null);
+  const [donationsPage, setDonationsPage] = useState<PagedResult<DonationAmountRow> | null>(null);
+  const [extraLoading, setExtraLoading] = useState(false);
+  const [extraError, setExtraError] = useState(false);
+
+  useEffect(() => {
+    if (!selection) {
+      setSupporter(null);
+      setDonationsPage(null);
+      setExtraError(false);
+      return;
+    }
+    let cancelled = false;
+    const id = selection.supporterId;
+    setExtraLoading(true);
+    setExtraError(false);
+    Promise.all([
+      fetchJson<SupporterDetailRow>(`/api/supporters/${id}`),
+      fetchPaged<DonationAmountRow>('/api/donations', 1, 100, { supporterId: id }),
+    ])
+      .then(([sup, dPage]) => {
+        if (cancelled) return;
+        setSupporter(sup);
+        setDonationsPage(dPage);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setSupporter(null);
+          setDonationsPage(null);
+          setExtraError(true);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setExtraLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selection]);
+
+  if (!selection) return null;
+
+  const displayName =
+    selection.displayName?.trim() ||
+    supporter?.displayName?.trim() ||
+    supporter?.organizationName?.trim() ||
+    `Supporter #${selection.supporterId}`;
+
+  const donationList =
+    !extraLoading && !extraError && donationsPage ? (
+      (() => {
+        const items = donationsPage.items;
+        const cur = items[0]?.currencyCode ?? 'PHP';
+        const sumSample = items.reduce((s, d) => s + (d.amount != null ? Number(d.amount) : 0), 0);
+        const lastDate = items[0]?.donationDate
+          ? new Date(items[0].donationDate).toLocaleDateString()
+          : null;
+        return (
+          <ul className="small text-muted mb-0 ps-3">
+            <li>
+              <strong className="text-body">Recorded gifts:</strong> {donationsPage.totalCount.toLocaleString()}
+            </li>
+            {lastDate && (
+              <li>
+                <strong className="text-body">Most recent gift:</strong> {lastDate}
+              </li>
+            )}
+            {items.length > 0 && (
+              <li>
+                <strong className="text-body">
+                  {donationsPage.totalCount <= items.length
+                    ? 'Total given (known amounts):'
+                    : 'Total (recent sample):'}
+                </strong>{' '}
+                {fmtDonationMoney(sumSample, cur)}
+              </li>
+            )}
+          </ul>
+        );
+      })()
+    ) : null;
+
+  return (
+    <div
+      className="modal d-block"
+      style={{ backgroundColor: 'rgba(0,0,0,0.55)' }}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="adminDonorQuickTitle"
+      onClick={onClose}
+    >
+      <div
+        className="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="modal-content">
+          <div className="modal-header" style={{ background: '#F5F3FF', borderBottom: '1px solid #E9D5FF' }}>
+            <h5 className="modal-title fw-bold mb-0" id="adminDonorQuickTitle" style={{ color: '#1E3A5F' }}>
+              Donor insights — {displayName}
+            </h5>
+            <button type="button" className="btn-close" onClick={onClose} aria-label="Close" />
+          </div>
+          <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+            <p className="small text-muted mb-2">
+              <strong>Outreach priority:</strong>{' '}
+              {formatDonorOutreachSummary(selection.riskBand, selection.outreachPriorityRank)}
+            </p>
+            {selection.outreachNote?.trim() && (
+              <p className="small border rounded p-2 bg-light mb-3">{selection.outreachNote.trim()}</p>
+            )}
+            <p className="fw-semibold small mb-2" style={{ color: 'var(--hw-navy)' }}>
+              Key drivers
+            </p>
+            <ul className="small mb-4">
+              {(selection.topDrivers ?? []).slice(0, 8).map((t, i) => (
+                <li key={`drv-${i}`}>{t}</li>
+              ))}
+              {(!selection.topDrivers || selection.topDrivers.length === 0) && (
+                <li className="text-muted">None listed</li>
+              )}
+            </ul>
+            <p className="fw-semibold small mb-2" style={{ color: 'var(--hw-navy)' }}>
+              Supporter record &amp; gifts
+            </p>
+            {extraLoading && <p className="small text-muted mb-0">Loading supporter details…</p>}
+            {!extraLoading && extraError && (
+              <p className="small text-muted mb-0">Could not load supporter profile or contributions.</p>
+            )}
+            {!extraLoading && !extraError && supporter && (
+              <ul className="small text-muted mb-3 ps-3">
+                <li>
+                  <strong className="text-body">Type:</strong> {supporter.supporterType?.trim() || '—'}
+                </li>
+                <li>
+                  <strong className="text-body">Status:</strong> {supporter.status?.trim() || '—'}
+                </li>
+                <li>
+                  <strong className="text-body">First gift:</strong>{' '}
+                  {supporter.firstDonationDate
+                    ? new Date(supporter.firstDonationDate).toLocaleDateString()
+                    : '—'}
+                </li>
+              </ul>
+            )}
+            {!extraLoading && !extraError && donationList}
+          </div>
+          <div className="modal-footer" style={{ borderTop: '1px solid var(--hw-bg-lavender2)' }}>
+            <Link to="/admin/donations" className="btn btn-outline-primary btn-sm" onClick={onClose}>
+              Open supporters
+            </Link>
+            <button type="button" className="btn btn-outline-secondary" onClick={onClose}>
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function AdminHomePage() {
   const { authSession } = useAuth();
+
+  const [residentQuick, setResidentQuick] = useState<{
+    row: ResidentMlScoreRow;
+    totalScored: number | null;
+  } | null>(null);
+  const [donorQuick, setDonorQuick] = useState<DonorChurnRow | null>(null);
 
   const [recentDonations, setRecentDonations] = useState<PagedResult<RecentDonationRow> | null>(null);
   const [recentError, setRecentError] = useState(false);
@@ -507,13 +936,15 @@ export default function AdminHomePage() {
               title="Residents needing attention"
               footerLink={{ to: '/admin/residents', label: 'Open caseload' }}
             >
-              <ResidentsNeedingAttentionWidget />
+              <ResidentsNeedingAttentionWidget
+                onSelectResident={(row, totalScored) => setResidentQuick({ row, totalScored })}
+              />
             </MlSectionCard>
             <MlSectionCard
               title="Donors needing outreach"
               footerLink={{ to: '/admin/donations', label: 'Open supporters' }}
             >
-              <AtRiskDonorsWidget />
+              <AtRiskDonorsWidget onSelectDonor={(d) => setDonorQuick(d)} />
             </MlSectionCard>
             <MlSectionCard
               title="Recommended next post"
@@ -659,6 +1090,9 @@ export default function AdminHomePage() {
           />
         </div>
       </div>
+
+      <AdminResidentQuickModal selection={residentQuick} onClose={() => setResidentQuick(null)} />
+      <AdminDonorQuickModal selection={donorQuick} onClose={() => setDonorQuick(null)} />
     </div>
   );
 }

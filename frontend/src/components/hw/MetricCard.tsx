@@ -6,6 +6,8 @@ interface MetricCardProps {
   prefix?: string;
   label: string;
   duration?: number;
+  /** When set, show this string instead of animating prefix+target+suffix (e.g. PHP + USD). */
+  staticDisplay?: string;
 }
 
 export default function MetricCard({
@@ -14,12 +16,15 @@ export default function MetricCard({
   prefix = '',
   label,
   duration = 2000,
+  staticDisplay,
 }: MetricCardProps) {
   const [count, setCount] = useState(0);
   const [started, setStarted] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const isStatic = staticDisplay !== undefined && staticDisplay !== '';
 
   useEffect(() => {
+    if (isStatic) return;
     const el = ref.current;
     if (!el) return;
     const observer = new IntersectionObserver(
@@ -28,10 +33,10 @@ export default function MetricCard({
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [started]);
+  }, [started, isStatic]);
 
   useEffect(() => {
-    if (!started) return;
+    if (isStatic || !started) return;
     const step = Math.ceil(target / (duration / 16));
     let current = 0;
     const timer = setInterval(() => {
@@ -40,12 +45,25 @@ export default function MetricCard({
       if (current >= target) clearInterval(timer);
     }, 16);
     return () => clearInterval(timer);
-  }, [started, target, duration]);
+  }, [started, target, duration, isStatic]);
 
   return (
     <div ref={ref} className="flex flex-col items-center justify-center px-6 py-10 text-center">
-      <span className="hw-metric-num text-5xl md:text-6xl font-extrabold leading-none text-white">
-        {prefix}{count.toLocaleString()}{suffix}
+      <span
+        className="hw-metric-num font-extrabold leading-none text-white"
+        style={
+          isStatic
+            ? { fontSize: 'clamp(1.25rem, 3.5vw, 2.25rem)', lineHeight: 1.2, whiteSpace: 'normal', wordBreak: 'break-word', maxWidth: '100%' }
+            : undefined
+        }
+      >
+        {isStatic ? (
+          staticDisplay
+        ) : (
+          <span className="text-5xl md:text-6xl">
+            {prefix}{count.toLocaleString()}{suffix}
+          </span>
+        )}
       </span>
       <span className="mt-3 text-xs uppercase tracking-widest font-semibold" style={{ color: '#5eead4' }}>
         {label}

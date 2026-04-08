@@ -1,8 +1,10 @@
 {
+  "donor_eligibility_rule": "Supporters included only if they have \u22651 donation row with donation_type='Monetary' and a non-null amount (same rule as the donor-retention cohort).",
   "export_mode": "heuristic",
-  "high_priority_outreach_fallback": "Primary and value-weighted fallbacks empty (no at-risk donors with monetary_sum > 0); queue is top at-risk donors by churn_risk_score only (still a valid staff triage list).",
-  "high_priority_outreach_rule": "churn_risk_score >= 0.35 AND monetary_sum >= cohort median (3049.01 PHP) \u2014 prioritizes at-risk donors with above-median historical monetary total.",
-  "n_outreach_queue": 3,
-  "n_supporters": 60,
-  "note": "churn_risk_score is a recency + lifetime-giving heuristic until donor_churn_pipeline.joblib is trained (see donor_retention_churn.ipynb) and wired to this export."
+  "high_priority_outreach_fallback": null,
+  "high_priority_outreach_rule": "churn_risk_score >= 0.35 AND monetary_sum >= cohort median (3432.50 PHP) \u2014 prioritizes at-risk donors with above-median historical monetary total.",
+  "n_outreach_queue": 2,
+  "n_scored_donors": 57,
+  "n_supporters": 57,
+  "note": "churn_risk_score is a recency + lifetime-giving heuristic until donor_churn_pipeline.joblib is trained (see donor_retention_churn.ipynb) and wired to this export. Scores apply only to the donor-eligible cohort (qualifying monetary gifts), not all supporters."
 }

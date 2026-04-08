@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import DeleteConfirmModal from '../DeleteConfirmModal';
 import { deleteJson, fetchPaged, type PagedResult } from '../../lib/apiClient';
+import { formatPhpAndUsd } from '../../lib/currency';
 import { useAuth } from '../../context/AuthContext';
 
 interface PagedTableProps {
@@ -128,7 +129,7 @@ export default function PagedTable({
                     <tr key={i}>
                       {columns.map((c) => (
                         <td key={c} style={{ maxWidth: 240, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {formatCell(row[c])}
+                          {formatCell(c, row[c])}
                         </td>
                       ))}
                       {canDelete && (
@@ -184,8 +185,17 @@ export default function PagedTable({
   );
 }
 
-function formatCell(value: unknown): string {
+const MONETARY_COLUMN_KEYS = new Set(['amount', 'amountAllocated']);
+
+function formatCell(columnKey: string, value: unknown): string {
   if (value === null || value === undefined) return '';
+  if (MONETARY_COLUMN_KEYS.has(columnKey)) {
+    if (typeof value === 'number' && !Number.isNaN(value)) return formatPhpAndUsd(value);
+    if (typeof value === 'string' && value.trim() !== '') {
+      const n = Number(value);
+      if (!Number.isNaN(n)) return formatPhpAndUsd(n);
+    }
+  }
   if (typeof value === 'object') return JSON.stringify(value);
   return String(value);
 }
@@ -228,6 +238,6 @@ function describeRow(row: Record<string, unknown>): string {
   }
 
   const idField = inferIdField(row);
-  if (idField) return `${idField}: ${formatCell(row[idField])}`;
+  if (idField) return `${idField}: ${formatCell(idField, row[idField])}`;
   return 'this item';
 }

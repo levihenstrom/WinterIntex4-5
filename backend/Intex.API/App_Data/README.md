@@ -8,7 +8,7 @@ Files under **`App_Data/ml/**`** are **copied on build and publish** (see `Intex
 |-----------|------|
 | `ml/reintegration/` | Resident readiness JSON for dashboards / queues |
 | `ml/donors/` | Donor churn / outreach JSON |
-| `ml/social/` | Serialized social recommender pipelines + manifest (and/or pointers for a separate inference service) |
+| `ml/social/` | Serialized social recommender pipelines (`.joblib`) + manifest; optional **estimator-only `.onnx`** + optional **full-graph `*_full.onnx`** (when `INTEX_SOCIAL_FULL_PIPELINE_ONNX=1`) + `social_net_preprocessing_spec.json` for .NET prep (joblib / FastAPI remain live today) |
 
 **Runtime layout:** after publish, paths are under the app’s content root, e.g.  
 `{ContentRoot}/App_Data/ml/...`  
