@@ -58,7 +58,7 @@ export default function NavBar() {
 
   // ── Dropdown menu (desktop) ─────────────────────────────────────────────────
   const dropdownMenu = dropdownOpen && (
-    <div className="absolute right-0 top-[calc(100%+8px)] bg-white/95 backdrop-blur-3xl rounded-2xl shadow-[0_16px_50px_rgba(30,58,95,0.15)] min-w-[250px] z-[3000] overflow-hidden border border-stone-200/60 p-1.5 flex flex-col hw-fade-in translate-y-1 transition-all duration-300">
+    <div className="absolute right-0 top-[calc(100%+8px)] bg-white/95 backdrop-blur-3xl rounded-2xl shadow-[0_16px_50px_rgba(30,58,95,0.15)] min-w-[250px] z-[3000] overflow-hidden border border-stone-200/60 p-1.5 flex flex-col">
       {/* Email and Role header */}
       <div className="px-4 py-3.5 border-b border-stone-100 bg-stone-50/50 rounded-xl mb-1.5 flex flex-col gap-1">
         <p className="m-0 text-[9px] text-stone-400 font-extrabold uppercase tracking-[0.15em]">Signed in as</p>
