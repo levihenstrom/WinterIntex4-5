@@ -23,6 +23,8 @@ public class ResidentsController(AppDbContext db, StaffScopeResolver scopeResolv
         [FromQuery] string? caseStatus = null,
         [FromQuery] string? caseCategory = null,
         [FromQuery] string? reintegrationStatus = null,
+        [FromQuery] string? currentRiskLevel = null,
+        [FromQuery] bool? highRisk = null,
         [FromQuery] string? search = null,
         CancellationToken cancellationToken = default)
     {
@@ -36,16 +38,23 @@ public class ResidentsController(AppDbContext db, StaffScopeResolver scopeResolv
             query = query.Where(r => r.CaseCategory == caseCategory);
         if (!string.IsNullOrWhiteSpace(reintegrationStatus))
             query = query.Where(r => r.ReintegrationStatus == reintegrationStatus);
+        if (!string.IsNullOrWhiteSpace(currentRiskLevel))
+            query = query.Where(r => r.CurrentRiskLevel == currentRiskLevel);
+        if (highRisk == true)
+            query = query.Where(r => r.CurrentRiskLevel == "High" || r.CurrentRiskLevel == "Critical");
         if (!string.IsNullOrWhiteSpace(search))
         {
             var s = search.Trim();
             if (int.TryParse(s, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var rid))
                 query = query.Where(r => r.ResidentId == rid);
             else
+            {
+                var needle = s.ToLower();
                 query = query.Where(r =>
-                    (r.CaseControlNo != null && r.CaseControlNo.Contains(s)) ||
-                    (r.InternalCode != null && r.InternalCode.Contains(s)) ||
-                    (r.AssignedSocialWorker != null && r.AssignedSocialWorker.Contains(s)));
+                    (r.CaseControlNo != null && r.CaseControlNo.ToLower().Contains(needle)) ||
+                    (r.InternalCode != null && r.InternalCode.ToLower().Contains(needle)) ||
+                    (r.AssignedSocialWorker != null && r.AssignedSocialWorker.ToLower().Contains(needle)));
+            }
         }
 
         query = query.OrderBy(r => r.ResidentId);

@@ -19,11 +19,36 @@ public class HomeVisitationsController(AppDbContext db) : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = Pagination.DefaultPageSize,
         [FromQuery] int? residentId = null,
+        [FromQuery] string? visitType = null,
+        [FromQuery] bool? followUpNeeded = null,
+        [FromQuery] bool? safetyConcernsNoted = null,
+        [FromQuery] string? search = null,
         CancellationToken cancellationToken = default)
     {
         var query = db.HomeVisitations.AsNoTracking().AsQueryable();
         if (residentId is { } rid)
             query = query.Where(h => h.ResidentId == rid);
+        if (!string.IsNullOrWhiteSpace(visitType))
+            query = query.Where(v => v.VisitType == visitType);
+        if (followUpNeeded is { } f)
+            query = query.Where(v => v.FollowUpNeeded == f);
+        if (safetyConcernsNoted is { } s)
+            query = query.Where(v => v.SafetyConcernsNoted == s);
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var q = search.Trim();
+            if (int.TryParse(q, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var ridFromSearch))
+                query = query.Where(v => v.ResidentId == ridFromSearch);
+            else
+            {
+                var needle = q.ToLower();
+                query = query.Where(v =>
+                    (v.SocialWorker != null && v.SocialWorker.ToLower().Contains(needle)) ||
+                    (v.VisitType != null && v.VisitType.ToLower().Contains(needle)) ||
+                    (v.LocationVisited != null && v.LocationVisited.ToLower().Contains(needle)) ||
+                    (v.Observations != null && v.Observations.ToLower().Contains(needle)));
+            }
+        }
 
         query = query.OrderByDescending(h => h.VisitDate).ThenBy(h => h.VisitationId);
         var result = await query.ToPagedResultAsync(page, pageSize, cancellationToken);

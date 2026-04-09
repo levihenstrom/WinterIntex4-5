@@ -21,6 +21,7 @@ public class DonationAllocationsController(AppDbContext db, StaffScopeResolver s
         [FromQuery] int pageSize = Pagination.DefaultPageSize,
         [FromQuery] int? safehouseId = null,
         [FromQuery] string? programArea = null,
+        [FromQuery] string? search = null,
         CancellationToken cancellationToken = default)
     {
         var scope = await scopeResolver.GetForUserAsync(User, cancellationToken);
@@ -48,6 +49,23 @@ public class DonationAllocationsController(AppDbContext db, StaffScopeResolver s
             query = query.Where(a => a.SafehouseId == sid);
         if (!string.IsNullOrWhiteSpace(programArea))
             query = query.Where(a => a.ProgramArea == programArea);
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var q = search.Trim();
+            if (int.TryParse(q, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var donationId))
+            {
+                query = query.Where(a => a.DonationId == donationId);
+            }
+            else
+            {
+                var needle = q.ToLower();
+                query = query.Where(a =>
+                    (a.ProgramArea != null && a.ProgramArea.ToLower().Contains(needle)) ||
+                    (a.AllocationNotes != null && a.AllocationNotes.ToLower().Contains(needle)) ||
+                    (a.Safehouse != null && a.Safehouse.Name != null && a.Safehouse.Name.ToLower().Contains(needle)) ||
+                    (a.Donation != null && a.Donation.Supporter != null && a.Donation.Supporter.DisplayName != null && a.Donation.Supporter.DisplayName.ToLower().Contains(needle)));
+            }
+        }
 
         query = query
             .OrderByDescending(a => a.AllocationDate)

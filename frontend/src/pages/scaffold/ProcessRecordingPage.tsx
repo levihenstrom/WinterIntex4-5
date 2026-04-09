@@ -201,12 +201,23 @@ export default function ProcessRecordingPage() {
   const [deleteBusy, setDeleteBusy] = useState(false);
 
   const [typeFilter, setTypeFilter] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [sortCol, setSortCol] = useState<SortCol | null>(null);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [quickFilter, setQuickFilter] = useState<SessionQuickFilter>(null);
   function toggleQuickFilter(f: SessionQuickFilter) {
     setQuickFilter(prev => prev === f ? null : f);
   }
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setSearchQuery(searchInput.trim()), 300);
+    return () => window.clearTimeout(timer);
+  }, [searchInput]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [residentId, typeFilter, quickFilter, searchQuery]);
 
   // ── Fetch ─────────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -217,13 +228,20 @@ export default function ProcessRecordingPage() {
       '/api/process-recordings',
       page,
       20,
-      residentId ? { residentId } : {},
+      {
+        ...(residentId ? { residentId } : {}),
+        ...(typeFilter ? { sessionType: typeFilter } : {}),
+        ...(quickFilter === 'progress' ? { progressNoted: 'true' } : {}),
+        ...(quickFilter === 'concerns' ? { concernsFlagged: 'true' } : {}),
+        ...(quickFilter === 'referral' ? { referralMade: 'true' } : {}),
+        ...(searchQuery ? { search: searchQuery } : {}),
+      },
     )
       .then((r) => { if (!cancelled) setData(r); })
       .catch((e: Error) => { if (!cancelled) setError(e.message); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [page, residentId, reloadToken]);
+  }, [page, residentId, reloadToken, typeFilter, quickFilter, searchQuery]);
 
   function handleSort(col: SortCol) {
     if (sortCol === col) {
@@ -236,10 +254,6 @@ export default function ProcessRecordingPage() {
 
   const filteredAndSorted = useMemo(() => {
     let items = data?.items ?? [];
-    if (typeFilter) items = items.filter(r => r.sessionType === typeFilter);
-    if (quickFilter === 'progress') items = items.filter(r => r.progressNoted === true);
-    if (quickFilter === 'concerns') items = items.filter(r => r.concernsFlagged === true);
-    if (quickFilter === 'referral') items = items.filter(r => r.referralMade === true);
     if (sortCol) {
       items = [...items].sort((a, b) => compareValues(
         a[sortCol] as string | number | boolean | null,
@@ -248,7 +262,7 @@ export default function ProcessRecordingPage() {
       ));
     }
     return items;
-  }, [data?.items, typeFilter, quickFilter, sortCol, sortDir]);
+  }, [data?.items, sortCol, sortDir]);
 
   // ── Modal helpers ─────────────────────────────────────────────────────────────
   function openCreate() {
@@ -378,7 +392,7 @@ export default function ProcessRecordingPage() {
               )}
             </h1>
             <p className="text-muted mb-0" style={{ fontSize: 14 }}>
-              {data ? `${data.totalCount} session${data.totalCount !== 1 ? 's' : ''} recorded` : 'Loading sessions…'}
+              {data ? `${data.totalCount} session${data.totalCount !== 1 ? 's' : ''} recorded. Click a row to review or edit details.` : 'Loading sessions…'}
             </p>
           </div>
           {canWrite && (
@@ -422,6 +436,42 @@ export default function ProcessRecordingPage() {
             )}
           </>
         )}
+
+        {/* Session type filter pills */}
+        <div
+          style={{
+            background: '#fff',
+            borderRadius: 12,
+            padding: '16px 20px',
+            border: '1px solid #E2E8F0',
+            boxShadow: '0 2px 8px rgba(30,58,95,0.06)',
+            marginBottom: 16,
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 12,
+            alignItems: 'center',
+          }}
+        >
+          <input
+            type="search"
+            placeholder="Search social worker, narrative, type, or resident ID…"
+            aria-label="Search session notes"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            style={{ flex: '1 1 260px', padding: '8px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13 }}
+          />
+          <button
+            type="button"
+            onClick={() => {
+              setSearchInput('');
+              setTypeFilter('');
+              setQuickFilter(null);
+            }}
+            style={{ background: 'none', border: '1px solid #CBD5E1', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: '#64748B' }}
+          >
+            Reset filters
+          </button>
+        </div>
 
         {/* Session type filter pills */}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>

@@ -34,6 +34,7 @@ public class SupportersController(AppDbContext db, StaffScopeResolver scopeResol
         [FromQuery] int pageSize = Pagination.DefaultPageSize,
         [FromQuery] string? supporterType = null,
         [FromQuery] string? status = null,
+        [FromQuery] string? search = null,
         CancellationToken cancellationToken = default)
     {
         var scope = await scopeResolver.GetForUserAsync(User, cancellationToken);
@@ -42,6 +43,22 @@ public class SupportersController(AppDbContext db, StaffScopeResolver scopeResol
             query = query.Where(s => s.SupporterType == supporterType);
         if (!string.IsNullOrWhiteSpace(status))
             query = query.Where(s => s.Status == status);
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var q = search.Trim();
+            if (int.TryParse(q, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var sid))
+            {
+                query = query.Where(s => s.SupporterId == sid);
+            }
+            else
+            {
+                var needle = q.ToLower();
+                query = query.Where(s =>
+                    (s.DisplayName != null && s.DisplayName.ToLower().Contains(needle)) ||
+                    (s.OrganizationName != null && s.OrganizationName.ToLower().Contains(needle)) ||
+                    (s.Email != null && s.Email.ToLower().Contains(needle)));
+            }
+        }
 
         query = query.OrderBy(s => s.SupporterId);
         var result = await query.ToPagedResultAsync(page, pageSize, cancellationToken);

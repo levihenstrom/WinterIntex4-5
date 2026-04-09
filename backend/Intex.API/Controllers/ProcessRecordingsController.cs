@@ -19,11 +19,38 @@ public class ProcessRecordingsController(AppDbContext db) : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = Pagination.DefaultPageSize,
         [FromQuery] int? residentId = null,
+        [FromQuery] string? sessionType = null,
+        [FromQuery] bool? progressNoted = null,
+        [FromQuery] bool? concernsFlagged = null,
+        [FromQuery] bool? referralMade = null,
+        [FromQuery] string? search = null,
         CancellationToken cancellationToken = default)
     {
         var query = db.ProcessRecordings.AsNoTracking().AsQueryable();
         if (residentId is { } rid)
             query = query.Where(p => p.ResidentId == rid);
+        if (!string.IsNullOrWhiteSpace(sessionType))
+            query = query.Where(p => p.SessionType == sessionType);
+        if (progressNoted is { } p)
+            query = query.Where(r => r.ProgressNoted == p);
+        if (concernsFlagged is { } c)
+            query = query.Where(r => r.ConcernsFlagged == c);
+        if (referralMade is { } r)
+            query = query.Where(x => x.ReferralMade == r);
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var q = search.Trim();
+            if (int.TryParse(q, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var ridFromSearch))
+                query = query.Where(p => p.ResidentId == ridFromSearch);
+            else
+            {
+                var needle = q.ToLower();
+                query = query.Where(p =>
+                    (p.SocialWorker != null && p.SocialWorker.ToLower().Contains(needle)) ||
+                    (p.SessionType != null && p.SessionType.ToLower().Contains(needle)) ||
+                    (p.SessionNarrative != null && p.SessionNarrative.ToLower().Contains(needle)));
+            }
+        }
 
         query = query.OrderByDescending(p => p.SessionDate).ThenBy(p => p.RecordingId);
         var result = await query.ToPagedResultAsync(page, pageSize, cancellationToken);

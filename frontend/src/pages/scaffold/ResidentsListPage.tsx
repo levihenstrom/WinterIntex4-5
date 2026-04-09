@@ -321,6 +321,17 @@ export default function ResidentsListPage() {
     setQuickFilter(prev => prev === f ? null : f);
   }
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setAppliedSearch(search.trim());
+      setAppliedStatus(statusFilter);
+      setAppliedReintegration(reintegrationFilter);
+      setAppliedCategory(categoryFilter);
+      setPage(1);
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [search, statusFilter, reintegrationFilter, categoryFilter]);
+
   /**
    * ML join: artifact `residentCode` matches caseload `internalCode` (e.g. LS-0006).
    * Compare with trim + uppercase via normalizeResidentMlKey().
@@ -340,12 +351,14 @@ export default function ResidentsListPage() {
     if (appliedReintegration) extra.reintegrationStatus = appliedReintegration;
     if (appliedCategory) extra.caseCategory = appliedCategory;
     if (appliedSearch) extra.search = appliedSearch;
+    if (quickFilter === 'active') extra.caseStatus = 'Active';
+    if (quickFilter === 'highRisk') extra.highRisk = 'true';
     fetchPaged<Resident>('/api/residents', page, 20, extra)
       .then((r) => { if (!cancelled) setData(r); })
       .catch((e: Error) => { if (!cancelled) setError(e.message); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [page, appliedStatus, appliedReintegration, appliedCategory, appliedSearch, reloadToken]);
+  }, [page, appliedStatus, appliedReintegration, appliedCategory, appliedSearch, quickFilter, reloadToken]);
 
   useEffect(() => {
     let cancelled = false;
@@ -402,18 +415,11 @@ export default function ResidentsListPage() {
     };
   }, [reloadToken]);
 
-  function applyFilters() {
-    setPage(1);
-    setAppliedSearch(search);
-    setAppliedStatus(statusFilter);
-    setAppliedReintegration(reintegrationFilter);
-    setAppliedCategory(categoryFilter);
-  }
-
   function resetFilters() {
     setSearch(''); setStatusFilter(''); setCategoryFilter(''); setReintegrationFilter('');
     setPage(1);
     setAppliedSearch(''); setAppliedStatus(''); setAppliedCategory(''); setAppliedReintegration('');
+    setQuickFilter(null);
   }
 
   function handleSort(col: SortCol) {
@@ -477,12 +483,7 @@ export default function ResidentsListPage() {
     );
   }, [data?.items, sortCol, sortDir, mlByKey]);
 
-  const filteredItems = useMemo(() => {
-    if (!quickFilter) return sortedItems;
-    if (quickFilter === 'active') return sortedItems.filter(r => r.caseStatus === 'Active');
-    if (quickFilter === 'highRisk') return sortedItems.filter(r => r.currentRiskLevel === 'High' || r.currentRiskLevel === 'Critical');
-    return sortedItems;
-  }, [sortedItems, quickFilter]);
+  const filteredItems = sortedItems;
 
   // ── Modal helpers ─────────────────────────────────────────────────────────────
   function openCreate() {
@@ -657,17 +658,12 @@ export default function ResidentsListPage() {
             placeholder="Search case control no., internal code, or social worker…"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && applyFilters()}
             style={{ ...inputStyle, flex: '1 1 200px' }}
           />
           <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} style={{ ...selectStyle, flex: '0 0 auto', width: 'auto' }}>
             <option value="">All Categories</option>
             {caseCategories.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
-          <button onClick={applyFilters} style={{
-            background: '#1E3A5F', color: '#fff', border: 'none', borderRadius: 8,
-            padding: '8px 18px', fontWeight: 600, fontSize: 13, cursor: 'pointer',
-          }}>Search</button>
           <button onClick={resetFilters} style={{
             background: 'none', border: '1px solid #CBD5E1', borderRadius: 8,
             padding: '8px 14px', fontWeight: 600, fontSize: 13, cursor: 'pointer', color: '#64748B',

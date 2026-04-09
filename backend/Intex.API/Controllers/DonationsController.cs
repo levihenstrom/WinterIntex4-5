@@ -44,10 +44,13 @@ public class DonationsController(AppDbContext db, StaffScopeResolver scopeResolv
             if (int.TryParse(t, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var did))
                 query = query.Where(d => d.DonationId == did);
             else
+            {
+                var needle = t.ToLower();
                 query = query.Where(d =>
                     d.Supporter != null &&
-                    ((d.Supporter.DisplayName != null && d.Supporter.DisplayName.Contains(t)) ||
-                     (d.Supporter.OrganizationName != null && d.Supporter.OrganizationName.Contains(t))));
+                    ((d.Supporter.DisplayName != null && d.Supporter.DisplayName.ToLower().Contains(needle)) ||
+                     (d.Supporter.OrganizationName != null && d.Supporter.OrganizationName.ToLower().Contains(needle))));
+            }
         }
 
         query = query.OrderByDescending(d => d.DonationDate).ThenBy(d => d.DonationId);

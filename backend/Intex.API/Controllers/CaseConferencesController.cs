@@ -24,6 +24,7 @@ public class CaseConferencesController(AppDbContext db) : ControllerBase
         [FromQuery] int pageSize = Pagination.DefaultPageSize,
         [FromQuery] int? residentId = null,
         [FromQuery] bool? upcoming = null,
+        [FromQuery] string? search = null,
         CancellationToken cancellationToken = default)
     {
         var query = db.InterventionPlans.AsNoTracking().AsQueryable();
@@ -41,6 +42,20 @@ public class CaseConferencesController(AppDbContext db) : ControllerBase
         {
             var today = DateTime.UtcNow.Date;
             query = query.Where(p => p.CaseConferenceDate < today);
+        }
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var q = search.Trim();
+            if (int.TryParse(q, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var ridFromSearch))
+                query = query.Where(p => p.ResidentId == ridFromSearch);
+            else
+            {
+                var needle = q.ToLower();
+                query = query.Where(p =>
+                    (p.PlanCategory != null && p.PlanCategory.ToLower().Contains(needle)) ||
+                    (p.PlanDescription != null && p.PlanDescription.ToLower().Contains(needle)) ||
+                    (p.Status != null && p.Status.ToLower().Contains(needle)));
+            }
         }
 
         query = query.OrderBy(p => p.CaseConferenceDate).ThenBy(p => p.PlanId);
