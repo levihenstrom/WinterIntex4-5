@@ -1,5 +1,5 @@
 # Build from repository root (WinterIntex4-5):
-#   docker build -f ml_service/Dockerfile -t intex-social-ml:latest .
+#   docker build -f ml_service/Dockerfile -t intex-ml-service .
 #
 # Runtime needs: ml_service package, ml-pipelines/ml_pipeline_social_media_engagement,
 # App_Data social artifacts, and social_media_posts.csv (see ENV below).
@@ -25,5 +25,5 @@ ENV SOCIAL_ARTIFACT_DIR=/app/artifacts/social \
 
 EXPOSE 8000
 
-# Azure and many hosts set PORT; default 8000 for local runs.
+# Azure and many hosts set PORT; default 8000. Backend appsettings use :8001 — map with -p 8001:8000 for local.
 CMD ["sh", "-c", "exec uvicorn ml_service.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
