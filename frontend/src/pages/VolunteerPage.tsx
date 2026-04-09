@@ -97,19 +97,35 @@ export default function VolunteerPage() {
 
       {/* Hero banner */}
       <div style={{
-        background: 'linear-gradient(135deg, #1E3A5F 0%, #0D9488 100%)',
+        position: 'relative',
         paddingTop: '7rem', paddingBottom: '3.5rem',
         textAlign: 'center', color: 'white',
+        overflow: 'hidden',
       }}>
-        <HealingWingsLogo size={52} style={{ marginBottom: 16 }} />
-        <h1 style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 800,
-          fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', margin: '0 0 12px' }}>
-          Volunteer With Us
-        </h1>
-        <p style={{ fontSize: 16, opacity: 0.85, maxWidth: 520, margin: '0 auto', lineHeight: 1.6 }}>
-          Join our mission to restore hope and rebuild lives for girl survivors of
-          trafficking and abuse in the Philippines.
-        </p>
+        {/* Background photo */}
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 0,
+          backgroundImage: 'url(https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?w=1600&q=80)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center 35%',
+        }} />
+        {/* Blue overlay */}
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 1,
+          background: 'linear-gradient(160deg, rgba(30,58,95,0.82) 0%, rgba(13,100,140,0.75) 100%)',
+        }} />
+        {/* Content above overlays */}
+        <div style={{ position: 'relative', zIndex: 2 }}>
+          <HealingWingsLogo size={52} style={{ marginBottom: 16 }} />
+          <h1 style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 800,
+            fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', margin: '0 0 12px' }}>
+            Volunteer With Us
+          </h1>
+          <p style={{ fontSize: 16, opacity: 0.88, maxWidth: 520, margin: '0 auto', lineHeight: 1.6 }}>
+            Join our mission to restore hope and rebuild lives for girl survivors of
+            trafficking and abuse in the Philippines.
+          </p>
+        </div>
       </div>
 
       {/* Main content */}

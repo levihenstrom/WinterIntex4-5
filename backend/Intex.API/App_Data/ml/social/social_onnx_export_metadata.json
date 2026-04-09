@@ -70,9 +70,9 @@
     "donation_referrals_count": {
       "onnx_input_name": "X",
       "onnx_bytes": 757,
-      "max_abs_diff_sklearn_vs_onnx": 1.6092221137853358e-06,
+      "max_abs_diff_sklearn_vs_onnx": 1.2518008354334142e-06,
       "sklearn_preview": 15.27841824282807,
-      "onnx_preview": 15.278416633605957,
+      "onnx_preview": 15.278419494628906,
       "joblib_source": "donation_referrals_count_pipeline.joblib"
     },
     "donation_value_log1p": {

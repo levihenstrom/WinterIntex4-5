@@ -33,7 +33,7 @@ public sealed class MlArtifactService(IWebHostEnvironment env, ILogger<MlArtifac
         await using var stream = File.OpenRead(path);
         var rows = await JsonSerializer.DeserializeAsync<List<ResidentReadinessArtifactRecord>>(stream, ReadJson, cancellationToken)
                    ?? [];
-        return rows.ConvertAll(ResidentReadinessDto.FromArtifact);
+        return rows.ConvertAll(r => ResidentReadinessDto.FromArtifact(r));
     }
 
     public async Task<IReadOnlyList<ResidentReadinessDto>> GetResidentsPriorityAsync(int limit, CancellationToken cancellationToken)

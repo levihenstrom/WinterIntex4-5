@@ -13,6 +13,7 @@ import {
 } from 'recharts';
 import { fetchJson } from '../../lib/apiClient';
 import { ErrorState, LoadingState } from '../../components/common/AsyncStatus';
+import { formatAmountMaybePhpAndUsd } from '../../lib/currency';
 
 
 const card: React.CSSProperties = {
@@ -44,7 +45,7 @@ function buildQuery(params: Record<string, string | undefined | null>): string {
 }
 
 function fmtMoney(n: number) {
-  return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(n);
+  return formatAmountMaybePhpAndUsd(n, 'PHP');
 }
 
 function fmtHours(n: number) {

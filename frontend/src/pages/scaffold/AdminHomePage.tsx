@@ -1,11 +1,11 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { fetchJson, fetchPaged, type PagedResult } from '../../lib/apiClient';
+import { fetchJson, fetchPaged, postJson, type PagedResult } from '../../lib/apiClient';
+import { ResidentProfileModal } from '../../components/admin/ResidentProfileModal';
 import {
   getAtRiskDonors,
   getResidentCurrentScores,
   getResidentPriority,
-  normalizeResidentMlKey,
   recommendSocialPost,
   type DonorChurnRow,
   type ResidentMlScoreRow,
@@ -13,11 +13,11 @@ import {
 } from '../../lib/mlApi';
 import {
   formatDonorOutreachSummary,
-  formatRelativeReadinessPercentile,
   formatResidentPriorityRank,
 } from '../../lib/mlDisplayHelpers';
 import { useAuth } from '../../context/AuthContext';
 import { ErrorState, LoadingState } from '../../components/common/AsyncStatus';
+import { formatAmountMaybePhpAndUsd } from '../../lib/currency';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
 interface MetricState {
@@ -157,33 +157,52 @@ interface RecentDonationRow {
   supporter?: { displayName?: string | null; organizationName?: string | null } | null;
 }
 
-function fmtDonationMoney(n: number | null | undefined, currency = 'PHP') {
-  if (n == null) return '—';
-  try {
-    return new Intl.NumberFormat('en-PH', { style: 'currency', currency, maximumFractionDigits: 0 }).format(n);
-  } catch {
-    return `${currency} ${n.toFixed(0)}`;
-  }
-}
-
 // ── Insights dashboard widgets (isolated fetch/error so one failure does not block others) ──
 
 function MlSectionCard({
   title,
   children,
   footerLink,
+  alertBadge,
 }: {
   title: string;
   children: ReactNode;
   footerLink?: { to: string; label: string };
+  alertBadge?: { count: number; color: string; label: string } | null;
 }) {
+  const hasAlert = alertBadge && alertBadge.count > 0;
   return (
-    <div className="col-12 col-lg-4">
-      <div className="card border-0 shadow-sm rounded-3 h-100">
+    <div className="col-12 col-lg-6">
+      <div
+        className="card border-0 rounded-3 h-100"
+        style={hasAlert ? {
+          boxShadow: `0 0 0 2px ${alertBadge.color}, 0 4px 20px ${alertBadge.color}44`,
+          border: `1.5px solid ${alertBadge.color}`,
+        } : {
+          boxShadow: '0 2px 8px rgba(30,58,95,0.07)',
+        }}
+      >
         <div className="card-body d-flex flex-column">
-          <h3 className="h6 fw-semibold mb-3" style={{ color: 'var(--hw-navy)' }}>
-            {title}
-          </h3>
+          <div className="d-flex align-items-center gap-2 mb-3">
+            {hasAlert && (
+              <span style={{
+                width: 8, height: 8, borderRadius: '50%',
+                background: alertBadge.color, flexShrink: 0,
+                boxShadow: `0 0 6px 2px ${alertBadge.color}88`,
+              }} />
+            )}
+            <h3 className="h6 fw-semibold mb-0" style={{ color: 'var(--hw-navy)', flex: 1 }}>
+              {title}
+            </h3>
+            {hasAlert && (
+              <span
+                className="badge rounded-pill"
+                style={{ background: alertBadge.color, color: 'white', fontSize: '0.62rem', letterSpacing: '0.06em' }}
+              >
+                {alertBadge.count} {alertBadge.label}
+              </span>
+            )}
+          </div>
           <div className="flex-grow-1 small">{children}</div>
           {footerLink && (
             <Link
@@ -200,11 +219,7 @@ function MlSectionCard({
   );
 }
 
-function ResidentsNeedingAttentionWidget({
-  onSelectResident,
-}: {
-  onSelectResident?: (row: ResidentMlScoreRow, totalScored: number | null) => void;
-}) {
+function ResidentsNeedingAttentionWidget({ onCriticalCount, onOpenProfile }: { onCriticalCount?: (n: number) => void; onOpenProfile?: (residentId: number) => void }) {
   const [rows, setRows] = useState<ResidentMlScoreRow[] | null>(null);
   const [totalScored, setTotalScored] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -219,6 +234,8 @@ function ResidentsNeedingAttentionWidget({
           setRows(priorityRows);
           setTotalScored(allScored.length);
           setErr(null);
+          const critical = priorityRows.filter(r => (r.supportPriorityRank ?? 99) <= 3).length;
+          onCriticalCount?.(critical);
         }
       })
       .catch((e: Error) => {
@@ -234,6 +251,7 @@ function ResidentsNeedingAttentionWidget({
     return () => {
       cancelled = true;
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (loading) return <LoadingState message="Loading ML insights…" size="compact" />;
@@ -244,50 +262,31 @@ function ResidentsNeedingAttentionWidget({
 
   return (
     <ul className="list-unstyled mb-0" style={{ maxHeight: 220, overflowY: 'auto' }}>
-      {rows.slice(0, 8).map((r) =>
-        onSelectResident ? (
+      {rows.slice(0, 8).map((r) => {
+        const rank = r.supportPriorityRank ?? 99;
+        const severityColor = rank <= 3 ? '#dc2626' : rank <= 6 ? '#d97706' : '#cbd5e1';
+        return (
           <li
             key={r.residentCode}
-            role="button"
-            tabIndex={0}
             className="mb-2 pb-2 border-bottom border-light"
-            style={{ cursor: 'pointer' }}
-            onClick={() => onSelectResident(r, totalScored)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                onSelectResident(r, totalScored);
-              }
+            style={{
+              borderLeft: `3px solid ${severityColor}`,
+              paddingLeft: 8,
+              borderRadius: 4,
+              background: rank <= 3 ? 'rgba(220,38,38,0.05)' : rank <= 6 ? 'rgba(217,119,6,0.04)' : undefined,
             }}
           >
-            <div className="fw-semibold" style={{ color: 'var(--hw-navy)' }}>
-              {r.residentCode}
-            </div>
-            <div className="text-muted small">
-              {formatResidentPriorityRank(r.supportPriorityRank, totalScored)}
-            </div>
-            <div className="text-muted small">{r.operationalBand}</div>
-            {r.topRiskFactors?.[0] && (
-              <div className="text-truncate" title={r.topRiskFactors[0]} style={{ fontSize: 12, color: '#64748B' }}>
-                Factor: {r.topRiskFactors[0]}
-              </div>
-            )}
-          </li>
-        ) : (
-          <li key={r.residentCode} className="mb-2 pb-2 border-bottom border-light">
-            <Link
-              to="/admin/residents"
-              className="text-decoration-none d-block rounded px-2 py-1"
-              style={{ transition: 'background 0.15s' }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.background = 'var(--hw-bg-lavender)';
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.background = '';
-              }}
+            <button
+              type="button"
+              className="text-decoration-none d-block rounded px-2 py-1 w-100 text-start border-0 bg-transparent"
+              style={{ transition: 'background 0.15s', cursor: r.residentId != null ? 'pointer' : 'default' }}
+              onClick={() => { if (r.residentId != null) onOpenProfile?.(r.residentId); }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--hw-bg-lavender)'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = ''; }}
             >
               <div className="fw-semibold" style={{ color: 'var(--hw-navy)' }}>
                 {r.residentCode}
+                {r.residentId != null && <i className="bi bi-box-arrow-up-right ms-1" style={{ fontSize: 10, opacity: 0.5 }} />}
               </div>
               <div className="text-muted small">
                 {formatResidentPriorityRank(r.supportPriorityRank, totalScored)}
@@ -298,17 +297,19 @@ function ResidentsNeedingAttentionWidget({
                   Factor: {r.topRiskFactors[0]}
                 </div>
               )}
-            </Link>
+            </button>
           </li>
-        ),
-      )}
+        );
+      })}
     </ul>
   );
 }
 
 function AtRiskDonorsWidget({
+  onCriticalCount,
   onSelectDonor,
 }: {
+  onCriticalCount?: (n: number) => void;
   onSelectDonor?: (row: DonorChurnRow) => void;
 }) {
   const [rows, setRows] = useState<DonorChurnRow[] | null>(null);
@@ -323,6 +324,8 @@ function AtRiskDonorsWidget({
         if (!cancelled) {
           setRows(r);
           setErr(null);
+          const critical = r.filter(d => d.riskBand === 'Critical').length;
+          onCriticalCount?.(critical);
         }
       })
       .catch((e: Error) => {
@@ -337,6 +340,7 @@ function AtRiskDonorsWidget({
     return () => {
       cancelled = true;
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (loading) return <LoadingState message="Loading ML insights…" size="compact" />;
@@ -347,44 +351,26 @@ function AtRiskDonorsWidget({
 
   return (
     <ul className="list-unstyled mb-0" style={{ maxHeight: 220, overflowY: 'auto' }}>
-      {rows.slice(0, 8).map((d) =>
-        onSelectDonor ? (
+      {rows.slice(0, 8).map((d) => {
+        const isCritical = d.riskBand === 'Critical';
+        const isHigh = d.riskBand === 'High';
+        const leftColor = isCritical ? '#dc2626' : isHigh ? '#d97706' : '#cbd5e1';
+        return (
           <li
             key={d.supporterId}
-            role="button"
-            tabIndex={0}
             className="mb-2 pb-2 border-bottom border-light"
-            style={{ cursor: 'pointer' }}
-            onClick={() => onSelectDonor(d)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                onSelectDonor(d);
-              }
-            }}
+            style={{ borderLeft: `3px solid ${leftColor}`, paddingLeft: 8 }}
           >
-            <div className="fw-semibold" style={{ color: 'var(--hw-navy)' }}>
-              {d.displayName || `Supporter #${d.supporterId}`}
-            </div>
-            <div className="text-muted small">{formatDonorOutreachSummary(d.riskBand, d.outreachPriorityRank)}</div>
-            {d.topDrivers?.[0] && (
-              <div className="text-truncate" title={d.topDrivers[0]} style={{ fontSize: 12, color: '#64748B' }}>
-                {d.topDrivers[0]}
-              </div>
-            )}
-          </li>
-        ) : (
-          <li key={d.supporterId} className="mb-2 pb-2 border-bottom border-light">
             <Link
               to="/admin/donations"
               className="text-decoration-none d-block rounded px-2 py-1"
-              style={{ transition: 'background 0.15s' }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.background = 'var(--hw-bg-lavender)';
+              style={{
+                transition: 'background 0.15s',
+                background: isCritical ? 'rgba(220,38,38,0.04)' : undefined,
               }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.background = '';
-              }}
+              onClick={() => onSelectDonor?.(d)}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--hw-bg-lavender)'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = isCritical ? 'rgba(220,38,38,0.04)' : ''; }}
             >
               <div className="fw-semibold" style={{ color: 'var(--hw-navy)' }}>
                 {d.displayName || `Supporter #${d.supporterId}`}
@@ -397,8 +383,8 @@ function AtRiskDonorsWidget({
               )}
             </Link>
           </li>
-        ),
-      )}
+        );
+      })}
     </ul>
   );
 }
@@ -461,16 +447,142 @@ function BestNextPostWidget() {
   );
 }
 
-// ── Dashboard quick-profile modals (same-page overlay; list footers still link to full pages) ──
-
-interface ResidentSearchRow {
-  residentId: number;
-  internalCode?: string | null;
-  caseStatus?: string | null;
-  caseCategory?: string | null;
-  safehouseId?: number | null;
-  assignedSocialWorker?: string | null;
+interface UnallocatedDonation {
+  donationId: number;
+  donationDate?: string | null;
+  amount?: number | null;
+  currencyCode?: string | null;
+  donationType?: string | null;
+  supporter?: { displayName?: string | null; organizationName?: string | null } | null;
 }
+
+interface AllocFormState {
+  donationId: number;
+  safehouseId: string;
+  programArea: string;
+  amount: string;
+  submitting: boolean;
+  error: string | null;
+  done: boolean;
+}
+
+function UnallocatedDonationsWidget({ onUnallocatedCount }: { onUnallocatedCount?: (n: number) => void }) {
+  const [items, setItems] = useState<UnallocatedDonation[] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [forms, setForms] = useState<Record<number, AllocFormState>>({});
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    fetchPaged<UnallocatedDonation>('/api/donations', 1, 10, { unallocated: 'true' })
+      .then((r) => {
+        if (!cancelled) {
+          setItems(r.items);
+          setErr(null);
+          onUnallocatedCount?.(r.totalCount);
+        }
+      })
+      .catch((e: Error) => {
+        if (!cancelled) { setErr(e.message); setItems([]); }
+      })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function toggleExpand(id: number) {
+    setExpandedId((prev) => prev === id ? null : id);
+    setForms((prev) => ({
+      ...prev,
+      [id]: prev[id] ?? { donationId: id, safehouseId: '', programArea: '', amount: '', submitting: false, error: null, done: false },
+    }));
+  }
+
+  async function submitAllocation(donationId: number) {
+    const f = forms[donationId];
+    if (!f) return;
+    setForms((prev) => ({ ...prev, [donationId]: { ...f, submitting: true, error: null } }));
+    try {
+      await postJson('/api/donation-allocations', {
+        donationId,
+        safehouseId: Number(f.safehouseId),
+        programArea: f.programArea || null,
+        amountAllocated: f.amount ? Number(f.amount) : null,
+        allocationDate: new Date().toISOString().split('T')[0],
+      });
+      setForms((prev) => ({ ...prev, [donationId]: { ...f, submitting: false, done: true } }));
+      setItems((prev) => prev?.filter((d) => d.donationId !== donationId) ?? prev);
+      onUnallocatedCount?.((items?.length ?? 1) - 1);
+    } catch (e) {
+      setForms((prev) => ({ ...prev, [donationId]: { ...f, submitting: false, error: e instanceof Error ? e.message : 'Failed.' } }));
+    }
+  }
+
+  if (loading) return <LoadingState message="Loading…" size="compact" />;
+  if (err) return <ErrorState message={err} />;
+  if (!items?.length) return <p className="text-muted mb-0 small">No unallocated donations — all caught up!</p>;
+
+  return (
+    <ul className="list-unstyled mb-0" style={{ maxHeight: 280, overflowY: 'auto' }}>
+      {items.map((d) => {
+        const name = d.supporter?.displayName?.trim() || d.supporter?.organizationName?.trim() || `Donation #${d.donationId}`;
+        const f = forms[d.donationId];
+        const isExpanded = expandedId === d.donationId;
+        const amt = d.amount != null ? formatAmountMaybePhpAndUsd(Number(d.amount), d.currencyCode ?? 'PHP') : '—';
+        return (
+          <li key={d.donationId} className="mb-2 border-bottom border-light pb-2" style={{ borderLeft: '3px solid #dc2626', paddingLeft: 8 }}>
+            <div className="d-flex align-items-center justify-content-between gap-2">
+              <div>
+                <div className="fw-semibold small" style={{ color: 'var(--hw-navy)' }}>{name}</div>
+                <div className="text-muted" style={{ fontSize: 11 }}>
+                  {amt}{d.donationDate ? ` · ${new Date(d.donationDate).toLocaleDateString()}` : ''}
+                </div>
+              </div>
+              <button
+                type="button"
+                className="btn btn-sm fw-semibold flex-shrink-0"
+                style={{ fontSize: 11, background: isExpanded ? '#f1f5f9' : 'var(--hw-purple)', color: isExpanded ? '#1E3A5F' : 'white', borderRadius: 6, padding: '3px 10px' }}
+                onClick={() => toggleExpand(d.donationId)}
+              >
+                {isExpanded ? 'Cancel' : 'Allocate →'}
+              </button>
+            </div>
+            {isExpanded && f && !f.done && (
+              <div className="mt-2 p-2 rounded" style={{ background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                {f.error && <div className="text-danger small mb-1">{f.error}</div>}
+                <div className="d-flex flex-wrap gap-2 align-items-end">
+                  <div>
+                    <label className="form-label mb-1" style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748B' }}>Safehouse ID</label>
+                    <input type="number" className="form-control form-control-sm" style={{ width: 90 }} placeholder="ID"
+                      value={f.safehouseId} onChange={(e) => setForms((p) => ({ ...p, [d.donationId]: { ...f, safehouseId: e.target.value } }))} />
+                  </div>
+                  <div>
+                    <label className="form-label mb-1" style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748B' }}>Program area</label>
+                    <input type="text" className="form-control form-control-sm" style={{ width: 120 }} placeholder="e.g. Education"
+                      value={f.programArea} onChange={(e) => setForms((p) => ({ ...p, [d.donationId]: { ...f, programArea: e.target.value } }))} />
+                  </div>
+                  <div>
+                    <label className="form-label mb-1" style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748B' }}>Amount</label>
+                    <input type="number" className="form-control form-control-sm" style={{ width: 100 }} placeholder="e.g. 5000"
+                      value={f.amount} onChange={(e) => setForms((p) => ({ ...p, [d.donationId]: { ...f, amount: e.target.value } }))} />
+                  </div>
+                  <button type="button" className="btn btn-sm btn-success fw-semibold" disabled={f.submitting} onClick={() => void submitAllocation(d.donationId)}>
+                    {f.submitting ? 'Saving…' : 'Save'}
+                  </button>
+                </div>
+              </div>
+            )}
+            {f?.done && <div className="text-success small mt-1"><i className="bi bi-check-circle me-1" />Allocated!</div>}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+// ── Dashboard quick-profile modals ──
 
 interface SupporterDetailRow {
   supporterId: number;
@@ -496,147 +608,6 @@ function useModalDismiss(onClose: () => void, open: boolean) {
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [open, onClose]);
-}
-
-function AdminResidentQuickModal({
-  selection,
-  onClose,
-}: {
-  selection: { row: ResidentMlScoreRow; totalScored: number | null } | null;
-  onClose: () => void;
-}) {
-  const open = selection !== null;
-  useModalDismiss(onClose, open);
-
-  const [caseloadRow, setCaseloadRow] = useState<ResidentSearchRow | null>(null);
-  const [caseloadLoading, setCaseloadLoading] = useState(false);
-
-  useEffect(() => {
-    if (!selection) {
-      setCaseloadRow(null);
-      return;
-    }
-    let cancelled = false;
-    const code = selection.row.residentCode.trim();
-    setCaseloadLoading(true);
-    fetchPaged<ResidentSearchRow>('/api/residents', 1, 30, { search: code })
-      .then((page) => {
-        if (cancelled) return;
-        const key = normalizeResidentMlKey(code);
-        const hit = page.items.find(
-          (x) => normalizeResidentMlKey(x.internalCode ?? '') === key,
-        );
-        setCaseloadRow(hit ?? null);
-      })
-      .catch(() => {
-        if (!cancelled) setCaseloadRow(null);
-      })
-      .finally(() => {
-        if (!cancelled) setCaseloadLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [selection]);
-
-  if (!selection) return null;
-
-  const { row, totalScored } = selection;
-
-  return (
-    <div
-      className="modal d-block"
-      style={{ backgroundColor: 'rgba(0,0,0,0.55)' }}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="adminResidentQuickTitle"
-      onClick={onClose}
-    >
-      <div
-        className="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="modal-content">
-          <div className="modal-header" style={{ background: '#F5F3FF', borderBottom: '1px solid #E9D5FF' }}>
-            <h5 className="modal-title fw-bold mb-0" id="adminResidentQuickTitle" style={{ color: '#1E3A5F' }}>
-              Resident quick profile — {row.residentCode}
-            </h5>
-            <button type="button" className="btn-close" onClick={onClose} aria-label="Close" />
-          </div>
-          <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-            <p className="small text-muted mb-3">
-              <strong>Support priority:</strong> {formatResidentPriorityRank(row.supportPriorityRank, totalScored)}
-              {' · '}
-              <strong>Operational band:</strong> {row.operationalBand}
-              {' · '}
-              <strong>Relative readiness (percentile):</strong>{' '}
-              {row.readinessPercentileAmongCurrentResidents != null
-                ? formatRelativeReadinessPercentile(row.readinessPercentileAmongCurrentResidents)
-                : '—'}
-            </p>
-            {row.rawScoreNote && (
-              <p className="small text-muted border rounded p-2 bg-light mb-3">{row.rawScoreNote}</p>
-            )}
-            <p className="fw-semibold small text-success mb-2">Top positive factors</p>
-            <ul className="small mb-4">
-              {(row.topPositiveFactors ?? []).slice(0, 8).map((t, i) => (
-                <li key={`pos-${i}`}>{t}</li>
-              ))}
-              {(!row.topPositiveFactors || row.topPositiveFactors.length === 0) && (
-                <li className="text-muted">None listed</li>
-              )}
-            </ul>
-            <p className="fw-semibold small text-danger mb-2">Top risk factors</p>
-            <ul className="small mb-4">
-              {(row.topRiskFactors ?? []).slice(0, 8).map((t, i) => (
-                <li key={`risk-${i}`}>{t}</li>
-              ))}
-              {(!row.topRiskFactors || row.topRiskFactors.length === 0) && (
-                <li className="text-muted">None listed</li>
-              )}
-            </ul>
-            <p className="fw-semibold small mb-2" style={{ color: 'var(--hw-navy)' }}>
-              Caseload snapshot
-            </p>
-            {caseloadLoading && <p className="small text-muted mb-0">Loading caseload fields…</p>}
-            {!caseloadLoading && !caseloadRow && (
-              <p className="small text-muted mb-0">
-                No matching resident row found for this code (check permissions or spelling).
-              </p>
-            )}
-            {!caseloadLoading && caseloadRow && (
-              <ul className="small text-muted mb-0 ps-3">
-                <li>
-                  <strong className="text-body">Case status:</strong> {caseloadRow.caseStatus?.trim() || '—'}
-                </li>
-                <li>
-                  <strong className="text-body">Category:</strong> {caseloadRow.caseCategory?.trim() || '—'}
-                </li>
-                <li>
-                  <strong className="text-body">Safehouse:</strong>{' '}
-                  {caseloadRow.safehouseId != null && caseloadRow.safehouseId > 0
-                    ? `#${caseloadRow.safehouseId}`
-                    : '—'}
-                </li>
-                <li>
-                  <strong className="text-body">Assigned social worker:</strong>{' '}
-                  {caseloadRow.assignedSocialWorker?.trim() || '—'}
-                </li>
-              </ul>
-            )}
-          </div>
-          <div className="modal-footer" style={{ borderTop: '1px solid var(--hw-bg-lavender2)' }}>
-            <Link to="/admin/residents" className="btn btn-outline-primary btn-sm" onClick={onClose}>
-              Open full caseload
-            </Link>
-            <button type="button" className="btn btn-outline-secondary" onClick={onClose}>
-              Close
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 function AdminDonorQuickModal({
@@ -723,7 +694,7 @@ function AdminDonorQuickModal({
                     ? 'Total given (known amounts):'
                     : 'Total (recent sample):'}
                 </strong>{' '}
-                {fmtDonationMoney(sumSample, cur)}
+                {formatAmountMaybePhpAndUsd(sumSample, cur)}
               </li>
             )}
           </ul>
@@ -811,13 +782,25 @@ function AdminDonorQuickModal({
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
+interface LiveStats {
+  successfulReintegrations: number;
+}
+
 export default function AdminHomePage() {
   const { authSession } = useAuth();
 
-  const [residentQuick, setResidentQuick] = useState<{
-    row: ResidentMlScoreRow;
-    totalScored: number | null;
-  } | null>(null);
+  const [liveStats, setLiveStats] = useState<LiveStats | null>(null);
+  const [residentCriticalCount, setResidentCriticalCount] = useState(0);
+  const [donorCriticalCount, setDonorCriticalCount] = useState(0);
+  const [unallocatedCount, setUnallocatedCount] = useState(0);
+  const [dashboardProfileId, setDashboardProfileId] = useState<number | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetchJson<LiveStats>('/api/public-impact/live-stats')
+      .then((s) => { if (!cancelled) setLiveStats(s); })
+      .catch(() => { /* non-critical — OKR card shows — on error */ });
+    return () => { cancelled = true; };
+  }, []);
   const [donorQuick, setDonorQuick] = useState<DonorChurnRow | null>(null);
 
   const [recentDonations, setRecentDonations] = useState<PagedResult<RecentDonationRow> | null>(null);
@@ -892,6 +875,136 @@ export default function AdminHomePage() {
           </p>
         </div>
 
+        {/* Zone 1 — Action Required */}
+        <div className="mb-5">
+          <p className="hw-eyebrow mb-3">Action Required</p>
+          <div className="row g-3">
+            <div className="col-12 col-lg-6">
+              <div
+                className="card border-0 rounded-3 h-100"
+                style={residentCriticalCount > 0 ? {
+                  boxShadow: '0 0 0 2px #dc2626, 0 4px 20px #dc262644',
+                  border: '1.5px solid #dc2626',
+                } : { boxShadow: '0 2px 8px rgba(30,58,95,0.07)' }}
+              >
+                <div className="card-body d-flex flex-column">
+                  <div className="d-flex align-items-center gap-2 mb-3">
+                    {residentCriticalCount > 0 && (
+                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#dc2626', flexShrink: 0, boxShadow: '0 0 6px 2px #dc262688' }} />
+                    )}
+                    <h3 className="h6 fw-semibold mb-0" style={{ color: 'var(--hw-navy)', flex: 1 }}>Residents needing attention</h3>
+                    {residentCriticalCount > 0 && (
+                      <span className="badge rounded-pill" style={{ background: '#dc2626', color: 'white', fontSize: '0.62rem' }}>
+                        {residentCriticalCount} Critical
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex-grow-1 small">
+                    <ResidentsNeedingAttentionWidget
+                      onCriticalCount={setResidentCriticalCount}
+                      onOpenProfile={setDashboardProfileId}
+                    />
+                  </div>
+                  <Link to="/admin/residents" className="small fw-semibold text-decoration-none mt-3" style={{ color: 'var(--hw-purple)' }}>
+                    Open caseload →
+                  </Link>
+                </div>
+              </div>
+            </div>
+            <div className="col-12 col-lg-6">
+              <div
+                className="card border-0 rounded-3 h-100"
+                style={unallocatedCount > 0 ? {
+                  boxShadow: '0 0 0 2px #dc2626, 0 4px 20px #dc262644',
+                  border: '1.5px solid #dc2626',
+                } : { boxShadow: '0 2px 8px rgba(30,58,95,0.07)' }}
+              >
+                <div className="card-body d-flex flex-column">
+                  <div className="d-flex align-items-center gap-2 mb-3">
+                    {unallocatedCount > 0 && (
+                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#dc2626', flexShrink: 0, boxShadow: '0 0 6px 2px #dc262688' }} />
+                    )}
+                    <h3 className="h6 fw-semibold mb-0" style={{ color: 'var(--hw-navy)', flex: 1 }}>Donations to allocate</h3>
+                    {unallocatedCount > 0 && (
+                      <span className="badge rounded-pill" style={{ background: '#dc2626', color: 'white', fontSize: '0.62rem' }}>
+                        {unallocatedCount} unallocated
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex-grow-1 small">
+                    <UnallocatedDonationsWidget onUnallocatedCount={setUnallocatedCount} />
+                  </div>
+                  <Link to="/admin/donations/allocations" className="small fw-semibold text-decoration-none mt-3" style={{ color: 'var(--hw-purple)' }}>
+                    Open allocations →
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* OKR — Primary Success Metric */}
+        <div className="mb-4">
+          <Link to="/admin/residents?caseStatus=Closed" className="text-decoration-none">
+            <div
+              className="card border-0 shadow-sm rounded-3"
+              style={{
+                borderTop: '4px solid #D97706',
+                boxShadow: '0 4px 20px rgba(217,119,6,0.15)',
+                background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
+                transition: 'transform 0.15s, box-shadow 0.15s',
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
+                (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 28px rgba(217,119,6,0.22)';
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.transform = '';
+                (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 20px rgba(217,119,6,0.15)';
+              }}
+            >
+              <div className="card-body d-flex align-items-center gap-4 py-3 px-4">
+                <div
+                  className="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0"
+                  style={{ width: 56, height: 56, background: 'rgba(217,119,6,0.12)', fontSize: '1.6rem' }}
+                >
+                  <i className="bi bi-star-fill" style={{ color: '#D97706' }} />
+                </div>
+                <div className="flex-grow-1">
+                  <div className="d-flex align-items-center gap-2 mb-1">
+                    <span
+                      className="badge rounded-pill"
+                      style={{ background: '#D97706', color: 'white', fontSize: '0.62rem', letterSpacing: '0.1em', textTransform: 'uppercase' }}
+                    >
+                      ★ Primary Success Metric · OKR
+                    </span>
+                  </div>
+                  <div className="d-flex align-items-baseline gap-3">
+                    <span
+                      className="fw-bold"
+                      style={{ fontSize: '2.4rem', color: '#92400e', lineHeight: 1, fontFamily: 'Poppins, sans-serif' }}
+                    >
+                      {liveStats != null ? liveStats.successfulReintegrations : '—'}
+                    </span>
+                    <span className="fw-semibold" style={{ color: '#92400e', fontSize: '1rem' }}>
+                      Successful Reintegrations
+                    </span>
+                  </div>
+                  <p className="small mb-0 mt-1" style={{ color: '#78350f', maxWidth: 680 }}>
+                    Children who have completed their full reintegration plan and returned to a stable, safe life.
+                    Every program, staff hour, and donor dollar exists to move this number up — it is the ultimate measure of our mission's success.
+                  </p>
+                </div>
+                <div className="flex-shrink-0 d-none d-md-block text-end" style={{ minWidth: 140 }}>
+                  <p className="small fw-semibold mb-0" style={{ color: '#92400e' }}>
+                    OKR: Maximize children who successfully return to family or independent life
+                  </p>
+                </div>
+              </div>
+            </div>
+          </Link>
+        </div>
+
         {/* Metric cards */}
         <div className="row g-3 mb-5">
           <MetricCard
@@ -908,7 +1021,7 @@ export default function AdminHomePage() {
             metric={activeResidents}
             accentColor="var(--hw-teal)"
             icon="clipboard-data"
-            linkTo="/admin/residents"
+            linkTo="/admin/residents?caseStatus=Active"
           />
           <MetricCard
             label="Counseling sessions logged"
@@ -928,23 +1041,16 @@ export default function AdminHomePage() {
           />
         </div>
 
-        {/* Priority & Insights — staff-only API; failures are contained per widget */}
+        {/* ML Insights — donors + social recommendation */}
         <div className="mb-5">
-          <p className="hw-eyebrow mb-3">Priority &amp; Insights</p>
+          <p className="hw-eyebrow mb-3">ML Insights</p>
           <div className="row g-3">
-            <MlSectionCard
-              title="Residents needing attention"
-              footerLink={{ to: '/admin/residents', label: 'Open caseload' }}
-            >
-              <ResidentsNeedingAttentionWidget
-                onSelectResident={(row, totalScored) => setResidentQuick({ row, totalScored })}
-              />
-            </MlSectionCard>
             <MlSectionCard
               title="Donors needing outreach"
               footerLink={{ to: '/admin/donations', label: 'Open supporters' }}
+              alertBadge={donorCriticalCount > 0 ? { count: donorCriticalCount, color: '#dc2626', label: 'Critical' } : null}
             >
-              <AtRiskDonorsWidget onSelectDonor={(d) => setDonorQuick(d)} />
+              <AtRiskDonorsWidget onCriticalCount={setDonorCriticalCount} onSelectDonor={(d) => setDonorQuick(d)} />
             </MlSectionCard>
             <MlSectionCard
               title="Recommended next post"
@@ -1005,7 +1111,7 @@ export default function AdminHomePage() {
                             </td>
                             <td className="small">{d.donationType ?? '—'}</td>
                             <td className="small tabular-nums">
-                              {fmtDonationMoney(d.amount != null ? Number(d.amount) : null, d.currencyCode ?? 'PHP')}
+                              {formatAmountMaybePhpAndUsd(d.amount != null ? Number(d.amount) : null, d.currencyCode ?? 'PHP')}
                             </td>
                             <td className="pe-4 small text-muted">{d.campaignName ?? '—'}</td>
                           </tr>
@@ -1091,8 +1197,11 @@ export default function AdminHomePage() {
         </div>
       </div>
 
-      <AdminResidentQuickModal selection={residentQuick} onClose={() => setResidentQuick(null)} />
       <AdminDonorQuickModal selection={donorQuick} onClose={() => setDonorQuick(null)} />
+      <ResidentProfileModal
+        residentId={dashboardProfileId}
+        onClose={() => setDashboardProfileId(null)}
+      />
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { fetchJson, postJson } from './apiClient';
 
 /** Row from GET /api/ml/residents/current-scores or priority (camelCase from ASP.NET). */
 export interface ResidentMlScoreRow {
+  residentId?: number | null;
   residentCode: string;
   asOfDate?: string | null;
   reintegrationReadinessScore: number;
@@ -28,20 +29,8 @@ export interface DonorChurnRow {
 
 export type MlGoal = 'donations' | 'awareness' | 'mixed';
 
-export interface SocialFixedInputsRequest {
-  contentTopic?: string | null;
-  platform?: string | null;
-  postType?: string | null;
-  mediaType?: string | null;
-  hasCallToAction?: boolean | null;
-  callToActionType?: string | null;
-  featuresResidentStory?: boolean | null;
-  postHour?: number | null;
-}
-
 export interface SocialRecommendRequest {
   goal: MlGoal;
-  fixedInputs?: SocialFixedInputsRequest;
   topK: number;
 }
 

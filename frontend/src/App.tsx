@@ -195,6 +195,7 @@ function App() {
               <Route path="donations/contributions" element={<ContributionsPage />} />
               <Route path="donations/allocations" element={<AllocationsPage />} />
               <Route path="residents" element={<ResidentsListPage />} />
+              <Route path="residents/:id" element={<ResidentsListPage />} />
               <Route path="residents/process-recordings" element={<ProcessRecordingPage />} />
               <Route path="residents/visits-conferences" element={<ResidentVisitsAndConferencesPage />} />
               <Route path="residents/:id/process" element={<ProcessRecordingPage />} />

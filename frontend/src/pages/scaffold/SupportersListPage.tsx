@@ -6,7 +6,7 @@ import { ErrorState, LoadingState } from '../../components/common/AsyncStatus';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import { buildDonorMlMap, getCurrentDonorScores, type DonorChurnRow } from '../../lib/mlApi';
 import { formatDonorOutreachSummary } from '../../lib/mlDisplayHelpers';
-import { formatPhpAndUsd } from '../../lib/currency';
+import { formatAmountMaybePhpAndUsd } from '../../lib/currency';
 
 /* ── API shape (camelCase from ASP.NET) ─────────────────────── */
 interface SupporterApi {
@@ -47,7 +47,7 @@ const TYPE_COLORS: Record<string, { bg: string; text: string }> = {
   MonetaryDonor: { bg: '#DCFCE7', text: '#166534' },
   Volunteer: { bg: '#DBEAFE', text: '#1E40AF' },
   InKindDonor: { bg: '#FEF9C3', text: '#854D0E' },
-  SocialMediaAdvocate: { bg: '#FFE4E6', text: '#9F1239' },
+  SocialMediaAdvocate: { bg: '#E0F2FE', text: '#0369A1' },
   PartnerOrganization: { bg: '#F3E8FF', text: '#6B21A8' },
 };
 
@@ -109,8 +109,8 @@ function SupporterKpiStrip({
         { label: 'Monetary donors', value: String(monetary), accent: '#0D9488', icon: 'cash-stack' },
         { label: 'Volunteers', value: String(volunteers), accent: '#2563EB', icon: 'heart' },
         {
-          label: 'Monetary gifts (PHP)',
-          value: formatPhpAndUsd(monetaryTotalPhp),
+          label: 'Monetary gifts (USD)',
+          value: formatAmountMaybePhpAndUsd(monetaryTotalPhp, 'PHP'),
           sub: 'loaded gifts total',
           accent: '#7C3AED',
           icon: 'wallet2',
@@ -156,8 +156,8 @@ export default function SupportersListPage() {
   const [typeFilter, setTypeFilter] = useState<string>('All');
   const [statusFilter, setStatusFilter] = useState<string>('All');
   const [search, setSearch] = useState('');
-  /** When true, sort list by ML outreach priority (lower rank = higher churn priority). */
-  const [sortByMlRisk, setSortByMlRisk] = useState(false);
+  /** When true, sort list by ML outreach priority (lower rank = higher churn priority). Defaults on. */
+  const [sortByMlRisk, setSortByMlRisk] = useState(true);
   const [donorMlById, setDonorMlById] = useState<Map<number, DonorChurnRow>>(() => new Map());
   const [mlLoadError, setMlLoadError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -385,9 +385,17 @@ export default function SupportersListPage() {
           <>
             <SupporterKpiStrip supporters={supporters} monetaryTotalPhp={monetaryTotalPhp} />
 
-            {donorMlById.size > 0 && (
-              <div
+            {donorMlById.size > 0 && mlCriticalOrHighCount > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSortByMlRisk(true);
+                  document.getElementById('supporter-cards')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }}
                 style={{
+                  display: 'block',
+                  width: '100%',
+                  textAlign: 'left',
                   background: 'linear-gradient(90deg, #FEF2F2 0%, #FFF7ED 100%)',
                   borderRadius: 12,
                   padding: '12px 18px',
@@ -395,12 +403,17 @@ export default function SupportersListPage() {
                   marginBottom: 20,
                   fontSize: 13,
                   color: '#7F1D1D',
+                  cursor: 'pointer',
+                  transition: 'box-shadow 0.15s',
                 }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = '0 0 0 2px #dc2626aa'; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = ''; }}
               >
+                <i className="bi bi-exclamation-triangle-fill me-2" />
                 <strong>Donors needing outreach:</strong> {mlCriticalOrHighCount} supporter
                 {mlCriticalOrHighCount !== 1 ? 's' : ''} scored Critical or High churn risk (
-                {donorMlById.size} total scored).
-              </div>
+                {donorMlById.size} total scored). <span style={{ opacity: 0.7 }}>Show by priority →</span>
+              </button>
             )}
 
             <div
@@ -682,13 +695,18 @@ export default function SupportersListPage() {
                     }
                   }
                 `}</style>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
+                <div id="supporter-cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
                 {pagedSupporters.map((s) => {
                   const st = s.supporterType ?? '';
                   const tc = TYPE_COLORS[st] ?? { bg: '#F1F5F9', text: '#475569' };
                   const sc = STATUS_COLORS[s.status ?? ''] ?? STATUS_COLORS.Inactive;
                   const dm = donorMlById.get(s.supporterId);
                   const churnColors = dm ? CHURN_BAND_COLORS[dm.riskBand] ?? { bg: '#F1F5F9', text: '#475569' } : null;
+                  const cardGlow = dm?.riskBand === 'Critical'
+                    ? '0 0 0 2px #dc2626, 0 0 18px 2px rgba(220,38,38,0.28)'
+                    : dm?.riskBand === 'High'
+                    ? '0 0 0 1.5px #d97706, 0 0 12px 1px rgba(217,119,6,0.18)'
+                    : '0 2px 10px rgba(30,58,95,0.06)';
                   const display = (s.displayName ?? 'Unknown').trim();
                   const initials = display
                     .split(/\s+/)
@@ -702,14 +720,15 @@ export default function SupportersListPage() {
                       key={s.supporterId}
                       className="supporter-card-netflix"
                       style={{
-                        background: '#fff',
+                        background: dm?.riskBand === 'Critical' ? '#fff8f8' : '#fff',
                         borderRadius: 14,
                         padding: 20,
-                        border: '1px solid #E2E8F0',
-                        boxShadow: '0 2px 10px rgba(30,58,95,0.06)',
+                        border: dm?.riskBand === 'Critical' ? '1px solid #fca5a5' : '1px solid #E2E8F0',
+                        boxShadow: cardGlow,
                         display: 'flex',
                         flexDirection: 'column',
                         gap: 12,
+                        transition: 'box-shadow 0.2s',
                       }}
                     >
                       <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
@@ -848,7 +867,7 @@ export default function SupportersListPage() {
                         {aggRow && aggRow.totalPhp > 0 && (
                           <span style={{ color: '#166534', fontWeight: 600 }}>
                             <i className="bi bi-wallet2 me-1" aria-hidden />
-                            {formatPhpAndUsd(aggRow.totalPhp)} monetary (tracked)
+                            {formatAmountMaybePhpAndUsd(aggRow.totalPhp, 'PHP')} monetary (tracked)
                           </span>
                         )}
                         {aggRow?.lastGift && (

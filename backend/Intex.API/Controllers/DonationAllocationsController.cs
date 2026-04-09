@@ -104,6 +104,59 @@ public class DonationAllocationsController(AppDbContext db, StaffScopeResolver s
         await db.SaveChangesAsync(cancellationToken);
         return CreatedAtAction(nameof(GetPage), new { }, allocation);
     }
+
+    [HttpPut("{id:int}")]
+    [Authorize(Policy = AuthPolicies.StaffWrite)]
+    [ProducesResponseType(typeof(DonationAllocation), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<DonationAllocation>> Update(
+        int id,
+        [FromBody] DonationAllocation body,
+        CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var existing = await db.DonationAllocations.FindAsync([id], cancellationToken);
+        if (existing is null)
+            return NotFound();
+
+        var scope = await scopeResolver.GetForUserAsync(User, cancellationToken);
+        if (!scope.IsAdmin && !scope.SafehouseIds.Contains(existing.SafehouseId))
+            return Forbid();
+
+        existing.SafehouseId = body.SafehouseId;
+        existing.DonationId = body.DonationId;
+        existing.ProgramArea = body.ProgramArea;
+        existing.AmountAllocated = body.AmountAllocated;
+        existing.AllocationDate = body.AllocationDate;
+        existing.AllocationNotes = body.AllocationNotes;
+
+        await db.SaveChangesAsync(cancellationToken);
+        return Ok(existing);
+    }
+
+    [HttpDelete("{id:int}")]
+    [Authorize(Policy = AuthPolicies.StaffWrite)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
+    {
+        var existing = await db.DonationAllocations.FindAsync([id], cancellationToken);
+        if (existing is null)
+            return NotFound();
+
+        var scope = await scopeResolver.GetForUserAsync(User, cancellationToken);
+        if (!scope.IsAdmin && !scope.SafehouseIds.Contains(existing.SafehouseId))
+            return Forbid();
+
+        db.DonationAllocations.Remove(existing);
+        await db.SaveChangesAsync(cancellationToken);
+        return NoContent();
+    }
 }
 
 public sealed class DonationAllocationSummary
