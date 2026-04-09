@@ -95,11 +95,11 @@ function SessionKpiStrip({
   return (
     <AdminKpiStrip
       items={[
-        { label: 'Sessions on page', value: String(total), accent: '#1E3A5F', icon: 'clipboard2-data' },
-        { label: 'Avg duration', value: `${avgDur} min`, accent: '#1E40AF', icon: 'stopwatch' },
-        { label: 'Progress noted', value: String(progressCount), accent: '#166534', icon: 'check-circle', onClick: () => onToggle('progress'), active: quickFilter === 'progress' },
-        { label: 'Concerns flagged', value: String(concernsCount), accent: '#991B1B', icon: 'exclamation-triangle', onClick: () => onToggle('concerns'), active: quickFilter === 'concerns' },
-        { label: 'Referrals made', value: String(referralCount), accent: '#6B21A8', icon: 'link-45deg', onClick: () => onToggle('referral'), active: quickFilter === 'referral' },
+        { label: 'Progress noted', value: String(progressCount), accent: '#166534', icon: 'check-circle', onClick: () => onToggle('progress'), active: quickFilter === 'progress', group: 'filterable' },
+        { label: 'Concerns flagged', value: String(concernsCount), accent: '#991B1B', icon: 'exclamation-triangle', onClick: () => onToggle('concerns'), active: quickFilter === 'concerns', group: 'filterable' },
+        { label: 'Referrals made', value: String(referralCount), accent: '#6B21A8', icon: 'link-45deg', onClick: () => onToggle('referral'), active: quickFilter === 'referral', group: 'filterable' },
+        { label: 'Sessions', value: String(total), accent: '#1E3A5F', icon: 'clipboard2-data', group: 'info' },
+        { label: 'Avg duration', value: `${avgDur} min`, accent: '#1E40AF', icon: 'stopwatch', group: 'info' },
       ]}
     />
   );

@@ -291,13 +291,15 @@ export default function ContributionsPage() {
                   sub: 'Monetary gift rows only',
                   accent: '#059669',
                   icon: 'cash-stack',
+                  group: 'info',
                 },
                 {
-                  label: 'All gift records',
+                  label: 'Gift records',
                   value: String(kpis.count),
-                  sub: 'loaded page',
+                  sub: 'matching current search',
                   accent: '#1E3A5F',
                   icon: 'clipboard2-data',
+                  group: 'info',
                 },
                 {
                   label: 'Monetary rows',
@@ -306,6 +308,7 @@ export default function ContributionsPage() {
                   icon: 'wallet2',
                   onClick: () => { setTypeFilter(prev => prev === 'Monetary' ? 'All' : 'Monetary'); setPage(1); },
                   active: typeFilter === 'Monetary',
+                  group: 'filterable',
                 },
                 {
                   label: 'Gift types in data',
@@ -313,6 +316,7 @@ export default function ContributionsPage() {
                   sub: 'distinct type values',
                   accent: '#7C3AED',
                   icon: 'tags',
+                  group: 'info',
                 },
               ]}
             />
@@ -484,24 +488,29 @@ export default function ContributionsPage() {
 
             <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(30,58,95,0.06)', overflow: 'hidden' }}>
               <div style={{ overflowX: 'auto' }}>
-                <table className="table table-sm table-hover mb-0" style={{ fontSize: 13 }}>
-                  <thead className="table-light">
-                    <tr>
-                      <th>Gift ID</th>
-                      <th>Date</th>
-                      <th>Supporter</th>
-                      <th>Type</th>
-                      <th>Cash amount</th>
-                      <th>Quantity</th>
-                      <th>Campaign</th>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ background: '#F8FAFC', borderBottom: '2px solid #E2E8F0' }}>
+                      <th style={{ padding: '12px 16px', color: '#475569', fontWeight: 700, fontSize: 12 }}>Gift ID</th>
+                      <th style={{ padding: '12px 16px', color: '#475569', fontWeight: 700, fontSize: 12 }}>Date</th>
+                      <th style={{ padding: '12px 16px', color: '#475569', fontWeight: 700, fontSize: 12 }}>Supporter</th>
+                      <th style={{ padding: '12px 16px', color: '#475569', fontWeight: 700, fontSize: 12 }}>Type</th>
+                      <th style={{ padding: '12px 16px', color: '#475569', fontWeight: 700, fontSize: 12 }}>Cash amount</th>
+                      <th style={{ padding: '12px 16px', color: '#475569', fontWeight: 700, fontSize: 12 }}>Quantity</th>
+                      <th style={{ padding: '12px 16px', color: '#475569', fontWeight: 700, fontSize: 12 }}>Campaign</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {pageRows.map((d) => (
+                    {pageRows.map((d, idx) => (
                       <tr
                         key={d.donationId}
                         tabIndex={0}
-                        style={{ cursor: 'pointer' }}
+                        style={{
+                          cursor: 'pointer',
+                          background: idx % 2 === 0 ? '#fff' : '#FAFAFA',
+                          borderBottom: '1px solid #F1F5F9',
+                          transition: 'background 0.15s',
+                        }}
                         onClick={() => setDetailDonation(d)}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' || e.key === ' ') {
@@ -510,18 +519,20 @@ export default function ContributionsPage() {
                           }
                         }}
                         title="View full gift details"
+                        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#F1F5F9'; }}
+                        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = idx % 2 === 0 ? '#fff' : '#FAFAFA'; }}
                       >
-                        <td className="text-muted">{d.donationId}</td>
-                        <td>
+                        <td style={{ padding: '12px 16px', color: '#64748B', fontWeight: 600 }}>{d.donationId}</td>
+                        <td style={{ padding: '12px 16px', color: '#1E3A5F', fontWeight: 600, whiteSpace: 'nowrap' }}>
                           {d.donationDate
                             ? new Date(d.donationDate).toLocaleDateString()
                             : '—'}
                         </td>
-                        <td className="fw-semibold">{supporterName(d.supporter ?? undefined)}</td>
-                        <td>{d.donationType ?? '—'}</td>
-                        <td className="tabular-nums">{formatDonationCashAmountCell(d)}</td>
-                        <td className="tabular-nums">{formatDonationQuantityCell(d)}</td>
-                        <td>{d.campaignName ?? '—'}</td>
+                        <td style={{ padding: '12px 16px', color: '#1E3A5F', fontWeight: 700 }}>{supporterName(d.supporter ?? undefined)}</td>
+                        <td style={{ padding: '12px 16px', color: '#475569' }}>{d.donationType ?? '—'}</td>
+                        <td style={{ padding: '12px 16px' }} className="tabular-nums">{formatDonationCashAmountCell(d)}</td>
+                        <td style={{ padding: '12px 16px' }} className="tabular-nums">{formatDonationQuantityCell(d)}</td>
+                        <td style={{ padding: '12px 16px', color: '#64748B' }}>{d.campaignName ?? '—'}</td>
                       </tr>
                     ))}
                   </tbody>
