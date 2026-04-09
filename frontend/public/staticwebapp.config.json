@@ -3,31 +3,31 @@
     {
       "route": "/assets/*.js",
       "headers": {
-        "Content-Type": "text/javascript; charset=utf-8"
+        "Content-Type": "application/javascript"
       }
     },
     {
       "route": "/assets/*.mjs",
       "headers": {
-        "Content-Type": "text/javascript; charset=utf-8"
+        "Content-Type": "application/javascript"
       }
     },
     {
       "route": "/*.js",
       "headers": {
-        "Content-Type": "text/javascript; charset=utf-8"
+        "Content-Type": "application/javascript"
       }
     },
     {
       "route": "/*.mjs",
       "headers": {
-        "Content-Type": "text/javascript; charset=utf-8"
+        "Content-Type": "application/javascript"
       }
     }
   ],
   "mimeTypes": {
-    ".js": "text/javascript; charset=utf-8",
-    ".mjs": "text/javascript; charset=utf-8",
+    ".js": "application/javascript",
+    ".mjs": "application/javascript",
     ".css": "text/css",
     ".svg": "image/svg+xml",
     ".woff2": "font/woff2",
