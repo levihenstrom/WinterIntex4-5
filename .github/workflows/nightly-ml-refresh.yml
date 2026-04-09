@@ -166,6 +166,43 @@ jobs:
           fi
           echo "=== Docker push succeeded ==="
 
+      - name: Container App deploy context (debug)
+        if: env.IMAGE_TAG_SHA != ''
+        run: |
+          set -e
+          echo "Deploy target (from GitHub secrets mapped to env):"
+          echo "  AZURE_RESOURCE_GROUP=${AZURE_RESOURCE_GROUP}"
+          echo "  AZURE_CONTAINERAPP_NAME=${AZURE_CONTAINERAPP_NAME}"
+          if [ -z "${AZURE_RESOURCE_GROUP}" ]; then
+            echo "AZURE_RESOURCE_GROUP is empty — verify secret AZURE_RESOURCE_GROUP."
+          fi
+          if [ -z "${AZURE_CONTAINERAPP_NAME}" ]; then
+            echo "AZURE_CONTAINERAPP_NAME is empty — verify secret AZURE_CONTAINERAPP_NAME."
+          fi
+          if [ -n "${AZURE_RESOURCE_GROUP}" ]; then
+            echo "=== az containerapp list --resource-group \"${AZURE_RESOURCE_GROUP}\" ==="
+            az containerapp list --resource-group "$AZURE_RESOURCE_GROUP" -o table
+          else
+            echo "Skipping containerapp list (AZURE_RESOURCE_GROUP not set)."
+          fi
+
+      - name: Validate Container App exists
+        if: env.IMAGE_TAG_SHA != ''
+        run: |
+          if [ -z "${AZURE_CONTAINERAPP_NAME}" ] || [ -z "${AZURE_RESOURCE_GROUP}" ]; then
+            echo "AZURE_CONTAINERAPP_NAME or AZURE_RESOURCE_GROUP not set; skipping container app validation."
+            exit 0
+          fi
+          echo "Checking container app exists: resource_group=${AZURE_RESOURCE_GROUP} containerapp_name=${AZURE_CONTAINERAPP_NAME}"
+          if ! az containerapp show --name "${AZURE_CONTAINERAPP_NAME}" --resource-group "${AZURE_RESOURCE_GROUP}"; then
+            echo "::error::Container App not found."
+            echo "  resource_group: ${AZURE_RESOURCE_GROUP}"
+            echo "  containerapp_name: ${AZURE_CONTAINERAPP_NAME}"
+            echo "Confirm GitHub secrets AZURE_RESOURCE_GROUP and AZURE_CONTAINERAPP_NAME match a Container App in the subscription used by azure/login (OIDC)."
+            exit 1
+          fi
+          echo "Container App exists: ${AZURE_CONTAINERAPP_NAME}"
+
       - name: Update Azure Container App image
         if: env.IMAGE_TAG_SHA != ''
         run: |
