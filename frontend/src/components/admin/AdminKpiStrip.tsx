@@ -10,6 +10,8 @@ export interface AdminKpiItem {
   icon?: string;
   /** When provided, the card renders as a clickable button. */
   onClick?: () => void;
+  /** Highlights the card as the currently active filter. */
+  active?: boolean;
 }
 
 const stripStyle: CSSProperties = {
@@ -67,6 +69,7 @@ export default function AdminKpiStrip({ items }: { items: AdminKpiItem[] }) {
                 cursor: 'pointer',
                 textAlign: 'left',
                 transition: 'box-shadow 0.15s, transform 0.15s',
+                ...(k.active ? { border: `2px solid ${k.accent ?? '#1E3A5F'}`, boxShadow: `0 0 0 3px ${k.accent ?? '#1E3A5F'}22` } : {}),
               }}
               onMouseEnter={(e) => {
                 (e.currentTarget as HTMLElement).style.boxShadow = `0 4px 16px ${k.accent ?? '#1E3A5F'}22`;

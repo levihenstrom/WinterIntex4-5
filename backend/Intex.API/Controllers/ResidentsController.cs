@@ -138,7 +138,69 @@ public class ResidentsController(AppDbContext db, StaffScopeResolver scopeResolv
             })
             .ToListAsync(cancellationToken);
 
-        return Ok(new ResidentDetailResponse { Resident = resident, Incidents = incidents });
+        var educationRecords = await db.EducationRecords.AsNoTracking()
+            .Where(e => e.ResidentId == id)
+            .OrderByDescending(e => e.RecordDate)
+            .Select(e => new EducationRecordDto
+            {
+                EducationRecordId = e.EducationRecordId,
+                RecordDate = e.RecordDate,
+                EducationLevel = e.EducationLevel,
+                SchoolName = e.SchoolName,
+                EnrollmentStatus = e.EnrollmentStatus,
+                AttendanceRate = e.AttendanceRate,
+                ProgressPercent = e.ProgressPercent,
+                CompletionStatus = e.CompletionStatus,
+                Notes = e.Notes,
+            })
+            .ToListAsync(cancellationToken);
+
+        var healthRecords = await db.HealthWellbeingRecords.AsNoTracking()
+            .Where(h => h.ResidentId == id)
+            .OrderByDescending(h => h.RecordDate)
+            .Select(h => new HealthRecordDto
+            {
+                HealthRecordId = h.HealthRecordId,
+                RecordDate = h.RecordDate,
+                GeneralHealthScore = h.GeneralHealthScore,
+                NutritionScore = h.NutritionScore,
+                SleepQualityScore = h.SleepQualityScore,
+                EnergyLevelScore = h.EnergyLevelScore,
+                HeightCm = h.HeightCm,
+                WeightKg = h.WeightKg,
+                Bmi = h.Bmi,
+                MedicalCheckupDone = h.MedicalCheckupDone,
+                DentalCheckupDone = h.DentalCheckupDone,
+                PsychologicalCheckupDone = h.PsychologicalCheckupDone,
+                Notes = h.Notes,
+            })
+            .ToListAsync(cancellationToken);
+
+        var interventionPlans = await db.InterventionPlans.AsNoTracking()
+            .Where(p => p.ResidentId == id)
+            .OrderByDescending(p => p.CreatedAt)
+            .Select(p => new InterventionPlanDto
+            {
+                PlanId = p.PlanId,
+                PlanCategory = p.PlanCategory,
+                PlanDescription = p.PlanDescription,
+                ServicesProvided = p.ServicesProvided,
+                TargetValue = p.TargetValue,
+                TargetDate = p.TargetDate,
+                Status = p.Status,
+                CaseConferenceDate = p.CaseConferenceDate,
+                CreatedAt = p.CreatedAt,
+            })
+            .ToListAsync(cancellationToken);
+
+        return Ok(new ResidentDetailResponse
+        {
+            Resident = resident,
+            Incidents = incidents,
+            EducationRecords = educationRecords,
+            HealthRecords = healthRecords,
+            InterventionPlans = interventionPlans,
+        });
     }
 }
 
@@ -146,6 +208,9 @@ public sealed class ResidentDetailResponse
 {
     public Resident Resident { get; set; } = null!;
     public List<IncidentReportListItemDto> Incidents { get; set; } = new();
+    public List<EducationRecordDto> EducationRecords { get; set; } = new();
+    public List<HealthRecordDto> HealthRecords { get; set; } = new();
+    public List<InterventionPlanDto> InterventionPlans { get; set; } = new();
 }
 
 public sealed class IncidentReportListItemDto
@@ -161,4 +226,47 @@ public sealed class IncidentReportListItemDto
     public DateTime? ResolutionDate { get; set; }
     public string? ReportedBy { get; set; }
     public bool? FollowUpRequired { get; set; }
+}
+
+public sealed class EducationRecordDto
+{
+    public int EducationRecordId { get; set; }
+    public DateTime? RecordDate { get; set; }
+    public string? EducationLevel { get; set; }
+    public string? SchoolName { get; set; }
+    public string? EnrollmentStatus { get; set; }
+    public decimal? AttendanceRate { get; set; }
+    public decimal? ProgressPercent { get; set; }
+    public string? CompletionStatus { get; set; }
+    public string? Notes { get; set; }
+}
+
+public sealed class HealthRecordDto
+{
+    public int HealthRecordId { get; set; }
+    public DateTime? RecordDate { get; set; }
+    public decimal? GeneralHealthScore { get; set; }
+    public decimal? NutritionScore { get; set; }
+    public decimal? SleepQualityScore { get; set; }
+    public decimal? EnergyLevelScore { get; set; }
+    public decimal? HeightCm { get; set; }
+    public decimal? WeightKg { get; set; }
+    public decimal? Bmi { get; set; }
+    public bool? MedicalCheckupDone { get; set; }
+    public bool? DentalCheckupDone { get; set; }
+    public bool? PsychologicalCheckupDone { get; set; }
+    public string? Notes { get; set; }
+}
+
+public sealed class InterventionPlanDto
+{
+    public int PlanId { get; set; }
+    public string? PlanCategory { get; set; }
+    public string? PlanDescription { get; set; }
+    public string? ServicesProvided { get; set; }
+    public decimal? TargetValue { get; set; }
+    public DateTime? TargetDate { get; set; }
+    public string? Status { get; set; }
+    public DateTime? CaseConferenceDate { get; set; }
+    public DateTime? CreatedAt { get; set; }
 }

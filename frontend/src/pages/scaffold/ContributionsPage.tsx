@@ -259,6 +259,8 @@ export default function ContributionsPage() {
                   value: String(kpis.monetaryCount),
                   accent: '#D97706',
                   icon: 'wallet2',
+                  onClick: () => { setTypeFilter(prev => prev === 'Monetary' ? 'All' : 'Monetary'); setPage(1); },
+                  active: typeFilter === 'Monetary',
                 },
                 {
                   label: 'Gift types in data',
