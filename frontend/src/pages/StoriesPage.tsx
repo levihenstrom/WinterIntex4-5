@@ -1,229 +1,307 @@
+import { useState, useEffect, useRef } from 'react';
 import NavBar from '../components/hw/NavBar';
 import Footer from '../components/hw/Footer';
-import HealingWingsLogo from '../components/hw/HealingWingsLogo';
+import { useAuth } from '../context/AuthContext';
+import { fetchJson, postJson } from '../lib/apiClient';
 
-const STORIES = [
-  {
-    name: 'Maria, 14',
-    tag: 'Survivor · Cebu',
-    quote:
-      '"When I arrived at HealingWings, I was afraid of everything. Now I laugh every day. I am learning to paint and I dream of becoming a teacher."',
-    img: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&q=80',
-    color: '#0D9488',
-  },
-  {
-    name: 'Ana, 11',
-    tag: 'Survivor · Manila',
-    quote:
-      '"The counselors here never gave up on me. For the first time in my life I felt safe enough to sleep through the night."',
-    img: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&q=80',
-    color: '#6B21A8',
-  },
-  {
-    name: 'Grace, 16',
-    tag: 'Graduate · Davao',
-    quote:
-      '"I finished high school at the top of my class. HealingWings gave me the books, the tutors, and the belief that I could do it."',
-    img: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&q=80',
-    color: '#1E3A5F',
-  },
-  {
-    name: 'Joy, 13',
-    tag: 'Survivor · Iloilo',
-    quote:
-      '"I used to think nobody cared. Here, everyone knows my name. The staff pray with us, eat with us, celebrate with us."',
-    img: 'https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=400&q=80',
-    color: '#D97706',
-  },
-];
+interface Story {
+  storyId: number;
+  authorEmail: string | null;
+  authorName: string | null;
+  authorRole: string | null;
+  content: string;
+  createdAt: string;
+  likesCount: number;
+}
+
+const ROLE_COLOR: Record<string, { bg: string; color: string }> = {
+  Admin:     { bg: '#EDE9FE', color: '#6B21A8' },
+  Staff:     { bg: '#DBEAFE', color: '#1D4ED8' },
+  Donor:     { bg: '#D1FAE5', color: '#065F46' },
+  Volunteer: { bg: '#FEF3C7', color: '#92400E' },
+};
+
+function timeAgo(dateStr: string) {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1)  return 'just now';
+  if (mins < 60) return `${mins}m`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24)  return `${hrs}h`;
+  const days = Math.floor(hrs / 24);
+  if (days < 7)  return `${days}d`;
+  return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function initials(name: string | null, email: string | null) {
+  const src = name || email || '?';
+  return src.slice(0, 2).toUpperCase();
+}
+
+function avatarColor(str: string) {
+  const colors = ['#0D9488', '#1E3A5F', '#6B21A8', '#D97706', '#DC2626', '#059669'];
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  return colors[Math.abs(hash) % colors.length];
+}
+
+const MAX_CHARS = 500;
 
 export default function StoriesPage() {
+  const { isAuthenticated, authSession } = useAuth();
+  const [stories, setStories]     = useState<Story[]>([]);
+  const [loading, setLoading]     = useState(true);
+  const [draft, setDraft]         = useState('');
+  const [posting, setPosting]     = useState(false);
+  const [likedIds, setLikedIds]   = useState<Set<number>>(new Set());
+  const [error, setError]         = useState('');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => { load(); }, []);
+
+  async function load() {
+    setLoading(true);
+    try {
+      const data = await fetchJson<Story[]>('/api/stories');
+      setStories(data);
+    } catch {
+      // silently fail — stories are optional
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function post() {
+    if (!draft.trim() || draft.length > MAX_CHARS) return;
+    setPosting(true);
+    setError('');
+    try {
+      const displayName = authSession.email?.split('@')[0] ?? 'Anonymous';
+      const newStory = await postJson<Story>('/api/stories', {
+        content: draft.trim(),
+        authorName: displayName,
+      });
+      setStories(prev => [newStory, ...prev]);
+      setDraft('');
+    } catch (e: any) {
+      setError(e.message ?? 'Could not post. Please try again.');
+    } finally {
+      setPosting(false);
+    }
+  }
+
+  async function like(id: number) {
+    if (likedIds.has(id)) return;
+    setLikedIds(prev => new Set(prev).add(id));
+    try {
+      const res = await postJson<{ likes: number }>(`/api/stories/${id}/like`, {});
+      setStories(prev => prev.map(s => s.storyId === id ? { ...s, likesCount: res.likes } : s));
+    } catch {
+      setLikedIds(prev => { const n = new Set(prev); n.delete(id); return n; });
+    }
+  }
+
+  const remaining = MAX_CHARS - draft.length;
+
   return (
-    <div style={{ minHeight: '100vh', background: '#f8f9fb' }}>
+    <div style={{ minHeight: '100vh', background: '#f0f2f5' }}>
       <NavBar />
 
-      {/* Hero */}
-      <div
-        style={{
-          background: 'linear-gradient(135deg, #1E3A5F 0%, #6B21A8 100%)',
-          paddingTop: '7rem',
-          paddingBottom: '3.5rem',
-          textAlign: 'center',
-          color: 'white',
-        }}
-      >
-        <HealingWingsLogo size={52} style={{ marginBottom: 16 }} />
-        <h1
-          style={{
-            fontFamily: 'Poppins, sans-serif',
-            fontWeight: 800,
-            fontSize: 'clamp(1.8rem, 4vw, 2.8rem)',
-            margin: '0 0 12px',
-          }}
-        >
-          Stories of Hope
+      {/* Top banner */}
+      <div style={{
+        background: '#1E3A5F',
+        paddingTop: '5rem',
+        paddingBottom: '1.5rem',
+        textAlign: 'center',
+        color: 'white',
+        borderBottom: '1px solid rgba(255,255,255,0.1)',
+      }}>
+        <h1 style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 800,
+          fontSize: 'clamp(1.5rem, 3vw, 2.2rem)', margin: '0 0 6px' }}>
+          Community Stories
         </h1>
-        <p
-          style={{
-            fontSize: 16,
-            opacity: 0.85,
-            maxWidth: 520,
-            margin: '0 auto',
-            lineHeight: 1.6,
-          }}
-        >
-          Every child who walks through our doors carries a story of courage.
-          These are just a few of the lives you help change.
+        <p style={{ margin: 0, opacity: 0.7, fontSize: 14 }}>
+          Donors · Volunteers · Residents — share your voice
         </p>
       </div>
 
-      {/* Cards grid */}
-      <div
-        style={{
-          maxWidth: 1100,
-          margin: '0 auto',
-          padding: '3rem 1.5rem 4rem',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-          gap: 28,
-        }}
-      >
-        {STORIES.map((s) => (
-          <div
-            key={s.name}
-            style={{
-              background: 'white',
-              borderRadius: 20,
-              overflow: 'hidden',
-              boxShadow: '0 4px 24px rgba(30,58,95,0.08)',
-              display: 'flex',
-              flexDirection: 'column',
-            }}
-          >
-            {/* Photo */}
-            <div style={{ position: 'relative', height: 220 }}>
-              <img
-                src={s.img}
-                alt={s.name}
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              />
-              <div
+      <div style={{ maxWidth: 620, margin: '0 auto', padding: '1.5rem 1rem 4rem' }}>
+
+        {/* Compose box */}
+        {isAuthenticated ? (
+          <div style={{
+            background: 'white', borderRadius: 16,
+            boxShadow: '0 1px 6px rgba(0,0,0,0.08)',
+            marginBottom: 20, overflow: 'hidden',
+          }}>
+            <div style={{ padding: '16px 16px 0', display: 'flex', gap: 12 }}>
+              {/* Avatar */}
+              <div style={{
+                width: 42, height: 42, borderRadius: '50%', flexShrink: 0,
+                background: avatarColor(authSession.email ?? ''),
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'white', fontWeight: 800, fontSize: 14,
+              }}>
+                {initials(null, authSession.email)}
+              </div>
+
+              <textarea
+                ref={textareaRef}
+                value={draft}
+                onChange={e => setDraft(e.target.value)}
+                placeholder="Share your story, experience or message of hope…"
+                rows={3}
                 style={{
-                  position: 'absolute',
-                  inset: 0,
-                  background: 'linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 60%)',
+                  flex: 1, border: 'none', outline: 'none', resize: 'none',
+                  fontSize: 15, color: '#1E3A5F', lineHeight: 1.55,
+                  fontFamily: 'inherit', background: 'transparent',
+                  padding: '4px 0',
                 }}
               />
-              <div style={{ position: 'absolute', bottom: 14, left: 16 }}>
-                <p style={{ margin: 0, color: 'white', fontWeight: 800, fontSize: 17, fontFamily: 'Poppins, sans-serif' }}>
-                  {s.name}
-                </p>
-                <span
-                  style={{
-                    background: s.color,
-                    color: 'white',
-                    fontSize: 10,
-                    fontWeight: 700,
-                    padding: '2px 10px',
-                    borderRadius: 20,
-                    letterSpacing: '0.05em',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  {s.tag}
-                </span>
-              </div>
             </div>
 
-            {/* Quote */}
-            <div style={{ padding: '20px 20px 24px', flex: 1 }}>
-              <div
+            {/* Compose footer */}
+            <div style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              padding: '10px 16px 14px',
+              borderTop: draft ? '1px solid #f0f0f0' : 'none',
+            }}>
+              <span style={{
+                fontSize: 12, fontWeight: 600,
+                color: remaining < 50 ? (remaining < 0 ? '#DC2626' : '#D97706') : '#9CA3AF',
+              }}>
+                {draft ? `${remaining} characters left` : ''}
+              </span>
+              <button
+                onClick={post}
+                disabled={!draft.trim() || remaining < 0 || posting}
                 style={{
-                  width: 32,
-                  height: 3,
-                  background: s.color,
-                  borderRadius: 2,
-                  marginBottom: 14,
-                }}
-              />
-              <p
-                style={{
-                  margin: 0,
-                  color: '#374151',
-                  fontSize: 14,
-                  lineHeight: 1.75,
-                  fontStyle: 'italic',
+                  background: (!draft.trim() || remaining < 0 || posting) ? '#E5E7EB' : '#1E3A5F',
+                  color: (!draft.trim() || remaining < 0 || posting) ? '#9CA3AF' : 'white',
+                  border: 'none', borderRadius: 50,
+                  padding: '8px 22px', fontWeight: 700, fontSize: 14,
+                  cursor: (!draft.trim() || remaining < 0 || posting) ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s',
+                  display: 'flex', alignItems: 'center', gap: 8,
                 }}
               >
-                {s.quote}
-              </p>
+                {posting ? <><span className="spinner-border spinner-border-sm" /> Posting…</> : 'Post'}
+              </button>
             </div>
-          </div>
-        ))}
-      </div>
 
-      {/* CTA banner */}
-      <div
-        style={{
-          background: 'linear-gradient(135deg, #0D9488, #1E3A5F)',
-          textAlign: 'center',
-          padding: '3rem 1.5rem',
-          color: 'white',
-        }}
-      >
-        <p
-          style={{
-            fontSize: 11,
-            fontWeight: 700,
-            textTransform: 'uppercase',
-            letterSpacing: '0.2em',
-            opacity: 0.8,
-            marginBottom: 8,
-          }}
-        >
-          Make a difference today
-        </p>
-        <h2
-          style={{
-            fontFamily: 'Poppins, sans-serif',
-            fontWeight: 800,
-            fontSize: 'clamp(1.5rem, 3vw, 2.2rem)',
-            margin: '0 0 20px',
-          }}
-        >
-          Help write the next story of hope
-        </h2>
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-          <a
-            href="/#donate"
-            style={{
-              background: 'white',
-              color: '#1E3A5F',
-              borderRadius: 50,
-              padding: '12px 28px',
-              fontWeight: 700,
-              fontSize: 14,
-              textDecoration: 'none',
-            }}
-          >
-            Donate Now →
-          </a>
-          <a
-            href="/volunteer"
-            style={{
-              background: 'transparent',
-              color: 'white',
-              border: '2px solid rgba(255,255,255,0.6)',
-              borderRadius: 50,
-              padding: '12px 28px',
-              fontWeight: 700,
-              fontSize: 14,
-              textDecoration: 'none',
-            }}
-          >
-            Volunteer
-          </a>
-        </div>
+            {error && (
+              <p style={{ margin: '0 16px 12px', color: '#DC2626', fontSize: 12, fontWeight: 600 }}>{error}</p>
+            )}
+          </div>
+        ) : (
+          <div style={{
+            background: 'white', borderRadius: 16, padding: '20px',
+            textAlign: 'center', marginBottom: 20,
+            boxShadow: '0 1px 6px rgba(0,0,0,0.08)',
+          }}>
+            <p style={{ margin: '0 0 12px', color: '#6B7280', fontSize: 14 }}>
+              <strong>Sign in</strong> to share your own story with the community.
+            </p>
+            <a href="/login" style={{
+              background: '#1E3A5F', color: 'white', borderRadius: 50,
+              padding: '9px 24px', fontWeight: 700, fontSize: 13,
+              textDecoration: 'none', display: 'inline-block',
+            }}>
+              Sign In
+            </a>
+          </div>
+        )}
+
+        {/* Feed */}
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '3rem 0', color: '#9CA3AF' }}>
+            <div className="spinner-border spinner-border-sm me-2" role="status" />
+            Loading stories…
+          </div>
+        ) : stories.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '4rem 0', color: '#9CA3AF' }}>
+            <div style={{ fontSize: 48, marginBottom: 12 }}>🕊️</div>
+            <p style={{ fontWeight: 600, margin: 0 }}>No stories yet.</p>
+            <p style={{ margin: '4px 0 0', fontSize: 13 }}>Be the first to share!</p>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {stories.map(s => {
+              const roleStyle = ROLE_COLOR[s.authorRole ?? ''] ?? { bg: '#F3F4F6', color: '#374151' };
+              const liked = likedIds.has(s.storyId);
+              const avatarBg = avatarColor(s.authorEmail ?? s.storyId.toString());
+
+              return (
+                <div key={s.storyId} style={{
+                  background: 'white', borderRadius: 16,
+                  padding: '16px', boxShadow: '0 1px 6px rgba(0,0,0,0.07)',
+                  transition: 'box-shadow 0.2s',
+                }}>
+                  {/* Header */}
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 11, marginBottom: 10 }}>
+                    <div style={{
+                      width: 42, height: 42, borderRadius: '50%', flexShrink: 0,
+                      background: avatarBg, display: 'flex', alignItems: 'center',
+                      justifyContent: 'center', color: 'white', fontWeight: 800, fontSize: 14,
+                    }}>
+                      {initials(s.authorName, s.authorEmail)}
+                    </div>
+
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <span style={{ fontWeight: 700, color: '#1E3A5F', fontSize: 14 }}>
+                          {s.authorName ?? s.authorEmail?.split('@')[0] ?? 'Anonymous'}
+                        </span>
+                        {s.authorRole && (
+                          <span style={{
+                            background: roleStyle.bg, color: roleStyle.color,
+                            borderRadius: 20, padding: '1px 9px',
+                            fontSize: 10, fontWeight: 700,
+                            textTransform: 'uppercase', letterSpacing: '0.05em',
+                          }}>
+                            {s.authorRole}
+                          </span>
+                        )}
+                        <span style={{ color: '#9CA3AF', fontSize: 13 }}>·</span>
+                        <span style={{ color: '#9CA3AF', fontSize: 13 }}>{timeAgo(s.createdAt)}</span>
+                      </div>
+                      {s.authorEmail && (
+                        <p style={{ margin: 0, fontSize: 12, color: '#9CA3AF' }}>
+                          @{s.authorEmail.split('@')[0]}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Content */}
+                  <p style={{
+                    margin: '0 0 12px', fontSize: 15, color: '#1F2937',
+                    lineHeight: 1.65, whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+                  }}>
+                    {s.content}
+                  </p>
+
+                  {/* Actions */}
+                  <div style={{ display: 'flex', gap: 20, paddingTop: 8, borderTop: '1px solid #f3f4f6' }}>
+                    <button
+                      onClick={() => like(s.storyId)}
+                      disabled={liked}
+                      style={{
+                        background: 'none', border: 'none', cursor: liked ? 'default' : 'pointer',
+                        display: 'flex', alignItems: 'center', gap: 5,
+                        color: liked ? '#DC2626' : '#9CA3AF', fontSize: 13, fontWeight: 600,
+                        padding: '4px 0', transition: 'color 0.15s',
+                      }}
+                    >
+                      <i className={liked ? 'bi bi-heart-fill' : 'bi bi-heart'} style={{ fontSize: 15 }} />
+                      {s.likesCount > 0 && s.likesCount}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <Footer />

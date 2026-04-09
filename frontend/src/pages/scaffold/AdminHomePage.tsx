@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type MouseEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { fetchJson, fetchPaged, postJson, type PagedResult } from '../../lib/apiClient';
 import {
@@ -130,11 +130,11 @@ function QuickLink({ to, icon, title, description }: QuickLinkProps) {
           border: '1px solid rgba(107,33,168,0.08)',
           transition: 'border-color 0.2s, background 0.2s',
         }}
-        onMouseEnter={(e: React.MouseEvent) => {
+        onMouseEnter={(e: MouseEvent<HTMLElement>) => {
           (e.currentTarget as HTMLElement).style.borderColor = 'var(--hw-purple-soft)';
           (e.currentTarget as HTMLElement).style.background = 'var(--hw-bg-lavender)';
         }}
-        onMouseLeave={(e: React.MouseEvent) => {
+        onMouseLeave={(e: MouseEvent<HTMLElement>) => {
           (e.currentTarget as HTMLElement).style.borderColor = 'rgba(107,33,168,0.08)';
           (e.currentTarget as HTMLElement).style.background = 'var(--hw-bg-white)';
         }}
@@ -161,6 +161,9 @@ interface RecentDonationRow {
   supporter?: { displayName?: string | null; organizationName?: string | null } | null;
 }
 // ── Insights dashboard widgets (isolated fetch/error so one failure does not block others) ──
+
+// ── Insights dashboard widgets (isolated fetch/error so one failure does not block others) ──
+
 function ResidentsNeedingAttentionWidget({ onCriticalCount, onOpenProfile }: { onCriticalCount?: (n: number) => void; onOpenProfile?: (residentId: number) => void }) {
   const [rows, setRows] = useState<ResidentMlScoreRow[] | null>(null);
   const [totalScored, setTotalScored] = useState<number | null>(null);

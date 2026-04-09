@@ -16,6 +16,18 @@ const usdFormatter = new Intl.NumberFormat('en-US', {
   maximumFractionDigits: 2,
 });
 
+/** Whole peso amounts for tables and chart axes (keeps ticks readable). */
+const phpWholeFormatter = new Intl.NumberFormat('en-PH', {
+  style: 'currency',
+  currency: 'PHP',
+  maximumFractionDigits: 0,
+});
+
+export function formatPesoCompact(amount: number | null | undefined): string {
+  if (amount == null || Number.isNaN(Number(amount))) return '—';
+  return phpWholeFormatter.format(Number(amount));
+}
+
 export function formatUsd(amount: number | null | undefined): string {
   if (amount == null || Number.isNaN(Number(amount))) return '—';
   return usdFormatter.format(Number(amount));
@@ -35,7 +47,17 @@ export function formatUsdThousandsFromPhp(
 }
 
 /**
- * Display-only: PHP amounts convert to USD; other codes are formatted as USD (same numeric value).
+ * Treat the numeric amount as PHP (database / product default) and display USD only
+ * using {@link PHP_TO_USD_RATE}. Use for contribution amounts, estimates, and generic money columns.
+ */
+export function formatPhpOriginAsUsd(amount: number | null | undefined): string {
+  const usd = convertPhpToUsd(amount);
+  return usd == null ? '—' : formatUsd(usd);
+}
+
+/**
+ * PHP (or missing code, treated as PHP): convert to USD and show `$` only.
+ * Other ISO codes: format the numeric value as USD (same digits, USD style).
  */
 export function formatAmountMaybePhpAndUsd(
   amount: number | null | undefined,
@@ -44,8 +66,7 @@ export function formatAmountMaybePhpAndUsd(
   if (amount == null || Number.isNaN(Number(amount))) return '—';
   const code = (currencyCode ?? 'PHP').toUpperCase();
   if (code === 'PHP') {
-    const usd = convertPhpToUsd(amount);
-    return usd == null ? '—' : formatUsd(usd);
+    return formatPhpOriginAsUsd(amount);
   }
   return usdFormatter.format(Number(amount));
 }

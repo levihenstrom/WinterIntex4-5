@@ -1,4 +1,16 @@
 import type { AuthSession } from '../types/AuthSession';
+
+function normalizeAuthSession(raw: Partial<AuthSession> | null | undefined): AuthSession {
+  if (!raw) {
+    return { isAuthenticated: false, userName: null, email: null, roles: [] };
+  }
+  return {
+    isAuthenticated: Boolean(raw.isAuthenticated),
+    userName: raw.userName ?? null,
+    email: raw.email ?? null,
+    roles: Array.isArray(raw.roles) ? raw.roles : [],
+  };
+}
 import type { TwoFactorStatus } from '../types/TwoFactorStatus';
 import { API_BASE_URL as apiBaseUrl } from './apiBaseUrl';
 
@@ -103,7 +115,7 @@ export function getStoredSession(): AuthSession | null {
   try {
     const raw = window.localStorage.getItem(SESSION_KEY);
     if (!raw) return null;
-    return JSON.parse(raw) as AuthSession;
+    return normalizeAuthSession(JSON.parse(raw) as Partial<AuthSession>);
   } catch {
     return null;
   }
@@ -132,7 +144,7 @@ export async function getAuthSession(): Promise<AuthSession> {
   });
 
   if (response.ok) {
-    const session: AuthSession = await response.json();
+    const session = normalizeAuthSession((await response.json()) as Partial<AuthSession>);
     if (session.isAuthenticated) {
       return session;
     }
@@ -148,7 +160,7 @@ export async function getAuthSession(): Promise<AuthSession> {
     });
 
     if (refreshResponse.ok) {
-      return refreshResponse.json();
+      return normalizeAuthSession((await refreshResponse.json()) as Partial<AuthSession>);
     }
 
     // Refresh token expired/invalid — clear stored session
@@ -158,7 +170,7 @@ export async function getAuthSession(): Promise<AuthSession> {
   // Check localStorage as last resort (may have been stored during OAuth flow)
   const stored = getStoredSession();
   if (stored?.isAuthenticated) {
-    return stored;
+    return normalizeAuthSession(stored);
   }
 
   return {
@@ -182,12 +194,7 @@ export async function exchangeAuthToken(token: string): Promise<AuthSession> {
   }
 
   const data = await response.json();
-  const session: AuthSession = {
-    isAuthenticated: data.isAuthenticated,
-    userName: data.userName,
-    email: data.email,
-    roles: data.roles,
-  };
+  const session = normalizeAuthSession(data as Partial<AuthSession>);
 
   storeSession(session, data.refreshToken);
   return session;

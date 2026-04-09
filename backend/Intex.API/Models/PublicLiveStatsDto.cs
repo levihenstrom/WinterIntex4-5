@@ -11,5 +11,7 @@ public record PublicLiveStatsDto(
     decimal DonationsRaisedTotal,
     int VolunteerHoursTotal,
     double ReintegrationRatePct,
-    int? OldestAdmissionYear
+    int? OldestAdmissionYear,
+    double? AvgHealthScore,
+    double? AvgEducationProgress
 );

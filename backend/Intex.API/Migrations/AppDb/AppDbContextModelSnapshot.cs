@@ -1477,6 +1477,44 @@ namespace Intex.API.Migrations.AppDb
                 {
                     b.Navigation("Donations");
                 });
+
+            modelBuilder.Entity("Intex.API.Models.Story", b =>
+                {
+                    b.Property<int>("StoryId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("story_id")
+                        .HasAnnotation("SqlServer:Identity", "1, 1");
+
+                    b.Property<string>("AuthorEmail")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("author_email");
+
+                    b.Property<string>("AuthorName")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("author_name");
+
+                    b.Property<string>("AuthorRole")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("author_role");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("content");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("created_at");
+
+                    b.Property<int>("LikesCount")
+                        .HasColumnType("int")
+                        .HasColumnName("likes_count");
+
+                    b.HasKey("StoryId");
+
+                    b.ToTable("stories");
+                });
 #pragma warning restore 612, 618
         }
     }

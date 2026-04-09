@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import DeleteConfirmModal from '../DeleteConfirmModal';
 import { deleteJson, fetchPaged, type PagedResult } from '../../lib/apiClient';
-import { formatAmountMaybePhpAndUsd } from '../../lib/currency';
+import { formatPhpOriginAsUsd } from '../../lib/currency';
 import { useAuth } from '../../context/AuthContext';
 
 interface PagedTableProps {
@@ -185,15 +185,21 @@ export default function PagedTable({
   );
 }
 
-const MONETARY_COLUMN_KEYS = new Set(['amount', 'amountAllocated']);
+/** API may camelCase or snake_case; values are PHP-origin for scaffold money columns. */
+const MONETARY_COLUMN_KEYS = new Set([
+  'amount',
+  'amountAllocated',
+  'estimatedValue',
+  'estimated_value',
+]);
 
 function formatCell(columnKey: string, value: unknown): string {
   if (value === null || value === undefined) return '';
   if (MONETARY_COLUMN_KEYS.has(columnKey)) {
-    if (typeof value === 'number' && !Number.isNaN(value)) return formatAmountMaybePhpAndUsd(value, 'PHP');
+    if (typeof value === 'number' && !Number.isNaN(value)) return formatPhpOriginAsUsd(value);
     if (typeof value === 'string' && value.trim() !== '') {
       const n = Number(value);
-      if (!Number.isNaN(n)) return formatAmountMaybePhpAndUsd(n, 'PHP');
+      if (!Number.isNaN(n)) return formatPhpOriginAsUsd(n);
     }
   }
   if (typeof value === 'object') return JSON.stringify(value);
