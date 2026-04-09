@@ -470,11 +470,11 @@ export default function ContributionsPage() {
                         </td>
                         <td className="fw-semibold">{supporterName(d.supporter ?? undefined)}</td>
                         <td>{d.donationType ?? '—'}</td>
-                        <td>
+                        <td className="tabular-nums">
                           {d.amount != null
                             ? formatAmountMaybePhpAndUsd(Number(d.amount), d.currencyCode ?? 'PHP')
                             : d.estimatedValue != null
-                              ? String(d.estimatedValue)
+                              ? formatAmountMaybePhpAndUsd(Number(d.estimatedValue), d.currencyCode ?? 'PHP')
                               : '—'}
                         </td>
                         <td>{d.campaignName ?? '—'}</td>
@@ -533,7 +533,15 @@ export default function ContributionsPage() {
                               ? formatAmountMaybePhpAndUsd(Number(detailDonation.amount), detailDonation.currencyCode ?? 'PHP')
                               : '—',
                           ],
-                          ['Estimated value', detailDonation.estimatedValue != null ? String(detailDonation.estimatedValue) : '—'],
+                          [
+                            'Estimated value',
+                            detailDonation.estimatedValue != null
+                              ? formatAmountMaybePhpAndUsd(
+                                  Number(detailDonation.estimatedValue),
+                                  detailDonation.currencyCode ?? 'PHP',
+                                )
+                              : '—',
+                          ],
                           ['Currency', detailDonation.currencyCode ?? '—'],
                           ['Campaign', detailDonation.campaignName ?? '—'],
                           ['Channel / source', detailDonation.channelSource ?? '—'],

@@ -109,9 +109,9 @@ export default function SocialMediaSuggestPage() {
             What to optimize for
           </h2>
           <form onSubmit={(e) => void handleSubmit(e)}>
-            <div className="row g-3 align-items-end">
+            <div className="row g-3">
               <div className="col-md-4">
-                <label className="form-label small fw-semibold text-muted">Goal</label>
+                <label className="form-label small fw-semibold text-muted mb-1">Goal</label>
                 <select
                   className="form-select"
                   value={goal}
@@ -125,7 +125,7 @@ export default function SocialMediaSuggestPage() {
               </div>
               <div className="col-md-4">
                 <label
-                  className="form-label small fw-semibold text-muted"
+                  className="form-label small fw-semibold text-muted mb-1"
                   htmlFor="social-suggest-num-suggestions"
                 >
                   Number of suggestions
@@ -141,19 +141,30 @@ export default function SocialMediaSuggestPage() {
                   disabled={loading}
                   aria-describedby="social-suggest-num-suggestions-hint"
                 />
-                <div id="social-suggest-num-suggestions-hint" className="form-text text-muted small mb-0">
-                  Choose how many post ideas you want to see.
-                </div>
               </div>
-              <div className="col-md-4">
+              <div className="col-md-4 d-flex flex-column">
+                <label
+                  className="form-label small fw-semibold text-muted mb-1"
+                  style={{ visibility: 'hidden' }}
+                  aria-hidden="true"
+                >
+                  &nbsp;
+                </label>
                 <button
                   type="submit"
-                  className="btn w-100 fw-semibold text-white"
+                  className="btn w-100 fw-semibold text-white mt-0"
                   style={{ background: '#0D9488', border: 'none', padding: '10px 16px', borderRadius: 8 }}
                   disabled={loading}
                 >
                   {loading ? 'Getting recommendations…' : 'Get recommendations'}
                 </button>
+              </div>
+            </div>
+            <div className="row mt-1">
+              <div className="col-12 col-md-4 offset-md-4">
+                <p id="social-suggest-num-suggestions-hint" className="form-text text-muted small mb-0">
+                  Choose how many post ideas you want to see.
+                </p>
               </div>
             </div>
           </form>

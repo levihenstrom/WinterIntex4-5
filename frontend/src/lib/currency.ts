@@ -47,8 +47,17 @@ export function formatUsdThousandsFromPhp(
 }
 
 /**
- * Display: PHP amounts show as pesos with a USD equivalent in parentheses when applicable.
- * Non-PHP codes are formatted as USD using the numeric value as USD.
+ * Treat the numeric amount as PHP (database / product default) and display USD only
+ * using {@link PHP_TO_USD_RATE}. Use for contribution amounts, estimates, and generic money columns.
+ */
+export function formatPhpOriginAsUsd(amount: number | null | undefined): string {
+  const usd = convertPhpToUsd(amount);
+  return usd == null ? '—' : formatUsd(usd);
+}
+
+/**
+ * PHP (or missing code, treated as PHP): convert to USD and show `$` only.
+ * Other ISO codes: format the numeric value as USD (same digits, USD style).
  */
 export function formatAmountMaybePhpAndUsd(
   amount: number | null | undefined,
@@ -57,10 +66,7 @@ export function formatAmountMaybePhpAndUsd(
   if (amount == null || Number.isNaN(Number(amount))) return '—';
   const code = (currencyCode ?? 'PHP').toUpperCase();
   if (code === 'PHP') {
-    const n = Number(amount);
-    const phpStr = phpWholeFormatter.format(n);
-    const usd = convertPhpToUsd(n);
-    return usd != null ? `${phpStr} (${formatUsd(usd)})` : phpStr;
+    return formatPhpOriginAsUsd(amount);
   }
   return usdFormatter.format(Number(amount));
 }
