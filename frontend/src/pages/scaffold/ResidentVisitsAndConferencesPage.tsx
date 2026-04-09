@@ -106,23 +106,23 @@ function VisitKpiStrip({
   return (
     <AdminKpiStrip
       items={[
-        { label: 'Visits on page', value: String(total), accent: '#1E3A5F', icon: 'house-door' },
+        { label: 'Safety concerns', value: String(safety), accent: '#991B1B', icon: 'exclamation-triangle', onClick: () => onFilterToggle('safety'), active: quickFilter === 'safety', group: 'filterable' },
         {
-          label: safety > 0 && quickFilter === 'safety' ? 'Safety concerns (filtered) ✕' : 'Safety concerns',
-          value: String(safety), accent: '#991B1B', icon: 'exclamation-triangle',
-          onClick: () => onFilterToggle('safety'),
-        },
-        {
-          label: followUp > 0 && quickFilter === 'followUp' ? 'Follow-ups needed (filtered) ✕' : 'Follow-ups needed',
+          label: 'Follow-ups needed',
           value: String(followUp), accent: '#854D0E', icon: 'pin-map',
           onClick: () => onFilterToggle('followUp'),
+          active: quickFilter === 'followUp',
+          group: 'filterable',
         },
         {
-          label: emergency > 0 && quickFilter === 'emergency' ? 'Emergency visits (filtered) ✕' : 'Emergency visits',
+          label: 'Emergency visits',
           value: String(emergency), accent: '#DC2626', icon: 'lightning-charge',
           onClick: () => onFilterToggle('emergency'),
+          active: quickFilter === 'emergency',
+          group: 'filterable',
         },
-        { label: 'Cooperative families', value: String(cooperative), accent: '#166534', icon: 'people' },
+        { label: 'Visits', value: String(total), accent: '#1E3A5F', icon: 'house-door', group: 'info' },
+        { label: 'Cooperative families', value: String(cooperative), accent: '#166534', icon: 'people', group: 'info' },
       ]}
     />
   );
@@ -321,6 +321,18 @@ export default function ResidentVisitsAndConferencesPage() {
     setFormError(null);
     if (editTarget === 'new' && (!form.residentId || form.residentId < 1)) {
       setFormError('Select a resident.');
+      return;
+    }
+    if (!form.visitDate?.trim()) {
+      setFormError('Visit date is required.');
+      return;
+    }
+    if (!form.socialWorker?.trim()) {
+      setFormError('Social worker is required.');
+      return;
+    }
+    if (!form.visitType?.trim()) {
+      setFormError('Visit type is required.');
       return;
     }
     setSaving(true);

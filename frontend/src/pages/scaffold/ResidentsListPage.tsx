@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   deleteJson,
+  fetchAllPaged,
   fetchPaged,
   postJson,
   putJson,
@@ -78,10 +79,6 @@ interface Resident {
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const CASE_STATUSES = ['Active', 'Closed', 'Transferred', 'Referred', 'Discharged', 'Pending'];
-const CASE_CATEGORIES = [
-  'Abused', 'Neglected', 'Abandoned', 'Trafficked', 'Child Labor',
-  'OSAEC', 'CICL', 'At-Risk', 'Street Child', 'Child with HIV', 'Orphaned',
-];
 const SEXES = ['Female', 'Male'];
 const RISK_LEVELS = ['Low', 'Medium', 'High', 'Critical'];
 const REINTEGRATION_TYPES = [
@@ -303,6 +300,8 @@ export default function ResidentsListPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
+  const [caseCategories, setCaseCategories] = useState<string[]>([]);
+  const [statusPillOptions, setStatusPillOptions] = useState<string[]>([]);
 
   const [editTarget, setEditTarget] = useState<Resident | 'new' | null>(null);
   const [form, setForm] = useState<FormData>(emptyForm());
@@ -371,6 +370,37 @@ export default function ResidentsListPage() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchAllPaged<Resident>('/api/residents', 250)
+      .then((rows) => {
+        if (cancelled) return;
+        const unique = Array.from(
+          new Set(
+            rows
+              .map((r) => r.caseCategory?.trim())
+              .filter((v): v is string => Boolean(v)),
+          ),
+        ).sort((a, b) => a.localeCompare(b));
+        setCaseCategories(unique);
+        const inData = new Set(
+          rows
+            .map((r) => r.caseStatus?.trim())
+            .filter((v): v is string => Boolean(v)),
+        );
+        setStatusPillOptions(CASE_STATUSES.filter((s) => inData.has(s)));
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setCaseCategories([]);
+          setStatusPillOptions([]);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [reloadToken]);
 
   function applyFilters() {
     setPage(1);
@@ -477,6 +507,14 @@ export default function ResidentsListPage() {
       setFormError('Select a safehouse.');
       return;
     }
+    if (!form.caseStatus?.trim()) {
+      setFormError('Case status is required.');
+      return;
+    }
+    if (!form.caseCategory?.trim()) {
+      setFormError('Case category is required.');
+      return;
+    }
     setSaving(true);
     try {
       const payload = {
@@ -567,17 +605,9 @@ export default function ResidentsListPage() {
           <>
             <AdminKpiStrip
               items={[
-                { label: 'Residents on this page', value: String(data.items.length), accent: '#1E3A5F', icon: 'people' },
+                { label: 'Active residents', value: String(data.items.filter((r) => r.caseStatus === 'Active').length), accent: '#0D9488', icon: 'person-check', onClick: () => toggleQuickFilter('active'), active: quickFilter === 'active', group: 'filterable' },
                 {
-                  label: 'Active on this page',
-                  value: String(data.items.filter((r) => r.caseStatus === 'Active').length),
-                  accent: '#0D9488',
-                  icon: 'person-check',
-                  onClick: () => toggleQuickFilter('active'),
-                  active: quickFilter === 'active',
-                },
-                {
-                  label: 'High or critical risk (page)',
+                  label: 'High or critical risk',
                   value: String(
                     data.items.filter((r) => r.currentRiskLevel === 'High' || r.currentRiskLevel === 'Critical').length,
                   ),
@@ -585,13 +615,21 @@ export default function ResidentsListPage() {
                   icon: 'exclamation-triangle',
                   onClick: () => toggleQuickFilter('highRisk'),
                   active: quickFilter === 'highRisk',
+                  group: 'filterable',
                 },
                 {
-                  label: 'Total in database (filtered)',
+                  label: 'Residents',
                   value: String(data.totalCount),
-                  sub: `Page ${data.page} of ${data.totalPages || 1}`,
+                  accent: '#1E3A5F',
+                  icon: 'people',
+                  group: 'info',
+                },
+                {
+                  label: 'Database total',
+                  value: String(data.totalCount),
                   accent: '#6B21A8',
                   icon: 'database',
+                  group: 'info',
                 },
               ]}
             />
@@ -624,7 +662,7 @@ export default function ResidentsListPage() {
           />
           <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} style={{ ...selectStyle, flex: '0 0 auto', width: 'auto' }}>
             <option value="">All Categories</option>
-            {CASE_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+            {caseCategories.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
           <button onClick={applyFilters} style={{
             background: '#1E3A5F', color: '#fff', border: 'none', borderRadius: 8,
@@ -641,7 +679,7 @@ export default function ResidentsListPage() {
 
         {/* Status filter pills */}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12, alignItems: 'center' }}>
-          {['', ...CASE_STATUSES].map(s => {
+          {['', ...statusPillOptions].map(s => {
             const isActive = statusFilter === s;
             const cfg = s ? STATUS_COLORS[s] : null;
             return (
@@ -1015,7 +1053,7 @@ export default function ResidentsListPage() {
                       <label className="hw-label">Case Category <span className="text-danger">*</span></label>
                       <select className="hw-input" value={form.caseCategory ?? ''} onChange={(e) => setField('caseCategory', e.target.value)}>
                         <option value="">Select…</option>
-                        {CASE_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                        {caseCategories.map((c) => <option key={c} value={c}>{c}</option>)}
                       </select>
                     </div>
                     <div className="col-md-4">

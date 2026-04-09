@@ -1061,19 +1061,19 @@ export default function AdminHomePage() {
               )}
               {!recentError && recentDonations && recentDonations.items.length > 0 && (
                 <div className="table-responsive">
-                  <table className="table table-sm table-hover mb-0 align-middle">
-                    <thead className="table-light">
-                      <tr>
-                        <th className="ps-4 small text-muted">Date</th>
-                        <th className="small text-muted">Supporter</th>
-                        <th className="small text-muted">Type</th>
-                        <th className="small text-muted">Cash</th>
-                        <th className="small text-muted">Quantity</th>
-                        <th className="pe-4 small text-muted">Campaign</th>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                    <thead>
+                      <tr style={{ background: '#F8FAFC', borderBottom: '2px solid #E2E8F0' }}>
+                        <th style={{ padding: '12px 16px', color: '#475569', fontWeight: 700, fontSize: 12 }}>Date</th>
+                        <th style={{ padding: '12px 16px', color: '#475569', fontWeight: 700, fontSize: 12 }}>Supporter</th>
+                        <th style={{ padding: '12px 16px', color: '#475569', fontWeight: 700, fontSize: 12 }}>Type</th>
+                        <th style={{ padding: '12px 16px', color: '#475569', fontWeight: 700, fontSize: 12 }}>Cash</th>
+                        <th style={{ padding: '12px 16px', color: '#475569', fontWeight: 700, fontSize: 12 }}>Quantity</th>
+                        <th style={{ padding: '12px 16px', color: '#475569', fontWeight: 700, fontSize: 12 }}>Campaign</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {recentDonations.items.map((d) => {
+                      {recentDonations.items.map((d, idx) => {
                         const name =
                           d.supporter?.displayName?.trim() ||
                           d.supporter?.organizationName?.trim() ||
@@ -1084,7 +1084,12 @@ export default function AdminHomePage() {
                             role="button"
                             tabIndex={0}
                             className="cursor-pointer"
-                            style={{ cursor: 'pointer' }}
+                            style={{
+                              cursor: 'pointer',
+                              background: idx % 2 === 0 ? '#fff' : '#FAFAFA',
+                              borderBottom: '1px solid #F1F5F9',
+                              transition: 'background 0.15s',
+                            }}
                             onClick={() => navigate(`/admin/donations/contributions?donationId=${d.donationId}`)}
                             onKeyDown={(e) => {
                               if (e.key === 'Enter' || e.key === ' ') {
@@ -1093,19 +1098,21 @@ export default function AdminHomePage() {
                               }
                             }}
                             title="Open in Contributions (filtered to this gift)"
+                            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#F1F5F9'; }}
+                            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = idx % 2 === 0 ? '#fff' : '#FAFAFA'; }}
                           >
-                            <td className="ps-4 text-muted small">
+                            <td style={{ padding: '12px 16px', color: '#64748B', whiteSpace: 'nowrap' }}>
                               {d.donationDate
                                 ? new Date(d.donationDate).toLocaleDateString()
                                 : '—'}
                             </td>
-                            <td className="fw-medium" style={{ color: 'var(--hw-navy)' }}>
+                            <td style={{ padding: '12px 16px', fontWeight: 700, color: 'var(--hw-navy)' }}>
                               {name}
                             </td>
-                            <td className="small">{d.donationType ?? '—'}</td>
-                            <td className="small tabular-nums text-muted">{formatDonationCashAmountCell(d)}</td>
-                            <td className="small tabular-nums text-muted">{formatDonationQuantityCell(d)}</td>
-                            <td className="pe-4 small text-muted">{d.campaignName ?? '—'}</td>
+                            <td style={{ padding: '12px 16px', color: '#475569' }}>{d.donationType ?? '—'}</td>
+                            <td style={{ padding: '12px 16px', color: '#64748B' }} className="tabular-nums">{formatDonationCashAmountCell(d)}</td>
+                            <td style={{ padding: '12px 16px', color: '#64748B' }} className="tabular-nums">{formatDonationQuantityCell(d)}</td>
+                            <td style={{ padding: '12px 16px', color: '#64748B' }}>{d.campaignName ?? '—'}</td>
                           </tr>
                         );
                       })}
