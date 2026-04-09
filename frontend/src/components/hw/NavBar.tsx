@@ -1,7 +1,7 @@
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import 'bootstrap-icons/font/bootstrap-icons.css';
+import HealingWingsLogo from './HealingWingsLogo';
 
 const NAV_LINKS = [
   { label: 'Home', hash: '#hero' },
@@ -9,13 +9,13 @@ const NAV_LINKS = [
   { label: 'Donate', hash: '#donate' },
   { label: 'Impact', to: '/impact' },
   { label: 'Stories', to: '/stories' },
+  { label: 'Volunteer', to: '/volunteer' },
 ];
 
 const ADMIN_NAV_LINKS = [
   { label: 'Home', to: '/admin/home' },
   { label: 'Donations', to: '/admin/donations' },
   { label: 'Residents', to: '/admin/residents' },
-  { label: 'Social Media', to: '/admin/social-media' },
   { label: 'Reports', to: '/admin/reports' },
 ];
 
@@ -70,16 +70,28 @@ export default function NavBar() {
 
       {/* User Manager — Admin only */}
       {isAdmin && (
-        <Link
-          to="/admin/user-manager"
-          onClick={() => setDropdownOpen(false)}
-          className="w-full bg-transparent border-none cursor-pointer px-4 py-2.5 flex items-center gap-3 text-[13px] text-[#1E3A5F] font-semibold text-left rounded-xl hover:bg-violet-50 transition-colors no-underline"
-        >
-          <span className="w-7 h-7 rounded-full bg-violet-100 flex items-center justify-center flex-shrink-0 text-[#6B21A8]">
-            <i className="bi bi-shield-lock-fill text-[13px]" />
-          </span>
-          User Manager
-        </Link>
+        <>
+          <Link
+            to="/admin/user-manager"
+            onClick={() => setDropdownOpen(false)}
+            className="w-full bg-transparent border-none cursor-pointer px-4 py-2.5 flex items-center gap-3 text-[13px] text-[#1E3A5F] font-semibold text-left rounded-xl hover:bg-violet-50 transition-colors no-underline"
+          >
+            <span className="w-7 h-7 rounded-full bg-violet-100 flex items-center justify-center flex-shrink-0 text-[#6B21A8]">
+              <i className="bi bi-shield-lock-fill text-[13px]" />
+            </span>
+            User Manager
+          </Link>
+          <Link
+            to="/admin/volunteer-submissions"
+            onClick={() => setDropdownOpen(false)}
+            className="w-full bg-transparent border-none cursor-pointer px-4 py-2.5 flex items-center gap-3 text-[13px] text-[#1E3A5F] font-semibold text-left rounded-xl hover:bg-teal-50 transition-colors no-underline"
+          >
+            <span className="w-7 h-7 rounded-full bg-teal-100 flex items-center justify-center flex-shrink-0 text-[#0D9488]">
+              <i className="bi bi-person-lines-fill text-[13px]" />
+            </span>
+            Volunteer Submissions
+          </Link>
+        </>
       )}
 
       <div className="h-[1px] bg-stone-100 my-1 mx-2" />
@@ -110,18 +122,7 @@ export default function NavBar() {
           href={isAdminPortalUser ? '/' : sectionHref('#hero')}
           className="flex items-center gap-2 no-underline flex-shrink-0"
         >
-          <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
-            <path
-              d="M14 26C14 26 3 19 3 11C3 7.13 6.13 4 10 4C11.9 4 13.6 4.78 14 5C14.4 4.78 16.1 4 18 4C21.87 4 25 7.13 25 11C25 19 14 26 14 26Z"
-              fill="#0D9488"
-              opacity="0.9"
-            />
-            <path
-              d="M14 26C14 26 7 17 7 11C7 8.24 9.24 6 12 6C13.1 6 14 6.45 14 6.45V26Z"
-              fill="#5eead4"
-              opacity="0.5"
-            />
-          </svg>
+          <HealingWingsLogo size={36} />
           <span
             className="font-bold text-lg text-white tracking-tight"
             style={{ fontFamily: 'Poppins, sans-serif' }}
@@ -133,38 +134,58 @@ export default function NavBar() {
         {/* Desktop nav links */}
         <nav className="hidden lg:flex items-center gap-7">
           {isAdminPortalUser ? (
-            ADMIN_NAV_LINKS.map((link) => (
-              <NavLink
-                key={link.label}
-                to={link.to}
-                className={({ isActive }: { isActive: boolean }) =>
-                  'text-sm font-medium no-underline transition-colors ' +
-                  (isActive ? 'text-white' : 'text-white/75 hover:text-white')
-                }
-              >
-                {link.label}
-              </NavLink>
-            ))
-          ) : (
-            NAV_LINKS.map((link) =>
-              link.to ? (
-                <Link
+            <>
+              {ADMIN_NAV_LINKS.map((link) => (
+                <NavLink
                   key={link.label}
                   to={link.to}
-                  className="text-sm font-medium text-white/75 hover:text-white transition-colors no-underline"
+                  className={({ isActive }: { isActive: boolean }) =>
+                    'text-sm font-medium no-underline transition-colors ' +
+                    (isActive ? 'text-white' : 'text-white/75 hover:text-white')
+                  }
                 >
                   {link.label}
+                </NavLink>
+              ))}
+              {isAdmin && (
+                <NavLink
+                  to="/admin/social-media"
+                  className={({ isActive }: { isActive: boolean }) =>
+                    'text-sm font-medium no-underline transition-colors ' +
+                    (isActive ? 'text-white' : 'text-white/75 hover:text-white')
+                  }
+                >
+                  Social Media
+                </NavLink>
+              )}
+            </>
+          ) : (
+            <>
+              {NAV_LINKS.map((link) =>
+                link.to ? (
+                  <Link
+                    key={link.label}
+                    to={link.to}
+                    className="text-sm font-medium text-white/75 hover:text-white transition-colors no-underline"
+                  >
+                    {link.label}
+                  </Link>
+                ) : (
+                  <Link
+                    key={link.label}
+                    to={{ pathname: '/', hash: link.hash }}
+                    className="text-sm font-medium text-white/75 hover:text-white transition-colors no-underline"
+                  >
+                    {link.label}
+                  </Link>
+                )
+              )}
+              {isAuthenticated && (
+                <Link to="/donor" className="text-sm font-medium text-white/75 hover:text-white transition-colors no-underline">
+                  My Portal
                 </Link>
-              ) : (
-                <a
-                  key={link.label}
-                  href={sectionHref(link.hash!)}
-                  className="text-sm font-medium text-white/75 hover:text-white transition-colors no-underline"
-                >
-                  {link.label}
-                </a>
-              )
-            )
+              )}
+            </>
           )}
         </nav>
 
@@ -252,41 +273,66 @@ export default function NavBar() {
       {menuOpen && (
         <div className="lg:hidden border-t border-white/20 px-6 py-4 bg-[#1E3A5F]/75 backdrop-blur-xl">
           {isAdminPortalUser ? (
-            ADMIN_NAV_LINKS.map((link) => (
-              <NavLink
-                key={link.label}
-                to={link.to}
-                onClick={() => setMenuOpen(false)}
-                className={({ isActive }: { isActive: boolean }) =>
-                  'block py-3 font-medium text-sm border-b border-white/10 no-underline transition-colors ' +
-                  (isActive ? 'text-white' : 'text-white/75 hover:text-white')
-                }
-              >
-                {link.label}
-              </NavLink>
-            ))
-          ) : (
-            NAV_LINKS.map((link) =>
-              link.to ? (
-                <Link
+            <>
+              {ADMIN_NAV_LINKS.map((link) => (
+                <NavLink
                   key={link.label}
                   to={link.to}
                   onClick={() => setMenuOpen(false)}
-                  className="block py-3 text-white/75 hover:text-white font-medium text-sm border-b border-white/10 no-underline transition-colors"
+                  className={({ isActive }: { isActive: boolean }) =>
+                    'block py-3 font-medium text-sm border-b border-white/10 no-underline transition-colors ' +
+                    (isActive ? 'text-white' : 'text-white/75 hover:text-white')
+                  }
                 >
                   {link.label}
-                </Link>
-              ) : (
-                <a
-                  key={link.label}
-                  href={sectionHref(link.hash!)}
+                </NavLink>
+              ))}
+              {isAdmin && (
+                <NavLink
+                  to="/admin/social-media"
+                  onClick={() => setMenuOpen(false)}
+                  className={({ isActive }: { isActive: boolean }) =>
+                    'block py-3 font-medium text-sm border-b border-white/10 no-underline transition-colors ' +
+                    (isActive ? 'text-white' : 'text-white/75 hover:text-white')
+                  }
+                >
+                  Social Media
+                </NavLink>
+              )}
+            </>
+          ) : (
+            <>
+              {NAV_LINKS.map((link) =>
+                link.to ? (
+                  <Link
+                    key={link.label}
+                    to={link.to}
+                    onClick={() => setMenuOpen(false)}
+                    className="block py-3 text-white/75 hover:text-white font-medium text-sm border-b border-white/10 no-underline transition-colors"
+                  >
+                    {link.label}
+                  </Link>
+                ) : (
+                  <Link
+                    key={link.label}
+                    to={{ pathname: '/', hash: link.hash }}
+                    onClick={() => setMenuOpen(false)}
+                    className="block py-3 text-white/75 hover:text-white font-medium text-sm border-b border-white/10 no-underline transition-colors"
+                  >
+                    {link.label}
+                  </Link>
+                )
+              )}
+              {isAuthenticated && (
+                <Link
+                  to="/donor"
                   onClick={() => setMenuOpen(false)}
                   className="block py-3 text-white/75 hover:text-white font-medium text-sm border-b border-white/10 no-underline transition-colors"
                 >
-                  {link.label}
-                </a>
-              )
-            )
+                  My Portal
+                </Link>
+              )}
+            </>
           )}
 
           {/* Mobile account section */}

@@ -57,6 +57,14 @@
 .hw-bg-white      { background: var(--hw-bg-white); }
 .hw-bg-navy       { background: var(--hw-bg-navy); }
 
+/* Scroll offset — compensate for fixed navbar (~64px) + a little breathing room */
+#hero,
+#mission,
+#donate,
+#programs {
+  scroll-margin-top: 72px;
+}
+
 /* Text */
 .hw-text-purple   { color: var(--hw-purple); }
 .hw-text-teal     { color: var(--hw-teal); }

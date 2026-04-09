@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import NavBar from '../components/hw/NavBar';
-import SectionContainer from '../components/hw/SectionContainer';
 import MetricCard from '../components/hw/MetricCard';
 import DonationWidget from '../components/hw/DonationWidget';
 import Footer from '../components/hw/Footer';
 import CarouselPillarsSection from '../components/hw/CarouselPillarsSection';
+import { fetchJson } from '../lib/apiClient';
 
 // ── Scroll fade-in hook ───────────────────────────────────────────────────────
 function useFadeIn() {
@@ -25,6 +25,16 @@ function useFadeIn() {
 // ── Image URLs ────────────────────────────────────────────────────────────────
 const HERO_IMG = '/girls.avif';
 const MISSION_IMG = '/free.avif';
+
+interface PublicLiveStats {
+  totalResidents: number;
+  successfulReintegrations: number;
+  safehousesActive: number;
+  donationsRaisedTotal: number;
+  volunteerHoursTotal: number;
+  reintegrationRatePct: number;
+  oldestAdmissionYear?: number | null;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Section 1 — Hero
@@ -76,15 +86,25 @@ function HeroSection() {
 // ─────────────────────────────────────────────────────────────────────────────
 // Section 2 — Impact Numbers Bar
 // ─────────────────────────────────────────────────────────────────────────────
-function ImpactBar() {
+function ImpactBar({
+  residentsServed,
+  safehousesActive,
+  reintegrationRatePct,
+  yearsOfImpact,
+}: {
+  residentsServed: number;
+  safehousesActive: number;
+  reintegrationRatePct: number;
+  yearsOfImpact: number;
+}) {
   return (
     <section id="impact" className="relative z-20 mx-auto max-w-7xl w-[92%] -mt-20 sm:-mt-24 lg:-mt-28 bg-[#1E3A5F]/75 backdrop-blur-xl rounded-[2rem] shadow-2xl border border-white/20">
       <div className="py-10 px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-white/20 gap-y-10 lg:gap-y-0 text-center">
-          <MetricCard target={247} label="children Served" />
-          <MetricCard target={4} label="Safe Homes" />
-          <MetricCard target={89} suffix="%" label="Reintegration Rate" />
-          <MetricCard target={6} label="Years of Impact" />
+          <MetricCard target={residentsServed} suffix="+" label="children Served" />
+          <MetricCard target={safehousesActive} label="Safe Homes" />
+          <MetricCard target={reintegrationRatePct} suffix="%" label="Reintegration Rate" />
+          <MetricCard target={yearsOfImpact} label="Years of Impact" />
         </div>
       </div>
     </section>
@@ -170,7 +190,7 @@ function MissionSection() {
               ))}
             </div>
             <a
-              href="#pillars"
+              href="#donate"
               className="hw-btn-magenta inline-flex items-center gap-2 px-7 py-3 rounded-full font-bold text-sm mt-8 no-underline"
             >
               How We Help →
@@ -187,58 +207,6 @@ function MissionSection() {
 // ─────────────────────────────────────────────────────────────────────────────
 // Legacy static Pillars Section removed — now using CarouselPillarsSection
 
-
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Section 7 — How You Can Help
-// ─────────────────────────────────────────────────────────────────────────────
-function BoardOfDirectorsSection() {
-  const ref = useFadeIn();
-  
-  const directors = [
-    { name: 'Board Member', role: 'Executive Director', image: '/director.jpeg' },
-    { name: 'Board Member', role: 'Executive Director', image: '/director1.png' },
-    { name: 'Board Member', role: 'Executive Director', image: '/director2.jpeg' },
-    { name: 'Board Member', role: 'Executive Director', image: '/directors.jpeg' },
-  ];
-
-  return (
-    <section className="p-20 hw-bg-white">
-      <SectionContainer>
-        <div className="text-center mb-16 hw-fade-in" ref={ref}>
-          <span className="hw-eyebrow">Leadership</span>
-          <h2 className="hw-heading mt-3 text-3xl md:text-5xl font-extrabold tracking-tight">
-            Board of Directors
-          </h2>
-          <p className="text-stone-500 max-w-2xl mx-auto mt-6 text-lg">
-            Meet the dedicated individuals guiding our mission to restore hope and rebuild lives for children in need.
-          </p>
-        </div>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-8 max-w-6xl mx-auto">
-          {directors.map((dir, i) => (
-            <div key={i} className="flex flex-col items-center text-center group">
-              <div className="w-56 h-56 lg:w-48 lg:h-48 mb-6 overflow-hidden rounded-full border-4 border-white shadow-2xl relative">
-                <img 
-                  src={dir.image} 
-                  alt={dir.name} 
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                />
-                <div className="absolute inset-0 bg-[#1E3A5F]/0 group-hover:bg-[#1E3A5F]/10 transition-colors duration-300 rounded-full" />
-              </div>
-              <h3 className="text-xl font-bold text-stone-900 mb-1" style={{ fontFamily: 'var(--hw-font-heading)' }}>
-                {dir.name}
-              </h3>
-              <p className="text-sky-600 font-bold text-sm tracking-widest uppercase">
-                {dir.role}
-              </p>
-            </div>
-          ))}
-        </div>
-      </SectionContainer>
-    </section>
-  );
-}
 
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -457,14 +425,47 @@ function DonorWallSection() {
 // Page
 // ─────────────────────────────────────────────────────────────────────────────
 export default function HealingWingsHome() {
+  const [impactKpis, setImpactKpis] = useState({
+    residentsServed: 247,
+    safehousesActive: 4,
+    reintegrationRatePct: 89,
+    yearsOfImpact: 6,
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchJson<PublicLiveStats>('/api/public-impact/live-stats')
+      .then((s) => {
+        if (cancelled) return;
+        const yearsOfImpact = s.oldestAdmissionYear
+          ? Math.max(1, new Date().getFullYear() - s.oldestAdmissionYear + 1)
+          : impactKpis.yearsOfImpact;
+        setImpactKpis({
+          residentsServed: s.totalResidents || impactKpis.residentsServed,
+          safehousesActive: s.safehousesActive || impactKpis.safehousesActive,
+          reintegrationRatePct: s.reintegrationRatePct || impactKpis.reintegrationRatePct,
+          yearsOfImpact,
+        });
+      })
+      .catch(() => {
+        // Keep defaults when live stats are unavailable.
+      });
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <div style={{ fontFamily: 'var(--hw-font-body)' }}>
       <NavBar />
       <HeroSection />
-      <ImpactBar />
+      <ImpactBar
+        residentsServed={impactKpis.residentsServed}
+        safehousesActive={impactKpis.safehousesActive}
+        reintegrationRatePct={impactKpis.reintegrationRatePct}
+        yearsOfImpact={impactKpis.yearsOfImpact}
+      />
       <MissionSection />
       <CarouselPillarsSection />
-      <BoardOfDirectorsSection />
       <DonationBanner />
       <DonorWallSection />
       <Footer />

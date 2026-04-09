@@ -7,3 +7,7 @@ seaborn>=0.13
 jupyter>=1.0
 ipykernel>=6.0
 joblib>=1.3
+# ONNX export / validation for social recommender (optional at runtime; used by export_onnx + refresh)
+skl2onnx>=1.16
+onnx>=1.16
+onnxruntime>=1.17

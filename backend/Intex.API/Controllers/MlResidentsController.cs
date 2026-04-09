@@ -3,14 +3,30 @@ using Intex.API.Data;
 using Intex.API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Intex.API.Controllers;
 
 [ApiController]
 [Route("api/ml/residents")]
 [Authorize(Policy = AuthPolicies.StaffRead)]
-public sealed class MlResidentsController(MlArtifactService ml) : ControllerBase
+public sealed class MlResidentsController(MlArtifactService ml, AppDbContext db) : ControllerBase
 {
+    /// <summary>
+    /// Builds a code→id lookup from the residents table and enriches each DTO with the numeric ResidentId.
+    /// Single DB round-trip regardless of list size.
+    /// </summary>
+    private async Task<IReadOnlyList<ResidentReadinessDto>> EnrichAsync(
+        IReadOnlyList<ResidentReadinessDto> list, CancellationToken ct)
+    {
+        var lookup = await db.Residents.AsNoTracking()
+            .Where(r => r.InternalCode != null)
+            .ToDictionaryAsync(r => r.InternalCode!, r => (int?)r.ResidentId, ct);
+        return list.Select(d =>
+            lookup.TryGetValue(d.ResidentCode, out var id) ? d.WithResidentId(id) : d
+        ).ToList();
+    }
+
     [HttpGet("priority")]
     [ProducesResponseType(typeof(IReadOnlyList<ResidentReadinessDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -30,7 +46,7 @@ public sealed class MlResidentsController(MlArtifactService ml) : ControllerBase
         try
         {
             var list = await ml.GetResidentsPriorityAsync(limit, cancellationToken);
-            return Ok(list);
+            return Ok(await EnrichAsync(list, cancellationToken));
         }
         catch (FileNotFoundException ex)
         {
@@ -60,7 +76,7 @@ public sealed class MlResidentsController(MlArtifactService ml) : ControllerBase
         try
         {
             var list = await ml.GetResidentsCurrentScoresAsync(cancellationToken);
-            return Ok(list);
+            return Ok(await EnrichAsync(list, cancellationToken));
         }
         catch (FileNotFoundException ex)
         {

@@ -12,6 +12,7 @@ import {
   Cell,
 } from 'recharts';
 import { fetchJson } from '../../lib/apiClient';
+import { ErrorState, LoadingState } from '../../components/common/AsyncStatus';
 
 
 const card: React.CSSProperties = {
@@ -323,9 +324,7 @@ export default function ReportsAnalyticsPage() {
           </button>
         </header>
 
-        {loadingAny && !donData && !outData ? (
-          <div style={{ textAlign: 'center', padding: 56, color: '#94A3B8' }}>Loading…</div>
-        ) : null}
+        {loadingAny && !donData && !outData ? <LoadingState message="Loading reports and analytics…" /> : null}
 
         <section id="giving" style={{ marginBottom: 36 }}>
           <h2 style={sectionTitle}>Financial giving</h2>
@@ -407,12 +406,8 @@ export default function ReportsAnalyticsPage() {
             </div>
           </div>
 
-          {donLoading && donData && (
-            <div style={{ color: '#94A3B8', marginBottom: 12, fontSize: 13 }}>Refreshing giving charts…</div>
-          )}
-          {donError && (
-            <div style={{ borderRadius: 12, padding: 14, background: '#FEF2F2', border: '1px solid #FECACA', color: '#991B1B', marginBottom: 16 }}>{donError}</div>
-          )}
+          {donLoading && donData && <LoadingState message="Refreshing giving charts…" size="compact" />}
+          {donError && <ErrorState message={donError} />}
 
           {donData && (
             <>
@@ -539,10 +534,8 @@ export default function ReportsAnalyticsPage() {
             </label>
           </div>
 
-          {outLoading && <div style={{ color: '#94A3B8', marginBottom: 16 }}>Updating services and outcomes…</div>}
-          {outError && (
-            <div style={{ borderRadius: 12, padding: 14, background: '#FEF2F2', border: '1px solid #FECACA', color: '#991B1B', marginBottom: 16 }}>{outError}</div>
-          )}
+          {outLoading && <LoadingState message="Updating services and outcomes…" size="compact" />}
+          {outError && <ErrorState message={outError} />}
 
           {outData && !outLoading && (
             <>

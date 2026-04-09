@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
-import { fetchPaged } from '../../lib/apiClient';
+import { fetchPaged, postJson } from '../../lib/apiClient';
 import NavBar from '../../components/hw/NavBar';
+import Footer from '../../components/hw/Footer';
 import MetricCard from '../../components/hw/MetricCard';
-import 'bootstrap-icons/font/bootstrap-icons.css';
+import { ErrorState, LoadingState } from '../../components/common/AsyncStatus';
+import { formatAmountMaybePhpAndUsd, formatPhpAndUsd } from '../../lib/currency';
 
 /* ── Types ───────────────────────────────────────────────────── */
 interface DonationAllocationApi {
@@ -42,16 +44,6 @@ async function fetchAllDonationsMine(): Promise<DonationMine[]> {
     page += 1;
   }
   return items;
-}
-
-function formatMoney(amount: number | null | undefined, currencyCode = 'PHP'): string {
-  if (amount == null) return '—';
-  const code = currencyCode && currencyCode.length === 3 ? currencyCode : 'PHP';
-  try {
-    return new Intl.NumberFormat('en-PH', { style: 'currency', currency: code, maximumFractionDigits: 0 }).format(amount);
-  } catch {
-    return `${code} ${amount.toFixed(0)}`;
-  }
 }
 
 function formatDate(iso: string | null | undefined): string {
@@ -186,11 +178,25 @@ function KpiStripPlaceholder() {
   );
 }
 
+const LEDGER_PAGE_SIZE = 10;
+
 /* ── Main Page Component ─────────────────────────────────────── */
 export default function DonorDashboardPage() {
   const [donations, setDonations] = useState<DonationMine[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [ledgerPage, setLedgerPage] = useState(1);
+  const [showGiveModal, setShowGiveModal] = useState(false);
+  const [giveForm, setGiveForm] = useState({
+    amount: '',
+    giftType: 'One-time',
+    campaign: '',
+    note: '',
+  });
+  const [giveSuccess, setGiveSuccess] = useState<string | null>(null);
+  const [giveError, setGiveError] = useState<string | null>(null);
+  const [giveSubmitting, setGiveSubmitting] = useState(false);
+  const [hoveredCategory, setHoveredCategory] = useState<ProgramImpactRow | null>(null);
 
   const loadDonations = useCallback((opts?: { silent?: boolean }) => {
     if (!opts?.silent) {
@@ -213,6 +219,15 @@ export default function DonorDashboardPage() {
     void loadDonations();
   }, [loadDonations]);
 
+  useEffect(() => {
+    if (!showGiveModal) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowGiveModal(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [showGiveModal]);
+
   const totals = useMemo(() => {
     if (!donations) return { count: 0, sum: 0 };
     let sum = 0;
@@ -223,10 +238,72 @@ export default function DonorDashboardPage() {
   }, [donations]);
 
   const programImpact = useMemo(() => (donations ? buildProgramImpact(donations) : []), [donations]);
+  const campaignOptions = useMemo(
+    () =>
+      donations
+        ? [...new Set(donations.map((d) => d.campaignName?.trim()).filter((name): name is string => Boolean(name)))]
+            .sort((a, b) => a.localeCompare(b))
+        : [],
+    [donations],
+  );
 
   const heroRef = useFadeIn();
 
   const impactTotalTarget = Math.max(0, Math.round(totals.sum));
+
+  function resetGiveForm() {
+    setGiveForm({
+      amount: '',
+      giftType: 'One-time',
+      campaign: '',
+      note: '',
+    });
+    setGiveSuccess(null);
+    setGiveError(null);
+  }
+
+  async function handleGiveSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const amount = Number(giveForm.amount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setGiveError('Please enter a valid donation amount.');
+      return;
+    }
+    if (!giveForm.campaign.trim()) {
+      setGiveError('Please select a campaign.');
+      return;
+    }
+
+    setGiveSubmitting(true);
+    setGiveError(null);
+    setGiveSuccess(null);
+    try {
+      await postJson<DonationMine>('/api/donations/demo-gift', {
+        amount,
+        donationType: 'Monetary',
+        campaignName: giveForm.campaign.trim() || null,
+        currencyCode: 'PHP',
+        notes:
+          (giveForm.note.trim() || null) ??
+          undefined,
+        impactUnit:
+          giveForm.giftType === 'Recurring monthly'
+            ? 'Recurring monthly commitment'
+            : undefined,
+      });
+      setGiveSuccess('Thank you! Your donation was recorded successfully.');
+      await loadDonations({ silent: true });
+      setGiveForm((f) => ({ ...f, amount: '', campaign: '', note: '' }));
+      setTimeout(() => {
+        setShowGiveModal(false);
+        setGiveSuccess(null);
+      }, 1500);
+    } catch (err) {
+      setGiveError(err instanceof Error ? err.message : 'Could not submit donation right now.');
+    } finally {
+      setGiveSubmitting(false);
+    }
+  }
 
   return (
     <div style={{ fontFamily: 'var(--hw-font-body)', minHeight: '100vh', background: '#f8fafc' }}>
@@ -243,31 +320,65 @@ export default function DonorDashboardPage() {
           paddingRight: '1.5rem',
         }}
       >
-        <div ref={heroRef} className="hw-fade-in" style={{ maxWidth: CONTENT_MAX, margin: '0 auto' }}>
-          <span className="hw-eyebrow">Supporter Portal</span>
-          <h1
-            style={{
-              fontFamily: 'Poppins, sans-serif',
-              fontWeight: 900,
-              fontSize: 'clamp(2.2rem, 5vw, 3.4rem)',
-              color: '#fff',
-              margin: '0.5rem 0 0.75rem',
-              lineHeight: 1.1,
-            }}
-          >
-            Your Giving & Impact
-          </h1>
-          <p
-            style={{
-              color: 'rgba(255,255,255,0.65)',
-              fontSize: '1.05rem',
-              maxWidth: 520,
-              lineHeight: 1.65,
-              margin: '0 0 1.5rem',
-            }}
-          >
-            Because of your generosity, we provide safe housing and restorative care. Thank you for being part of the HealingWings mission.
-          </p>
+        <div
+          ref={heroRef}
+          className="hw-fade-in"
+          style={{
+            maxWidth: CONTENT_MAX,
+            margin: '0 auto',
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '1.75rem 2rem',
+          }}
+        >
+          <div style={{ flex: '1 1 280px', minWidth: 0, maxWidth: 560 }}>
+            <span className="hw-eyebrow">Supporter Portal</span>
+            <h1
+              style={{
+                fontFamily: 'Poppins, sans-serif',
+                fontWeight: 900,
+                fontSize: 'clamp(2.2rem, 5vw, 3.4rem)',
+                color: '#fff',
+                margin: '0.5rem 0 0.75rem',
+                lineHeight: 1.1,
+              }}
+            >
+              Your Giving & Impact
+            </h1>
+            <p
+              style={{
+                color: 'rgba(255,255,255,0.65)',
+                fontSize: '1.05rem',
+                lineHeight: 1.65,
+                margin: 0,
+              }}
+            >
+              Because of your generosity, we provide safe housing and restorative care. Thank you for being part of the HealingWings mission.
+            </p>
+          </div>
+          <div style={{ flex: '0 0 auto', marginLeft: 'auto' }}>
+            <button
+              type="button"
+              onClick={() => {
+                resetGiveForm();
+                setShowGiveModal(true);
+              }}
+              className="hw-btn-magenta"
+              style={{
+                padding: '1rem 2.5rem',
+                borderRadius: 50,
+                fontWeight: 700,
+                fontSize: 'clamp(1rem, 2vw, 1.15rem)',
+                border: 'none',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Give again now →
+            </button>
+          </div>
         </div>
       </section>
 
@@ -293,7 +404,12 @@ export default function DonorDashboardPage() {
                 <MetricCard target={totals.count} label="Gifts" />
               </div>
               <div style={{ borderRight: '1px solid rgba(255,255,255,0.1)' }}>
-                <MetricCard target={impactTotalTarget} prefix="₱" label="Total impact (PHP)" />
+                <MetricCard
+                  target={impactTotalTarget}
+                  prefix=""
+                  label="Total impact"
+                  staticDisplay={formatPhpAndUsd(impactTotalTarget)}
+                />
               </div>
               <div>
                 <MetricCard target={programImpact.length} label="Areas funded" />
@@ -306,41 +422,16 @@ export default function DonorDashboardPage() {
       <main id="donor-dashboard-main">
         <div style={{ maxWidth: CONTENT_MAX, margin: '0 auto', padding: '2rem 1.5rem 5rem' }}>
           {loading && (
-            <div style={{ padding: '3rem 0', textAlign: 'center' }} role="status" aria-live="polite" aria-busy="true">
-              <div
-                className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-[#1E3A5F] border-t-transparent mb-4"
-                aria-hidden="true"
-              />
-              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.14em', color: '#94a3b8', textTransform: 'uppercase', margin: 0 }}>
-                Loading your giving data…
-              </p>
-            </div>
+            <LoadingState message="Loading your giving data…" />
           )}
 
           {error && (
-            <div
-              className="hw-alert-error shadow-sm p-8 text-center"
-              role="alert"
-              style={{ borderRadius: 16, maxWidth: 560, margin: '0 auto' }}
-            >
-              <div className="w-14 h-14 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4" aria-hidden="true">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="m15 9-6 6M9 9l6 6" />
-                </svg>
-              </div>
-              <h2 className="font-extrabold text-lg mb-1 text-[#991B1B]" style={{ fontFamily: 'Poppins, sans-serif' }}>
-                Unable to load dashboard
-              </h2>
-              <p className="text-red-700/80 mb-0" style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.9rem' }}>
-                {error}
-              </p>
-            </div>
+            <ErrorState message={error} />
           )}
 
           {!loading && !error && donations && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-              {/* ── Impact by category (ReportCard-style pills) ── */}
+              {/* ── Impact by category (segmented allocation bar) ── */}
               <section aria-labelledby="impact-by-category-heading">
                 <h2
                   id="impact-by-category-heading"
@@ -356,92 +447,188 @@ export default function DonorDashboardPage() {
                 >
                   Impact by category
                 </h2>
+                <p
+                  id="impact-by-category-hint"
+                  style={{
+                    margin: '-0.75rem 0 1rem',
+                    fontFamily: 'Inter, sans-serif',
+                    fontSize: '0.8rem',
+                    color: '#94a3b8',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                  }}
+                >
+                  <span aria-hidden="true" style={{ opacity: 0.85 }}>
+                    ⤷
+                  </span>
+                  Hover a colored segment to see amount, share, and gift count
+                </p>
 
                 {programImpact.length === 0 ? (
                   <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.95rem', color: '#64748b', margin: 0 }}>
                     Your generosity will fuel measurable change across our programs.
                   </p>
                 ) : (
-                  <div
-                    style={{
-                      width: '100%',
-                      boxSizing: 'border-box',
-                      padding: '1.25rem',
-                      background: '#fafaf9',
-                      border: '1px solid #f1f5f9',
-                      borderRadius: 16,
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: 'grid',
-                        width: '100%',
-                        boxSizing: 'border-box',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))',
-                        gap: '1rem',
-                      }}
-                    >
-                      {programImpact.map((row, idx) => {
-                        const pal = CATEGORY_PILL_STYLES[idx % CATEGORY_PILL_STYLES.length];
-                        return (
+                  (() => {
+                    const totalAllocated = programImpact.reduce((sum, row) => sum + row.totalAmount, 0);
+                    return (
+                      <div
+                        style={{
+                          width: '100%',
+                          boxSizing: 'border-box',
+                          padding: '1.25rem',
+                          background: '#fafaf9',
+                          border: '1px solid #f1f5f9',
+                          borderRadius: 16,
+                        }}
+                      >
+                        <div
+                          role="img"
+                          aria-labelledby="impact-by-category-heading"
+                          aria-describedby="impact-by-category-hint"
+                          aria-label="Segmented bar chart of donation allocation by category; hover a segment for details"
+                          onMouseLeave={() => setHoveredCategory(null)}
+                          style={{
+                            display: 'flex',
+                            width: '100%',
+                            height: 40,
+                            overflow: 'hidden',
+                            borderRadius: 999,
+                            border: '1px solid #E2E8F0',
+                            background: '#fff',
+                            boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.12)',
+                          }}
+                        >
+                          {programImpact.map((row, idx) => {
+                            const pal = CATEGORY_PILL_STYLES[idx % CATEGORY_PILL_STYLES.length];
+                            const pct = totalAllocated > 0 ? (row.totalAmount / totalAllocated) * 100 : 0;
+                            const showLabel = pct >= 14;
+                            return (
+                              <div
+                                key={row.label}
+                                onMouseEnter={() => setHoveredCategory(row)}
+                                title={`${row.label} — hover for full details`}
+                                aria-label={`${row.label}, ${pct.toFixed(0)} percent of allocation; hover for details`}
+                                style={{
+                                  width: `${pct}%`,
+                                  background: pal.color,
+                                  minWidth: pct > 0 ? 8 : 0,
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  position: 'relative',
+                                  transition: 'filter 0.15s ease, box-shadow 0.15s ease',
+                                  boxShadow: hoveredCategory?.label === row.label ? 'inset 0 0 0 2px rgba(255,255,255,0.95)' : undefined,
+                                  filter: hoveredCategory?.label === row.label ? 'brightness(1.08)' : undefined,
+                                }}
+                              >
+                                {showLabel && (
+                                  <span
+                                    aria-hidden="true"
+                                    style={{
+                                      fontFamily: 'Inter, sans-serif',
+                                      fontSize: 10,
+                                      fontWeight: 700,
+                                      color: 'rgba(255,255,255,0.92)',
+                                      textShadow: '0 1px 2px rgba(0,0,0,0.25)',
+                                      padding: '0 4px',
+                                      textAlign: 'center',
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis',
+                                      whiteSpace: 'nowrap',
+                                      maxWidth: '100%',
+                                    }}
+                                  >
+                                    {row.label.length > 14 ? `${row.label.slice(0, 12)}…` : row.label}
+                                  </span>
+                                )}
+                                {!showLabel && pct > 0 && (
+                                  <span
+                                    aria-hidden="true"
+                                    style={{
+                                      fontSize: 14,
+                                      color: 'rgba(255,255,255,0.85)',
+                                      textShadow: '0 1px 2px rgba(0,0,0,0.2)',
+                                      lineHeight: 1,
+                                    }}
+                                  >
+                                    ···
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {hoveredCategory ? (
                           <div
-                            key={row.label}
+                            role="status"
+                            aria-live="polite"
                             style={{
-                              background: pal.bg,
-                              border: `1px solid ${pal.border}`,
-                              borderRadius: 16,
-                              padding: '1.75rem 1.5rem',
-                              textAlign: 'center',
-                              minHeight: 168,
-                              display: 'flex',
-                              flexDirection: 'column',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              boxSizing: 'border-box',
+                              marginTop: 12,
+                              background: '#ffffff',
+                              border: '1px solid #E2E8F0',
+                              borderRadius: 12,
+                              padding: '10px 12px',
+                              boxShadow: '0 8px 24px rgba(30,58,95,0.08)',
                             }}
                           >
-                            <div
-                              style={{
-                                fontFamily: 'Poppins, sans-serif',
-                                fontWeight: 800,
-                                fontSize: 'clamp(1.35rem, 3.2vw, 2rem)',
-                                color: pal.color,
-                                lineHeight: 1.15,
-                                wordBreak: 'break-word',
-                              }}
-                            >
-                              {formatMoney(row.totalAmount)}
+                            <div style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.76rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#0D9488', fontWeight: 700 }}>
+                              {hoveredCategory.label}
                             </div>
-                            <div
-                              style={{
-                                fontFamily: 'Inter, sans-serif',
-                                fontSize: '0.8rem',
-                                fontWeight: 700,
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.08em',
-                                color: pal.color,
-                                opacity: 0.88,
-                                marginTop: 12,
-                                maxWidth: '100%',
-                              }}
-                            >
-                              {row.label}
+                            <div style={{ marginTop: 6, fontFamily: 'Poppins, sans-serif', fontWeight: 800, fontSize: '1.1rem', color: '#1E3A5F' }}>
+                              {formatPhpAndUsd(hoveredCategory.totalAmount)}
                             </div>
-                            <div
-                              style={{
-                                fontFamily: 'Inter, sans-serif',
-                                fontSize: '0.85rem',
-                                color: '#64748b',
-                                marginTop: 10,
-                              }}
-                            >
-                              {row.giftCount} gift{row.giftCount === 1 ? '' : 's'}
+                            <div style={{ marginTop: 4, fontFamily: 'Inter, sans-serif', fontSize: '0.84rem', color: '#64748b' }}>
+                              {totalAllocated > 0 ? ((hoveredCategory.totalAmount / totalAllocated) * 100).toFixed(1) : '0.0'}% of total allocation · {hoveredCategory.giftCount} gift{hoveredCategory.giftCount === 1 ? '' : 's'}
                             </div>
                           </div>
-                        );
-                      })}
-                    </div>
-                  </div>
+                        ) : (
+                          <div
+                            style={{
+                              marginTop: 12,
+                              background: '#fafafa',
+                              border: '1px dashed #CBD5E1',
+                              borderRadius: 12,
+                              padding: '12px 14px',
+                              display: 'flex',
+                              alignItems: 'flex-start',
+                              gap: 10,
+                            }}
+                          >
+                            <span
+                              aria-hidden="true"
+                              style={{
+                                flexShrink: 0,
+                                width: 28,
+                                height: 28,
+                                borderRadius: 8,
+                                background: '#f1f5f9',
+                                border: '1px solid #e2e8f0',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: 14,
+                                color: '#64748b',
+                              }}
+                            >
+                              ⓘ
+                            </span>
+                            <div>
+                              <div style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.82rem', fontWeight: 600, color: '#475569' }}>
+                                Details on hover
+                              </div>
+                              <div style={{ marginTop: 4, fontFamily: 'Inter, sans-serif', fontSize: '0.8rem', color: '#94a3b8', lineHeight: 1.45 }}>
+                                Move your pointer over any segment in the bar above. The panel will show the full category name, total amount, percentage of your giving, and number of gifts.
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()
                 )}
               </section>
 
@@ -466,7 +653,10 @@ export default function DonorDashboardPage() {
                   <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.95rem', color: '#64748b', margin: 0 }}>
                     No financial transactions found on your account.
                   </p>
-                ) : (
+                ) : (() => {
+                  const ledgerTotalPages = Math.max(1, Math.ceil(donations.length / LEDGER_PAGE_SIZE));
+                  const ledgerRows = donations.slice((ledgerPage - 1) * LEDGER_PAGE_SIZE, ledgerPage * LEDGER_PAGE_SIZE);
+                  return (
                   <DashboardCard title="Donation ledger" sub="Your gifts and initiatives" titleId="donation-ledger-heading">
                     <div style={{ margin: '-1.4rem -1.5rem 0', overflowX: 'auto' }}>
                       <table
@@ -510,14 +700,14 @@ export default function DonorDashboardPage() {
                           </tr>
                         </thead>
                         <tbody>
-                          {donations.map((d) => (
+                          {ledgerRows.map((d) => (
                             <tr key={d.donationId} style={{ borderBottom: '1px solid #f8fafc' }}>
                               <td style={{ fontFamily: 'Inter, sans-serif', padding: '1rem 1.25rem', color: '#64748b', fontSize: '0.9rem' }}>
                                 {formatDate(d.donationDate)}
                               </td>
                               <td style={{ padding: '1rem 1.25rem' }}>
                                 <span style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 800, fontSize: '1.05rem', color: '#1E3A5F' }}>
-                                  {formatMoney(d.amount, d.currencyCode ?? 'PHP')}
+                                  {formatAmountMaybePhpAndUsd(d.amount, d.currencyCode ?? 'PHP')}
                                 </span>
                                 <span
                                   style={{
@@ -605,50 +795,180 @@ export default function DonorDashboardPage() {
                         </tbody>
                       </table>
                     </div>
+                    {ledgerTotalPages > 1 && (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 1.5rem 0.25rem', borderTop: '1px solid #f1f5f9', marginTop: '0.5rem' }}>
+                        <button
+                          onClick={() => setLedgerPage((p) => p - 1)}
+                          disabled={ledgerPage <= 1}
+                          style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.8rem', fontWeight: 600, color: ledgerPage <= 1 ? '#cbd5e1' : '#1E3A5F', background: 'none', border: 'none', cursor: ledgerPage <= 1 ? 'default' : 'pointer', padding: '0.35rem 0.75rem', borderRadius: 8 }}
+                        >
+                          ← Prev
+                        </button>
+                        <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.75rem', color: '#94a3b8' }}>
+                          Page {ledgerPage} of {ledgerTotalPages}
+                        </span>
+                        <button
+                          onClick={() => setLedgerPage((p) => p + 1)}
+                          disabled={ledgerPage >= ledgerTotalPages}
+                          style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.8rem', fontWeight: 600, color: ledgerPage >= ledgerTotalPages ? '#cbd5e1' : '#1E3A5F', background: 'none', border: 'none', cursor: ledgerPage >= ledgerTotalPages ? 'default' : 'pointer', padding: '0.35rem 0.75rem', borderRadius: 8 }}
+                        >
+                          Next →
+                        </button>
+                      </div>
+                    )}
                   </DashboardCard>
-                )}
+                  );
+                })()}
               </section>
             </div>
           )}
         </div>
       </main>
 
-      {/* ── CTA (ImpactPage bottom band) ── */}
-      <section style={{ background: 'linear-gradient(135deg, #1E3A5F 0%, #0f2744 100%)', padding: '4rem 1.5rem' }} aria-label="Continue giving">
-        <div style={{ maxWidth: 640, margin: '0 auto', textAlign: 'center' }}>
-          <span className="hw-eyebrow">Make a difference</span>
-          <h2
+      <Footer />
+
+      {showGiveModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="give-again-title"
+          onClick={() => setShowGiveModal(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15,23,42,0.5)',
+            backdropFilter: 'blur(2px)',
+            zIndex: 90,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1rem',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
             style={{
-              fontFamily: 'Poppins, sans-serif',
-              fontWeight: 900,
-              fontSize: 'clamp(1.5rem, 3vw, 2rem)',
-              color: '#fff',
-              margin: '0.6rem 0 0.75rem',
+              width: 'min(560px, 100%)',
+              background: '#fff',
+              borderRadius: 16,
+              border: '1px solid #E2E8F0',
+              boxShadow: '0 20px 60px rgba(15,23,42,0.22)',
+              overflow: 'hidden',
             }}
           >
-            Continue your legacy of giving
-          </h2>
-          <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '1rem', lineHeight: 1.65, marginBottom: '2rem' }}>
-            Your support expands outreach and brings hope to more individuals we serve.
-          </p>
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <a
-              href="/#donate"
-              className="hw-btn-magenta"
+            <div
               style={{
-                padding: '0.75rem 2rem',
-                borderRadius: 50,
-                fontWeight: 700,
-                fontSize: '0.9rem',
-                textDecoration: 'none',
-                display: 'inline-block',
+                padding: '1rem 1.25rem',
+                borderBottom: '1px solid #E2E8F0',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
               }}
             >
-              Give again now →
-            </a>
+              <div>
+                <p className="hw-eyebrow" style={{ margin: 0 }}>Support HealingWings</p>
+                <h3 id="give-again-title" style={{ margin: '0.25rem 0 0', fontFamily: 'Poppins, sans-serif', color: '#1E3A5F' }}>
+                  Give again
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowGiveModal(false)}
+                aria-label="Close donation form"
+                style={{ border: 'none', background: 'transparent', fontSize: 24, lineHeight: 1, color: '#64748B', cursor: 'pointer' }}
+              >
+                ×
+              </button>
+            </div>
+
+            <form onSubmit={handleGiveSubmit} style={{ padding: '1rem 1.25rem 1.25rem' }}>
+              <div style={{ display: 'grid', gap: 12 }}>
+                <label style={{ fontSize: 13, color: '#475569', fontWeight: 600 }}>
+                  Amount (PHP)
+                  <input
+                    type="number"
+                    min={1}
+                    required
+                    value={giveForm.amount}
+                    onChange={(e) => setGiveForm((f) => ({ ...f, amount: e.target.value }))}
+                    style={{ marginTop: 6, width: '100%', border: '1px solid #CBD5E1', borderRadius: 10, padding: '10px 12px' }}
+                    placeholder="e.g. 1000"
+                  />
+                </label>
+
+                <label style={{ fontSize: 13, color: '#475569', fontWeight: 600 }}>
+                  Gift type
+                  <select
+                    value={giveForm.giftType}
+                    onChange={(e) => setGiveForm((f) => ({ ...f, giftType: e.target.value }))}
+                    style={{ marginTop: 6, width: '100%', border: '1px solid #CBD5E1', borderRadius: 10, padding: '10px 12px', background: '#fff' }}
+                  >
+                    <option>One-time</option>
+                    <option>Recurring monthly</option>
+                  </select>
+                </label>
+
+                <label style={{ fontSize: 13, color: '#475569', fontWeight: 600 }}>
+                  Campaign
+                  <select
+                    required
+                    value={giveForm.campaign}
+                    onChange={(e) => setGiveForm((f) => ({ ...f, campaign: e.target.value }))}
+                    style={{ marginTop: 6, width: '100%', border: '1px solid #CBD5E1', borderRadius: 10, padding: '10px 12px', background: '#fff' }}
+                  >
+                    <option value="" disabled>
+                      {campaignOptions.length > 0 ? 'Select a campaign' : 'No campaigns available'}
+                    </option>
+                    {campaignOptions.map((campaign) => (
+                      <option key={campaign} value={campaign}>
+                        {campaign}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label style={{ fontSize: 13, color: '#475569', fontWeight: 600 }}>
+                  Note (optional)
+                  <textarea
+                    value={giveForm.note}
+                    onChange={(e) => setGiveForm((f) => ({ ...f, note: e.target.value }))}
+                    style={{ marginTop: 6, width: '100%', border: '1px solid #CBD5E1', borderRadius: 10, padding: '10px 12px', minHeight: 90, resize: 'vertical' }}
+                    placeholder="Add a dedication or comment"
+                  />
+                </label>
+
+                {giveSuccess && (
+                  <div style={{ fontSize: 13, color: '#0D9488', background: '#ECFDF5', border: '1px solid #A7F3D0', borderRadius: 10, padding: '9px 11px' }}>
+                    {giveSuccess}
+                  </div>
+                )}
+                {giveError && (
+                  <div style={{ fontSize: 13, color: '#991B1B', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 10, padding: '9px 11px' }}>
+                    {giveError}
+                  </div>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 14 }}>
+                <button
+                  type="button"
+                  onClick={() => setShowGiveModal(false)}
+                  style={{ border: '1px solid #CBD5E1', background: '#fff', color: '#475569', borderRadius: 999, padding: '9px 14px', fontWeight: 600, cursor: 'pointer' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={giveSubmitting}
+                  style={{ border: 'none', background: '#6B21A8', color: '#fff', borderRadius: 999, padding: '9px 16px', fontWeight: 700, cursor: giveSubmitting ? 'default' : 'pointer', opacity: giveSubmitting ? 0.7 : 1 }}
+                >
+                  {giveSubmitting ? 'Submitting…' : 'Continue'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
-      </section>
+      )}
     </div>
   );
 }

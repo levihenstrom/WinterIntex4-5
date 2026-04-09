@@ -97,17 +97,12 @@ export default function CarouselPillarsSection() {
                 </div>
 
                 {/* Hover Solid Dark Blue Overlay (Replaces image) */}
-                <div 
-                  className="hw-hover-overlay absolute z-20 inset-0 p-5 flex flex-col justify-start opacity-0 transition-opacity duration-300 pointer-events-none"
+                <div
+                  className="hw-hover-overlay absolute z-20 inset-0 p-5 flex flex-col justify-center opacity-0 transition-opacity duration-300 pointer-events-none"
                   style={{ backgroundColor: '#1E3A5F' }}
                 >
-                  <h3 className="font-extrabold text-[18px] mb-2 text-white">{pillar.title}</h3>
-                  <p className="text-white/90 font-medium text-[14px] leading-relaxed flex-grow">{pillar.description}</p>
-                  <div className="mt-auto">
-                    <button className="bg-white text-[#1E3A5F] hover:bg-stone-200 transition-colors text-[12px] px-4 py-2 rounded-full font-bold whitespace-nowrap pointer-events-auto">
-                      Learn More &rarr;
-                    </button>
-                  </div>
+                  <h3 className="font-extrabold text-[18px] mb-3 text-white">{pillar.title}</h3>
+                  <p className="text-white/90 font-medium text-[14px] leading-relaxed">{pillar.description}</p>
                 </div>
               </div>
             ))}

@@ -35,6 +35,7 @@ export default function DonationWidget() {
       <iframe
         name="givebutter"
         title="givebutter-iframe"
+        {...({ allowpaymentrequest: 'true' } as any)}
         allow="payment"
         className="w-full bg-white rounded-[24px] border-0 transition-all duration-300 ease-out"
         style={{ 
@@ -43,9 +44,11 @@ export default function DonationWidget() {
           width: '100%', 
           overflow: 'hidden' 
         }}
-        src="https://givebutter.com/embed/c/ozvC2F?goalBar=false&amp;v=1"
-        scrolling="auto"
+        src="https://givebutter.com/embed/c/ozvC2F?goalBar=false&gba_gb.element.id=jN24wj"
+        id="iFrameResizer0"
       />
     </div>
   );
 }
+
+

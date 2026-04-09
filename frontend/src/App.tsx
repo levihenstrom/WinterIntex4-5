@@ -4,7 +4,9 @@ import {
   Route,
   Navigate,
   Link,
+  useLocation,
 } from 'react-router-dom';
+import { useEffect } from 'react';
 import { AuthProvider } from './context/AuthContext';
 import { CookieConsentProvider } from './context/CookieConsentContext';
 import CookieConsentBanner from './components/CookieConsentBanner';
@@ -21,6 +23,8 @@ import RequireAuth from './components/RequireAuth';
 import AdminLayout from './layouts/AdminLayout';
 import DonorLayout from './layouts/DonorLayout';
 import ImpactPage from './pages/scaffold/ImpactPage';
+import VolunteerPage from './pages/VolunteerPage';
+import StoriesPage from './pages/StoriesPage';
 import DonorDashboardPage from './pages/scaffold/DonorDashboardPage';
 import AdminHomePage from './pages/scaffold/AdminHomePage';
 import SupportersListPage from './pages/scaffold/SupportersListPage';
@@ -34,6 +38,7 @@ import SocialMediaHistoryPage from './pages/scaffold/SocialMediaHistoryPage';
 import SocialMediaSuggestPage from './pages/scaffold/SocialMediaSuggestPage';
 import ReportsAnalyticsPage from './pages/scaffold/ReportsAnalyticsPage';
 import UserManagerPage from './pages/scaffold/UserManagerPage';
+import VolunteerSubmissionsPage from './pages/scaffold/VolunteerSubmissionsPage';
 import OAuthCallbackPage from './pages/OAuthCallbackPage';
 
 // Auth pages — same fixed NavBar as the landing page (see NavBar.tsx)
@@ -60,15 +65,83 @@ function AuthLayout({ children }: { children: React.ReactNode }) {
   );
 }
 
+function ScrollToTop() {
+  const { pathname, hash } = useLocation();
+  useEffect(() => {
+    if (hash) {
+      // Wait for the page to render, then scroll to the anchor
+      const id = hash.replace('#', '');
+      const attempt = (tries: number) => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth' });
+        } else if (tries > 0) {
+          setTimeout(() => attempt(tries - 1), 80);
+        }
+      };
+      attempt(10);
+    } else {
+      window.scrollTo(0, 0);
+    }
+  }, [pathname, hash]);
+  return null;
+}
+
+function RouteTitleManager() {
+  const location = useLocation();
+
+  useEffect(() => {
+    const titleByPathPrefix: Array<[string, string]> = [
+      ['/admin/donations/contributions', 'Contributions'],
+      ['/admin/donations/allocations', 'Allocations'],
+      ['/admin/donations', 'Supporters'],
+      ['/admin/residents/visits-conferences', 'Visits & Conferences'],
+      ['/admin/residents/process-recordings', 'Session Notes'],
+      ['/admin/residents/', 'Resident Detail'],
+      ['/admin/residents', 'Residents'],
+      ['/admin/social-media/suggest', 'Social Media Suggestions'],
+      ['/admin/social-media', 'Social Media History'],
+      ['/admin/reports', 'Reports & Analytics'],
+      ['/admin/user-manager', 'User Manager'],
+      ['/admin/home', 'Admin Home'],
+      ['/admin', 'Admin'],
+      ['/donor/dashboard', 'Donor Dashboard'],
+      ['/donor', 'Donor Dashboard'],
+      ['/volunteer', 'Volunteer'],
+      ['/stories', 'Stories'],
+      ['/impact', 'Impact'],
+      ['/privacy', 'Privacy Policy'],
+      ['/mfa', 'Manage MFA'],
+      ['/logout', 'Logout'],
+      ['/register', 'Register'],
+      ['/login', 'Login'],
+      ['/unauthorized', 'Unauthorized'],
+      ['/oauth/callback', 'OAuth Callback'],
+      ['/', 'Home'],
+    ];
+
+    const pageName =
+      titleByPathPrefix.find(([prefix]) => location.pathname.startsWith(prefix))?.[1] ??
+      'HealingWings';
+    document.title = `HealingWings — ${pageName}`;
+  }, [location.pathname]);
+
+  return null;
+}
+
 function App() {
   return (
     <CookieConsentProvider>
       <AuthProvider>
         <Router>
+          <ScrollToTop />
+          <RouteTitleManager />
           <Routes>
             {/* Public routes */}
             <Route path="/" element={<HealingWingsHome />} />
             <Route path="/impact" element={<ImpactPage />} />
+            <Route path="/volunteer" element={<VolunteerPage />} />
+            <Route path="/stories" element={<StoriesPage />} />
             <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
             <Route path="/login" element={<AuthLayout><LoginPage /></AuthLayout>} />
             <Route path="/register" element={<AuthLayout><RegisterPage /></AuthLayout>} />
@@ -122,6 +195,7 @@ function App() {
               <Route path="donations/contributions" element={<ContributionsPage />} />
               <Route path="donations/allocations" element={<AllocationsPage />} />
               <Route path="residents" element={<ResidentsListPage />} />
+              <Route path="residents/:id" element={<ResidentsListPage />} />
               <Route path="residents/process-recordings" element={<ProcessRecordingPage />} />
               <Route path="residents/visits-conferences" element={<ResidentVisitsAndConferencesPage />} />
               <Route path="residents/:id/process" element={<ProcessRecordingPage />} />
@@ -148,6 +222,14 @@ function App() {
                 element={
                   <RequireAuth role="Admin">
                     <UserManagerPage />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="volunteer-submissions"
+                element={
+                  <RequireAuth role="Admin">
+                    <VolunteerSubmissionsPage />
                   </RequireAuth>
                 }
               />

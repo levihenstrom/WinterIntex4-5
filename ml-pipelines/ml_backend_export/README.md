@@ -10,7 +10,7 @@ Standardized **nightly-ready** outputs for **Intex.API** under:
 |-----------|----------|-------------------|
 | `reintegration/` | `score_all_current_residents` (via `ml_backend_export.reintegration_backend`) | .NET reads JSON for dashboards / queues |
 | `donors/` | `ml_backend_export.donors_backend` | .NET reads JSON for churn / outreach |
-| `social/` | `ml_backend_export.social_backend` | Python inference service + manifest |
+| `social/` | `ml_backend_export.social_backend` | Python inference service + manifest (`.joblib` primary); **ONNX** estimators + `social_onnx_export_metadata.json` produced in parallel when `skl2onnx` / `onnxruntime` are installed |
 
 ## Path config (single source of truth)
 
@@ -86,7 +86,9 @@ cd ml-pipelines && PYTHONPATH=. python3 -m ml_pipeline_reintegration_readiness_s
 
 ## Donor scores note
 
-Heuristic until `donor_churn_pipeline.joblib` is wired; see `donor_churn_backend_export_metadata.json`.
+**Eligibility:** Only supporters with at least one `donation_type='Monetary'` row with a non-null `amount` appear in donor churn JSON. Non-donor supporter types (e.g. Volunteer) are excluded unless they have such a gift on file.
+
+Heuristic until `donor_churn_pipeline.joblib` is wired; see `donor_churn_backend_export_metadata.json` (`donor_eligibility_rule`).
 
 **Outreach queue:** primary = at-risk and `monetary_sum` ≥ cohort median; fallbacks documented in metadata.
 

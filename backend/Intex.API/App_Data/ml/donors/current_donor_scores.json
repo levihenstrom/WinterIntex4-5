@@ -1,39 +1,19 @@
 [
   {
-    "churn_risk_score": 1.0,
-    "display_name": "Faye Yu",
+    "churn_risk_score": 0.9077,
+    "display_name": "Lea Jain",
     "outreach_priority_rank": 1,
     "risk_band": "Critical",
-    "supporter_id": 49,
+    "supporter_id": 59,
     "top_drivers": [
       "No monetary gift in over 12 months (or never on file)"
     ]
   },
   {
-    "churn_risk_score": 1.0,
-    "display_name": "Owen Nguyen",
+    "churn_risk_score": 0.812,
+    "display_name": "Rico Iglesias",
     "outreach_priority_rank": 2,
     "risk_band": "Critical",
-    "supporter_id": 14,
-    "top_drivers": [
-      "No monetary gift in over 12 months (or never on file)"
-    ]
-  },
-  {
-    "churn_risk_score": 1.0,
-    "display_name": "Pia Baker",
-    "outreach_priority_rank": 3,
-    "risk_band": "Critical",
-    "supporter_id": 28,
-    "top_drivers": [
-      "No monetary gift in over 12 months (or never on file)"
-    ]
-  },
-  {
-    "churn_risk_score": 0.1945,
-    "display_name": "Rico Iglesias",
-    "outreach_priority_rank": 4,
-    "risk_band": "Lower",
     "supporter_id": 58,
     "top_drivers": [
       "No monetary gift in over 12 months (or never on file)",
@@ -41,209 +21,249 @@
     ]
   },
   {
-    "churn_risk_score": 0.177,
-    "display_name": "Lea Jain",
-    "outreach_priority_rank": 5,
-    "risk_band": "Lower",
-    "supporter_id": 59,
-    "top_drivers": [
-      "No monetary gift in over 12 months (or never on file)"
-    ]
-  },
-  {
-    "churn_risk_score": 0.1419,
-    "display_name": "Ria White",
-    "outreach_priority_rank": 6,
-    "risk_band": "Lower",
-    "supporter_id": 23,
-    "top_drivers": [
-      "No monetary gift in over 12 months (or never on file)"
-    ]
-  },
-  {
-    "churn_risk_score": 0.1392,
+    "churn_risk_score": 0.6966,
     "display_name": "Paz Hale",
-    "outreach_priority_rank": 7,
-    "risk_band": "Lower",
+    "outreach_priority_rank": 3,
+    "risk_band": "High",
     "supporter_id": 57,
     "top_drivers": [
       "No monetary gift in over 12 months (or never on file)"
     ]
   },
   {
-    "churn_risk_score": 0.1322,
-    "display_name": "Cleo Owens",
-    "outreach_priority_rank": 8,
-    "risk_band": "Lower",
-    "supporter_id": 41,
-    "top_drivers": [
-      "No monetary gift in over 12 months (or never on file)"
-    ]
-  },
-  {
-    "churn_risk_score": 0.1302,
-    "display_name": "Zoe Ortiz",
-    "outreach_priority_rank": 9,
-    "risk_band": "Lower",
-    "supporter_id": 15,
-    "top_drivers": [
-      "No monetary gift in over 12 months (or never on file)"
-    ]
-  },
-  {
-    "churn_risk_score": 0.1266,
-    "display_name": "Hana Quinn",
-    "outreach_priority_rank": 10,
-    "risk_band": "Lower",
-    "supporter_id": 17,
-    "top_drivers": [
-      "No monetary gift in over 12 months (or never on file)"
-    ]
-  },
-  {
-    "churn_risk_score": 0.1192,
-    "display_name": "Lyle Gomez",
-    "outreach_priority_rank": 11,
-    "risk_band": "Lower",
-    "supporter_id": 56,
-    "top_drivers": [
-      "Relative risk from recency and giving volume heuristic"
-    ]
-  },
-  {
-    "churn_risk_score": 0.1176,
-    "display_name": "Mia Hill",
-    "outreach_priority_rank": 12,
-    "risk_band": "Lower",
-    "supporter_id": 34,
-    "top_drivers": [
-      "No monetary gift in over 12 months (or never on file)"
-    ]
-  },
-  {
-    "churn_risk_score": 0.1146,
-    "display_name": "Dina DelosReyes",
-    "outreach_priority_rank": 13,
-    "risk_band": "Lower",
-    "supporter_id": 53,
-    "top_drivers": [
-      "No monetary gift in over 12 months (or never on file)"
-    ]
-  },
-  {
-    "churn_risk_score": 0.1072,
+    "churn_risk_score": 0.6716,
     "display_name": "Aria Brown",
-    "outreach_priority_rank": 14,
-    "risk_band": "Lower",
+    "outreach_priority_rank": 4,
+    "risk_band": "High",
     "supporter_id": 2,
     "top_drivers": [
       "No monetary gift in over 12 months (or never on file)"
     ]
   },
   {
-    "churn_risk_score": 0.1058,
-    "display_name": "Ben Morris",
-    "outreach_priority_rank": 15,
-    "risk_band": "Lower",
-    "supporter_id": 39,
-    "top_drivers": [
-      "Extended gap since last monetary gift"
-    ]
-  },
-  {
-    "churn_risk_score": 0.0997,
-    "display_name": "Lena Nash",
-    "outreach_priority_rank": 16,
-    "risk_band": "Lower",
-    "supporter_id": 40,
+    "churn_risk_score": 0.6626,
+    "display_name": "Cleo Owens",
+    "outreach_priority_rank": 5,
+    "risk_band": "High",
+    "supporter_id": 41,
     "top_drivers": [
       "No monetary gift in over 12 months (or never on file)"
     ]
   },
   {
-    "churn_risk_score": 0.095,
-    "display_name": "Rae Klein",
-    "outreach_priority_rank": 17,
-    "risk_band": "Lower",
-    "supporter_id": 37,
+    "churn_risk_score": 0.6317,
+    "display_name": "Dina DelosReyes",
+    "outreach_priority_rank": 6,
+    "risk_band": "High",
+    "supporter_id": 53,
     "top_drivers": [
       "No monetary gift in over 12 months (or never on file)"
     ]
   },
   {
-    "churn_risk_score": 0.0874,
-    "display_name": "Iris Patel",
-    "outreach_priority_rank": 18,
-    "risk_band": "Lower",
-    "supporter_id": 16,
-    "top_drivers": [
-      "Extended gap since last monetary gift"
-    ]
-  },
-  {
-    "churn_risk_score": 0.086,
-    "display_name": "Lucas Jones",
-    "outreach_priority_rank": 19,
-    "risk_band": "Lower",
-    "supporter_id": 10,
+    "churn_risk_score": 0.5495,
+    "display_name": "Zoe Ortiz",
+    "outreach_priority_rank": 7,
+    "risk_band": "High",
+    "supporter_id": 15,
     "top_drivers": [
       "No monetary gift in over 12 months (or never on file)"
     ]
   },
   {
-    "churn_risk_score": 0.0853,
+    "churn_risk_score": 0.5485,
+    "display_name": "Ria White",
+    "outreach_priority_rank": 8,
+    "risk_band": "High",
+    "supporter_id": 23,
+    "top_drivers": [
+      "No monetary gift in over 12 months (or never on file)"
+    ]
+  },
+  {
+    "churn_risk_score": 0.5247,
+    "display_name": "Mia Hill",
+    "outreach_priority_rank": 9,
+    "risk_band": "High",
+    "supporter_id": 34,
+    "top_drivers": [
+      "No monetary gift in over 12 months (or never on file)"
+    ]
+  },
+  {
+    "churn_risk_score": 0.4848,
+    "display_name": "Hana Quinn",
+    "outreach_priority_rank": 10,
+    "risk_band": "Moderate",
+    "supporter_id": 17,
+    "top_drivers": [
+      "No monetary gift in over 12 months (or never on file)"
+    ]
+  },
+  {
+    "churn_risk_score": 0.4811,
     "display_name": "Lara Johnson",
-    "outreach_priority_rank": 20,
-    "risk_band": "Lower",
+    "outreach_priority_rank": 11,
+    "risk_band": "Moderate",
     "supporter_id": 36,
     "top_drivers": [
       "No monetary gift in over 12 months (or never on file)"
     ]
   },
   {
-    "churn_risk_score": 0.0844,
-    "display_name": "Nora Singh",
-    "outreach_priority_rank": 21,
-    "risk_band": "Lower",
-    "supporter_id": 19,
-    "top_drivers": [
-      "No monetary gift in over 12 months (or never on file)"
-    ]
-  },
-  {
-    "churn_risk_score": 0.0844,
+    "churn_risk_score": 0.4374,
     "display_name": "Cole Cruz",
-    "outreach_priority_rank": 22,
-    "risk_band": "Lower",
+    "outreach_priority_rank": 12,
+    "risk_band": "Moderate",
     "supporter_id": 52,
     "top_drivers": [
       "No monetary gift in over 12 months (or never on file)"
     ]
   },
   {
-    "churn_risk_score": 0.079,
+    "churn_risk_score": 0.4122,
+    "display_name": "Lena Nash",
+    "outreach_priority_rank": 13,
+    "risk_band": "Moderate",
+    "supporter_id": 40,
+    "top_drivers": [
+      "No monetary gift in over 12 months (or never on file)"
+    ]
+  },
+  {
+    "churn_risk_score": 0.4119,
+    "display_name": "Rae Klein",
+    "outreach_priority_rank": 14,
+    "risk_band": "Moderate",
+    "supporter_id": 37,
+    "top_drivers": [
+      "No monetary gift in over 12 months (or never on file)"
+    ]
+  },
+  {
+    "churn_risk_score": 0.4042,
+    "display_name": "Nora Singh",
+    "outreach_priority_rank": 15,
+    "risk_band": "Moderate",
+    "supporter_id": 19,
+    "top_drivers": [
+      "No monetary gift in over 12 months (or never on file)"
+    ]
+  },
+  {
+    "churn_risk_score": 0.3786,
+    "display_name": "Lucas Jones",
+    "outreach_priority_rank": 16,
+    "risk_band": "Moderate",
+    "supporter_id": 10,
+    "top_drivers": [
+      "No monetary gift in over 12 months (or never on file)"
+    ]
+  },
+  {
+    "churn_risk_score": 0.3705,
+    "display_name": "Ben Morris",
+    "outreach_priority_rank": 17,
+    "risk_band": "Moderate",
+    "supporter_id": 39,
+    "top_drivers": [
+      "Extended gap since last monetary gift"
+    ]
+  },
+  {
+    "churn_risk_score": 0.3371,
+    "display_name": "Lyle Gomez",
+    "outreach_priority_rank": 18,
+    "risk_band": "Moderate",
+    "supporter_id": 56,
+    "top_drivers": [
+      "Relative risk from recency and giving volume heuristic"
+    ]
+  },
+  {
+    "churn_risk_score": 0.3356,
     "display_name": "June Usman",
-    "outreach_priority_rank": 23,
-    "risk_band": "Lower",
+    "outreach_priority_rank": 19,
+    "risk_band": "Moderate",
     "supporter_id": 21,
     "top_drivers": [
       "Extended gap since last monetary gift"
     ]
   },
   {
-    "churn_risk_score": 0.078,
-    "display_name": "Faith Alliance",
+    "churn_risk_score": 0.3233,
+    "display_name": "Hope Group",
+    "outreach_priority_rank": 20,
+    "risk_band": "Moderate",
+    "supporter_id": 13,
+    "top_drivers": [
+      "Extended gap since last monetary gift"
+    ]
+  },
+  {
+    "churn_risk_score": 0.3128,
+    "display_name": "Iris Patel",
+    "outreach_priority_rank": 21,
+    "risk_band": "Moderate",
+    "supporter_id": 16,
+    "top_drivers": [
+      "Extended gap since last monetary gift"
+    ]
+  },
+  {
+    "churn_risk_score": 0.3127,
+    "display_name": "Tara Green",
+    "outreach_priority_rank": 22,
+    "risk_band": "Moderate",
+    "supporter_id": 33,
+    "top_drivers": [
+      "Extended gap since last monetary gift"
+    ]
+  },
+  {
+    "churn_risk_score": 0.2827,
+    "display_name": "Bright Foundation",
+    "outreach_priority_rank": 23,
+    "risk_band": "Moderate",
+    "supporter_id": 50,
+    "top_drivers": [
+      "Extended gap since last monetary gift"
+    ]
+  },
+  {
+    "churn_risk_score": 0.2815,
+    "display_name": "Sean Xu",
     "outreach_priority_rank": 24,
-    "risk_band": "Lower",
+    "risk_band": "Moderate",
+    "supporter_id": 24,
+    "top_drivers": [
+      "Extended gap since last monetary gift"
+    ]
+  },
+  {
+    "churn_risk_score": 0.2684,
+    "display_name": "Faith Alliance",
+    "outreach_priority_rank": 25,
+    "risk_band": "Moderate",
     "supporter_id": 46,
     "top_drivers": [
       "Relative risk from recency and giving volume heuristic"
     ]
   },
   {
-    "churn_risk_score": 0.0773,
+    "churn_risk_score": 0.265,
+    "display_name": "Tess Khan",
+    "outreach_priority_rank": 26,
+    "risk_band": "Moderate",
+    "supporter_id": 60,
+    "top_drivers": [
+      "Extended gap since last monetary gift"
+    ]
+  },
+  {
+    "churn_risk_score": 0.2319,
     "display_name": "Ian Xu",
-    "outreach_priority_rank": 25,
+    "outreach_priority_rank": 27,
     "risk_band": "Lower",
     "supporter_id": 48,
     "top_drivers": [
@@ -251,89 +271,9 @@
     ]
   },
   {
-    "churn_risk_score": 0.0739,
-    "display_name": "Hope Group",
-    "outreach_priority_rank": 26,
-    "risk_band": "Lower",
-    "supporter_id": 13,
-    "top_drivers": [
-      "Extended gap since last monetary gift"
-    ]
-  },
-  {
-    "churn_risk_score": 0.0738,
-    "display_name": "Bright Foundation",
-    "outreach_priority_rank": 27,
-    "risk_band": "Lower",
-    "supporter_id": 50,
-    "top_drivers": [
-      "Extended gap since last monetary gift"
-    ]
-  },
-  {
-    "churn_risk_score": 0.0706,
-    "display_name": "Nico Vasquez",
-    "outreach_priority_rank": 28,
-    "risk_band": "Lower",
-    "supporter_id": 22,
-    "top_drivers": [
-      "Relative risk from recency and giving volume heuristic"
-    ]
-  },
-  {
-    "churn_risk_score": 0.0693,
-    "display_name": "Sean Xu",
-    "outreach_priority_rank": 29,
-    "risk_band": "Lower",
-    "supporter_id": 24,
-    "top_drivers": [
-      "Extended gap since last monetary gift"
-    ]
-  },
-  {
-    "churn_risk_score": 0.0687,
-    "display_name": "Finn Price",
-    "outreach_priority_rank": 30,
-    "risk_band": "Lower",
-    "supporter_id": 42,
-    "top_drivers": [
-      "Relative risk from recency and giving volume heuristic"
-    ]
-  },
-  {
-    "churn_risk_score": 0.0684,
-    "display_name": "Tara Green",
-    "outreach_priority_rank": 31,
-    "risk_band": "Lower",
-    "supporter_id": 33,
-    "top_drivers": [
-      "Extended gap since last monetary gift"
-    ]
-  },
-  {
-    "churn_risk_score": 0.0654,
-    "display_name": "Hugo Ross",
-    "outreach_priority_rank": 32,
-    "risk_band": "Lower",
-    "supporter_id": 43,
-    "top_drivers": [
-      "Relative risk from recency and giving volume heuristic"
-    ]
-  },
-  {
-    "churn_risk_score": 0.0593,
-    "display_name": "Tess Khan",
-    "outreach_priority_rank": 33,
-    "risk_band": "Lower",
-    "supporter_id": 60,
-    "top_drivers": [
-      "Extended gap since last monetary gift"
-    ]
-  },
-  {
-    "churn_risk_score": 0.0582,
+    "churn_risk_score": 0.2243,
     "display_name": "Ella Lopez",
-    "outreach_priority_rank": 34,
+    "outreach_priority_rank": 28,
     "risk_band": "Lower",
     "supporter_id": 12,
     "top_drivers": [
@@ -341,49 +281,29 @@
     ]
   },
   {
-    "churn_risk_score": 0.057,
-    "display_name": "Mira Bello",
-    "outreach_priority_rank": 35,
+    "churn_risk_score": 0.2187,
+    "display_name": "Nico Vasquez",
+    "outreach_priority_rank": 29,
     "risk_band": "Lower",
-    "supporter_id": 51,
+    "supporter_id": 22,
     "top_drivers": [
       "Relative risk from recency and giving volume heuristic"
     ]
   },
   {
-    "churn_risk_score": 0.0558,
-    "display_name": "Theo Reed",
-    "outreach_priority_rank": 36,
+    "churn_risk_score": 0.2154,
+    "display_name": "Hugo Ross",
+    "outreach_priority_rank": 30,
     "risk_band": "Lower",
-    "supporter_id": 18,
+    "supporter_id": 43,
     "top_drivers": [
       "Relative risk from recency and giving volume heuristic"
     ]
   },
   {
-    "churn_risk_score": 0.0517,
-    "display_name": "Maya Kim",
-    "outreach_priority_rank": 37,
-    "risk_band": "Lower",
-    "supporter_id": 11,
-    "top_drivers": [
-      "Relative risk from recency and giving volume heuristic"
-    ]
-  },
-  {
-    "churn_risk_score": 0.0508,
-    "display_name": "Seth Clark",
-    "outreach_priority_rank": 38,
-    "risk_band": "Lower",
-    "supporter_id": 29,
-    "top_drivers": [
-      "Relative risk from recency and giving volume heuristic"
-    ]
-  },
-  {
-    "churn_risk_score": 0.049,
+    "churn_risk_score": 0.2132,
     "display_name": "Rina Davis",
-    "outreach_priority_rank": 39,
+    "outreach_priority_rank": 31,
     "risk_band": "Lower",
     "supporter_id": 30,
     "top_drivers": [
@@ -391,99 +311,29 @@
     ]
   },
   {
-    "churn_risk_score": 0.0481,
-    "display_name": "Luz Fisher",
-    "outreach_priority_rank": 40,
+    "churn_risk_score": 0.1931,
+    "display_name": "Finn Price",
+    "outreach_priority_rank": 32,
     "risk_band": "Lower",
-    "supporter_id": 32,
+    "supporter_id": 42,
     "top_drivers": [
       "Relative risk from recency and giving volume heuristic"
     ]
   },
   {
-    "churn_risk_score": 0.0445,
-    "display_name": "Emma Evans",
-    "outreach_priority_rank": 41,
+    "churn_risk_score": 0.1865,
+    "display_name": "Seth Clark",
+    "outreach_priority_rank": 33,
     "risk_band": "Lower",
-    "supporter_id": 5,
+    "supporter_id": 29,
     "top_drivers": [
       "Relative risk from recency and giving volume heuristic"
     ]
   },
   {
-    "churn_risk_score": 0.044,
-    "display_name": "Ethan Garcia",
-    "outreach_priority_rank": 42,
-    "risk_band": "Lower",
-    "supporter_id": 7,
-    "top_drivers": [
-      "Relative risk from recency and giving volume heuristic"
-    ]
-  },
-  {
-    "churn_risk_score": 0.0413,
-    "display_name": "Jules Abe",
-    "outreach_priority_rank": 43,
-    "risk_band": "Lower",
-    "supporter_id": 27,
-    "top_drivers": [
-      "Relative risk from recency and giving volume heuristic"
-    ]
-  },
-  {
-    "churn_risk_score": 0.0392,
-    "display_name": "Faith Partners",
-    "outreach_priority_rank": 44,
-    "risk_band": "Lower",
-    "supporter_id": 38,
-    "top_drivers": [
-      "Relative risk from recency and giving volume heuristic"
-    ]
-  },
-  {
-    "churn_risk_score": 0.035,
-    "display_name": "Vera Stone",
-    "outreach_priority_rank": 45,
-    "risk_band": "Lower",
-    "supporter_id": 44,
-    "top_drivers": [
-      "Relative risk from recency and giving volume heuristic"
-    ]
-  },
-  {
-    "churn_risk_score": 0.0326,
-    "display_name": "Kaya Ward",
-    "outreach_priority_rank": 46,
-    "risk_band": "Lower",
-    "supporter_id": 47,
-    "top_drivers": [
-      "Relative risk from recency and giving volume heuristic"
-    ]
-  },
-  {
-    "churn_risk_score": 0.0299,
-    "display_name": "Sara Escobar",
-    "outreach_priority_rank": 47,
-    "risk_band": "Lower",
-    "supporter_id": 54,
-    "top_drivers": [
-      "Extended gap since last monetary gift"
-    ]
-  },
-  {
-    "churn_risk_score": 0.0295,
-    "display_name": "Jose Inoue",
-    "outreach_priority_rank": 48,
-    "risk_band": "Lower",
-    "supporter_id": 35,
-    "top_drivers": [
-      "Extended gap since last monetary gift"
-    ]
-  },
-  {
-    "churn_risk_score": 0.0225,
+    "churn_risk_score": 0.1837,
     "display_name": "Ezra Taylor",
-    "outreach_priority_rank": 49,
+    "outreach_priority_rank": 34,
     "risk_band": "Lower",
     "supporter_id": 20,
     "top_drivers": [
@@ -491,19 +341,119 @@
     ]
   },
   {
-    "churn_risk_score": 0.021,
-    "display_name": "Jon Edwards",
-    "outreach_priority_rank": 50,
+    "churn_risk_score": 0.174,
+    "display_name": "Emma Evans",
+    "outreach_priority_rank": 35,
     "risk_band": "Lower",
-    "supporter_id": 31,
+    "supporter_id": 5,
     "top_drivers": [
       "Relative risk from recency and giving volume heuristic"
     ]
   },
   {
-    "churn_risk_score": 0.021,
+    "churn_risk_score": 0.1719,
+    "display_name": "Sara Escobar",
+    "outreach_priority_rank": 36,
+    "risk_band": "Lower",
+    "supporter_id": 54,
+    "top_drivers": [
+      "Extended gap since last monetary gift"
+    ]
+  },
+  {
+    "churn_risk_score": 0.162,
+    "display_name": "Luz Fisher",
+    "outreach_priority_rank": 37,
+    "risk_band": "Lower",
+    "supporter_id": 32,
+    "top_drivers": [
+      "Relative risk from recency and giving volume heuristic"
+    ]
+  },
+  {
+    "churn_risk_score": 0.1583,
+    "display_name": "Maya Kim",
+    "outreach_priority_rank": 38,
+    "risk_band": "Lower",
+    "supporter_id": 11,
+    "top_drivers": [
+      "Relative risk from recency and giving volume heuristic"
+    ]
+  },
+  {
+    "churn_risk_score": 0.154,
+    "display_name": "Kian Farah",
+    "outreach_priority_rank": 39,
+    "risk_band": "Lower",
+    "supporter_id": 55,
+    "top_drivers": [
+      "Extended gap since last monetary gift"
+    ]
+  },
+  {
+    "churn_risk_score": 0.1529,
+    "display_name": "Theo Reed",
+    "outreach_priority_rank": 40,
+    "risk_band": "Lower",
+    "supporter_id": 18,
+    "top_drivers": [
+      "Relative risk from recency and giving volume heuristic"
+    ]
+  },
+  {
+    "churn_risk_score": 0.1528,
+    "display_name": "Jose Inoue",
+    "outreach_priority_rank": 41,
+    "risk_band": "Lower",
+    "supporter_id": 35,
+    "top_drivers": [
+      "Extended gap since last monetary gift"
+    ]
+  },
+  {
+    "churn_risk_score": 0.1497,
+    "display_name": "Faith Partners",
+    "outreach_priority_rank": 42,
+    "risk_band": "Lower",
+    "supporter_id": 38,
+    "top_drivers": [
+      "Relative risk from recency and giving volume heuristic"
+    ]
+  },
+  {
+    "churn_risk_score": 0.1428,
+    "display_name": "Kaya Ward",
+    "outreach_priority_rank": 43,
+    "risk_band": "Lower",
+    "supporter_id": 47,
+    "top_drivers": [
+      "Relative risk from recency and giving volume heuristic"
+    ]
+  },
+  {
+    "churn_risk_score": 0.1393,
+    "display_name": "Mira Bello",
+    "outreach_priority_rank": 44,
+    "risk_band": "Lower",
+    "supporter_id": 51,
+    "top_drivers": [
+      "Relative risk from recency and giving volume heuristic"
+    ]
+  },
+  {
+    "churn_risk_score": 0.1346,
+    "display_name": "Ethan Garcia",
+    "outreach_priority_rank": 45,
+    "risk_band": "Lower",
+    "supporter_id": 7,
+    "top_drivers": [
+      "Relative risk from recency and giving volume heuristic"
+    ]
+  },
+  {
+    "churn_risk_score": 0.1251,
     "display_name": "Noah Chen",
-    "outreach_priority_rank": 51,
+    "outreach_priority_rank": 46,
     "risk_band": "Lower",
     "supporter_id": 3,
     "top_drivers": [
@@ -511,29 +461,39 @@
     ]
   },
   {
-    "churn_risk_score": 0.0203,
-    "display_name": "Margo Zhang",
-    "outreach_priority_rank": 52,
+    "churn_risk_score": 0.1174,
+    "display_name": "Vera Stone",
+    "outreach_priority_rank": 47,
     "risk_band": "Lower",
-    "supporter_id": 26,
+    "supporter_id": 44,
     "top_drivers": [
       "Relative risk from recency and giving volume heuristic"
     ]
   },
   {
-    "churn_risk_score": 0.0187,
-    "display_name": "Isla Hernandez",
-    "outreach_priority_rank": 53,
+    "churn_risk_score": 0.105,
+    "display_name": "Jules Abe",
+    "outreach_priority_rank": 48,
     "risk_band": "Lower",
-    "supporter_id": 8,
+    "supporter_id": 27,
     "top_drivers": [
       "Relative risk from recency and giving volume heuristic"
     ]
   },
   {
-    "churn_risk_score": 0.0183,
+    "churn_risk_score": 0.0895,
+    "display_name": "Jon Edwards",
+    "outreach_priority_rank": 49,
+    "risk_band": "Lower",
+    "supporter_id": 31,
+    "top_drivers": [
+      "Relative risk from recency and giving volume heuristic"
+    ]
+  },
+  {
+    "churn_risk_score": 0.0874,
     "display_name": "Olivia Ford",
-    "outreach_priority_rank": 54,
+    "outreach_priority_rank": 50,
     "risk_band": "Lower",
     "supporter_id": 6,
     "top_drivers": [
@@ -541,7 +501,47 @@
     ]
   },
   {
-    "churn_risk_score": 0.018,
+    "churn_risk_score": 0.0859,
+    "display_name": "Tina Young",
+    "outreach_priority_rank": 51,
+    "risk_band": "Lower",
+    "supporter_id": 25,
+    "top_drivers": [
+      "Relative risk from recency and giving volume heuristic"
+    ]
+  },
+  {
+    "churn_risk_score": 0.0756,
+    "display_name": "Isla Hernandez",
+    "outreach_priority_rank": 52,
+    "risk_band": "Lower",
+    "supporter_id": 8,
+    "top_drivers": [
+      "Relative risk from recency and giving volume heuristic"
+    ]
+  },
+  {
+    "churn_risk_score": 0.0712,
+    "display_name": "Noel Turner",
+    "outreach_priority_rank": 53,
+    "risk_band": "Lower",
+    "supporter_id": 45,
+    "top_drivers": [
+      "Relative risk from recency and giving volume heuristic"
+    ]
+  },
+  {
+    "churn_risk_score": 0.0514,
+    "display_name": "Margo Zhang",
+    "outreach_priority_rank": 54,
+    "risk_band": "Lower",
+    "supporter_id": 26,
+    "top_drivers": [
+      "Relative risk from recency and giving volume heuristic"
+    ]
+  },
+  {
+    "churn_risk_score": 0.0481,
     "display_name": "Mila Alvarez",
     "outreach_priority_rank": 55,
     "risk_band": "Lower",
@@ -551,51 +551,21 @@
     ]
   },
   {
-    "churn_risk_score": 0.0177,
-    "display_name": "Tina Young",
+    "churn_risk_score": 0.0373,
+    "display_name": "Sophia Ibrahim",
     "outreach_priority_rank": 56,
     "risk_band": "Lower",
-    "supporter_id": 25,
+    "supporter_id": 9,
     "top_drivers": [
       "Relative risk from recency and giving volume heuristic"
     ]
   },
   {
-    "churn_risk_score": 0.0168,
-    "display_name": "Kian Farah",
+    "churn_risk_score": 0.0296,
+    "display_name": "Liam Diaz",
     "outreach_priority_rank": 57,
     "risk_band": "Lower",
-    "supporter_id": 55,
-    "top_drivers": [
-      "Extended gap since last monetary gift"
-    ]
-  },
-  {
-    "churn_risk_score": 0.0123,
-    "display_name": "Noel Turner",
-    "outreach_priority_rank": 58,
-    "risk_band": "Lower",
-    "supporter_id": 45,
-    "top_drivers": [
-      "Relative risk from recency and giving volume heuristic"
-    ]
-  },
-  {
-    "churn_risk_score": 0.0122,
-    "display_name": "Liam Diaz",
-    "outreach_priority_rank": 59,
-    "risk_band": "Lower",
     "supporter_id": 4,
-    "top_drivers": [
-      "Relative risk from recency and giving volume heuristic"
-    ]
-  },
-  {
-    "churn_risk_score": 0.0107,
-    "display_name": "Sophia Ibrahim",
-    "outreach_priority_rank": 60,
-    "risk_band": "Lower",
-    "supporter_id": 9,
     "top_drivers": [
       "Relative risk from recency and giving volume heuristic"
     ]

@@ -24,6 +24,14 @@ export default function UserManagerPage() {
   const [saving, setSaving]         = useState<string | null>(null);
   const [toast, setToast]           = useState<{ msg: string; ok: boolean } | null>(null);
 
+  // User creation state
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [newEmail, setNewEmail]           = useState('');
+  const [newPassword, setNewPassword]     = useState('');
+  const [newRole, setNewRole]             = useState('');
+  const [creating, setCreating]           = useState(false);
+  const [showPass, setShowPass]           = useState(false);
+
   useEffect(() => { loadUsers(); }, []);
 
   async function loadUsers() {
@@ -33,7 +41,7 @@ export default function UserManagerPage() {
       const data = await fetchJson<UserRecord[]>('/api/auth/users');
       setUsers(data);
     } catch {
-      setError('No se pudo cargar la lista de usuarios.');
+      setError('Failed to load user list.'); // put this in english
     } finally {
       setLoading(false);
     }
@@ -59,11 +67,34 @@ export default function UserManagerPage() {
         prev.map(u => u.email === email ? { ...u, roles: [role] } : u)
       );
       setPendingRole(prev => { const n = { ...prev }; delete n[email]; return n; });
-      showToast(`Rol actualizado a "${role}" para ${email}`, true);
+      showToast(`Role updated to "${role}" for ${email}`, true);
     } catch {
-      showToast('Error al actualizar el rol.', false);
+      showToast('Error updating role.', false);
     } finally {
       setSaving(null);
+    }
+  }
+
+  async function handleCreateUser(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newEmail || !newPassword || !newRole) {
+      showToast('Please fill in all fields.', false);
+      return;
+    }
+    setCreating(true);
+    try {
+      await postJson('/api/auth/create-user', { email: newEmail, password: newPassword, role: newRole });
+      showToast(`User ${newEmail} created successfully.`, true);
+      setNewEmail('');
+      setNewPassword('');
+      setNewRole('');
+      setShowCreateForm(false);
+      loadUsers();
+    } catch (err: any) {
+      const msg = err.message || 'Error creating user.';
+      showToast(msg, false);
+    } finally {
+      setCreating(false);
     }
   }
 
@@ -85,17 +116,126 @@ export default function UserManagerPage() {
       )}
 
       {/* Page header */}
-      <div style={{ marginBottom: '1.75rem' }}>
-        <p style={{ margin: 0, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 2, color: '#0D9488' }}>
-          ADMINISTRACIÓN
-        </p>
-        <h1 style={{ margin: '4px 0 6px', fontSize: '1.9rem', fontWeight: 800, color: '#1E3A5F', fontFamily: 'Poppins, sans-serif' }}>
-          User Manager
-        </h1>
-        <p style={{ margin: 0, color: '#6B7280', fontSize: 14 }}>
-          Gestiona los roles de todos los usuarios registrados. Solo los administradores pueden cambiar roles.
-        </p>
+      <div style={{ marginBottom: '1.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+        <div>
+          <p style={{ margin: 0, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 2, color: '#0D9488' }}>
+            ADMINISTRATION
+          </p>
+          <h1 style={{ margin: '4px 0 6px', fontSize: '1.9rem', fontWeight: 800, color: '#1E3A5F', fontFamily: 'Poppins, sans-serif' }}>
+            User Manager
+          </h1>
+          <p style={{ margin: 0, color: '#6B7280', fontSize: 14 }}>
+            Manage the roles of all registered users. Only administrators can change roles.
+          </p>
+        </div>
+        <button
+          onClick={() => setShowCreateForm(!showCreateForm)}
+          style={{
+            background: showCreateForm ? '#FEE2E2' : '#0D9488',
+            color: showCreateForm ? '#991B1B' : 'white',
+            border: 'none', borderRadius: 10, padding: '10px 20px',
+            fontSize: 14, fontWeight: 700, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', gap: 8,
+            boxShadow: showCreateForm ? 'none' : '0 4px 12px rgba(13, 148, 136, 0.25)',
+            transition: 'all 0.2s',
+          }}
+        >
+          <i className={`bi ${showCreateForm ? 'bi-x-lg' : 'bi-person-plus-fill'}`} />
+          {showCreateForm ? 'Cancel' : 'Add New User'}
+        </button>
       </div>
+
+      {/* Create User Form */}
+      {showCreateForm && (
+        <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: 16, overflow: 'hidden', borderLeft: '4px solid #0D9488' }}>
+          <div className="card-body" style={{ padding: '1.5rem' }}>
+            <h5 style={{ margin: '0 0 1.25rem', fontSize: 16, fontWeight: 700, color: '#1E3A5F' }}>
+              Create New Account
+            </h5>
+            <form onSubmit={handleCreateUser} style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+              <div style={{ flex: '1 1 240px' }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#6B7280', marginBottom: 6 }}>Email</label>
+                <div style={{ position: 'relative' }}>
+                  <i className="bi bi-envelope" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
+                  <input
+                    type="email"
+                    className="form-control"
+                    placeholder="user@example.com"
+                    value={newEmail}
+                    onChange={e => setNewEmail(e.target.value)}
+                    required
+                    style={{ paddingLeft: 36, borderRadius: 10, border: '1px solid #E5E7EB', fontSize: 14 }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ flex: '1 1 200px' }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#6B7280', marginBottom: 6 }}>Password</label>
+                <div style={{ position: 'relative' }}>
+                  <i className="bi bi-key" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
+                  <input
+                    type={showPass ? 'text' : 'password'}
+                    className="form-control"
+                    placeholder="Min 14 characters"
+                    value={newPassword}
+                    onChange={e => setNewPassword(e.target.value)}
+                    required
+                    style={{ paddingLeft: 36, paddingRight: 36, borderRadius: 10, border: '1px solid #E5E7EB', fontSize: 14 }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPass(!showPass)}
+                    style={{
+                      position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
+                      border: 'none', background: 'transparent', color: '#9CA3AF', cursor: 'pointer',
+                    }}
+                  >
+                    <i className={`bi ${showPass ? 'bi-eye-slash' : 'bi-eye'}`} />
+                  </button>
+                </div>
+              </div>
+
+              <div style={{ flex: '0 1 180px' }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#6B7280', marginBottom: 6 }}>Initial Role</label>
+                <select
+                  className="form-select"
+                  value={newRole}
+                  onChange={e => setNewRole(e.target.value)}
+                  required
+                  style={{ borderRadius: 10, border: '1px solid #E5E7EB', fontSize: 14 }}
+                >
+                  <option value="">Select role...</option>
+                  {ROLE_OPTIONS.map(r => (
+                    <option key={r} value={r}>{r}</option>
+                  ))}
+                </select>
+              </div>
+
+              <button
+                type="submit"
+                disabled={creating}
+                style={{
+                  background: '#0D9488', color: 'white', border: 'none', borderRadius: 10,
+                  padding: '10px 24px', fontSize: 14, fontWeight: 700, cursor: creating ? 'not-allowed' : 'pointer',
+                  display: 'flex', alignItems: 'center', gap: 8,
+                }}
+              >
+                {creating ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm" role="status" />
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <i className="bi bi-person-check-fill" />
+                    Create User
+                  </>
+                )}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Main card */}
       <div className="card border-0 shadow-sm" style={{ borderRadius: 16 }}>
@@ -111,7 +251,7 @@ export default function UserManagerPage() {
               <input
                 type="text"
                 className="form-control"
-                placeholder="Buscar por correo..."
+                placeholder="Search by email..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 style={{ paddingLeft: 36, borderRadius: 10, border: '1px solid #E5E7EB', fontSize: 14 }}
@@ -120,7 +260,7 @@ export default function UserManagerPage() {
 
             <span style={{ color: '#6B7280', fontSize: 13, whiteSpace: 'nowrap' }}>
               <i className="bi bi-people me-1" />
-              {filtered.length} {filtered.length === 1 ? 'usuario' : 'usuarios'}
+              {filtered.length} {filtered.length === 1 ? 'user' : 'users'}
             </span>
 
             <button
@@ -131,7 +271,7 @@ export default function UserManagerPage() {
               }}
             >
               <i className="bi bi-arrow-clockwise" />
-              Actualizar
+                 Update
             </button>
           </div>
 
@@ -154,7 +294,7 @@ export default function UserManagerPage() {
           {loading ? (
             <div style={{ textAlign: 'center', padding: '4rem 0', color: '#9CA3AF' }}>
               <div className="spinner-border spinner-border-sm me-2" role="status" />
-              Cargando usuarios...
+              Loading users...
             </div>
           ) : error ? (
             <div style={{ textAlign: 'center', padding: '4rem 0', color: '#DC2626' }}>
@@ -165,7 +305,7 @@ export default function UserManagerPage() {
                 onClick={loadUsers}
                 style={{ marginTop: 12, background: '#1E3A5F', color: 'white', border: 'none', borderRadius: 8, padding: '8px 20px', cursor: 'pointer', fontSize: 13 }}
               >
-                Reintentar
+                Retry
               </button>
             </div>
           ) : filtered.length === 0 ? (
@@ -179,13 +319,13 @@ export default function UserManagerPage() {
                 <thead>
                   <tr style={{ borderBottom: '2px solid #f0f0f0' }}>
                     <th style={{ fontWeight: 700, color: '#6B7280', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, padding: '10px 16px', background: 'transparent', border: 'none' }}>
-                      Correo electrónico
+                      Email
                     </th>
                     <th style={{ fontWeight: 700, color: '#6B7280', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, padding: '10px 16px', background: 'transparent', border: 'none' }}>
-                      Rol actual
+                      Current Role
                     </th>
                     <th style={{ fontWeight: 700, color: '#6B7280', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, padding: '10px 16px', background: 'transparent', border: 'none', width: 300 }}>
-                      Cambiar rol
+                      Change Role
                     </th>
                   </tr>
                 </thead>
@@ -237,7 +377,7 @@ export default function UserManagerPage() {
                               disabled={isSaving}
                               style={{ borderRadius: 8, border: '1px solid #E5E7EB', fontSize: 13, maxWidth: 150, color: selected ? '#1E3A5F' : '#9CA3AF' }}
                             >
-                              <option value="">Seleccionar...</option>
+                              <option value="">Select...</option> // put this in english
                               {ROLE_OPTIONS.map(r => (
                                 <option key={r} value={r}>{r}</option>
                               ))}
@@ -265,12 +405,12 @@ export default function UserManagerPage() {
                               {isSaving ? (
                                 <>
                                   <span className="spinner-border spinner-border-sm" role="status" />
-                                  Guardando...
+                                  Saving...
                                 </>
                               ) : (
                                 <>
                                   <i className="bi bi-check2" />
-                                  Aplicar
+                                  Apply
                                 </>
                               )}
                             </button>

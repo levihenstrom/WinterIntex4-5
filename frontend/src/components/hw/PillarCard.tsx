@@ -1,3 +1,5 @@
+import { Link as RouterLink } from 'react-router-dom';
+
 interface PillarCardProps {
   imageUrl: string;
   title: string;
@@ -13,7 +15,7 @@ export default function PillarCard({
   link = '#',
   overlayColor = 'rgba(0,0,0,0.65)',
 }: PillarCardProps) {
-  return (
+  const content = (
     <div className="pillar-card relative h-[480px] rounded-2xl overflow-hidden group cursor-pointer shadow-xl">
       {/* Background image with zoom on hover */}
       <div
@@ -25,11 +27,13 @@ export default function PillarCard({
       {/* Content */}
       <div className="absolute bottom-0 left-0 right-0 p-8 text-white">
         <h3 className="text-2xl font-bold mb-2" style={{ fontFamily: 'Poppins, sans-serif' }}>{title}</h3>
-        <p className="text-white/80 text-sm leading-relaxed mb-4">{subtitle}</p>
-        <a href={link} className="text-white/70 text-sm font-semibold hover:text-white transition-colors no-underline">
-          Learn More →
-        </a>
+        <p className="text-white/80 text-sm leading-relaxed">{subtitle}</p>
       </div>
     </div>
   );
+
+  if (link.startsWith('#')) {
+    return <a href={link} className="no-underline">{content}</a>;
+  }
+  return <RouterLink to={link || '#'} className="no-underline">{content}</RouterLink>;
 }

@@ -1,6 +1,4 @@
-using System.Collections.Concurrent;
 using System.Security.Claims;
-using System.Security.Cryptography;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -19,15 +17,11 @@ public class AuthController(
     UserManager<ApplicationUser> userManager,
     SignInManager<ApplicationUser> signInManager,
     IConfiguration configuration,
-    AppDbContext appDb) : ControllerBase
+    AppDbContext appDb,
+    Services.RefreshTokenStore refreshTokenStore) : ControllerBase
 {
     private const string DefaultFrontendUrl = "http://localhost:3000";
     private const string DefaultExternalReturnPath = "/";
-
-    // Single-use tokens for cross-site OAuth flow (mobile Safari/Chrome block third-party cookies).
-    // After Google sign-in the backend mints a token → browser opens the SPA at /oauth/callback?authToken=…
-    // → POST /api/auth/exchange-token (fetch) sets the cookie + localStorage → navigate to the app.
-    private static readonly ConcurrentDictionary<string, (string UserId, DateTime Expiry)> _pendingTokens = new();
 
     [AllowAnonymous]
     [HttpGet("me")]
@@ -174,6 +168,48 @@ public class AuthController(
         }
 
         return Ok(new { message = "Role assigned successfully.", email = user.Email, role = canonicalRole });
+    }
+    //// SECURE END POINT TO CREATE A USER
+
+    [Authorize(Policy = AuthPolicies.AdminOnly)]
+    [HttpPost("create-user")]
+    public async Task<IActionResult> CreateUser([FromBody] CreateUserRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password) || string.IsNullOrWhiteSpace(request.Role))
+            return BadRequest(new { message = "Email, password, and role are required." });
+
+        var normalizedRole = request.Role.Trim();
+        var allowedRoles = new[] { AuthRoles.Admin, AuthRoles.Staff, AuthRoles.Donor };
+        if (!allowedRoles.Contains(normalizedRole, StringComparer.OrdinalIgnoreCase))
+            return BadRequest(new { message = "Role must be Admin, Staff, or Donor." });
+
+        var canonicalRole = allowedRoles.First(r => string.Equals(r, normalizedRole, StringComparison.OrdinalIgnoreCase));
+
+        var user = new ApplicationUser
+        {
+            UserName = request.Email.Trim(),
+            Email = request.Email.Trim(),
+            EmailConfirmed = true
+        };
+
+        var createResult = await userManager.CreateAsync(user, request.Password);
+        if (!createResult.Succeeded)
+        {
+            foreach (var error in createResult.Errors)
+                ModelState.AddModelError(error.Code, error.Description);
+            return ValidationProblem(ModelState);
+        }
+
+        var roleResult = await userManager.AddToRoleAsync(user, canonicalRole);
+        if (!roleResult.Succeeded)
+        {
+            await userManager.DeleteAsync(user);
+            foreach (var error in roleResult.Errors)
+                ModelState.AddModelError(error.Code, error.Description);
+            return ValidationProblem(ModelState);
+        }
+
+        return Ok(new { message = "User created successfully.", email = user.Email, role = canonicalRole });
     }
 
     [Authorize(Policy = AuthPolicies.AdminOnly)]
@@ -398,9 +434,7 @@ public class AuthController(
         // Mint a single-use token and redirect to the frontend with it.
         // The frontend will immediately redirect to /api/auth/exchange-token (top-level navigation)
         // which sets the Identity cookie as a first-party cookie (fixes mobile Safari/Chrome).
-        var token = GenerateToken();
-        PurgeExpiredTokens();
-        _pendingTokens[token] = (resolvedUser.Id, DateTime.UtcNow.AddMinutes(2));
+        var token = refreshTokenStore.Create(resolvedUser.Id, TimeSpan.FromMinutes(2));
 
         // Always land on a public SPA route first so RequireAuth never runs before the token is exchanged.
         var frontendUrl = configuration["FrontendUrl"] ?? DefaultFrontendUrl;
@@ -426,18 +460,13 @@ public class AuthController(
     [HttpPost("exchange-token")]
     public async Task<IActionResult> ExchangeToken([FromBody] ExchangeTokenRequest request)
     {
-        PurgeExpiredTokens();
-
         if (string.IsNullOrWhiteSpace(request.Token))
             return BadRequest(new { message = "Token is required." });
 
-        if (!_pendingTokens.TryRemove(request.Token, out var entry))
+        if (!refreshTokenStore.TryConsume(request.Token, out var userId) || string.IsNullOrWhiteSpace(userId))
             return Unauthorized(new { message = "Invalid or expired login token." });
 
-        if (DateTime.UtcNow > entry.Expiry)
-            return Unauthorized(new { message = "Login token has expired." });
-
-        var user = await userManager.FindByIdAsync(entry.UserId);
+        var user = await userManager.FindByIdAsync(userId);
         if (user is null)
             return Unauthorized(new { message = "User account not found." });
 
@@ -449,8 +478,7 @@ public class AuthController(
 
         // Return session data so frontend can store it regardless of cookie support.
         // Also return a refreshToken the frontend can use to re-validate later.
-        var refreshToken = GenerateToken();
-        _pendingTokens[refreshToken] = (user.Id, DateTime.UtcNow.AddDays(7));
+        var refreshToken = refreshTokenStore.Create(user.Id, TimeSpan.FromDays(7));
 
         return Ok(new
         {
@@ -470,21 +498,13 @@ public class AuthController(
     [HttpPost("refresh-session")]
     public async Task<IActionResult> RefreshSession([FromBody] RefreshSessionRequest request)
     {
-        PurgeExpiredTokens();
-
         if (string.IsNullOrWhiteSpace(request.RefreshToken))
             return Unauthorized(new { message = "Refresh token is required." });
 
-        if (!_pendingTokens.TryGetValue(request.RefreshToken, out var entry))
+        if (!refreshTokenStore.TryGetValidUserId(request.RefreshToken, out var userId) || string.IsNullOrWhiteSpace(userId))
             return Unauthorized(new { message = "Invalid or expired refresh token." });
 
-        if (DateTime.UtcNow > entry.Expiry)
-        {
-            _pendingTokens.TryRemove(request.RefreshToken, out _);
-            return Unauthorized(new { message = "Refresh token has expired." });
-        }
-
-        var user = await userManager.FindByIdAsync(entry.UserId);
+        var user = await userManager.FindByIdAsync(userId);
         if (user is null)
             return Unauthorized(new { message = "User account not found." });
 
@@ -521,6 +541,16 @@ public class AuthController(
         string Email,
         [Range(1, int.MaxValue, ErrorMessage = "Partner is required.")]
         int PartnerId);
+
+    public record CreateUserRequest(
+        [Required(ErrorMessage = "Email is required.")]
+        [EmailAddress(ErrorMessage = "Enter a valid email address.")]
+        string Email,
+        [Required(ErrorMessage = "Password is required.")]
+        [MinLength(14, ErrorMessage = "Password must be at least 14 characters.")]
+        string Password,
+        [Required(ErrorMessage = "Role is required.")]
+        string Role);
     public record PasswordLoginRequest(
         [Required(ErrorMessage = "Email is required.")]
         [EmailAddress(ErrorMessage = "Enter a valid email address.")]
@@ -541,7 +571,7 @@ public class AuthController(
 
         // Remove stored refresh token if provided
         if (!string.IsNullOrWhiteSpace(request?.RefreshToken))
-            _pendingTokens.TryRemove(request.RefreshToken, out _);
+            refreshTokenStore.Remove(request.RefreshToken);
 
         return Ok(new { message = "Logout successful." });
     }
@@ -583,27 +613,17 @@ public class AuthController(
         return QueryHelpers.AddQueryString(loginUrl, "externalError", errorMessage);
     }
 
-    private static string GenerateToken()
-    {
-        return Convert.ToBase64String(RandomNumberGenerator.GetBytes(32))
-            .Replace('+', '-').Replace('/', '_').TrimEnd('=');
-    }
-
-    private static void PurgeExpiredTokens()
-    {
-        var now = DateTime.UtcNow;
-        foreach (var key in _pendingTokens.Keys)
-        {
-            if (_pendingTokens.TryGetValue(key, out var val) && now > val.Expiry)
-                _pendingTokens.TryRemove(key, out _);
-        }
-    }
-
     private async Task<object> BuildSessionResponseAsync(ApplicationUser user, bool requiresTwoFactor)
     {
         var roles = (await userManager.GetRolesAsync(user))
             .OrderBy(r => r)
             .ToArray();
+
+        string? refreshToken = null;
+        if (!requiresTwoFactor)
+        {
+            refreshToken = refreshTokenStore.Create(user.Id, TimeSpan.FromDays(7));
+        }
 
         return new
         {
@@ -611,7 +631,8 @@ public class AuthController(
             isAuthenticated = !requiresTwoFactor,
             userName = user.UserName,
             email = user.Email,
-            roles
+            roles,
+            refreshToken
         };
     }
 }

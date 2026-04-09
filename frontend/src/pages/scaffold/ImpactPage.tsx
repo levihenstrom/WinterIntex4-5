@@ -1,25 +1,18 @@
 import { useState, useEffect, useRef } from 'react';
 import { fetchJson } from '../../lib/apiClient';
-import 'bootstrap-icons/font/bootstrap-icons.css';
 import NavBar from '../../components/hw/NavBar';
+import Footer from '../../components/hw/Footer';
 import MetricCard from '../../components/hw/MetricCard';
 import {
-  ResponsiveContainer, AreaChart, Area, BarChart, Bar,
-  LineChart, Line, RadialBarChart, RadialBar,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+  ResponsiveContainer, AreaChart, Area, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
 } from 'recharts';
 
 /* ── Types ───────────────────────────────────────────────────── */
 interface MetricPayload {
-  residents_served: number;
-  new_admissions: number;
-  successful_reintegrations: number;
-  reintegration_rate_pct: number;
-  active_volunteers: number;
-  volunteer_hours: number;
-  programs_completed: number;
-  donations_received_usd: number;
-  safehouses_active: number;
+  total_residents: number;
+  donations_total_for_month: number;
+  avg_health_score: number;
+  avg_education_progress: number;
 }
 interface ImpactSnapshot {
   snapshot_id: number;
@@ -56,9 +49,42 @@ function normalizeSnapshot(s: ApiImpactSnapshot): ImpactSnapshot {
 }
 
 /* ── Helpers ─────────────────────────────────────────────────── */
-const parse = (j: string): MetricPayload => { try { return JSON.parse(j); } catch { return {} as MetricPayload; } };
+function asNumber(v: unknown, fallback = 0): number {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function parseMetricPayload(raw: string): MetricPayload {
+  let parsed: Record<string, unknown> = {};
+  try {
+    parsed = JSON.parse(raw) as Record<string, unknown>;
+  } catch {
+    // Support legacy payloads that were persisted with single quotes.
+    try {
+      parsed = JSON.parse(raw.replace(/'/g, '"')) as Record<string, unknown>;
+    } catch {
+      parsed = {};
+    }
+  }
+
+  return {
+    total_residents: asNumber(parsed.total_residents ?? parsed.residents_served),
+    donations_total_for_month: asNumber(
+      parsed.donations_total_for_month ?? parsed.donations_received_usd ?? parsed.donations_total,
+    ),
+    avg_health_score: asNumber(parsed.avg_health_score),
+    avg_education_progress: asNumber(parsed.avg_education_progress),
+  };
+}
 const fmtMonth = (iso: string) => new Date(iso + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 const fmtShort = (iso: string) => new Date(iso + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+
+/** Last snapshot date included on charts (14 days before 2026-03-01) — drops placeholder Mar 2026 zeros. */
+const CHART_SNAPSHOT_LAST_INCLUSIVE = '2026-02-15';
+
+function snapshotIncludedInCharts(snapshotDate: string): boolean {
+  return Boolean(snapshotDate && snapshotDate <= CHART_SNAPSHOT_LAST_INCLUSIVE);
+}
 
 /* ── Recharts tooltip style ──────────────────────────────────── */
 const TT = {
@@ -78,13 +104,19 @@ function useFadeIn() {
 }
 
 /* ── White chart card ────────────────────────────────────────── */
-function Card({ title, sub, children }: { title: string; sub?: string; children: React.ReactNode }) {
+function Card({ title, sub, hint, children }: { title: string; sub?: string; hint?: string; children: React.ReactNode }) {
   const ref = useFadeIn();
   return (
     <div ref={ref} className="hw-fade-in" style={{ background: '#fff', borderRadius: 16, border: '1px solid #e2e8f0', boxShadow: '0 2px 16px rgba(30,58,95,0.07)', padding: '1.4rem 1.5rem' }}>
       <p style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, color: '#1E3A5F', fontSize: '0.9rem', margin: '0 0 2px' }}>{title}</p>
-      {sub && <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.72rem', color: '#94a3b8', margin: '0 0 1rem' }}>{sub}</p>}
-      {!sub && <div style={{ marginBottom: '1rem' }} />}
+      {sub && <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.72rem', color: '#94a3b8', margin: '0 0 0.35rem' }}>{sub}</p>}
+      {hint && (
+        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.75rem', color: '#64748b', lineHeight: 1.55, margin: '0 0 1rem' }}>
+          {hint}
+        </p>
+      )}
+      {!sub && !hint && <div style={{ marginBottom: '1rem' }} />}
+      {sub && !hint && <div style={{ marginBottom: '0.65rem' }} />}
       {children}
     </div>
   );
@@ -104,16 +136,14 @@ function StatBox({ label, value, color, bg, border }: { label: string; value: st
 /* ── Report card ─────────────────────────────────────────────── */
 function ReportCard({ snap, featured = false }: { snap: ImpactSnapshot; featured?: boolean }) {
   const [open, setOpen] = useState(featured);
-  const p = parse(snap.metric_payload_json);
+  const p = parseMetricPayload(snap.metric_payload_json);
   const ref = useFadeIn();
 
   const pills = [
-    { label: 'Residents', value: p.residents_served?.toLocaleString(), color: '#6B21A8', bg: '#f5f3ff', border: '#e9d5ff' },
-    { label: 'Reint. Rate', value: `${p.reintegration_rate_pct}%`, color: '#0D9488', bg: '#f0fdf4', border: '#bbf7d0' },
-    { label: 'Vol. Hours', value: p.volunteer_hours?.toLocaleString(), color: '#1d4ed8', bg: '#eff6ff', border: '#bfdbfe' },
-    { label: 'Donations', value: `$${(p.donations_received_usd / 1000).toFixed(0)}K`, color: '#D97706', bg: '#fffbeb', border: '#fde68a' },
-    { label: 'Programs', value: String(p.programs_completed), color: '#059669', bg: '#f0fdf4', border: '#a7f3d0' },
-    { label: 'Safehouses', value: String(p.safehouses_active), color: '#0284c7', bg: '#f0f9ff', border: '#bae6fd' },
+    { label: 'Residents', value: p.total_residents?.toLocaleString(), color: '#6B21A8', bg: '#f5f3ff', border: '#e9d5ff' },
+    { label: 'Health Score', value: p.avg_health_score?.toFixed(2), color: '#0D9488', bg: '#f0fdf4', border: '#bbf7d0' },
+    { label: 'Education', value: `${p.avg_education_progress?.toFixed(1)}%`, color: '#1d4ed8', bg: '#eff6ff', border: '#bfdbfe' },
+    { label: 'Donations', value: `₱${(p.donations_total_for_month / 1000).toFixed(1)}K`, color: '#D97706', bg: '#fffbeb', border: '#fde68a' },
   ];
 
   return (
@@ -155,14 +185,25 @@ function ReportCard({ snap, featured = false }: { snap: ImpactSnapshot; featured
 }
 
 /* ── Tabs ────────────────────────────────────────────────────── */
-const TABS = ['Overview', 'Donations', 'Residents', 'Volunteers', 'Reports'] as const;
+const TABS = ['Overview', 'Donations', 'Residents', 'Wellness', 'Reports'] as const;
 type Tab = typeof TABS[number];
+
+interface LiveStats {
+  totalResidents: number;
+  successfulReintegrations: number;
+  safehousesActive: number;
+  donationsRaisedTotal: number;
+  volunteerHoursTotal: number;
+  reintegrationRatePct: number;
+  oldestAdmissionYear?: number | null;
+}
 
 /* ── Page ────────────────────────────────────────────────────── */
 export default function ImpactPage() {
   const [tab, setTab] = useState<Tab>('Overview');
   const [snapshots, setSnapshots] = useState<ImpactSnapshot[]>([]);
   const [impactLoadError, setImpactLoadError] = useState<string | null>(null);
+  const [liveStats, setLiveStats] = useState<LiveStats | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -179,41 +220,64 @@ export default function ImpactPage() {
     return () => { cancelled = true; };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    fetchJson<LiveStats>('/api/public-impact/live-stats')
+      .then((s) => { if (!cancelled) setLiveStats(s); })
+      .catch(() => { /* KPI strip uses snapshot fallbacks */ });
+    return () => { cancelled = true; };
+  }, []);
+
   const published = snapshots
     .filter((s) => s.is_published)
     .sort((a, b) => new Date(b.snapshot_date).getTime() - new Date(a.snapshot_date).getTime());
   const featured = published[0];
   const rest = published.slice(1);
 
-  const chartData = [...published].reverse().map((s) => {
-    const p = parse(s.metric_payload_json);
+  const validSnapshots = [...published]
+    .reverse()
+    .filter((s) => {
+      const p = parseMetricPayload(s.metric_payload_json);
+      return p.avg_health_score > 0 || p.donations_total_for_month > 0;
+    });
+
+  const chartSnapshots = validSnapshots.filter((s) => snapshotIncludedInCharts(s.snapshot_date));
+
+  const chartData = chartSnapshots.map((s) => {
+    const p = parseMetricPayload(s.metric_payload_json);
     return {
       month: fmtShort(s.snapshot_date),
-      donations: p.donations_received_usd,
-      residents: p.residents_served,
-      reintegrationRate: p.reintegration_rate_pct,
-      volunteerHours: p.volunteer_hours,
-      programs: p.programs_completed,
-      newAdmissions: p.new_admissions,
-      reintegrations: p.successful_reintegrations,
-      volunteers: p.active_volunteers,
+      donations: p.donations_total_for_month,
+      residents: p.total_residents,
+      healthScore: p.avg_health_score,
+      educationProgress: p.avg_education_progress,
     };
   });
 
-  const radialColors = ['#6B21A8', '#7C3AED', '#0D9488', '#D97706', '#34d399', '#60a5fa'];
-  const radialData = [...published].reverse().map((s, i) => ({
-    name: fmtShort(s.snapshot_date),
-    value: parse(s.metric_payload_json).successful_reintegrations,
-    fill: radialColors[i % radialColors.length],
-  }));
-
   const maxResidents =
     published.length > 0
-      ? Math.max(...published.map((s) => parse(s.metric_payload_json).residents_served ?? 0))
+      ? Math.max(...published.map((s) => parseMetricPayload(s.metric_payload_json).total_residents ?? 0))
       : 0;
-  const totalReint = published.reduce((n, s) => n + (parse(s.metric_payload_json).successful_reintegrations ?? 0), 0);
-  const totalHours = published.reduce((n, s) => n + (parse(s.metric_payload_json).volunteer_hours ?? 0), 0);
-  const totalDonations = published.reduce((n, s) => n + (parse(s.metric_payload_json).donations_received_usd ?? 0), 0);
+  const totalDonationsPublished = published.reduce(
+    (n, s) => n + parseMetricPayload(s.metric_payload_json).donations_total_for_month,
+    0,
+  );
+
+  const totalDonationsCharts = chartSnapshots.reduce(
+    (n, s) => n + parseMetricPayload(s.metric_payload_json).donations_total_for_month,
+    0,
+  );
+  const latestHealth = chartSnapshots.length > 0
+    ? parseMetricPayload(chartSnapshots[chartSnapshots.length - 1].metric_payload_json).avg_health_score
+    : 0;
+  const peakEducation = chartSnapshots.length > 0
+    ? Math.max(...chartSnapshots.map((s) => parseMetricPayload(s.metric_payload_json).avg_education_progress))
+    : 0;
+  const monthsOfData = chartSnapshots.length;
+
+  const bestDonationMonth = chartData.length
+    ? chartData.reduce((best, row) => (row.donations > best.donations ? row : best), chartData[0])
+    : null;
 
   return (
     <div style={{ fontFamily: 'var(--hw-font-body)', minHeight: '100vh', background: '#f8fafc' }}>
@@ -225,21 +289,88 @@ export default function ImpactPage() {
         </div>
       )}
 
-      {/* ── Hero ── */}
-      <section style={{ background: 'linear-gradient(135deg, #1E3A5F 0%, #0f2744 100%)', paddingTop: '7rem', paddingBottom: '5rem', paddingLeft: '1.5rem', paddingRight: '1.5rem' }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <span className="hw-eyebrow">Public Impact Dashboard</span>
-          <h1 style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 900, fontSize: 'clamp(2.2rem, 5vw, 3.4rem)', color: '#fff', margin: '0.5rem 0 0.75rem', lineHeight: 1.1 }}>
-            Our Impact
-          </h1>
-          <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '1.05rem', maxWidth: 520, lineHeight: 1.65, margin: '0 0 1.5rem' }}>
-            Monthly anonymized aggregate reports for our community, donors, and partners. Every number represents a life changed.
-          </p>
-          <div style={{ display: 'inline-flex', alignItems: 'flex-start', gap: 10, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.16)', borderRadius: 12, padding: '0.75rem 1rem', maxWidth: 560 }}>
-            <svg width="15" height="15" fill="none" stroke="#5eead4" strokeWidth="2" viewBox="0 0 24 24" style={{ flexShrink: 0, marginTop: 1 }}><circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" /></svg>
-            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.82rem', color: 'rgba(255,255,255,0.62)', margin: 0, lineHeight: 1.6 }}>
-              These reports contain <strong style={{ color: '#5eead4' }}>anonymized, aggregated</strong> data intended for public-facing dashboards and donor communications. No personally identifiable information is included.
-            </p>
+      {/* ── Hero (DonorDashboardPage-aligned layout) ── */}
+      <section
+        aria-label="Public impact introduction"
+        style={{
+          background: 'linear-gradient(135deg, #1E3A5F 0%, #0f2744 100%)',
+          paddingTop: '7rem',
+          paddingBottom: '5rem',
+          paddingLeft: '1.5rem',
+          paddingRight: '1.5rem',
+        }}
+      >
+        <div style={{ maxWidth: 1100, margin: '0 auto', textAlign: 'left' }}>
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'flex-start',
+              justifyContent: 'space-between',
+              gap: '1.25rem 1.75rem',
+            }}
+          >
+            <div style={{ flex: '1 1 280px', minWidth: 0, maxWidth: 560 }}>
+              <span className="hw-eyebrow">Public Impact Dashboard</span>
+              <h1
+                style={{
+                  fontFamily: 'Poppins, sans-serif',
+                  fontWeight: 900,
+                  fontSize: 'clamp(2.2rem, 5vw, 3.4rem)',
+                  color: '#fff',
+                  margin: '0.45rem 0 0.65rem',
+                  lineHeight: 1.1,
+                }}
+              >
+                Our Impact
+              </h1>
+              <p
+                style={{
+                  color: 'rgba(255,255,255,0.65)',
+                  fontSize: '1.05rem',
+                  lineHeight: 1.65,
+                  margin: 0,
+                }}
+              >
+                Monthly anonymized aggregate reports for our community, donors, and partners. Every number represents a life changed.
+              </p>
+              <p
+                style={{
+                  fontFamily: 'Inter, sans-serif',
+                  fontSize: '0.88rem',
+                  color: 'rgba(255,255,255,0.62)',
+                  lineHeight: 1.65,
+                  margin: '1.1rem 0 0',
+                  paddingLeft: 'clamp(0.75rem, 2vw, 1rem)',
+                  borderLeft: '2px solid rgba(94, 234, 212, 0.45)',
+                }}
+              >
+                These reports contain <strong style={{ color: '#5eead4' }}>anonymized, aggregated</strong> data intended for public-facing dashboards and donor communications. No personally identifiable information is included.
+              </p>
+            </div>
+            <div
+              style={{
+                flex: '0 0 auto',
+                alignSelf: 'center',
+                marginRight: 'clamp(1rem, 3vw, 2rem)',
+              }}
+            >
+              <a
+                href="/#donate"
+                className="hw-btn-magenta"
+                style={{
+                  padding: '1rem 2.5rem',
+                  borderRadius: 50,
+                  fontWeight: 700,
+                  fontSize: 'clamp(1rem, 2vw, 1.15rem)',
+                  textDecoration: 'none',
+                  display: 'inline-block',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                Donate now →
+              </a>
+            </div>
           </div>
         </div>
       </section>
@@ -249,13 +380,44 @@ export default function ImpactPage() {
         <div style={{ marginTop: -44, background: 'rgba(30,58,95,0.92)', backdropFilter: 'blur(14px)', borderRadius: 20, border: '1px solid rgba(255,255,255,0.13)', boxShadow: '0 20px 60px rgba(30,58,95,0.28)', position: 'relative', zIndex: 10 }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)' }}>
             {[
-              { target: maxResidents, suffix: '+', label: 'Residents Served' },
-              { target: totalReint,   suffix: '',  label: 'Reintegrations' },
-              { target: Math.round(totalHours / 1000),    suffix: 'K', label: 'Volunteer Hours' },
-              { target: Math.round(totalDonations / 1000), prefix: '$', suffix: 'K', label: 'Donations Raised' },
+              {
+                target: liveStats?.totalResidents ?? maxResidents,
+                suffix: '+',
+                label: 'Youth supported',
+                description: 'Total young people who have received care in our programs, to date.',
+              },
+              {
+                target: liveStats?.successfulReintegrations ?? 0,
+                suffix: '',
+                label: 'Families reunified',
+                description: 'Youth who have moved to a stable, safe home with family or guardians.',
+              },
+              {
+                target: liveStats
+                  ? Math.round(liveStats.volunteerHoursTotal / 1000)
+                  : 0,
+                suffix: 'K',
+                label: 'Volunteer hours',
+                description: 'Time neighbors and mentors give—tutoring, activities, and meals.',
+              },
+              {
+                target: liveStats
+                  ? Math.round(Number(liveStats.donationsRaisedTotal) / 1000)
+                  : Math.round(totalDonationsPublished / 1000),
+                prefix: '$',
+                suffix: 'K',
+                label: 'Donor support',
+                description: 'Gifts that keep rooms staffed, food on the table, and services running.',
+              },
             ].map((kpi, i) => (
               <div key={kpi.label} style={{ borderRight: i < 3 ? '1px solid rgba(255,255,255,0.1)' : 'none' }}>
-                <MetricCard target={kpi.target} suffix={kpi.suffix} prefix={kpi.prefix} label={kpi.label} />
+                <MetricCard
+                  target={kpi.target}
+                  suffix={kpi.suffix}
+                  prefix={kpi.prefix}
+                  label={kpi.label}
+                  description={kpi.description}
+                />
               </div>
             ))}
           </div>
@@ -280,57 +442,71 @@ export default function ImpactPage() {
         {tab === 'Overview' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.25rem' }}>
-              <Card title="Donations Raised" sub="Monthly · USD">
+              <Card
+                title="Donations Raised"
+                sub="Monthly · PHP"
+                hint="Shows whether community giving is steady enough to plan shelter staffing, meals, and counseling."
+              >
                 <ResponsiveContainer width="100%" height={210}>
                   <AreaChart data={chartData} margin={{ top: 5, right: 8, left: 0, bottom: 0 }}>
                     <defs><linearGradient id="gDon" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#D97706" stopOpacity={0.18}/><stop offset="95%" stopColor="#D97706" stopOpacity={0}/></linearGradient></defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                     <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <YAxis tickFormatter={(v: any) => `$${v/1000}K`} tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={46} />
-                    <Tooltip {...TT} itemStyle={{ color: '#D97706' }} formatter={(v: any) => [`$${v.toLocaleString()}`, 'Donations']} />
+                    <YAxis tickFormatter={(v) => `₱${Number(v) / 1000}K`} tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={52} />
+                    <Tooltip {...TT} itemStyle={{ color: '#D97706' }} formatter={(v) => [`₱${Number(v).toLocaleString()}`, 'Donations']} />
                     <Area type="monotone" dataKey="donations" stroke="#D97706" strokeWidth={2.5} fill="url(#gDon)" dot={{ r: 4, fill: '#D97706', strokeWidth: 0 }} activeDot={{ r: 6 }} />
                   </AreaChart>
                 </ResponsiveContainer>
               </Card>
-              <Card title="Residents Served" sub="Monthly count">
+              <Card
+                title="Average Health Score"
+                sub="Monthly avg · 1–5 scale"
+                hint="Resident wellness average for the month; higher reflects stronger reported wellbeing on our scale."
+              >
                 <ResponsiveContainer width="100%" height={210}>
-                  <BarChart data={chartData} barSize={26} margin={{ top: 5, right: 8, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                  <LineChart data={chartData} margin={{ top: 5, right: 8, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                     <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={34} />
-                    <Tooltip {...TT} itemStyle={{ color: '#6B21A8' }} formatter={(v: any) => [v, 'Residents']} />
-                    <Bar dataKey="residents" fill="#6B21A8" radius={[5, 5, 0, 0]} opacity={0.85} />
-                  </BarChart>
+                    <YAxis domain={[2.5, 4.5]} tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={36} />
+                    <Tooltip {...TT} itemStyle={{ color: '#0D9488' }} formatter={(v) => [String(v), 'Wellness Score']} />
+                    <Line type="monotone" dataKey="healthScore" stroke="#0D9488" strokeWidth={2.5} dot={{ r: 5, fill: '#0D9488', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 7 }} />
+                  </LineChart>
                 </ResponsiveContainer>
               </Card>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.25rem' }}>
-              <Card title="Reintegration Rate" sub="Success % per month">
-                <ResponsiveContainer width="100%" height={200}>
-                  <LineChart data={chartData} margin={{ top: 5, right: 8, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                    <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <YAxis domain={[80, 92]} tickFormatter={(v: any) => `${v}%`} tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={40} />
-                    <Tooltip {...TT} itemStyle={{ color: '#0D9488' }} formatter={(v: any) => [`${v}%`, 'Rate']} />
-                    <Line type="monotone" dataKey="reintegrationRate" stroke="#0D9488" strokeWidth={2.5} dot={{ r: 5, fill: '#0D9488', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 7 }} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </Card>
-              <Card title="Admissions vs. Reintegrations" sub="Inflow · Outflow">
+              <Card
+                title="Education Progress"
+                sub="Monthly avg completion %"
+                hint="Average educational program completion across residents for each reporting month."
+              >
                 <ResponsiveContainer width="100%" height={200}>
                   <AreaChart data={chartData} margin={{ top: 5, right: 8, left: 0, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="gAdm" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#6B21A8" stopOpacity={0.13}/><stop offset="95%" stopColor="#6B21A8" stopOpacity={0}/></linearGradient>
-                      <linearGradient id="gRi" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#0D9488" stopOpacity={0.13}/><stop offset="95%" stopColor="#0D9488" stopOpacity={0}/></linearGradient>
-                    </defs>
+                    <defs><linearGradient id="gEduOv" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#6B21A8" stopOpacity={0.16}/><stop offset="95%" stopColor="#6B21A8" stopOpacity={0}/></linearGradient></defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                     <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={30} />
+                    <YAxis domain={[0, 105]} tickFormatter={(v) => `${v}%`} tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={40} />
+                    <Tooltip {...TT} itemStyle={{ color: '#6B21A8' }} formatter={(v) => [`${v}%`, 'Progress']} />
+                    <Area type="monotone" dataKey="educationProgress" stroke="#6B21A8" strokeWidth={2} fill="url(#gEduOv)" dot={{ r: 4, fill: '#6B21A8', strokeWidth: 0 }} activeDot={{ r: 6 }} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </Card>
+              <Card
+                title="Health & Education Trends"
+                sub="Dual-axis · score & progress"
+                hint="Teal: average wellness score (1–5). Purple: average education completion (%)."
+              >
+                <ResponsiveContainer width="100%" height={200}>
+                  <LineChart data={chartData} margin={{ top: 5, right: 12, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                    <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
+                    <YAxis yAxisId="left" domain={[0, 105]} tickFormatter={(v) => `${v}%`} tick={{ fill: '#6B21A8', fontSize: 11 }} axisLine={false} tickLine={false} width={44} />
+                    <YAxis yAxisId="right" orientation="right" domain={[2.5, 4.5]} tick={{ fill: '#0D9488', fontSize: 11 }} axisLine={false} tickLine={false} width={36} />
                     <Tooltip {...TT} />
                     <Legend wrapperStyle={{ fontSize: '0.75rem', color: '#64748b' }} />
-                    <Area type="monotone" dataKey="newAdmissions" name="New Admissions" stroke="#6B21A8" strokeWidth={2} fill="url(#gAdm)" dot={{ r: 3, fill: '#6B21A8', strokeWidth: 0 }} />
-                    <Area type="monotone" dataKey="reintegrations" name="Reintegrations" stroke="#0D9488" strokeWidth={2} fill="url(#gRi)" dot={{ r: 3, fill: '#0D9488', strokeWidth: 0 }} />
-                  </AreaChart>
+                    <Line yAxisId="left" type="monotone" dataKey="educationProgress" name="Education %" stroke="#6B21A8" strokeWidth={2} dot={{ r: 3, fill: '#6B21A8', strokeWidth: 0 }} />
+                    <Line yAxisId="right" type="monotone" dataKey="healthScore" name="Health score" stroke="#0D9488" strokeWidth={2} dot={{ r: 3, fill: '#0D9488', strokeWidth: 0 }} />
+                  </LineChart>
                 </ResponsiveContainer>
               </Card>
             </div>
@@ -339,23 +515,39 @@ export default function ImpactPage() {
 
         {tab === 'Donations' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            <Card title="Donation Trend" sub="Monthly revenue · USD">
+            <Card
+              title="Donation trend"
+              sub="Monthly revenue · PHP"
+              hint="Use this to see whether giving is steady, seasonal, or spiky—so you know if we can plan long-term or need to bridge a gap."
+            >
               <ResponsiveContainer width="100%" height={270}>
                 <AreaChart data={chartData} margin={{ top: 5, right: 16, left: 0, bottom: 0 }}>
                   <defs><linearGradient id="gDon2" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#D97706" stopOpacity={0.18}/><stop offset="95%" stopColor="#D97706" stopOpacity={0}/></linearGradient></defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                   <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={false} tickLine={false} />
-                  <YAxis tickFormatter={(v: any) => `$${v/1000}K`} tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={false} tickLine={false} width={50} />
-                  <Tooltip {...TT} itemStyle={{ color: '#D97706' }} formatter={(v: any) => [`$${v.toLocaleString()}`, 'Donations']} />
+                  <YAxis tickFormatter={(v) => `₱${Number(v) / 1000}K`} tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={false} tickLine={false} width={52} />
+                  <Tooltip {...TT} itemStyle={{ color: '#D97706' }} formatter={(v) => [`₱${Number(v).toLocaleString()}`, 'Donations']} />
                   <Area type="monotone" dataKey="donations" stroke="#D97706" strokeWidth={3} fill="url(#gDon2)" dot={{ r: 5, fill: '#D97706', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 7 }} />
                 </AreaChart>
               </ResponsiveContainer>
             </Card>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-              <StatBox label="Total Raised (6 mo)" value={`$${(totalDonations/1000).toFixed(0)}K`} color="#D97706" bg="#fffbeb" border="#fde68a" />
-              <StatBox label="Monthly Average"     value={`$${published.length > 0 ? (totalDonations / published.length / 1000).toFixed(0) : '0'}K`} color="#6B21A8" bg="#f5f3ff" border="#e9d5ff" />
-              <StatBox label="Best Month"          value="$94K" color="#0D9488" bg="#f0fdf4" border="#bbf7d0" />
-              <StatBox label="Reports Published"   value={String(published.length)} color="#1d4ed8" bg="#eff6ff" border="#bfdbfe" />
+              <StatBox label="Total Raised (chart months)" value={`₱${(totalDonationsCharts / 1000).toFixed(0)}K`} color="#D97706" bg="#fffbeb" border="#fde68a" />
+              <StatBox
+                label="Monthly Average"
+                value={`₱${monthsOfData > 0 ? (totalDonationsCharts / monthsOfData / 1000).toFixed(0) : '0'}K`}
+                color="#6B21A8"
+                bg="#f5f3ff"
+                border="#e9d5ff"
+              />
+              <StatBox
+                label={bestDonationMonth ? `Best month (${bestDonationMonth.month})` : 'Best month'}
+                value={bestDonationMonth ? `₱${(bestDonationMonth.donations / 1000).toFixed(0)}K` : '—'}
+                color="#0D9488"
+                bg="#f0fdf4"
+                border="#bbf7d0"
+              />
+              <StatBox label="Reports Published" value={String(published.length)} color="#1d4ed8" bg="#eff6ff" border="#bfdbfe" />
             </div>
           </div>
         )}
@@ -363,78 +555,64 @@ export default function ImpactPage() {
         {tab === 'Residents' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.25rem' }}>
-              <Card title="Residents Served" sub="Monthly · active residents">
-                <ResponsiveContainer width="100%" height={240}>
-                  <BarChart data={chartData} barSize={28} margin={{ top: 5, right: 8, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                    <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={34} />
-                    <Tooltip {...TT} itemStyle={{ color: '#6B21A8' }} formatter={(v: any) => [v, 'Residents']} />
-                    <Bar dataKey="residents" fill="#6B21A8" radius={[5, 5, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </Card>
-              <Card title="Reintegration Rate %" sub="Monthly success rate">
-                <ResponsiveContainer width="100%" height={240}>
+              <Card
+                title="Health Score Trend"
+                sub="Avg wellness score per month"
+                hint="Monthly average on a 1–5 scale; useful for spotting dips or recovery in aggregate wellbeing."
+              >
+                <ResponsiveContainer width="100%" height={260}>
                   <LineChart data={chartData} margin={{ top: 5, right: 8, left: 0, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                     <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <YAxis domain={[80, 92]} tickFormatter={(v: any) => `${v}%`} tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={40} />
-                    <Tooltip {...TT} itemStyle={{ color: '#0D9488' }} formatter={(v: any) => [`${v}%`, 'Rate']} />
-                    <Line type="monotone" dataKey="reintegrationRate" stroke="#0D9488" strokeWidth={3} dot={{ r: 5, fill: '#0D9488', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 7 }} />
+                    <YAxis domain={[2.5, 4.5]} tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={36} />
+                    <Tooltip {...TT} itemStyle={{ color: '#0D9488' }} formatter={(v) => [String(v), 'Wellness score']} />
+                    <Line type="monotone" dataKey="healthScore" stroke="#0D9488" strokeWidth={3} dot={{ r: 5, fill: '#0D9488', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 7 }} />
                   </LineChart>
                 </ResponsiveContainer>
               </Card>
+              <Card
+                title="Education Progress Trend"
+                sub="Avg completion % per month"
+                hint="Share of educational milestones completed on average across residents each month."
+              >
+                <ResponsiveContainer width="100%" height={260}>
+                  <AreaChart data={chartData} margin={{ top: 5, right: 8, left: 0, bottom: 0 }}>
+                    <defs><linearGradient id="gEduRes" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#6B21A8" stopOpacity={0.16}/><stop offset="95%" stopColor="#6B21A8" stopOpacity={0}/></linearGradient></defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                    <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
+                    <YAxis domain={[0, 105]} tickFormatter={(v) => `${v}%`} tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={40} />
+                    <Tooltip {...TT} itemStyle={{ color: '#6B21A8' }} formatter={(v) => [`${v}%`, 'Progress']} />
+                    <Area type="monotone" dataKey="educationProgress" stroke="#6B21A8" strokeWidth={2.5} fill="url(#gEduRes)" dot={{ r: 4, fill: '#6B21A8', strokeWidth: 0 }} activeDot={{ r: 6 }} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </Card>
             </div>
-            <Card title="Reintegrations per Month" sub="Absolute count — radial view">
-              <ResponsiveContainer width="100%" height={250}>
-                <RadialBarChart cx="50%" cy="50%" innerRadius="18%" outerRadius="88%" data={radialData} startAngle={180} endAngle={-180}>
-                  <RadialBar dataKey="value" cornerRadius={6} label={false} />
-                  <Tooltip contentStyle={TT.contentStyle} formatter={(v: any) => [v, 'Reintegrations']} />
-                  <Legend iconSize={8} layout="vertical" verticalAlign="middle" align="right" wrapperStyle={{ fontSize: '0.75rem', color: '#64748b', lineHeight: '1.9' }} />
-                </RadialBarChart>
-              </ResponsiveContainer>
-            </Card>
           </div>
         )}
 
-        {tab === 'Volunteers' && (
+        {tab === 'Wellness' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            <Card title="Volunteer Hours" sub="Monthly total hours contributed">
+            <Card
+              title="Health Score Over Time"
+              sub="Monthly average wellness score · 1–5 scale"
+              hint="Same metric as the overview health line—use this tab for a single full-width view and quick stats."
+            >
               <ResponsiveContainer width="100%" height={260}>
                 <AreaChart data={chartData} margin={{ top: 5, right: 16, left: 0, bottom: 0 }}>
-                  <defs><linearGradient id="gVol" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#7C3AED" stopOpacity={0.15}/><stop offset="95%" stopColor="#7C3AED" stopOpacity={0}/></linearGradient></defs>
+                  <defs><linearGradient id="gHealthWell" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#0D9488" stopOpacity={0.18}/><stop offset="95%" stopColor="#0D9488" stopOpacity={0}/></linearGradient></defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                   <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={false} tickLine={false} />
-                  <YAxis tickFormatter={(v: any) => `${(v/1000).toFixed(0)}K`} tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={false} tickLine={false} width={38} />
-                  <Tooltip {...TT} itemStyle={{ color: '#7C3AED' }} formatter={(v: any) => [v.toLocaleString(), 'Hours']} />
-                  <Area type="monotone" dataKey="volunteerHours" stroke="#7C3AED" strokeWidth={3} fill="url(#gVol)" dot={{ r: 5, fill: '#7C3AED', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 7 }} />
+                  <YAxis domain={[2.5, 4.5]} tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={false} tickLine={false} width={36} />
+                  <Tooltip {...TT} itemStyle={{ color: '#0D9488' }} formatter={(v) => [String(v), 'Wellness score']} />
+                  <Area type="monotone" dataKey="healthScore" stroke="#0D9488" strokeWidth={3} fill="url(#gHealthWell)" dot={{ r: 5, fill: '#0D9488', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 7 }} />
                 </AreaChart>
               </ResponsiveContainer>
             </Card>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.25rem' }}>
-              <Card title="Active Volunteers" sub="Monthly count">
-                <ResponsiveContainer width="100%" height={210}>
-                  <BarChart data={chartData} barSize={24} margin={{ top: 5, right: 8, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                    <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={42} />
-                    <Tooltip {...TT} itemStyle={{ color: '#0D9488' }} formatter={(v: any) => [v.toLocaleString(), 'Volunteers']} />
-                    <Bar dataKey="volunteers" fill="#0D9488" radius={[5, 5, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </Card>
-              <Card title="Programs Completed" sub="Monthly">
-                <ResponsiveContainer width="100%" height={210}>
-                  <BarChart data={chartData} barSize={24} margin={{ top: 5, right: 8, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                    <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={30} />
-                    <Tooltip {...TT} itemStyle={{ color: '#D97706' }} formatter={(v: any) => [v, 'Programs']} />
-                    <Bar dataKey="programs" fill="#D97706" radius={[5, 5, 0, 0]} opacity={0.85} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </Card>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
+              <StatBox label="Latest Health Score" value={chartSnapshots.length ? latestHealth.toFixed(2) : '—'} color="#0D9488" bg="#f0fdf4" border="#bbf7d0" />
+              <StatBox label="Peak Education" value={`${Math.round(peakEducation)}%`} color="#6B21A8" bg="#f5f3ff" border="#e9d5ff" />
+              <StatBox label="Months of Data" value={String(monthsOfData)} color="#1d4ed8" bg="#eff6ff" border="#bfdbfe" />
+              <StatBox label="Total Residents" value="60" color="#D97706" bg="#fffbeb" border="#fde68a" />
             </div>
           </div>
         )}
@@ -466,21 +644,15 @@ export default function ImpactPage() {
         <div style={{ maxWidth: 640, margin: '0 auto', textAlign: 'center' }}>
           <span className="hw-eyebrow">Make a Difference</span>
           <h2 style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 900, fontSize: 'clamp(1.5rem, 3vw, 2rem)', color: '#fff', margin: '0.6rem 0 0.75rem' }}>
-            Your donation creates the next data point.
+            Your gift keeps safe homes open and healing within reach.
           </h2>
-          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1rem', lineHeight: 1.65, marginBottom: '2rem' }}>
-            100% of contributions go directly to safehouse operations, programming, and resident support.
+          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1rem', lineHeight: 1.65, marginBottom: 0 }}>
+            Contributions fund shelter, counseling, education, and everyday care—so every girl we serve has a stable place to recover and grow.
           </p>
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <a href="/#donate" className="hw-btn-magenta" style={{ padding: '0.75rem 2rem', borderRadius: 50, fontWeight: 700, fontSize: '0.9rem', textDecoration: 'none', display: 'inline-block' }}>
-              Donate Now →
-            </a>
-            <button className="hw-btn-ghost-white" style={{ padding: '0.75rem 2rem', borderRadius: 50, fontWeight: 600, fontSize: '0.9rem' }}>
-              Subscribe to Reports
-            </button>
-          </div>
         </div>
       </section>
+
+      <Footer />
     </div>
   );
 }

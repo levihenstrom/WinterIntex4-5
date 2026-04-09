@@ -22,6 +22,7 @@ public class DonationsController(AppDbContext db, StaffScopeResolver scopeResolv
         [FromQuery] int pageSize = Pagination.DefaultPageSize,
         [FromQuery] int? supporterId = null,
         [FromQuery] string? donationType = null,
+        [FromQuery] bool? unallocated = null,
         CancellationToken cancellationToken = default)
     {
         var scope = await scopeResolver.GetForUserAsync(User, cancellationToken);
@@ -33,6 +34,8 @@ public class DonationsController(AppDbContext db, StaffScopeResolver scopeResolv
             query = query.Where(d => d.SupporterId == sid);
         if (!string.IsNullOrWhiteSpace(donationType))
             query = query.Where(d => d.DonationType == donationType);
+        if (unallocated == true)
+            query = query.Where(d => !db.DonationAllocations.Any(a => a.DonationId == d.DonationId));
 
         query = query.OrderByDescending(d => d.DonationDate).ThenBy(d => d.DonationId);
         var result = await query.ToPagedResultAsync(page, pageSize, cancellationToken);
@@ -65,6 +68,7 @@ public class DonationsController(AppDbContext db, StaffScopeResolver scopeResolv
 
         var query = db.Donations.AsNoTracking()
             .Include(d => d.Supporter)
+            .Include(d => d.DonationAllocations)
             .Where(d => d.SupporterId == supporterId)
             .OrderByDescending(d => d.DonationDate)
             .ThenBy(d => d.DonationId);
