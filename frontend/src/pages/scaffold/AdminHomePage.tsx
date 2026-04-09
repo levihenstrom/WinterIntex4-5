@@ -16,6 +16,7 @@ import {
 } from '../../lib/mlDisplayHelpers';
 import { useAuth } from '../../context/AuthContext';
 import { ErrorState, LoadingState } from '../../components/common/AsyncStatus';
+import { formatAmountMaybePhpAndUsd } from '../../lib/currency';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
 interface MetricState {
@@ -154,7 +155,6 @@ interface RecentDonationRow {
   campaignName?: string | null;
   supporter?: { displayName?: string | null; organizationName?: string | null } | null;
 }
-
 function fmtDonationMoney(n: number | null | undefined, currency = 'PHP') {
   if (n == null) return '—';
   try {
@@ -163,8 +163,67 @@ function fmtDonationMoney(n: number | null | undefined, currency = 'PHP') {
     return `${currency} ${n.toFixed(0)}`;
   }
 }
-
-// ── Insights dashboard widgets ────────────────────────────────────────────────
+// ── Insights dashboard widgets (isolated fetch/error so one failure does not block others) ──
+function MlSectionCard({
+  title,
+  children,
+  footerLink,
+  alertBadge,
+}: {
+  title: string;
+  children: ReactNode;
+  footerLink?: { to: string; label: string };
+  alertBadge?: { count: number; color: string; label: string } | null;
+}) {
+  const badge = alertBadge && alertBadge.count > 0 ? alertBadge : null;
+  const hasAlert = badge != null;
+  return (
+    <div className="col-12 col-lg-6">
+      <div
+        className="card border-0 rounded-3 h-100"
+        style={hasAlert ? {
+          boxShadow: `0 0 0 2px ${badge.color}, 0 4px 20px ${badge.color}44`,
+          border: `1.5px solid ${badge.color}`,
+        } : {
+          boxShadow: '0 2px 8px rgba(30,58,95,0.07)',
+        }}
+      >
+        <div className="card-body d-flex flex-column">
+          <div className="d-flex align-items-center gap-2 mb-3">
+            {hasAlert && (
+              <span style={{
+                width: 8, height: 8, borderRadius: '50%',
+                background: badge.color, flexShrink: 0,
+                boxShadow: `0 0 6px 2px ${badge.color}88`,
+              }} />
+            )}
+            <h3 className="h6 fw-semibold mb-0" style={{ color: 'var(--hw-navy)', flex: 1 }}>
+              {title}
+            </h3>
+            {hasAlert && (
+              <span
+                className="badge rounded-pill"
+                style={{ background: badge.color, color: 'white', fontSize: '0.62rem', letterSpacing: '0.06em' }}
+              >
+                {badge.count} {badge.label}
+              </span>
+            )}
+          </div>
+          <div className="flex-grow-1 small">{children}</div>
+          {footerLink && (
+            <Link
+              to={footerLink.to}
+              className="small fw-semibold text-decoration-none mt-3"
+              style={{ color: 'var(--hw-purple)' }}
+            >
+              {footerLink.label} →
+            </Link>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function ResidentsNeedingAttentionWidget({ onCriticalCount, onOpenProfile }: { onCriticalCount?: (n: number) => void; onOpenProfile?: (residentId: number) => void }) {
   const [rows, setRows] = useState<ResidentMlScoreRow[] | null>(null);
@@ -478,7 +537,7 @@ function UnallocatedDonationsWidget({ onUnallocatedCount }: { onUnallocatedCount
         const name = d.supporter?.displayName?.trim() || d.supporter?.organizationName?.trim() || `Donation #${d.donationId}`;
         const f = forms[d.donationId];
         const isExpanded = expandedId === d.donationId;
-        const amt = d.amount != null ? fmtDonationMoney(Number(d.amount), d.currencyCode ?? 'PHP') : '—';
+        const amt = d.amount != null ? formatAmountMaybePhpAndUsd(Number(d.amount), d.currencyCode ?? 'PHP') : '—';
         return (
           <li key={d.donationId} className="mb-2 border-bottom border-light pb-2" style={{ borderLeft: '3px solid #dc2626', paddingLeft: 8 }}>
             <div className="d-flex align-items-center justify-content-between gap-2">
@@ -512,7 +571,7 @@ function UnallocatedDonationsWidget({ onUnallocatedCount }: { onUnallocatedCount
                       value={f.programArea} onChange={(e) => setForms((p) => ({ ...p, [d.donationId]: { ...f, programArea: e.target.value } }))} />
                   </div>
                   <div>
-                    <label className="form-label mb-1" style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748B' }}>Amount (PHP)</label>
+                    <label className="form-label mb-1" style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748B' }}>Amount</label>
                     <input type="number" className="form-control form-control-sm" style={{ width: 100 }} placeholder="e.g. 5000"
                       value={f.amount} onChange={(e) => setForms((p) => ({ ...p, [d.donationId]: { ...f, amount: e.target.value } }))} />
                   </div>
@@ -642,7 +701,7 @@ function AdminDonorQuickModal({
                     ? 'Total given (known amounts):'
                     : 'Total (recent sample):'}
                 </strong>{' '}
-                {fmtDonationMoney(sumSample, cur)}
+                {formatAmountMaybePhpAndUsd(sumSample, cur)}
               </li>
             )}
           </ul>
@@ -1057,7 +1116,7 @@ export default function AdminHomePage() {
                             </td>
                             <td className="small">{d.donationType ?? '—'}</td>
                             <td className="small tabular-nums">
-                              {fmtDonationMoney(d.amount != null ? Number(d.amount) : null, d.currencyCode ?? 'PHP')}
+                              {formatAmountMaybePhpAndUsd(d.amount != null ? Number(d.amount) : null, d.currencyCode ?? 'PHP')}
                             </td>
                             <td className="pe-4 small text-muted">{d.campaignName ?? '—'}</td>
                           </tr>

@@ -6,7 +6,7 @@ import { ErrorState, LoadingState } from '../../components/common/AsyncStatus';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import { buildDonorMlMap, getCurrentDonorScores, type DonorChurnRow } from '../../lib/mlApi';
 import { formatDonorOutreachSummary } from '../../lib/mlDisplayHelpers';
-import { formatPhpAndUsd } from '../../lib/currency';
+import { formatAmountMaybePhpAndUsd } from '../../lib/currency';
 
 /* ── API shape (camelCase from ASP.NET) ─────────────────────── */
 interface SupporterApi {
@@ -115,8 +115,8 @@ function SupporterKpiStrip({
         { label: 'Monetary donors', value: String(monetary), accent: '#0D9488', icon: 'cash-stack', onClick: () => onToggle('monetary'), active: quickFilter === 'monetary' },
         { label: 'Volunteers', value: String(volunteers), accent: '#2563EB', icon: 'heart', onClick: () => onToggle('volunteer'), active: quickFilter === 'volunteer' },
         {
-          label: 'Monetary gifts (PHP)',
-          value: formatPhpAndUsd(monetaryTotalPhp),
+          label: 'Monetary gifts (USD)',
+          value: formatAmountMaybePhpAndUsd(monetaryTotalPhp, 'PHP'),
           sub: 'loaded gifts total',
           accent: '#7C3AED',
           icon: 'wallet2',
@@ -896,7 +896,7 @@ export default function SupportersListPage() {
                         {aggRow && aggRow.totalPhp > 0 && (
                           <span style={{ color: '#166534', fontWeight: 600 }}>
                             <i className="bi bi-wallet2 me-1" aria-hidden />
-                            {formatPhpAndUsd(aggRow.totalPhp)} monetary (tracked)
+                            {formatAmountMaybePhpAndUsd(aggRow.totalPhp, 'PHP')} monetary (tracked)
                           </span>
                         )}
                         {aggRow?.lastGift && (

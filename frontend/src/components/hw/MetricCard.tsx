@@ -8,7 +8,7 @@ interface MetricCardProps {
   /** Plain-language line for public dashboards (e.g. Impact page). */
   description?: string;
   duration?: number;
-  /** When set, show this string instead of animating prefix+target+suffix (e.g. PHP + USD). */
+  /** When set, show this string instead of animating prefix+target+suffix (e.g. formatted currency). */
   staticDisplay?: string;
 }
 

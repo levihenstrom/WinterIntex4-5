@@ -4,53 +4,48 @@
  */
 export const PHP_TO_USD_RATE = 0.017;
 
-export const CURRENCY_RATE_NOTE =
-  'USD values use a static conversion rate of 1 PHP = 0.017 USD.';
-
 export function convertPhpToUsd(php: number | null | undefined): number | null {
   if (php == null || Number.isNaN(Number(php))) return null;
   return Number(php) * PHP_TO_USD_RATE;
 }
 
-export function formatPhp(amount: number | null | undefined): string {
-  if (amount == null || Number.isNaN(Number(amount))) return '—';
-  const n = Number(amount);
-  return `₱${n.toLocaleString('en-US', { maximumFractionDigits: 0, minimumFractionDigits: 0 })}`;
-}
+const usdFormatter = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
 
 export function formatUsd(amount: number | null | undefined): string {
   if (amount == null || Number.isNaN(Number(amount))) return '—';
-  const n = Number(amount);
-  return `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-}
-
-/** Main display: ₱5,600 ($95.20) */
-export function formatPhpAndUsd(php: number | null | undefined): string {
-  if (php == null || Number.isNaN(Number(php))) return '—';
-  const usd = convertPhpToUsd(php);
-  if (usd == null) return '—';
-  return `${formatPhp(php)} (${formatUsd(usd)})`;
+  return usdFormatter.format(Number(amount));
 }
 
 /**
- * PHP rows: dual currency. Other ISO currencies: Intl only (no USD conversion).
+ * Compact chart label from a PHP amount, e.g. "$1.2K" (USD thousands).
+ */
+export function formatUsdThousandsFromPhp(
+  php: number | null | undefined,
+  fractionDigits: 0 | 1 = 1,
+): string {
+  const usd = convertPhpToUsd(php);
+  if (usd == null) return '—';
+  const k = usd / 1000;
+  return `$${k.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: fractionDigits })}K`;
+}
+
+/**
+ * Display-only: PHP amounts convert to USD; other codes are formatted as USD (same numeric value).
  */
 export function formatAmountMaybePhpAndUsd(
   amount: number | null | undefined,
   currencyCode?: string | null,
 ): string {
+  if (amount == null || Number.isNaN(Number(amount))) return '—';
   const code = (currencyCode ?? 'PHP').toUpperCase();
-  if (code !== 'PHP') {
-    if (amount == null || Number.isNaN(Number(amount))) return '—';
-    try {
-      return new Intl.NumberFormat('en-PH', {
-        style: 'currency',
-        currency: code,
-        maximumFractionDigits: 0,
-      }).format(Number(amount));
-    } catch {
-      return `${code} ${Number(amount).toFixed(0)}`;
-    }
+  if (code === 'PHP') {
+    const usd = convertPhpToUsd(amount);
+    return usd == null ? '—' : formatUsd(usd);
   }
-  return formatPhpAndUsd(amount);
+  return usdFormatter.format(Number(amount));
 }

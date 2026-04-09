@@ -3,7 +3,7 @@ import { deleteJson, fetchAllPaged, postJson } from '../../lib/apiClient';
 import AdminKpiStrip from '../../components/admin/AdminKpiStrip';
 import DeleteConfirmModal from '../../components/DeleteConfirmModal';
 import { ErrorState, LoadingState } from '../../components/common/AsyncStatus';
-import { CURRENCY_RATE_NOTE, formatAmountMaybePhpAndUsd } from '../../lib/currency';
+import { formatAmountMaybePhpAndUsd } from '../../lib/currency';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
 
@@ -228,9 +228,6 @@ export default function ContributionsPage() {
           <p className="text-muted mb-0" style={{ fontSize: 14 }}>
             Monetary, in-kind, time, and other gift types stored in the database (same data as reports and donor history).
           </p>
-          <p className="text-muted small mt-2 mb-0" style={{ fontSize: 13 }}>
-            {CURRENCY_RATE_NOTE}
-          </p>
         </div>
 
         {loading && <LoadingState message="Loading contributions…" />}
@@ -241,7 +238,7 @@ export default function ContributionsPage() {
             <AdminKpiStrip
               items={[
                 {
-                  label: 'Monetary total (PHP)',
+                  label: 'Monetary total (USD)',
                   value: formatAmountMaybePhpAndUsd(kpis.monetarySum, 'PHP'),
                   sub: 'Monetary gift rows only',
                   accent: '#059669',
@@ -403,7 +400,7 @@ export default function ContributionsPage() {
                         className="form-control form-control-sm"
                         value={form.amount}
                         onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
-                        placeholder={form.donationType === 'Monetary' ? 'PHP' : 'Units or hours'}
+                        placeholder={form.donationType === 'Monetary' ? '0.00' : 'Units or hours'}
                       />
                     </div>
                     <div className="col-md-6">

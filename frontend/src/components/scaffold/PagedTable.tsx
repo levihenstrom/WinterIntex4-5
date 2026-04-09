@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import DeleteConfirmModal from '../DeleteConfirmModal';
 import { deleteJson, fetchPaged, type PagedResult } from '../../lib/apiClient';
-import { formatPhpAndUsd } from '../../lib/currency';
+import { formatAmountMaybePhpAndUsd } from '../../lib/currency';
 import { useAuth } from '../../context/AuthContext';
 
 interface PagedTableProps {
@@ -190,10 +190,10 @@ const MONETARY_COLUMN_KEYS = new Set(['amount', 'amountAllocated']);
 function formatCell(columnKey: string, value: unknown): string {
   if (value === null || value === undefined) return '';
   if (MONETARY_COLUMN_KEYS.has(columnKey)) {
-    if (typeof value === 'number' && !Number.isNaN(value)) return formatPhpAndUsd(value);
+    if (typeof value === 'number' && !Number.isNaN(value)) return formatAmountMaybePhpAndUsd(value, 'PHP');
     if (typeof value === 'string' && value.trim() !== '') {
       const n = Number(value);
-      if (!Number.isNaN(n)) return formatPhpAndUsd(n);
+      if (!Number.isNaN(n)) return formatAmountMaybePhpAndUsd(n, 'PHP');
     }
   }
   if (typeof value === 'object') return JSON.stringify(value);

@@ -1,11 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  recommendSocialPost,
-  type MlGoal,
-  type SocialFixedInputsRequest,
-  type SocialRecommendResponse,
-} from '../../lib/mlApi';
+import { recommendSocialPost, type MlGoal, type SocialRecommendResponse } from '../../lib/mlApi';
 
 const cardStyle: React.CSSProperties = {
   background: '#fff',
@@ -25,13 +20,7 @@ const metricBox = (accent: string): React.CSSProperties => ({
 /** Ranked post ideas from the social recommendation service (same API as the admin dashboard widget). */
 export default function SocialMediaSuggestPage() {
   const [goal, setGoal] = useState<MlGoal>('donations');
-  const [contentTopic, setContentTopic] = useState('');
-  const [platform, setPlatform] = useState('');
-  const [postType, setPostType] = useState('');
-  const [mediaType, setMediaType] = useState('');
   const [topK, setTopK] = useState(3);
-  const [hasCallToAction, setHasCallToAction] = useState<'any' | 'yes' | 'no'>('any');
-  const [featuresResidentStory, setFeaturesResidentStory] = useState<'any' | 'yes' | 'no'>('any');
 
   const [result, setResult] = useState<SocialRecommendResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -43,23 +32,12 @@ export default function SocialMediaSuggestPage() {
     setError(null);
     setResult(null);
 
-    const fixedInputs: SocialFixedInputsRequest = {};
-    if (contentTopic.trim()) fixedInputs.contentTopic = contentTopic.trim();
-    if (platform.trim()) fixedInputs.platform = platform.trim();
-    if (postType.trim()) fixedInputs.postType = postType.trim();
-    if (mediaType.trim()) fixedInputs.mediaType = mediaType.trim();
-    if (hasCallToAction === 'yes') fixedInputs.hasCallToAction = true;
-    if (hasCallToAction === 'no') fixedInputs.hasCallToAction = false;
-    if (featuresResidentStory === 'yes') fixedInputs.featuresResidentStory = true;
-    if (featuresResidentStory === 'no') fixedInputs.featuresResidentStory = false;
-
     const topKClamped = Math.min(50, Math.max(1, Math.floor(topK) || 3));
 
     try {
       const res = await recommendSocialPost({
         goal,
         topK: topKClamped,
-        ...(Object.keys(fixedInputs).length > 0 ? { fixedInputs } : {}),
       });
       setResult(res);
     } catch (err) {
@@ -100,8 +78,8 @@ export default function SocialMediaSuggestPage() {
               Recommended next posts
             </h1>
             <p className="text-muted mb-0" style={{ fontSize: 14, maxWidth: 640 }}>
-              Get ranked post ideas based on past performance patterns. Choose your goal and optional constraints,
-              then see suggested formats and topics—use results as a starting point, not a guarantee.
+              Get ranked post ideas based on past performance patterns. Choose your goal and how many suggestions you
+              want—use results as a starting point, not a guarantee.
             </p>
           </div>
           <Link
@@ -163,6 +141,9 @@ export default function SocialMediaSuggestPage() {
                   disabled={loading}
                   aria-describedby="social-suggest-num-suggestions-hint"
                 />
+                <div id="social-suggest-num-suggestions-hint" className="form-text text-muted small mb-0">
+                  Choose how many post ideas you want to see.
+                </div>
               </div>
               <div className="col-md-4">
                 <button
@@ -173,81 +154,6 @@ export default function SocialMediaSuggestPage() {
                 >
                   {loading ? 'Getting recommendations…' : 'Get recommendations'}
                 </button>
-              </div>
-            </div>
-            <div className="row g-2 mt-0">
-              <div className="col-12 col-md-4 offset-md-4">
-                <div id="social-suggest-num-suggestions-hint" className="form-text text-muted small mb-0">
-                  Choose how many post ideas you want to see.
-                </div>
-              </div>
-            </div>
-            <div className="row g-3">
-              <div className="col-md-6">
-                <label className="form-label small fw-semibold text-muted">Content topic (optional)</label>
-                <input
-                  className="form-control"
-                  placeholder="e.g. Reintegration"
-                  value={contentTopic}
-                  onChange={(e) => setContentTopic(e.target.value)}
-                  disabled={loading}
-                />
-              </div>
-              <div className="col-md-6">
-                <label className="form-label small fw-semibold text-muted">Platform (optional)</label>
-                <input
-                  className="form-control"
-                  placeholder="e.g. Instagram"
-                  value={platform}
-                  onChange={(e) => setPlatform(e.target.value)}
-                  disabled={loading}
-                />
-              </div>
-              <div className="col-md-6">
-                <label className="form-label small fw-semibold text-muted">Post type (optional)</label>
-                <input
-                  className="form-control"
-                  placeholder="e.g. ImpactStory"
-                  value={postType}
-                  onChange={(e) => setPostType(e.target.value)}
-                  disabled={loading}
-                />
-              </div>
-              <div className="col-md-6">
-                <label className="form-label small fw-semibold text-muted">Media type (optional)</label>
-                <input
-                  className="form-control"
-                  placeholder="e.g. Video"
-                  value={mediaType}
-                  onChange={(e) => setMediaType(e.target.value)}
-                  disabled={loading}
-                />
-              </div>
-              <div className="col-md-6">
-                <label className="form-label small fw-semibold text-muted">Call to action</label>
-                <select
-                  className="form-select"
-                  value={hasCallToAction}
-                  onChange={(e) => setHasCallToAction(e.target.value as 'any' | 'yes' | 'no')}
-                  disabled={loading}
-                >
-                  <option value="any">Any</option>
-                  <option value="yes">Yes</option>
-                  <option value="no">No</option>
-                </select>
-              </div>
-              <div className="col-md-6">
-                <label className="form-label small fw-semibold text-muted">Features resident story</label>
-                <select
-                  className="form-select"
-                  value={featuresResidentStory}
-                  onChange={(e) => setFeaturesResidentStory(e.target.value as 'any' | 'yes' | 'no')}
-                  disabled={loading}
-                >
-                  <option value="any">Any</option>
-                  <option value="yes">Yes</option>
-                  <option value="no">No</option>
-                </select>
               </div>
             </div>
           </form>
@@ -291,7 +197,7 @@ export default function SocialMediaSuggestPage() {
             </div>
 
             {result.recommendations.length === 0 ? (
-              <p className="text-muted mb-0">No suggestions matched. Try different constraints or number of suggestions.</p>
+              <p className="text-muted mb-0">No suggestions matched. Try a different number of suggestions.</p>
             ) : (
               <div className="d-flex flex-column gap-4">
                 {result.recommendations.map((rec, idx) => (
