@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import GoogleIcon from '../components/hw/GoogleIcon';
 import { useAuth } from '../context/AuthContext';
 import HealingWingsLogo from '../components/hw/HealingWingsLogo';
@@ -36,7 +36,6 @@ function PasswordRule({ ok, children }: { ok: boolean; children: React.ReactNode
 }
 
 function RegisterPage() {
-  const navigate = useNavigate();
   const { isAuthenticated, isLoading, authSession, refreshAuthState } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
