@@ -323,6 +323,18 @@ export default function ResidentVisitsAndConferencesPage() {
       setFormError('Select a resident.');
       return;
     }
+    if (!form.visitDate?.trim()) {
+      setFormError('Visit date is required.');
+      return;
+    }
+    if (!form.socialWorker?.trim()) {
+      setFormError('Social worker is required.');
+      return;
+    }
+    if (!form.visitType?.trim()) {
+      setFormError('Visit type is required.');
+      return;
+    }
     setSaving(true);
     try {
       const payload = {

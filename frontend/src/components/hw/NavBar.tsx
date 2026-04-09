@@ -8,7 +8,6 @@ const NAV_LINKS = [
   { label: 'About', hash: '#mission' },
   { label: 'Donate', hash: '#donate' },
   { label: 'Impact', to: '/impact' },
-  { label: 'Stories', to: '/stories' },
   { label: 'Volunteer', to: '/volunteer' },
 ];
 
@@ -93,6 +92,17 @@ export default function NavBar() {
           </Link>
         </>
       )}
+
+      <Link
+        to="/mfa"
+        onClick={() => setDropdownOpen(false)}
+        className="w-full bg-transparent border-none cursor-pointer px-4 py-2.5 flex items-center gap-3 text-[13px] text-[#1E3A5F] font-semibold text-left rounded-xl hover:bg-cyan-50 transition-colors no-underline"
+      >
+        <span className="w-7 h-7 rounded-full bg-cyan-100 flex items-center justify-center flex-shrink-0 text-cyan-700">
+          <i className="bi bi-shield-check text-[13px]" />
+        </span>
+        Multi-factor authentication
+      </Link>
 
       <div className="h-[1px] bg-stone-100 my-1 mx-2" />
 
@@ -367,6 +377,15 @@ export default function NavBar() {
                     User Manager
                   </Link>
                 )}
+
+                <Link
+                  to="/mfa"
+                  onClick={() => setMenuOpen(false)}
+                  className="w-full bg-white/5 border border-transparent rounded-xl p-3.5 flex items-center gap-3 text-[13px] text-white font-medium text-left hover:bg-cyan-900/40 transition-colors mb-1.5 no-underline border-l-[3px] border-l-cyan-400"
+                >
+                  <i className="bi bi-shield-check text-[15px] text-cyan-300" />
+                  Multi-factor authentication
+                </Link>
 
                 {/* Log Out */}
                 <button

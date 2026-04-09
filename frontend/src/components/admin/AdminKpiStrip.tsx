@@ -18,17 +18,15 @@ export interface AdminKpiItem {
 
 const stripStyle: CSSProperties = {
   display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'flex-start',
   flexWrap: 'wrap',
-  rowGap: 12,
-  columnGap: 16,
+  gap: 12,
   marginBottom: 24,
 };
 
 const baseCardStyle: CSSProperties = {
-  flex: '1 1 170px',
-  minWidth: 160,
+  flex: '1 1 220px',
+  minWidth: 220,
+  minHeight: 108,
   background: '#fff',
   borderRadius: 12,
   padding: '14px 16px',
@@ -124,13 +122,26 @@ export default function AdminKpiStrip({ items }: { items: AdminKpiItem[] }) {
   }
 
   return (
-    <div style={stripStyle}>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, flex: '2 1 520px' }}>
+    <>
+      <style>{`
+        .admin-kpi-group-break {
+          display: none;
+          flex-basis: 100%;
+          height: 0;
+          margin: 0;
+          padding: 0;
+        }
+        @media (max-width: 1400px) {
+          .admin-kpi-group-break {
+            display: block;
+          }
+        }
+      `}</style>
+      <div style={stripStyle}>
         {filterableItems.map(renderCard)}
+        {filterableItems.length > 0 && infoItems.length > 0 ? <div className="admin-kpi-group-break" aria-hidden /> : null}
+        {infoItems.map((k, idx) => renderCard(k, filterableItems.length + idx))}
       </div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, flex: '1 1 340px', justifyContent: 'flex-end' }}>
-        {infoItems.map(renderCard)}
-      </div>
-    </div>
+    </>
   );
 }

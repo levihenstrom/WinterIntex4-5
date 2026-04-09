@@ -301,6 +301,7 @@ export default function ResidentsListPage() {
   const [error, setError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
   const [caseCategories, setCaseCategories] = useState<string[]>([]);
+  const [statusPillOptions, setStatusPillOptions] = useState<string[]>([]);
 
   const [editTarget, setEditTarget] = useState<Resident | 'new' | null>(null);
   const [form, setForm] = useState<FormData>(emptyForm());
@@ -383,9 +384,18 @@ export default function ResidentsListPage() {
           ),
         ).sort((a, b) => a.localeCompare(b));
         setCaseCategories(unique);
+        const inData = new Set(
+          rows
+            .map((r) => r.caseStatus?.trim())
+            .filter((v): v is string => Boolean(v)),
+        );
+        setStatusPillOptions(CASE_STATUSES.filter((s) => inData.has(s)));
       })
       .catch(() => {
-        if (!cancelled) setCaseCategories([]);
+        if (!cancelled) {
+          setCaseCategories([]);
+          setStatusPillOptions([]);
+        }
       });
     return () => {
       cancelled = true;
@@ -497,6 +507,14 @@ export default function ResidentsListPage() {
       setFormError('Select a safehouse.');
       return;
     }
+    if (!form.caseStatus?.trim()) {
+      setFormError('Case status is required.');
+      return;
+    }
+    if (!form.caseCategory?.trim()) {
+      setFormError('Case category is required.');
+      return;
+    }
     setSaving(true);
     try {
       const payload = {
@@ -602,7 +620,6 @@ export default function ResidentsListPage() {
                 {
                   label: 'Residents',
                   value: String(data.totalCount),
-                  sub: `Current result set`,
                   accent: '#1E3A5F',
                   icon: 'people',
                   group: 'info',
@@ -610,7 +627,6 @@ export default function ResidentsListPage() {
                 {
                   label: 'Database total',
                   value: String(data.totalCount),
-                  sub: `Page ${data.page} of ${data.totalPages || 1}`,
                   accent: '#6B21A8',
                   icon: 'database',
                   group: 'info',
@@ -663,7 +679,7 @@ export default function ResidentsListPage() {
 
         {/* Status filter pills */}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12, alignItems: 'center' }}>
-          {['', ...CASE_STATUSES].map(s => {
+          {['', ...statusPillOptions].map(s => {
             const isActive = statusFilter === s;
             const cfg = s ? STATUS_COLORS[s] : null;
             return (

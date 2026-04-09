@@ -179,8 +179,8 @@ export default function ReportsAnalyticsPage() {
 
   const [from, setFrom] = useState(defaultFrom);
   const [to, setTo] = useState(defaultTo);
-  const [dSafehouse, setDSafehouse] = useState('');
-  const [dType, setDType] = useState('');
+  const [safehouseId, setSafehouseId] = useState('');
+  const [donationType, setDonationType] = useState('');
 
   const [donLoading, setDonLoading] = useState(true);
   const [donError, setDonError] = useState<string | null>(null);
@@ -210,33 +210,17 @@ export default function ReportsAnalyticsPage() {
   );
 
   useEffect(() => {
-    void fetchDonations(defaultFrom, defaultTo, '', '');
-    // Initial load only; further refreshes use Apply or Reset.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const applyGivingFilters = () => {
-    void fetchDonations(from, to, dSafehouse, dType);
-  };
-
-  const resetGivingFilters = () => {
-    setFrom(defaultFrom);
-    setTo(defaultTo);
-    setDSafehouse('');
-    setDType('');
-    void fetchDonations(defaultFrom, defaultTo, '', '');
-  };
+    void fetchDonations(from, to, safehouseId, donationType);
+  }, [fetchDonations, from, to, safehouseId, donationType]);
 
   const [outLoading, setOutLoading] = useState(true);
   const [outError, setOutError] = useState<string | null>(null);
   const [outData, setOutData] = useState<OutcomeSummary | null>(null);
-  const [oSafehouse, setOSafehouse] = useState('');
-
-  const loadOutcomes = useCallback(async () => {
+  const loadOutcomes = useCallback(async (selectedSafehouseId: string) => {
     setOutLoading(true);
     setOutError(null);
     try {
-      const q = buildQuery({ safehouseId: oSafehouse || undefined });
+      const q = buildQuery({ safehouseId: selectedSafehouseId || undefined });
       const data = await fetchJson<OutcomeSummary>(`/api/reports/outcome-summary${q}`);
       setOutData(data);
     } catch (e) {
@@ -245,11 +229,33 @@ export default function ReportsAnalyticsPage() {
     } finally {
       setOutLoading(false);
     }
-  }, [oSafehouse]);
+  }, []);
 
   useEffect(() => {
-    void loadOutcomes();
-  }, [loadOutcomes]);
+    void loadOutcomes(safehouseId);
+  }, [loadOutcomes, safehouseId]);
+
+  const safehouseOptions = useMemo(() => {
+    const merged = new Map<number, string>();
+    for (const s of donData?.filterOptions.safehouses ?? []) merged.set(s.safehouseId, s.name);
+    for (const s of outData?.filterOptions.safehouses ?? []) merged.set(s.safehouseId, s.name);
+    return Array.from(merged.entries())
+      .map(([id, name]) => ({ safehouseId: id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [donData?.filterOptions.safehouses, outData?.filterOptions.safehouses]);
+
+  const donationTypeOptions = useMemo(() => {
+    const merged = new Set<string>(donData?.filterOptions.donationTypes ?? []);
+    for (const t of outData?.filterOptions.donationTypes ?? []) merged.add(t);
+    return Array.from(merged).sort((a, b) => a.localeCompare(b));
+  }, [donData?.filterOptions.donationTypes, outData?.filterOptions.donationTypes]);
+
+  function resetGlobalFilters() {
+    setFrom(defaultFrom);
+    setTo(defaultTo);
+    setSafehouseId('');
+    setDonationType('');
+  }
 
   const monthChartData = useMemo(
     () =>
@@ -339,85 +345,70 @@ export default function ReportsAnalyticsPage() {
 
         {loadingAny && !donData && !outData ? <LoadingState message="Loading reports and analytics…" /> : null}
 
+        <div style={{ ...card, marginBottom: 22 }} className="no-print-reports">
+          <div style={{ fontWeight: 700, color: '#1E293B', marginBottom: 14 }}>Global report filters</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'flex-end' }}>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12, color: '#64748B' }}>
+              From
+              <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} style={{ padding: 8, borderRadius: 8, border: '1px solid #CBD5E1' }} />
+            </label>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12, color: '#64748B' }}>
+              To
+              <input type="date" value={to} onChange={(e) => setTo(e.target.value)} style={{ padding: 8, borderRadius: 8, border: '1px solid #CBD5E1' }} />
+            </label>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12, color: '#64748B' }}>
+              Safehouse
+              <select
+                value={safehouseId}
+                onChange={(e) => setSafehouseId(e.target.value)}
+                style={{ padding: 8, borderRadius: 8, border: '1px solid #CBD5E1', minWidth: 200 }}
+              >
+                <option value="">All in scope</option>
+                {safehouseOptions.map((s) => (
+                  <option key={s.safehouseId} value={String(s.safehouseId)}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12, color: '#64748B' }}>
+              Contribution type
+              <select
+                value={donationType}
+                onChange={(e) => setDonationType(e.target.value)}
+                style={{ padding: 8, borderRadius: 8, border: '1px solid #CBD5E1', minWidth: 170 }}
+              >
+                <option value="">All types</option>
+                {donationTypeOptions.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button
+              type="button"
+              onClick={resetGlobalFilters}
+              style={{
+                background: '#fff',
+                color: '#475569',
+                border: '1px solid #CBD5E1',
+                borderRadius: 8,
+                padding: '10px 18px',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              Reset filters
+            </button>
+          </div>
+        </div>
+
         <section id="giving" style={{ marginBottom: 36 }}>
           <h2 style={sectionTitle}>Financial giving</h2>
           <p style={{ color: '#64748B', fontSize: 14, marginBottom: 16, maxWidth: 720 }}>
-            Donation totals and allocations across the selected period. Adjust filters and select Apply to refresh charts.
+            Donation totals and allocations across the selected period. Global filters refresh all report sections instantly.
           </p>
-
-          <div style={{ ...card, marginBottom: 20 }} className="no-print-reports">
-            <div style={{ fontWeight: 700, color: '#1E293B', marginBottom: 14 }}>Giving filters</div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'flex-end' }}>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12, color: '#64748B' }}>
-                From
-                <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} style={{ padding: 8, borderRadius: 8, border: '1px solid #CBD5E1' }} />
-              </label>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12, color: '#64748B' }}>
-                To
-                <input type="date" value={to} onChange={(e) => setTo(e.target.value)} style={{ padding: 8, borderRadius: 8, border: '1px solid #CBD5E1' }} />
-              </label>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12, color: '#64748B' }}>
-                Safehouse
-                <select
-                  value={dSafehouse}
-                  onChange={(e) => setDSafehouse(e.target.value)}
-                  style={{ padding: 8, borderRadius: 8, border: '1px solid #CBD5E1', minWidth: 180 }}
-                >
-                  <option value="">All in scope</option>
-                  {(donData?.filterOptions.safehouses ?? []).map((s) => (
-                    <option key={s.safehouseId} value={String(s.safehouseId)}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12, color: '#64748B' }}>
-                Contribution type
-                <select
-                  value={dType}
-                  onChange={(e) => setDType(e.target.value)}
-                  style={{ padding: 8, borderRadius: 8, border: '1px solid #CBD5E1', minWidth: 160 }}
-                >
-                  <option value="">All types</option>
-                  {(donData?.filterOptions.donationTypes ?? []).map((t) => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <button
-                type="button"
-                onClick={applyGivingFilters}
-                style={{
-                  background: '#0D9488',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: 8,
-                  padding: '10px 18px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                }}
-              >
-                Apply
-              </button>
-              <button
-                type="button"
-                onClick={resetGivingFilters}
-                style={{
-                  background: '#fff',
-                  color: '#475569',
-                  border: '1px solid #CBD5E1',
-                  borderRadius: 8,
-                  padding: '10px 18px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                }}
-              >
-                Reset
-              </button>
-            </div>
-          </div>
 
           {donLoading && donData && <LoadingState message="Refreshing giving charts…" size="compact" />}
           {donError && <ErrorState message={donError} />}
@@ -579,25 +570,6 @@ export default function ReportsAnalyticsPage() {
             Volume of documented services grouped as caring (psychosocial and field contact), healing (health), and teaching
             (education)—consistent with annual accomplishment reporting.
           </p>
-
-          <div style={{ ...card, marginBottom: 20 }} className="no-print-reports">
-            <div style={{ fontWeight: 700, color: '#1E293B', marginBottom: 10 }}>Outcome scope</div>
-            <label style={{ display: 'inline-flex', flexDirection: 'column', gap: 4, fontSize: 12, color: '#64748B' }}>
-              Limit to safehouse
-              <select
-                value={oSafehouse}
-                onChange={(e) => setOSafehouse(e.target.value)}
-                style={{ padding: 8, borderRadius: 8, border: '1px solid #CBD5E1', minWidth: 220 }}
-              >
-                <option value="">All sites in scope</option>
-                {(outData?.filterOptions.safehouses ?? []).map((s) => (
-                  <option key={s.safehouseId} value={String(s.safehouseId)}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
 
           {outLoading && <LoadingState message="Updating services and outcomes…" size="compact" />}
           {outError && <ErrorState message={outError} />}

@@ -110,14 +110,13 @@ function SupporterKpiStrip({
   return (
     <AdminKpiStrip
       items={[
-        { label: 'Active supporters', value: String(active), sub: 'status in database', accent: '#059669', icon: 'person-check', onClick: () => onToggle('active'), active: quickFilter === 'active', group: 'filterable' },
+        { label: 'Active supporters', value: String(active), accent: '#059669', icon: 'person-check', onClick: () => onToggle('active'), active: quickFilter === 'active', group: 'filterable' },
         { label: 'Monetary donors', value: String(monetary), accent: '#0D9488', icon: 'cash-stack', onClick: () => onToggle('monetary'), active: quickFilter === 'monetary', group: 'filterable' },
         { label: 'Volunteers', value: String(volunteers), accent: '#2563EB', icon: 'heart', onClick: () => onToggle('volunteer'), active: quickFilter === 'volunteer', group: 'filterable' },
         { label: 'Supporters', value: String(supporters.length), accent: '#1E3A5F', icon: 'people', group: 'info' },
         {
           label: 'Monetary gifts (USD)',
           value: formatAmountMaybePhpAndUsd(monetaryTotalPhp, 'PHP'),
-          sub: 'loaded gifts total',
           accent: '#7C3AED',
           icon: 'wallet2',
           group: 'info',
@@ -296,6 +295,21 @@ export default function SupportersListPage() {
     e.preventDefault();
     setSaving(true);
     setError(null);
+    if (!form.displayName.trim()) {
+      setSaving(false);
+      setError('Full name is required.');
+      return;
+    }
+    if (!form.supporterType.trim()) {
+      setSaving(false);
+      setError('Supporter type is required.');
+      return;
+    }
+    if (!form.status.trim()) {
+      setSaving(false);
+      setError('Supporter status is required.');
+      return;
+    }
     try {
       if (form.supporterId) {
         const merged: SupporterApi = {

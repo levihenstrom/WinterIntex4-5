@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace Intex.API.Models;
 
@@ -14,7 +15,8 @@ public class ProcessRecording
     [Range(1, int.MaxValue, ErrorMessage = "Resident is required.")]
     public int ResidentId { get; set; }
 
-    public Resident Resident { get; set; } = null!;
+    [ValidateNever]
+    public Resident? Resident { get; set; }
 
     [Column("session_date")]
     [Required(ErrorMessage = "Session date is required.")]

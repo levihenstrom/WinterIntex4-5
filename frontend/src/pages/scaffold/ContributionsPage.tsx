@@ -171,6 +171,14 @@ export default function ContributionsPage() {
       setError('Select a supporter.');
       return;
     }
+    if (!form.donationType.trim()) {
+      setError('Contribution type is required.');
+      return;
+    }
+    if (!form.donationDate.trim()) {
+      setError('Contribution date is required.');
+      return;
+    }
     setSaving(true);
     setError(null);
     try {

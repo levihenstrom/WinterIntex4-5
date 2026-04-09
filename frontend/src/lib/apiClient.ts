@@ -9,6 +9,15 @@ export interface PagedResult<T> {
   items: T[];
 }
 
+function toFriendlyFieldName(field: string): string {
+  const lastSegment = field.split('.').at(-1) ?? field;
+  return lastSegment
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/[_-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 async function readApiError(response: Response): Promise<string> {
   const fallback = `Request failed (${response.status}).`;
   const text = await response.text().catch(() => '');
@@ -22,12 +31,16 @@ async function readApiError(response: Response): Promise<string> {
       errors?: Record<string, string[]>;
     };
 
+    if (parsed.errors) {
+      const entries = Object.entries(parsed.errors).filter(([, messages]) => messages.length > 0);
+      if (entries.length > 0) {
+        return entries
+          .map(([field, messages]) => `${toFriendlyFieldName(field)}: ${messages[0]}`)
+          .join(' | ');
+      }
+    }
     if (parsed.message) return parsed.message;
     if (parsed.detail) return parsed.detail;
-    if (parsed.errors) {
-      const firstFieldErrors = Object.values(parsed.errors).find((messages) => messages.length > 0);
-      if (firstFieldErrors?.[0]) return firstFieldErrors[0];
-    }
     if (parsed.title) return parsed.title;
   } catch {
     return text;

@@ -49,7 +49,6 @@ const QUICK_LINKS = [
   { label: 'Home',     to: { pathname: '/', hash: '' } },
   { label: 'About Us', to: { pathname: '/', hash: '#mission' } },
   { label: 'Impact',   to: { pathname: '/impact', hash: '' } },
-  { label: 'Stories',  to: { pathname: '/stories', hash: '' } },
 ];
 
 const GET_INVOLVED_LINKS = [

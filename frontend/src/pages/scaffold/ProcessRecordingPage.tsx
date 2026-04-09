@@ -273,6 +273,18 @@ export default function ProcessRecordingPage() {
       setFormError('Select a resident.');
       return;
     }
+    if (!form.sessionDate?.trim()) {
+      setFormError('Session date is required.');
+      return;
+    }
+    if (!form.socialWorker?.trim()) {
+      setFormError('Social worker is required.');
+      return;
+    }
+    if (!form.sessionType?.trim()) {
+      setFormError('Session type is required.');
+      return;
+    }
     setSaving(true);
     try {
       const payload = {
