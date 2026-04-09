@@ -1,5 +1,5 @@
-import { useEffect, useState, useMemo } from 'react';
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   deleteJson,
   fetchPaged,
@@ -283,8 +283,7 @@ export default function ResidentsListPage() {
   const { authSession } = useAuth();
   const canWrite = authSession.roles.includes('Admin') || authSession.roles.includes('Staff');
 
-  // URL-driven initial state — supports /admin/residents/:id and ?caseStatus=Active
-  const { id: urlId } = useParams<{ id?: string }>();
+  // URL-driven initial state — supports ?caseStatus=Active (and search)
   const [searchParams] = useSearchParams();
 
   const [search, setSearch] = useState(() => searchParams.get('search') ?? '');

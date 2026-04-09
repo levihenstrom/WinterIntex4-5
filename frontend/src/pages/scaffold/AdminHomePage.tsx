@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type MouseEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { fetchJson, fetchPaged, postJson, type PagedResult } from '../../lib/apiClient';
 import {
@@ -127,11 +127,11 @@ function QuickLink({ to, icon, title, description }: QuickLinkProps) {
           border: '1px solid rgba(107,33,168,0.08)',
           transition: 'border-color 0.2s, background 0.2s',
         }}
-        onMouseEnter={(e: React.MouseEvent) => {
+        onMouseEnter={(e: MouseEvent<HTMLElement>) => {
           (e.currentTarget as HTMLElement).style.borderColor = 'var(--hw-purple-soft)';
           (e.currentTarget as HTMLElement).style.background = 'var(--hw-bg-lavender)';
         }}
-        onMouseLeave={(e: React.MouseEvent) => {
+        onMouseLeave={(e: MouseEvent<HTMLElement>) => {
           (e.currentTarget as HTMLElement).style.borderColor = 'rgba(107,33,168,0.08)';
           (e.currentTarget as HTMLElement).style.background = 'var(--hw-bg-white)';
         }}
@@ -155,75 +155,8 @@ interface RecentDonationRow {
   campaignName?: string | null;
   supporter?: { displayName?: string | null; organizationName?: string | null } | null;
 }
-function fmtDonationMoney(n: number | null | undefined, currency = 'PHP') {
-  if (n == null) return '—';
-  try {
-    return new Intl.NumberFormat('en-PH', { style: 'currency', currency, maximumFractionDigits: 0 }).format(n);
-  } catch {
-    return `${currency} ${n.toFixed(0)}`;
-  }
-}
+
 // ── Insights dashboard widgets (isolated fetch/error so one failure does not block others) ──
-function MlSectionCard({
-  title,
-  children,
-  footerLink,
-  alertBadge,
-}: {
-  title: string;
-  children: ReactNode;
-  footerLink?: { to: string; label: string };
-  alertBadge?: { count: number; color: string; label: string } | null;
-}) {
-  const badge = alertBadge && alertBadge.count > 0 ? alertBadge : null;
-  const hasAlert = badge != null;
-  return (
-    <div className="col-12 col-lg-6">
-      <div
-        className="card border-0 rounded-3 h-100"
-        style={hasAlert ? {
-          boxShadow: `0 0 0 2px ${badge.color}, 0 4px 20px ${badge.color}44`,
-          border: `1.5px solid ${badge.color}`,
-        } : {
-          boxShadow: '0 2px 8px rgba(30,58,95,0.07)',
-        }}
-      >
-        <div className="card-body d-flex flex-column">
-          <div className="d-flex align-items-center gap-2 mb-3">
-            {hasAlert && (
-              <span style={{
-                width: 8, height: 8, borderRadius: '50%',
-                background: badge.color, flexShrink: 0,
-                boxShadow: `0 0 6px 2px ${badge.color}88`,
-              }} />
-            )}
-            <h3 className="h6 fw-semibold mb-0" style={{ color: 'var(--hw-navy)', flex: 1 }}>
-              {title}
-            </h3>
-            {hasAlert && (
-              <span
-                className="badge rounded-pill"
-                style={{ background: badge.color, color: 'white', fontSize: '0.62rem', letterSpacing: '0.06em' }}
-              >
-                {badge.count} {badge.label}
-              </span>
-            )}
-          </div>
-          <div className="flex-grow-1 small">{children}</div>
-          {footerLink && (
-            <Link
-              to={footerLink.to}
-              className="small fw-semibold text-decoration-none mt-3"
-              style={{ color: 'var(--hw-purple)' }}
-            >
-              {footerLink.label} →
-            </Link>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function ResidentsNeedingAttentionWidget({ onCriticalCount, onOpenProfile }: { onCriticalCount?: (n: number) => void; onOpenProfile?: (residentId: number) => void }) {
   const [rows, setRows] = useState<ResidentMlScoreRow[] | null>(null);
