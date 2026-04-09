@@ -21,6 +21,7 @@ export default function MetricCard({
   duration = 2000,
   staticDisplay,
 }: MetricCardProps) {
+  const safeTarget = Number.isFinite(target) ? Math.max(0, target) : 0;
   const [count, setCount] = useState(0);
   const [started, setStarted] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -40,15 +41,19 @@ export default function MetricCard({
 
   useEffect(() => {
     if (isStatic || !started) return;
-    const step = Math.ceil(target / (duration / 16));
+    if (safeTarget === 0) {
+      setCount(0);
+      return;
+    }
+    const step = Math.max(1, Math.ceil(safeTarget / (duration / 16)));
     let current = 0;
     const timer = setInterval(() => {
-      current = Math.min(current + step, target);
+      current = Math.min(current + step, safeTarget);
       setCount(current);
-      if (current >= target) clearInterval(timer);
+      if (current >= safeTarget) clearInterval(timer);
     }, 16);
     return () => clearInterval(timer);
-  }, [started, target, duration, isStatic]);
+  }, [started, safeTarget, duration, isStatic]);
 
   return (
     <div ref={ref} className="flex flex-col items-center justify-center px-6 py-10 text-center">

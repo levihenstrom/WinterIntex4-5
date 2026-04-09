@@ -13,7 +13,7 @@ import {
 } from 'recharts';
 import { fetchJson } from '../../lib/apiClient';
 import { ErrorState, LoadingState } from '../../components/common/AsyncStatus';
-import { formatAmountMaybePhpAndUsd } from '../../lib/currency';
+import { formatAmountMaybePhpAndUsd, formatPesoCompact } from '../../lib/currency';
 
 
 const card: React.CSSProperties = {
@@ -46,6 +46,11 @@ function buildQuery(params: Record<string, string | undefined | null>): string {
 
 function fmtMoney(n: number) {
   return formatAmountMaybePhpAndUsd(n, 'PHP');
+}
+
+/** Shorter peso-only labels for chart axes (avoids cramped dual-currency ticks). */
+function fmtMoneyChart(n: number) {
+  return formatPesoCompact(n);
 }
 
 function fmtHours(n: number) {
@@ -431,7 +436,7 @@ export default function ReportsAnalyticsPage() {
                     <LineChart data={monthChartData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
                       <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                      <YAxis tickFormatter={(v: any) => fmtMoney(Number(v))} width={88} tick={{ fontSize: 10 }} />
+                      <YAxis tickFormatter={(v: any) => fmtMoneyChart(Number(v))} width={88} tick={{ fontSize: 10 }} />
                       <Tooltip formatter={(v: any) => fmtMoney(Number(v ?? 0))} labelStyle={{ color: '#334155' }} />
                       <Line type="monotone" dataKey="amount" name="Amount" stroke="#0D9488" strokeWidth={2} dot={{ r: 3 }} />
                     </LineChart>
@@ -455,7 +460,7 @@ export default function ReportsAnalyticsPage() {
                           layout="vertical"
                         >
                           <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                          <XAxis type="number" tickFormatter={(v: any) => fmtMoney(Number(v))} />
+                          <XAxis type="number" tickFormatter={(v: any) => fmtMoneyChart(Number(v))} />
                           <YAxis type="category" dataKey="name" width={108} tick={{ fontSize: 11 }} />
                           <Tooltip formatter={(v: any) => fmtMoney(Number(v ?? 0))} />
                           <Bar dataKey="amount" name="PHP" radius={[0, 4, 4, 0]}>
@@ -481,7 +486,7 @@ export default function ReportsAnalyticsPage() {
                         <BarChart data={donData.bySupporterTypeFinancial.map((x) => ({ name: x.name, amount: Number(x.amount) }))}>
                           <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
                           <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={0} angle={-18} textAnchor="end" height={64} />
-                          <YAxis tickFormatter={(v: any) => fmtMoney(Number(v))} width={72} />
+                          <YAxis tickFormatter={(v: any) => fmtMoneyChart(Number(v))} width={72} />
                           <Tooltip formatter={(v: any) => fmtMoney(Number(v ?? 0))} />
                           <Bar dataKey="amount" fill="#1E3A5F" name="PHP" radius={[4, 4, 0, 0]} />
                         </BarChart>
@@ -555,7 +560,7 @@ export default function ReportsAnalyticsPage() {
                       <BarChart data={donData.byProgramArea.map((x) => ({ name: x.name, amount: Number(x.amount) }))}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
                         <XAxis dataKey="name" interval={0} angle={-20} textAnchor="end" height={70} tick={{ fontSize: 10 }} />
-                        <YAxis tickFormatter={(v: any) => fmtMoney(Number(v))} width={80} />
+                        <YAxis tickFormatter={(v: any) => fmtMoneyChart(Number(v))} width={80} />
                         <Tooltip formatter={(v: any) => fmtMoney(Number(v ?? 0))} />
                         <Bar dataKey="amount" fill="#7C3AED" radius={[4, 4, 0, 0]} />
                       </BarChart>
@@ -569,7 +574,7 @@ export default function ReportsAnalyticsPage() {
                       <BarChart data={donData.bySafehouse.map((x) => ({ name: x.safehouseName, amount: Number(x.amount) }))}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
                         <XAxis dataKey="name" interval={0} angle={-18} textAnchor="end" height={72} tick={{ fontSize: 10 }} />
-                        <YAxis tickFormatter={(v: any) => fmtMoney(Number(v))} width={80} />
+                        <YAxis tickFormatter={(v: any) => fmtMoneyChart(Number(v))} width={80} />
                         <Tooltip formatter={(v: any) => fmtMoney(Number(v ?? 0))} />
                         <Bar dataKey="amount" fill="#D97706" radius={[4, 4, 0, 0]} />
                       </BarChart>

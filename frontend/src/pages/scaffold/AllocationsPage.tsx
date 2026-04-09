@@ -307,7 +307,7 @@ export default function AllocationsPage() {
           <>
             <AdminKpiStrip
               items={[
-                { label: 'Total allocated (USD)', value: formatAmountMaybePhpAndUsd(allocationKpis.totalPhp, 'PHP'), sub: 'all loaded rows', accent: '#059669', icon: 'cash-stack' },
+                { label: 'Total allocated', value: formatAmountMaybePhpAndUsd(allocationKpis.totalPhp, 'PHP'), sub: 'all loaded rows', accent: '#059669', icon: 'cash-stack' },
                 { label: 'Allocation rows', value: String(allocationKpis.count), accent: '#1E3A5F', icon: 'list-ul' },
                 { label: 'Sites', value: String(allocationKpis.safehouses), sub: 'distinct safehouses', accent: '#0D9488', icon: 'building' },
                 { label: 'Program areas', value: String(allocationKpis.programs), sub: 'distinct labels', accent: '#7C3AED', icon: 'diagram-3' },
