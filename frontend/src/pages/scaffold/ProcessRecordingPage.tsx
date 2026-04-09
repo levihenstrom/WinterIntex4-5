@@ -72,7 +72,17 @@ function Badge({ label, bg, text }: { label: string; bg: string; text: string })
 
 // ── KPI Strip ─────────────────────────────────────────────────────────────────
 
-function SessionKpiStrip({ items }: { items: ProcessRecording[] }) {
+type SessionQuickFilter = 'progress' | 'concerns' | 'referral' | null;
+
+function SessionKpiStrip({
+  items,
+  quickFilter,
+  onToggle,
+}: {
+  items: ProcessRecording[];
+  quickFilter: SessionQuickFilter;
+  onToggle: (f: SessionQuickFilter) => void;
+}) {
   const total = items.length;
   const avgDur = total > 0
     ? Math.round(items.reduce((s, r) => s + (r.sessionDurationMinutes ?? 0), 0) / total)
@@ -86,9 +96,9 @@ function SessionKpiStrip({ items }: { items: ProcessRecording[] }) {
       items={[
         { label: 'Sessions on page', value: String(total), accent: '#1E3A5F', icon: 'clipboard2-data' },
         { label: 'Avg duration', value: `${avgDur} min`, accent: '#1E40AF', icon: 'stopwatch' },
-        { label: 'Progress noted', value: String(progressCount), accent: '#166534', icon: 'check-circle' },
-        { label: 'Concerns flagged', value: String(concernsCount), accent: '#991B1B', icon: 'exclamation-triangle' },
-        { label: 'Referrals made', value: String(referralCount), accent: '#6B21A8', icon: 'link-45deg' },
+        { label: 'Progress noted', value: String(progressCount), accent: '#166534', icon: 'check-circle', onClick: () => onToggle('progress'), active: quickFilter === 'progress' },
+        { label: 'Concerns flagged', value: String(concernsCount), accent: '#991B1B', icon: 'exclamation-triangle', onClick: () => onToggle('concerns'), active: quickFilter === 'concerns' },
+        { label: 'Referrals made', value: String(referralCount), accent: '#6B21A8', icon: 'link-45deg', onClick: () => onToggle('referral'), active: quickFilter === 'referral' },
       ]}
     />
   );
@@ -196,6 +206,10 @@ export default function ProcessRecordingPage() {
   const [typeFilter, setTypeFilter] = useState('');
   const [sortCol, setSortCol] = useState<SortCol | null>(null);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+  const [quickFilter, setQuickFilter] = useState<SessionQuickFilter>(null);
+  function toggleQuickFilter(f: SessionQuickFilter) {
+    setQuickFilter(prev => prev === f ? null : f);
+  }
 
   // ── Fetch ─────────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -226,6 +240,9 @@ export default function ProcessRecordingPage() {
   const filteredAndSorted = useMemo(() => {
     let items = data?.items ?? [];
     if (typeFilter) items = items.filter(r => r.sessionType === typeFilter);
+    if (quickFilter === 'progress') items = items.filter(r => r.progressNoted === true);
+    if (quickFilter === 'concerns') items = items.filter(r => r.concernsFlagged === true);
+    if (quickFilter === 'referral') items = items.filter(r => r.referralMade === true);
     if (sortCol) {
       items = [...items].sort((a, b) => compareValues(
         a[sortCol] as string | number | boolean | null,
@@ -234,7 +251,7 @@ export default function ProcessRecordingPage() {
       ));
     }
     return items;
-  }, [data?.items, typeFilter, sortCol, sortDir]);
+  }, [data?.items, typeFilter, quickFilter, sortCol, sortDir]);
 
   // ── Modal helpers ─────────────────────────────────────────────────────────────
   function openCreate() {
@@ -377,7 +394,21 @@ export default function ProcessRecordingPage() {
         </div>
 
         {/* KPI Strip */}
-        {data && <SessionKpiStrip items={data.items} />}
+        {data && (
+          <>
+            <SessionKpiStrip items={data.items} quickFilter={quickFilter} onToggle={toggleQuickFilter} />
+            {quickFilter && (
+              <div className="mb-3 d-flex align-items-center gap-2">
+                <span className="badge rounded-pill" style={{ background: quickFilter === 'concerns' ? '#991B1B' : quickFilter === 'referral' ? '#6B21A8' : '#166534', color: '#fff', fontSize: 12, padding: '5px 12px' }}>
+                  Filtered: {quickFilter === 'progress' ? 'Progress noted' : quickFilter === 'concerns' ? 'Concerns flagged' : 'Referrals made'}
+                </span>
+                <button onClick={() => setQuickFilter(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: '#64748B', padding: '2px 6px' }}>
+                  Clear ✕
+                </button>
+              </div>
+            )}
+          </>
+        )}
 
         {/* Session type filter pills */}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>

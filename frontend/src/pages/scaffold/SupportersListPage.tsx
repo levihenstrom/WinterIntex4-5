@@ -91,12 +91,18 @@ function Badge({ label, bg, text }: { label: string; bg: string; text: string })
   );
 }
 
+type SupporterQuickFilter = 'active' | 'monetary' | 'volunteer' | null;
+
 function SupporterKpiStrip({
   supporters,
   monetaryTotalPhp,
+  quickFilter,
+  onToggle,
 }: {
   supporters: SupporterApi[];
   monetaryTotalPhp: number;
+  quickFilter: SupporterQuickFilter;
+  onToggle: (f: SupporterQuickFilter) => void;
 }) {
   const active = supporters.filter((s) => s.status === 'Active').length;
   const monetary = supporters.filter((s) => s.supporterType === 'MonetaryDonor').length;
@@ -105,9 +111,9 @@ function SupporterKpiStrip({
     <AdminKpiStrip
       items={[
         { label: 'Total supporters', value: String(supporters.length), accent: '#1E3A5F', icon: 'people' },
-        { label: 'Active', value: String(active), sub: 'status in database', accent: '#059669', icon: 'person-check' },
-        { label: 'Monetary donors', value: String(monetary), accent: '#0D9488', icon: 'cash-stack' },
-        { label: 'Volunteers', value: String(volunteers), accent: '#2563EB', icon: 'heart' },
+        { label: 'Active', value: String(active), sub: 'status in database', accent: '#059669', icon: 'person-check', onClick: () => onToggle('active'), active: quickFilter === 'active' },
+        { label: 'Monetary donors', value: String(monetary), accent: '#0D9488', icon: 'cash-stack', onClick: () => onToggle('monetary'), active: quickFilter === 'monetary' },
+        { label: 'Volunteers', value: String(volunteers), accent: '#2563EB', icon: 'heart', onClick: () => onToggle('volunteer'), active: quickFilter === 'volunteer' },
         {
           label: 'Monetary gifts (USD)',
           value: formatAmountMaybePhpAndUsd(monetaryTotalPhp, 'PHP'),
@@ -239,15 +245,28 @@ export default function SupportersListPage() {
     });
   }, [filtered, sortByMlRisk, donorMlById]);
 
-  const totalPages = Math.max(1, Math.ceil(displayedSupporters.length / PAGE_SIZE));
+  const [quickFilter, setQuickFilter] = useState<SupporterQuickFilter>(null);
+  function toggleQuickFilter(f: SupporterQuickFilter) {
+    setQuickFilter(prev => prev === f ? null : f);
+  }
+
+  const quickFilteredSupporters = useMemo(() => {
+    if (!quickFilter) return displayedSupporters;
+    if (quickFilter === 'active') return displayedSupporters.filter(s => s.status === 'Active');
+    if (quickFilter === 'monetary') return displayedSupporters.filter(s => s.supporterType === 'MonetaryDonor');
+    if (quickFilter === 'volunteer') return displayedSupporters.filter(s => s.supporterType === 'Volunteer');
+    return displayedSupporters;
+  }, [displayedSupporters, quickFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(quickFilteredSupporters.length / PAGE_SIZE));
   const pagedSupporters = useMemo(
-    () => displayedSupporters.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
-    [displayedSupporters, page],
+    () => quickFilteredSupporters.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [quickFilteredSupporters, page],
   );
 
   useEffect(() => {
     setPage(1);
-  }, [typeFilter, statusFilter, search, sortByMlRisk]);
+  }, [typeFilter, statusFilter, search, sortByMlRisk, quickFilter]);
 
   useEffect(() => {
     if (page > totalPages) setPage(totalPages);
@@ -383,7 +402,17 @@ export default function SupportersListPage() {
 
         {!loading && (
           <>
-            <SupporterKpiStrip supporters={supporters} monetaryTotalPhp={monetaryTotalPhp} />
+            <SupporterKpiStrip supporters={supporters} monetaryTotalPhp={monetaryTotalPhp} quickFilter={quickFilter} onToggle={toggleQuickFilter} />
+            {quickFilter && (
+              <div className="mb-3 d-flex align-items-center gap-2">
+                <span className="badge rounded-pill" style={{ background: quickFilter === 'active' ? '#059669' : quickFilter === 'monetary' ? '#0D9488' : '#2563EB', color: '#fff', fontSize: 12, padding: '5px 12px' }}>
+                  Filtered: {quickFilter === 'active' ? 'Active supporters' : quickFilter === 'monetary' ? 'Monetary donors' : 'Volunteers'}
+                </span>
+                <button onClick={() => setQuickFilter(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: '#64748B', padding: '2px 6px' }}>
+                  Clear ✕
+                </button>
+              </div>
+            )}
 
             {donorMlById.size > 0 && mlCriticalOrHighCount > 0 && (
               <button

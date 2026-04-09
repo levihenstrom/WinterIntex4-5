@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { fetchJson } from '../../lib/apiClient';
+import { Link } from 'react-router-dom';
+import { fetchJson, fetchPaged } from '../../lib/apiClient';
 import { useAuth } from '../../context/AuthContext';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -51,6 +52,16 @@ interface Resident {
   dateClosed: string | null;
   notesRestricted: string | null;
   safehouse?: { safehouseId: number; name?: string | null; safehouseCode?: string | null };
+}
+
+interface ProcessRecordingSummary {
+  recordingId: number;
+  sessionDate: string | null;
+  sessionType: string | null;
+  conductedBy: string | null;
+  durationMinutes: number | null;
+  progressNoted: boolean | null;
+  concernsFlagged: boolean | null;
 }
 
 interface IncidentSummary {
@@ -112,21 +123,32 @@ export function ResidentProfileModal({ residentId, onClose, onEditResident }: Re
   const [detail, setDetail] = useState<ProfileDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [recordings, setRecordings] = useState<ProcessRecordingSummary[] | null>(null);
+  const [recordingsLoading, setRecordingsLoading] = useState(false);
 
   useEffect(() => {
     if (residentId == null) {
       setDetail(null);
       setError(null);
+      setRecordings(null);
       return;
     }
     let cancelled = false;
     setLoading(true);
     setError(null);
     setDetail(null);
+    setRecordings(null);
     fetchJson<ProfileDetail>(`/api/residents/${residentId}/detail`)
       .then((d) => { if (!cancelled) setDetail(d); })
       .catch((e: Error) => { if (!cancelled) setError(e.message || 'Could not load resident profile.'); })
       .finally(() => { if (!cancelled) setLoading(false); });
+
+    setRecordingsLoading(true);
+    fetchPaged<ProcessRecordingSummary>('/api/process-recordings', 1, 20, { residentId: String(residentId) })
+      .then((r) => { if (!cancelled) setRecordings(r.items); })
+      .catch(() => { if (!cancelled) setRecordings([]); })
+      .finally(() => { if (!cancelled) setRecordingsLoading(false); });
+
     return () => { cancelled = true; };
   }, [residentId]);
 
@@ -153,12 +175,23 @@ export function ResidentProfileModal({ residentId, onClose, onEditResident }: Re
       <div className="modal-dialog modal-xl modal-dialog-scrollable modal-dialog-centered">
         <div className="modal-content">
           <div className="modal-header border-bottom">
-            <div>
+            <div className="flex-grow-1">
               <h5 className="modal-title fw-bold text-dark mb-0" id="residentProfileTitle">
                 Resident profile
               </h5>
               <p className="small text-muted mb-0">Database ID {residentId} · read-only summary for staff review</p>
             </div>
+            {canWrite && (
+              <Link
+                to={`/admin/residents/process-recordings?residentId=${residentId}`}
+                className="btn btn-sm btn-outline-primary me-2 fw-semibold"
+                style={{ fontSize: 12, whiteSpace: 'nowrap' }}
+                onClick={onClose}
+              >
+                <i className="bi bi-journal-plus me-1" />
+                Record session
+              </Link>
+            )}
             <button type="button" className="btn-close" aria-label="Close" onClick={onClose} />
           </div>
           <div className="modal-body">
@@ -233,6 +266,39 @@ export function ResidentProfileModal({ residentId, onClose, onEditResident }: Re
                   </div>
                   <h6 className="text-uppercase small fw-bold text-secondary mb-3">Restricted notes</h6>
                   <p className="small text-break border rounded p-3 bg-light">{r.notesRestricted?.trim() || '—'}</p>
+                  <h6 className="text-uppercase small fw-bold text-secondary mb-3 mt-4">Session recordings</h6>
+                  {recordingsLoading && <p className="small text-muted">Loading sessions…</p>}
+                  {!recordingsLoading && (!recordings || recordings.length === 0) && (
+                    <p className="small text-muted">No session recordings on file for this resident.</p>
+                  )}
+                  {!recordingsLoading && recordings && recordings.length > 0 && (
+                    <div className="table-responsive border rounded mb-4">
+                      <table className="table table-sm table-striped mb-0 small">
+                        <thead className="table-light">
+                          <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Social worker</th>
+                            <th>Duration (min)</th>
+                            <th>Progress?</th>
+                            <th>Concerns?</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {recordings.map((rec) => (
+                            <tr key={rec.recordingId}>
+                              <td className="text-nowrap">{fmtDate(rec.sessionDate)}</td>
+                              <td>{rec.sessionType || '—'}</td>
+                              <td>{rec.conductedBy || '—'}</td>
+                              <td>{rec.durationMinutes ?? '—'}</td>
+                              <td>{rec.progressNoted === true ? 'Yes' : rec.progressNoted === false ? 'No' : '—'}</td>
+                              <td>{rec.concernsFlagged === true ? 'Yes' : rec.concernsFlagged === false ? 'No' : '—'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                   <h6 className="text-uppercase small fw-bold text-secondary mb-3 mt-4">Incident reports</h6>
                   {detail.incidents.length === 0 ? (
                     <p className="small text-muted">No incident reports on file for this resident.</p>

@@ -1,7 +1,6 @@
-import { useEffect, useState, type ReactNode } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { fetchJson, fetchPaged, postJson, type PagedResult } from '../../lib/apiClient';
-import { ResidentProfileModal } from '../../components/admin/ResidentProfileModal';
 import {
   getAtRiskDonors,
   getResidentCurrentScores,
@@ -156,9 +155,15 @@ interface RecentDonationRow {
   campaignName?: string | null;
   supporter?: { displayName?: string | null; organizationName?: string | null } | null;
 }
-
+function fmtDonationMoney(n: number | null | undefined, currency = 'PHP') {
+  if (n == null) return '—';
+  try {
+    return new Intl.NumberFormat('en-PH', { style: 'currency', currency, maximumFractionDigits: 0 }).format(n);
+  } catch {
+    return `${currency} ${n.toFixed(0)}`;
+  }
+}
 // ── Insights dashboard widgets (isolated fetch/error so one failure does not block others) ──
-
 function MlSectionCard({
   title,
   children,
@@ -170,14 +175,15 @@ function MlSectionCard({
   footerLink?: { to: string; label: string };
   alertBadge?: { count: number; color: string; label: string } | null;
 }) {
-  const hasAlert = alertBadge && alertBadge.count > 0;
+  const badge = alertBadge && alertBadge.count > 0 ? alertBadge : null;
+  const hasAlert = badge != null;
   return (
     <div className="col-12 col-lg-6">
       <div
         className="card border-0 rounded-3 h-100"
         style={hasAlert ? {
-          boxShadow: `0 0 0 2px ${alertBadge.color}, 0 4px 20px ${alertBadge.color}44`,
-          border: `1.5px solid ${alertBadge.color}`,
+          boxShadow: `0 0 0 2px ${badge.color}, 0 4px 20px ${badge.color}44`,
+          border: `1.5px solid ${badge.color}`,
         } : {
           boxShadow: '0 2px 8px rgba(30,58,95,0.07)',
         }}
@@ -187,8 +193,8 @@ function MlSectionCard({
             {hasAlert && (
               <span style={{
                 width: 8, height: 8, borderRadius: '50%',
-                background: alertBadge.color, flexShrink: 0,
-                boxShadow: `0 0 6px 2px ${alertBadge.color}88`,
+                background: badge.color, flexShrink: 0,
+                boxShadow: `0 0 6px 2px ${badge.color}88`,
               }} />
             )}
             <h3 className="h6 fw-semibold mb-0" style={{ color: 'var(--hw-navy)', flex: 1 }}>
@@ -197,9 +203,9 @@ function MlSectionCard({
             {hasAlert && (
               <span
                 className="badge rounded-pill"
-                style={{ background: alertBadge.color, color: 'white', fontSize: '0.62rem', letterSpacing: '0.06em' }}
+                style={{ background: badge.color, color: 'white', fontSize: '0.62rem', letterSpacing: '0.06em' }}
               >
-                {alertBadge.count} {alertBadge.label}
+                {badge.count} {badge.label}
               </span>
             )}
           </div>
@@ -361,12 +367,13 @@ function AtRiskDonorsWidget({
             className="mb-2 pb-2 border-bottom border-light"
             style={{ borderLeft: `3px solid ${leftColor}`, paddingLeft: 8 }}
           >
-            <Link
-              to="/admin/donations"
-              className="text-decoration-none d-block rounded px-2 py-1"
+            <button
+              type="button"
+              className="d-block rounded px-2 py-1 w-100 text-start border-0 bg-transparent"
               style={{
                 transition: 'background 0.15s',
                 background: isCritical ? 'rgba(220,38,38,0.04)' : undefined,
+                cursor: onSelectDonor ? 'pointer' : 'default',
               }}
               onClick={() => onSelectDonor?.(d)}
               onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--hw-bg-lavender)'; }}
@@ -381,7 +388,7 @@ function AtRiskDonorsWidget({
                   {d.topDrivers[0]}
                 </div>
               )}
-            </Link>
+            </button>
           </li>
         );
       })}
@@ -788,12 +795,12 @@ interface LiveStats {
 
 export default function AdminHomePage() {
   const { authSession } = useAuth();
+  const navigate = useNavigate();
 
   const [liveStats, setLiveStats] = useState<LiveStats | null>(null);
   const [residentCriticalCount, setResidentCriticalCount] = useState(0);
   const [donorCriticalCount, setDonorCriticalCount] = useState(0);
   const [unallocatedCount, setUnallocatedCount] = useState(0);
-  const [dashboardProfileId, setDashboardProfileId] = useState<number | null>(null);
   useEffect(() => {
     let cancelled = false;
     fetchJson<LiveStats>('/api/public-impact/live-stats')
@@ -830,56 +837,87 @@ export default function AdminHomePage() {
     <div className="py-4" style={{ background: 'var(--hw-bg-gray)', minHeight: '100%' }}>
       <div className="container-xl">
 
-        {/* Header — match other admin pages (Poppins, bold navy title) */}
-        <div className="mb-5">
-          <span
-            style={{
-              display: 'block',
-              fontSize: 12,
-              fontWeight: 700,
-              color: '#0D9488',
-              letterSpacing: 2,
-              textTransform: 'uppercase',
-              marginBottom: 8,
-            }}
+        {/* Header */}
+        <div className="mb-5 d-flex align-items-stretch justify-content-between gap-4 flex-wrap">
+          <div>
+            <span
+              style={{
+                display: 'block',
+                fontSize: 12,
+                fontWeight: 700,
+                color: '#0D9488',
+                letterSpacing: 2,
+                textTransform: 'uppercase',
+                marginBottom: 8,
+              }}
+            >
+              Administration
+            </span>
+            <h1
+              style={{
+                fontFamily: 'Poppins, sans-serif',
+                fontWeight: 700,
+                fontSize: 28,
+                color: '#1E3A5F',
+                marginBottom: 8,
+                lineHeight: 1.2,
+              }}
+            >
+              Dashboard
+            </h1>
+            <p className="text-muted mb-0" style={{ fontSize: 14 }}>
+              Welcome back, <strong>{authSession.email}</strong>
+              {authSession.roles.length > 0 && (
+                <span className="ms-2">
+                  {authSession.roles.map((r) => (
+                    <span
+                      key={r}
+                      className="badge rounded-pill ms-1"
+                      style={{ background: 'var(--hw-purple)', color: 'white', fontSize: '0.7rem' }}
+                    >
+                      {r}
+                    </span>
+                  ))}
+                </span>
+              )}
+            </p>
+          </div>
+          {/* OKR chip — stretches to full height of the header left block */}
+          <Link
+            to="/admin/residents?caseStatus=Closed"
+            className="text-decoration-none flex-shrink-0"
+            style={{ display: 'flex', alignSelf: 'stretch' }}
           >
-            Administration
-          </span>
-          <h1
-            style={{
-              fontFamily: 'Poppins, sans-serif',
-              fontWeight: 700,
-              fontSize: 28,
-              color: '#1E3A5F',
-              marginBottom: 8,
-              lineHeight: 1.2,
-            }}
-          >
-            Dashboard
-          </h1>
-          <p className="text-muted mb-0" style={{ fontSize: 14 }}>
-            Welcome back, <strong>{authSession.email}</strong>
-            {authSession.roles.length > 0 && (
-              <span className="ms-2">
-                {authSession.roles.map((r) => (
-                  <span
-                    key={r}
-                    className="badge rounded-pill ms-1"
-                    style={{ background: 'var(--hw-purple)', color: 'white', fontSize: '0.7rem' }}
-                  >
-                    {r}
-                  </span>
-                ))}
-              </span>
-            )}
-          </p>
+            <div
+              className="d-flex align-items-center gap-2 rounded-3 px-3"
+              style={{
+                background: '#FEF3C7',
+                border: '1px solid #D97706',
+                transition: 'box-shadow 0.15s',
+                width: '100%',
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 12px rgba(217,119,6,0.25)'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = ''; }}
+            >
+              <i className="bi bi-star-fill" style={{ color: '#D97706', fontSize: 16 }} />
+              <div>
+                <div className="fw-bold" style={{ fontSize: 22, color: '#92400e', lineHeight: 1 }}>
+                  {liveStats != null ? liveStats.successfulReintegrations : '—'}
+                </div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#D97706', textTransform: 'uppercase', letterSpacing: '0.06em', lineHeight: 1.4, marginTop: 4 }}>
+                  Successful Reintegrations
+                </div>
+              </div>
+            </div>
+          </Link>
         </div>
 
         {/* Zone 1 — Action Required */}
         <div className="mb-5">
           <p className="hw-eyebrow mb-3">Action Required</p>
           <div className="row g-3">
-            <div className="col-12 col-lg-6">
+            {/* Residents needing attention */}
+            <div className="col-12 col-lg-4">
               <div
                 className="card border-0 rounded-3 h-100"
                 style={residentCriticalCount > 0 ? {
@@ -902,7 +940,7 @@ export default function AdminHomePage() {
                   <div className="flex-grow-1 small">
                     <ResidentsNeedingAttentionWidget
                       onCriticalCount={setResidentCriticalCount}
-                      onOpenProfile={setDashboardProfileId}
+                      onOpenProfile={(id) => navigate(`/admin/residents/${id}`)}
                     />
                   </div>
                   <Link to="/admin/residents" className="small fw-semibold text-decoration-none mt-3" style={{ color: 'var(--hw-purple)' }}>
@@ -911,7 +949,8 @@ export default function AdminHomePage() {
                 </div>
               </div>
             </div>
-            <div className="col-12 col-lg-6">
+            {/* Donations to allocate */}
+            <div className="col-12 col-lg-4">
               <div
                 className="card border-0 rounded-3 h-100"
                 style={unallocatedCount > 0 ? {
@@ -940,69 +979,37 @@ export default function AdminHomePage() {
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* OKR — Primary Success Metric */}
-        <div className="mb-4">
-          <Link to="/admin/residents?caseStatus=Closed" className="text-decoration-none">
-            <div
-              className="card border-0 shadow-sm rounded-3"
-              style={{
-                borderTop: '4px solid #D97706',
-                boxShadow: '0 4px 20px rgba(217,119,6,0.15)',
-                background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
-                transition: 'transform 0.15s, box-shadow 0.15s',
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
-                (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 28px rgba(217,119,6,0.22)';
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.transform = '';
-                (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 20px rgba(217,119,6,0.15)';
-              }}
-            >
-              <div className="card-body d-flex align-items-center gap-4 py-3 px-4">
-                <div
-                  className="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0"
-                  style={{ width: 56, height: 56, background: 'rgba(217,119,6,0.12)', fontSize: '1.6rem' }}
-                >
-                  <i className="bi bi-star-fill" style={{ color: '#D97706' }} />
-                </div>
-                <div className="flex-grow-1">
-                  <div className="d-flex align-items-center gap-2 mb-1">
-                    <span
-                      className="badge rounded-pill"
-                      style={{ background: '#D97706', color: 'white', fontSize: '0.62rem', letterSpacing: '0.1em', textTransform: 'uppercase' }}
-                    >
-                      ★ Primary Success Metric · OKR
-                    </span>
+            {/* Donors needing outreach */}
+            <div className="col-12 col-lg-4">
+              <div
+                className="card border-0 rounded-3 h-100"
+                style={donorCriticalCount > 0 ? {
+                  boxShadow: '0 0 0 2px #dc2626, 0 4px 20px #dc262644',
+                  border: '1.5px solid #dc2626',
+                } : { boxShadow: '0 2px 8px rgba(30,58,95,0.07)' }}
+              >
+                <div className="card-body d-flex flex-column">
+                  <div className="d-flex align-items-center gap-2 mb-3">
+                    {donorCriticalCount > 0 && (
+                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#dc2626', flexShrink: 0, boxShadow: '0 0 6px 2px #dc262688' }} />
+                    )}
+                    <h3 className="h6 fw-semibold mb-0" style={{ color: 'var(--hw-navy)', flex: 1 }}>Donors needing outreach</h3>
+                    {donorCriticalCount > 0 && (
+                      <span className="badge rounded-pill" style={{ background: '#dc2626', color: 'white', fontSize: '0.62rem' }}>
+                        {donorCriticalCount} Critical
+                      </span>
+                    )}
                   </div>
-                  <div className="d-flex align-items-baseline gap-3">
-                    <span
-                      className="fw-bold"
-                      style={{ fontSize: '2.4rem', color: '#92400e', lineHeight: 1, fontFamily: 'Poppins, sans-serif' }}
-                    >
-                      {liveStats != null ? liveStats.successfulReintegrations : '—'}
-                    </span>
-                    <span className="fw-semibold" style={{ color: '#92400e', fontSize: '1rem' }}>
-                      Successful Reintegrations
-                    </span>
+                  <div className="flex-grow-1 small">
+                    <AtRiskDonorsWidget onCriticalCount={setDonorCriticalCount} onSelectDonor={(d) => setDonorQuick(d)} />
                   </div>
-                  <p className="small mb-0 mt-1" style={{ color: '#78350f', maxWidth: 680 }}>
-                    Children who have completed their full reintegration plan and returned to a stable, safe life.
-                    Every program, staff hour, and donor dollar exists to move this number up — it is the ultimate measure of our mission's success.
-                  </p>
-                </div>
-                <div className="flex-shrink-0 d-none d-md-block text-end" style={{ minWidth: 140 }}>
-                  <p className="small fw-semibold mb-0" style={{ color: '#92400e' }}>
-                    OKR: Maximize children who successfully return to family or independent life
-                  </p>
+                  <Link to="/admin/donations" className="small fw-semibold text-decoration-none mt-3" style={{ color: 'var(--hw-purple)' }}>
+                    Open supporters →
+                  </Link>
                 </div>
               </div>
             </div>
-          </Link>
+          </div>
         </div>
 
         {/* Metric cards */}
@@ -1041,23 +1048,21 @@ export default function AdminHomePage() {
           />
         </div>
 
-        {/* ML Insights — donors + social recommendation */}
+        {/* Recommended next post — full width */}
         <div className="mb-5">
-          <p className="hw-eyebrow mb-3">ML Insights</p>
-          <div className="row g-3">
-            <MlSectionCard
-              title="Donors needing outreach"
-              footerLink={{ to: '/admin/donations', label: 'Open supporters' }}
-              alertBadge={donorCriticalCount > 0 ? { count: donorCriticalCount, color: '#dc2626', label: 'Critical' } : null}
-            >
-              <AtRiskDonorsWidget onCriticalCount={setDonorCriticalCount} onSelectDonor={(d) => setDonorQuick(d)} />
-            </MlSectionCard>
-            <MlSectionCard
-              title="Recommended next post"
-              footerLink={{ to: '/admin/social-media/suggest', label: 'Explore recommendations' }}
-            >
+          <div className="card border-0 rounded-3" style={{ boxShadow: '0 2px 8px rgba(30,58,95,0.07)' }}>
+            <div className="card-body">
+              <div className="d-flex align-items-center justify-content-between mb-3">
+                <h3 className="h6 fw-semibold mb-0" style={{ color: 'var(--hw-navy)' }}>
+                  <i className="bi bi-lightbulb me-2" style={{ color: 'var(--hw-purple)' }} />
+                  Recommended next post
+                </h3>
+                <Link to="/admin/social-media/suggest" className="small fw-semibold text-decoration-none" style={{ color: 'var(--hw-purple)' }}>
+                  Explore recommendations →
+                </Link>
+              </div>
               <BestNextPostWidget />
-            </MlSectionCard>
+            </div>
           </div>
         </div>
 
@@ -1198,10 +1203,6 @@ export default function AdminHomePage() {
       </div>
 
       <AdminDonorQuickModal selection={donorQuick} onClose={() => setDonorQuick(null)} />
-      <ResidentProfileModal
-        residentId={dashboardProfileId}
-        onClose={() => setDashboardProfileId(null)}
-      />
     </div>
   );
 }

@@ -314,24 +314,41 @@ export default function AllocationsPage() {
               ]}
             />
 
-            {/* By safehouse — all safehouses, "Lighthouse" prefix stripped */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 14, marginBottom: 24 }}>
-              {bySafehouse.map(([name, total]) => (
-                <div
-                  key={name}
-                  style={{
-                    background: '#fff',
-                    borderRadius: 12,
-                    padding: '18px 20px',
-                    border: '1px solid #E2E8F0',
-                    boxShadow: '0 2px 8px rgba(30,58,95,0.06)',
-                  }}
-                >
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#1E3A5F', marginBottom: 8 }}>{fmt(name)}</div>
-                  <div style={{ fontSize: 22, fontWeight: 800, color: '#1E3A5F' }}>{formatAmountMaybePhpAndUsd(total, 'PHP')}</div>
-                  <div style={{ fontSize: 11, color: '#64748B' }}>total allocated</div>
-                </div>
-              ))}
+            {/* By safehouse — horizontal bar chart, click to filter table */}
+            <div style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(30,58,95,0.06)', marginBottom: 24 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                <h6 style={{ fontFamily: 'Poppins,sans-serif', fontWeight: 700, color: '#1E3A5F', margin: 0 }}>Allocation by safehouse</h6>
+                {safehouseFilter !== 'All' && (
+                  <button onClick={() => setSafehouseFilter('All')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: '#64748B' }}>
+                    Clear filter ✕
+                  </button>
+                )}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {bySafehouse.map(([name, total]) => {
+                  const grand = bySafehouse.reduce((s, x) => s + x[1], 0);
+                  const pct = grand > 0 ? Math.round((total / grand) * 100) : 0;
+                  const isActive = safehouseFilter === name;
+                  return (
+                    <button
+                      key={name}
+                      type="button"
+                      onClick={() => { setSafehouseFilter(isActive ? 'All' : name); setPage(1); }}
+                      style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 3 }}>
+                        <span style={{ fontWeight: isActive ? 700 : 600, color: isActive ? '#0D9488' : '#475569' }}>{fmt(name)}</span>
+                        <span style={{ color: '#1E3A5F', fontWeight: 700 }}>
+                          {fmtMoney(total)} <span style={{ color: '#94A3B8', fontWeight: 400 }}>({pct}%)</span>
+                        </span>
+                      </div>
+                      <div style={{ background: '#F1F5F9', borderRadius: 4, height: 10, overflow: 'hidden', border: isActive ? '1.5px solid #0D9488' : 'none' }}>
+                        <div style={{ background: isActive ? 'linear-gradient(90deg, #0D9488, #059669)' : 'linear-gradient(90deg, var(--hw-purple, #6B21A8), #1E3A5F)', width: `${pct}%`, height: '100%', borderRadius: 4, transition: 'width 0.3s' }} />
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             <div style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(30,58,95,0.06)', marginBottom: 24 }}>

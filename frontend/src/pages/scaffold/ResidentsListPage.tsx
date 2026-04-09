@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState, useMemo } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { useEffect, useState, useMemo } from 'react';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   deleteJson,
   fetchPaged,
@@ -21,7 +21,6 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import DeleteConfirmModal from '../../components/DeleteConfirmModal';
 import AdminKpiStrip from '../../components/admin/AdminKpiStrip';
-import { ResidentProfileModal } from '../../components/admin/ResidentProfileModal';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -309,10 +308,15 @@ export default function ResidentsListPage() {
   const [deleteTarget, setDeleteTarget] = useState<Resident | null>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
 
-  const [profileViewId, setProfileViewId] = useState<number | null>(null);
+  const navigate = useNavigate();
 
   const [sortCol, setSortCol] = useState<SortCol | null>(null);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+
+  const [quickFilter, setQuickFilter] = useState<'active' | 'highRisk' | null>(null);
+  function toggleQuickFilter(f: 'active' | 'highRisk') {
+    setQuickFilter(prev => prev === f ? null : f);
+  }
 
   /**
    * ML join: artifact `residentCode` matches caseload `internalCode` (e.g. LS-0006).
@@ -437,6 +441,13 @@ export default function ResidentsListPage() {
     );
   }, [data?.items, sortCol, sortDir, mlByKey]);
 
+  const filteredItems = useMemo(() => {
+    if (!quickFilter) return sortedItems;
+    if (quickFilter === 'active') return sortedItems.filter(r => r.caseStatus === 'Active');
+    if (quickFilter === 'highRisk') return sortedItems.filter(r => r.currentRiskLevel === 'High' || r.currentRiskLevel === 'Critical');
+    return sortedItems;
+  }, [sortedItems, quickFilter]);
+
   // ── Modal helpers ─────────────────────────────────────────────────────────────
   function openCreate() {
     setForm(emptyForm());
@@ -497,26 +508,9 @@ export default function ResidentsListPage() {
     }
   }
 
-  function closeProfile() {
-    setProfileViewId(null);
-  }
-
   function openProfile(residentId: number) {
-    setProfileViewId(residentId);
+    navigate(`/admin/residents/${residentId}`);
   }
-
-  // Auto-open profile modal when navigated to /admin/residents/:id
-  const autoOpenedRef = useRef(false);
-  useEffect(() => {
-    if (!urlId || autoOpenedRef.current) return;
-    const numId = Number(urlId);
-    if (Number.isFinite(numId) && numId > 0) {
-      autoOpenedRef.current = true;
-      openProfile(numId);
-    }
-  // openProfile is stable within the component lifecycle
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [urlId]);
 
   const isEditing = editTarget !== null && editTarget !== 'new';
 
@@ -556,32 +550,48 @@ export default function ResidentsListPage() {
         </div>
 
         {data && (
-          <AdminKpiStrip
-            items={[
-              { label: 'Residents on this page', value: String(data.items.length), accent: '#1E3A5F', icon: 'people' },
-              {
-                label: 'Active on this page',
-                value: String(data.items.filter((r) => r.caseStatus === 'Active').length),
-                accent: '#0D9488',
-                icon: 'person-check',
-              },
-              {
-                label: 'High or critical risk (page)',
-                value: String(
-                  data.items.filter((r) => r.currentRiskLevel === 'High' || r.currentRiskLevel === 'Critical').length,
-                ),
-                accent: '#991B1B',
-                icon: 'exclamation-triangle',
-              },
-              {
-                label: 'Total in database (filtered)',
-                value: String(data.totalCount),
-                sub: `Page ${data.page} of ${data.totalPages || 1}`,
-                accent: '#6B21A8',
-                icon: 'database',
-              },
-            ]}
-          />
+          <>
+            <AdminKpiStrip
+              items={[
+                { label: 'Residents on this page', value: String(data.items.length), accent: '#1E3A5F', icon: 'people' },
+                {
+                  label: 'Active on this page',
+                  value: String(data.items.filter((r) => r.caseStatus === 'Active').length),
+                  accent: '#0D9488',
+                  icon: 'person-check',
+                  onClick: () => toggleQuickFilter('active'),
+                  active: quickFilter === 'active',
+                },
+                {
+                  label: 'High or critical risk (page)',
+                  value: String(
+                    data.items.filter((r) => r.currentRiskLevel === 'High' || r.currentRiskLevel === 'Critical').length,
+                  ),
+                  accent: '#991B1B',
+                  icon: 'exclamation-triangle',
+                  onClick: () => toggleQuickFilter('highRisk'),
+                  active: quickFilter === 'highRisk',
+                },
+                {
+                  label: 'Total in database (filtered)',
+                  value: String(data.totalCount),
+                  sub: `Page ${data.page} of ${data.totalPages || 1}`,
+                  accent: '#6B21A8',
+                  icon: 'database',
+                },
+              ]}
+            />
+            {quickFilter && (
+              <div className="mb-3 d-flex align-items-center gap-2">
+                <span className="badge rounded-pill" style={{ background: quickFilter === 'highRisk' ? '#991B1B' : '#0D9488', color: '#fff', fontSize: 12, padding: '5px 12px' }}>
+                  Filtered: {quickFilter === 'active' ? 'Active residents' : 'High / Critical risk'}
+                </span>
+                <button onClick={() => setQuickFilter(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: '#64748B', padding: '2px 6px' }}>
+                  Clear ✕
+                </button>
+              </div>
+            )}
+          </>
         )}
 
         {/* Filter bar */}
@@ -709,7 +719,7 @@ export default function ResidentsListPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {sortedItems.map((r, i) => {
+                    {filteredItems.map((r, i) => {
                       const sCfg = STATUS_COLORS[r.caseStatus ?? ''] ?? { bg: '#F1F5F9', text: '#64748B' };
                       const mlRow = mlByKey.get(normalizeResidentMlKey(r.internalCode));
                       const readinessPct = mlRow?.readinessPercentileAmongCurrentResidents;
@@ -1127,8 +1137,6 @@ export default function ResidentsListPage() {
           </div>
         </div>
       )}
-
-      <ResidentProfileModal residentId={profileViewId} onClose={closeProfile} onEditResident={openEdit} />
 
       {/* Readiness factors (read-only overlay; does not affect CRUD) */}
       {mlFactorsFor && (
