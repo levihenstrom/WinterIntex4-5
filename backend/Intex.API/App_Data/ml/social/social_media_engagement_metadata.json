@@ -84,84 +84,84 @@
     "engagement": {
       "best_model": "gradient_boosting",
       "metrics": {
-        "rmse": 0.02520498444648376,
-        "mae": 0.018834096718905062,
-        "r2": 0.7637481049031793
+        "rmse": 0.02569553079101377,
+        "mae": 0.019250182854966897,
+        "r2": 0.7544626185600299
       },
       "comparison": [
         {
           "model": "ridge",
-          "rmse": 0.0357759926033413,
-          "mae": 0.028719543920623584,
-          "r2": 0.5240231642889146
+          "rmse": 0.035782655945828426,
+          "mae": 0.028726572657853885,
+          "r2": 0.5238458447067456
         },
         {
           "model": "random_forest",
-          "rmse": 0.029778731536941532,
-          "mae": 0.022576844814846748,
-          "r2": 0.6702272071609808
+          "rmse": 0.02977895674154558,
+          "mae": 0.022508850932633353,
+          "r2": 0.6702222192633622
         },
         {
           "model": "gradient_boosting",
-          "rmse": 0.02520498444648376,
-          "mae": 0.018834096718905062,
-          "r2": 0.7637481049031793
+          "rmse": 0.02569553079101377,
+          "mae": 0.019250182854966897,
+          "r2": 0.7544626185600299
         }
       ]
     },
     "donation_referrals_count": {
-      "best_model": "ridge",
+      "best_model": "gradient_boosting",
       "metrics": {
-        "rmse": 27.03303562026144,
-        "mae": 9.568875133262267,
-        "r2": 0.3227048117446978
+        "rmse": 26.770351034006104,
+        "mae": 9.864936141049384,
+        "r2": 0.33580364338610114
       },
       "comparison": [
         {
           "model": "ridge",
-          "rmse": 27.03303562026144,
-          "mae": 9.568875133262267,
-          "r2": 0.3227048117446978
+          "rmse": 27.034461089540336,
+          "mae": 9.569304590059955,
+          "r2": 0.3226333814434976
         },
         {
           "model": "random_forest",
-          "rmse": 28.621460673423012,
-          "mae": 9.804201807358606,
-          "r2": 0.24077247492849352
+          "rmse": 28.651935107895184,
+          "mae": 9.812016461896276,
+          "r2": 0.2391548532986939
         },
         {
           "model": "gradient_boosting",
-          "rmse": 27.176305073343492,
-          "mae": 9.71058189455077,
-          "r2": 0.31550674142192237
+          "rmse": 26.770351034006104,
+          "mae": 9.864936141049384,
+          "r2": 0.33580364338610114
         }
       ]
     },
     "donation_value_log1p": {
       "best_model": "ridge",
       "metrics": {
-        "rmse": 3.1311528376807365,
-        "mae": 2.531599423166515,
-        "r2": 0.5984844843111601
+        "rmse": 3.13141783659507,
+        "mae": 2.532018398696033,
+        "r2": 0.5984165184955081
       },
       "comparison": [
         {
           "model": "ridge",
-          "rmse": 3.1311528376807365,
-          "mae": 2.531599423166515,
-          "r2": 0.5984844843111601
+          "rmse": 3.13141783659507,
+          "mae": 2.532018398696033,
+          "r2": 0.5984165184955081
         },
         {
           "model": "random_forest",
-          "rmse": 3.2679340198919533,
-          "mae": 2.51179225648172,
-          "r2": 0.5626386942730042
+          "rmse": 3.2731475834794677,
+          "mae": 2.5139861412545925,
+          "r2": 0.5612420749690517
         },
         {
           "model": "gradient_boosting",
-          "rmse": 3.156876800081341,
-          "mae": 2.4649725973723897,
-          "r2": 0.5918600889457097
+          "rmse": 3.20856711310004,
+          "mae": 2.5016779028897074,
+          "r2": 0.5783849995051825
         }
       ]
     },
@@ -173,7 +173,7 @@
         "precision": 0.7164179104477612,
         "recall": 0.8,
         "f1": 0.7559055118110236,
-        "roc_auc": 0.9266990291262136
+        "roc_auc": 0.926537216828479
       },
       "comparison": [
         {
@@ -182,23 +182,23 @@
           "precision": 0.7164179104477612,
           "recall": 0.8,
           "f1": 0.7559055118110236,
-          "roc_auc": 0.9266990291262136
+          "roc_auc": 0.926537216828479
         },
         {
           "model": "random_forest",
-          "accuracy": 0.8404907975460123,
-          "precision": 0.7575757575757576,
-          "recall": 0.8333333333333334,
-          "f1": 0.7936507936507936,
-          "roc_auc": 0.9254045307443366
+          "accuracy": 0.8466257668711656,
+          "precision": 0.7611940298507462,
+          "recall": 0.85,
+          "f1": 0.8031496062992126,
+          "roc_auc": 0.9200647249190939
         },
         {
           "model": "gradient_boosting",
           "accuracy": 0.8466257668711656,
-          "precision": 0.7966101694915254,
-          "recall": 0.7833333333333333,
-          "f1": 0.7899159663865546,
-          "roc_auc": 0.9215210355987056
+          "precision": 0.7868852459016393,
+          "recall": 0.8,
+          "f1": 0.7933884297520661,
+          "roc_auc": 0.9224919093851132
         }
       ]
     },
@@ -206,10 +206,10 @@
       "best_model": "random_forest",
       "metrics": {
         "model": "random_forest",
-        "accuracy": 0.8466257668711656,
-        "precision": 0.8470588235294118,
-        "recall": 0.8571428571428571,
-        "f1": 0.8520710059171598,
+        "accuracy": 0.8588957055214724,
+        "precision": 0.8588235294117647,
+        "recall": 0.8690476190476191,
+        "f1": 0.863905325443787,
         "roc_auc": 0.9088306208559374
       },
       "comparison": [
@@ -219,23 +219,23 @@
           "precision": 0.8045977011494253,
           "recall": 0.8333333333333334,
           "f1": 0.8187134502923976,
-          "roc_auc": 0.9041591320072333
+          "roc_auc": 0.9038577456298975
         },
         {
           "model": "random_forest",
-          "accuracy": 0.8466257668711656,
-          "precision": 0.8470588235294118,
-          "recall": 0.8571428571428571,
-          "f1": 0.8520710059171598,
+          "accuracy": 0.8588957055214724,
+          "precision": 0.8588235294117647,
+          "recall": 0.8690476190476191,
+          "f1": 0.863905325443787,
           "roc_auc": 0.9088306208559374
         },
         {
           "model": "gradient_boosting",
           "accuracy": 0.8159509202453987,
-          "precision": 0.813953488372093,
-          "recall": 0.8333333333333334,
-          "f1": 0.8235294117647058,
-          "roc_auc": 0.9041591320072333
+          "precision": 0.8068181818181818,
+          "recall": 0.8452380952380952,
+          "f1": 0.8255813953488372,
+          "roc_auc": 0.9022001205545509
         }
       ]
     }
@@ -255,123 +255,123 @@
   "permutation_importance_engagement_top": [
     {
       "feature": "num__post_hour",
-      "importance": 0.434316973337555
+      "importance": 0.43307974289470924
     },
     {
       "feature": "cat__sentiment_tone_Informative",
-      "importance": 0.12405440170415585
+      "importance": 0.12376450031921082
     },
     {
       "feature": "cat__sentiment_tone_Grateful",
-      "importance": 0.03848334751784097
-    },
-    {
-      "feature": "cat__sentiment_tone_Celebratory",
-      "importance": 0.0329443775238107
-    },
-    {
-      "feature": "num__log_follower_count",
-      "importance": 0.029718423255183223
-    },
-    {
-      "feature": "cat__sentiment_tone_Emotional",
-      "importance": 0.02734040711969742
-    },
-    {
-      "feature": "cat__call_to_action_type___none__",
-      "importance": 0.027107933001816707
-    },
-    {
-      "feature": "cat__time_of_day_bucket_evening",
-      "importance": 0.026152490479009926
-    },
-    {
-      "feature": "cat__sentiment_tone_Hopeful",
-      "importance": 0.02496641277410317
-    },
-    {
-      "feature": "cat__platform_TikTok",
-      "importance": 0.024398393902983283
-    },
-    {
-      "feature": "num__month",
-      "importance": 0.019475929056924062
-    },
-    {
-      "feature": "cat__platform_YouTube",
-      "importance": 0.01742313175137017
-    },
-    {
-      "feature": "cat__platform_Twitter",
-      "importance": 0.016949258746133088
-    },
-    {
-      "feature": "num__caption_length",
-      "importance": 0.015470825850241676
-    },
-    {
-      "feature": "num__hashtag_density",
-      "importance": 0.014824926911610596
+      "importance": 0.03818234745136122
     },
     {
       "feature": "num__has_call_to_action",
-      "importance": 0.014460610032944755
+      "importance": 0.03797372316439718
+    },
+    {
+      "feature": "cat__sentiment_tone_Celebratory",
+      "importance": 0.03288284293747761
+    },
+    {
+      "feature": "num__log_follower_count",
+      "importance": 0.029614020309900724
+    },
+    {
+      "feature": "cat__sentiment_tone_Emotional",
+      "importance": 0.026501951410968755
+    },
+    {
+      "feature": "cat__time_of_day_bucket_evening",
+      "importance": 0.025999727812749288
+    },
+    {
+      "feature": "cat__platform_TikTok",
+      "importance": 0.025201377170807424
+    },
+    {
+      "feature": "cat__sentiment_tone_Hopeful",
+      "importance": 0.024834308850454227
+    },
+    {
+      "feature": "cat__platform_YouTube",
+      "importance": 0.020620788827741467
+    },
+    {
+      "feature": "num__month",
+      "importance": 0.01972167082255135
+    },
+    {
+      "feature": "cat__platform_Twitter",
+      "importance": 0.01730579294479285
+    },
+    {
+      "feature": "num__hashtag_density",
+      "importance": 0.01674741257999786
+    },
+    {
+      "feature": "num__caption_length",
+      "importance": 0.01643045074240526
     },
     {
       "feature": "cat__platform_Instagram",
-      "importance": 0.013236983581102712
+      "importance": 0.014205461111863847
     },
     {
       "feature": "cat__platform_LinkedIn",
-      "importance": 0.011020827108713395
+      "importance": 0.00940042734092953
     },
     {
       "feature": "cat__time_of_day_bucket_morning",
-      "importance": 0.008036539430918865
+      "importance": 0.00694370916834362
     },
     {
-      "feature": "cat__time_of_day_bucket_afternoon",
-      "importance": 0.005805621389019978
+      "feature": "cat__call_to_action_type_LearnMore",
+      "importance": 0.005741532086064629
     },
     {
       "feature": "cat__sentiment_tone_Urgent",
-      "importance": 0.005282573335639793
+      "importance": 0.005639410409018344
+    },
+    {
+      "feature": "cat__time_of_day_bucket_afternoon",
+      "importance": 0.00543947549354779
     },
     {
       "feature": "cat__time_of_day_bucket_night",
-      "importance": 0.004592239795569593
+      "importance": 0.00496613865386765
     },
     {
       "feature": "num__boost_budget_php",
-      "importance": 0.004088646899828141
-    },
-    {
-      "feature": "cat__media_type_Carousel",
-      "importance": 0.003578517330961073
-    },
-    {
-      "feature": "cat__platform_Facebook",
-      "importance": 0.0032995049901858773
+      "importance": 0.004633855768385226
     },
     {
       "feature": "cat__post_type_EventPromotion",
-      "importance": 0.0032672204880007877
+      "importance": 0.0038034597817801306
     },
     {
       "feature": "cat__media_type_Photo",
-      "importance": 0.003185843658992699
+      "importance": 0.003461050345300994
     },
     {
-      "feature": "cat__call_to_action_type_ShareStory",
-      "importance": 0.0031004199826674484
+      "feature": "cat__media_type_Carousel",
+      "importance": 0.0034091099560241474
+    },
+    {
+      "feature": "cat__media_type_Video",
+      "importance": 0.0024897202046624263
     },
     {
       "feature": "cat__platform_post_type_Instagram|Campaign",
-      "importance": 0.0030149045749756423
+      "importance": 0.0023495323347017248
     },
     {
-      "feature": "cat__platform_post_type_YouTube|EventPromotion",
-      "importance": 0.002744529946211254
+      "feature": "num__mentions_count",
+      "importance": 0.0023326014364109956
+    },
+    {
+      "feature": "cat__call_to_action_type_ShareStory",
+      "importance": 0.0022967256128745553
     }
   ],
   "any_referral_probability_calibration": {
