@@ -29,20 +29,8 @@ export interface DonorChurnRow {
 
 export type MlGoal = 'donations' | 'awareness' | 'mixed';
 
-export interface SocialFixedInputsRequest {
-  contentTopic?: string | null;
-  platform?: string | null;
-  postType?: string | null;
-  mediaType?: string | null;
-  hasCallToAction?: boolean | null;
-  callToActionType?: string | null;
-  featuresResidentStory?: boolean | null;
-  postHour?: number | null;
-}
-
 export interface SocialRecommendRequest {
   goal: MlGoal;
-  fixedInputs?: SocialFixedInputsRequest;
   topK: number;
 }
 

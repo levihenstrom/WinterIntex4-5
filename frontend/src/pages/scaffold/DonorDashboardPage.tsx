@@ -4,7 +4,7 @@ import NavBar from '../../components/hw/NavBar';
 import Footer from '../../components/hw/Footer';
 import MetricCard from '../../components/hw/MetricCard';
 import { ErrorState, LoadingState } from '../../components/common/AsyncStatus';
-import { formatAmountMaybePhpAndUsd, formatPhpAndUsd } from '../../lib/currency';
+import { formatAmountMaybePhpAndUsd } from '../../lib/currency';
 
 /* ── Types ───────────────────────────────────────────────────── */
 interface DonationAllocationApi {
@@ -408,7 +408,7 @@ export default function DonorDashboardPage() {
                   target={impactTotalTarget}
                   prefix=""
                   label="Total impact"
-                  staticDisplay={formatPhpAndUsd(impactTotalTarget)}
+                  staticDisplay={formatAmountMaybePhpAndUsd(impactTotalTarget, 'PHP')}
                 />
               </div>
               <div>
@@ -579,7 +579,7 @@ export default function DonorDashboardPage() {
                               {hoveredCategory.label}
                             </div>
                             <div style={{ marginTop: 6, fontFamily: 'Poppins, sans-serif', fontWeight: 800, fontSize: '1.1rem', color: '#1E3A5F' }}>
-                              {formatPhpAndUsd(hoveredCategory.totalAmount)}
+                              {formatAmountMaybePhpAndUsd(hoveredCategory.totalAmount, 'PHP')}
                             </div>
                             <div style={{ marginTop: 4, fontFamily: 'Inter, sans-serif', fontSize: '0.84rem', color: '#64748b' }}>
                               {totalAllocated > 0 ? ((hoveredCategory.totalAmount / totalAllocated) * 100).toFixed(1) : '0.0'}% of total allocation · {hoveredCategory.giftCount} gift{hoveredCategory.giftCount === 1 ? '' : 's'}
@@ -884,7 +884,7 @@ export default function DonorDashboardPage() {
             <form onSubmit={handleGiveSubmit} style={{ padding: '1rem 1.25rem 1.25rem' }}>
               <div style={{ display: 'grid', gap: 12 }}>
                 <label style={{ fontSize: 13, color: '#475569', fontWeight: 600 }}>
-                  Amount (PHP)
+                  Amount
                   <input
                     type="number"
                     min={1}

@@ -3,6 +3,7 @@ import { fetchJson } from '../../lib/apiClient';
 import NavBar from '../../components/hw/NavBar';
 import Footer from '../../components/hw/Footer';
 import MetricCard from '../../components/hw/MetricCard';
+import { convertPhpToUsd, formatAmountMaybePhpAndUsd, formatUsdThousandsFromPhp } from '../../lib/currency';
 import {
   ResponsiveContainer, AreaChart, Area, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
 } from 'recharts';
@@ -143,7 +144,7 @@ function ReportCard({ snap, featured = false }: { snap: ImpactSnapshot; featured
     { label: 'Residents', value: p.total_residents?.toLocaleString(), color: '#6B21A8', bg: '#f5f3ff', border: '#e9d5ff' },
     { label: 'Health Score', value: p.avg_health_score?.toFixed(2), color: '#0D9488', bg: '#f0fdf4', border: '#bbf7d0' },
     { label: 'Education', value: `${p.avg_education_progress?.toFixed(1)}%`, color: '#1d4ed8', bg: '#eff6ff', border: '#bfdbfe' },
-    { label: 'Donations', value: `₱${(p.donations_total_for_month / 1000).toFixed(1)}K`, color: '#D97706', bg: '#fffbeb', border: '#fde68a' },
+    { label: 'Donations', value: formatUsdThousandsFromPhp(p.donations_total_for_month, 1), color: '#D97706', bg: '#fffbeb', border: '#fde68a' },
   ];
 
   return (
@@ -402,8 +403,8 @@ export default function ImpactPage() {
               },
               {
                 target: liveStats
-                  ? Math.round(Number(liveStats.donationsRaisedTotal) / 1000)
-                  : Math.round(totalDonationsPublished / 1000),
+                  ? Math.round((convertPhpToUsd(Number(liveStats.donationsRaisedTotal)) ?? 0) / 1000)
+                  : Math.round((convertPhpToUsd(totalDonationsPublished) ?? 0) / 1000),
                 prefix: '$',
                 suffix: 'K',
                 label: 'Donor support',
@@ -444,7 +445,7 @@ export default function ImpactPage() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.25rem' }}>
               <Card
                 title="Donations Raised"
-                sub="Monthly · PHP"
+                sub="Monthly · USD"
                 hint="Shows whether community giving is steady enough to plan shelter staffing, meals, and counseling."
               >
                 <ResponsiveContainer width="100%" height={210}>
@@ -452,8 +453,8 @@ export default function ImpactPage() {
                     <defs><linearGradient id="gDon" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#D97706" stopOpacity={0.18}/><stop offset="95%" stopColor="#D97706" stopOpacity={0}/></linearGradient></defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                     <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <YAxis tickFormatter={(v) => `₱${Number(v) / 1000}K`} tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={52} />
-                    <Tooltip {...TT} itemStyle={{ color: '#D97706' }} formatter={(v) => [`₱${Number(v).toLocaleString()}`, 'Donations']} />
+                    <YAxis tickFormatter={(v) => formatUsdThousandsFromPhp(Number(v), 1)} tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={52} />
+                    <Tooltip {...TT} itemStyle={{ color: '#D97706' }} formatter={(v) => [formatAmountMaybePhpAndUsd(Number(v), 'PHP'), 'Donations']} />
                     <Area type="monotone" dataKey="donations" stroke="#D97706" strokeWidth={2.5} fill="url(#gDon)" dot={{ r: 4, fill: '#D97706', strokeWidth: 0 }} activeDot={{ r: 6 }} />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -517,7 +518,7 @@ export default function ImpactPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             <Card
               title="Donation trend"
-              sub="Monthly revenue · PHP"
+              sub="Monthly revenue · USD"
               hint="Use this to see whether giving is steady, seasonal, or spiky—so you know if we can plan long-term or need to bridge a gap."
             >
               <ResponsiveContainer width="100%" height={270}>
@@ -525,24 +526,24 @@ export default function ImpactPage() {
                   <defs><linearGradient id="gDon2" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#D97706" stopOpacity={0.18}/><stop offset="95%" stopColor="#D97706" stopOpacity={0}/></linearGradient></defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                   <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={false} tickLine={false} />
-                  <YAxis tickFormatter={(v) => `₱${Number(v) / 1000}K`} tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={false} tickLine={false} width={52} />
-                  <Tooltip {...TT} itemStyle={{ color: '#D97706' }} formatter={(v) => [`₱${Number(v).toLocaleString()}`, 'Donations']} />
+                  <YAxis tickFormatter={(v) => formatUsdThousandsFromPhp(Number(v), 1)} tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={false} tickLine={false} width={52} />
+                  <Tooltip {...TT} itemStyle={{ color: '#D97706' }} formatter={(v) => [formatAmountMaybePhpAndUsd(Number(v), 'PHP'), 'Donations']} />
                   <Area type="monotone" dataKey="donations" stroke="#D97706" strokeWidth={3} fill="url(#gDon2)" dot={{ r: 5, fill: '#D97706', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 7 }} />
                 </AreaChart>
               </ResponsiveContainer>
             </Card>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-              <StatBox label="Total Raised (chart months)" value={`₱${(totalDonationsCharts / 1000).toFixed(0)}K`} color="#D97706" bg="#fffbeb" border="#fde68a" />
+              <StatBox label="Total Raised (chart months)" value={formatUsdThousandsFromPhp(totalDonationsCharts, 0)} color="#D97706" bg="#fffbeb" border="#fde68a" />
               <StatBox
                 label="Monthly Average"
-                value={`₱${monthsOfData > 0 ? (totalDonationsCharts / monthsOfData / 1000).toFixed(0) : '0'}K`}
+                value={monthsOfData > 0 ? formatUsdThousandsFromPhp(totalDonationsCharts / monthsOfData, 0) : '$0K'}
                 color="#6B21A8"
                 bg="#f5f3ff"
                 border="#e9d5ff"
               />
               <StatBox
                 label={bestDonationMonth ? `Best month (${bestDonationMonth.month})` : 'Best month'}
-                value={bestDonationMonth ? `₱${(bestDonationMonth.donations / 1000).toFixed(0)}K` : '—'}
+                value={bestDonationMonth ? formatUsdThousandsFromPhp(bestDonationMonth.donations, 0) : '—'}
                 color="#0D9488"
                 bg="#f0fdf4"
                 border="#bbf7d0"

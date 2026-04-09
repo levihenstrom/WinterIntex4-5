@@ -17,6 +17,7 @@ import {
 } from '../../lib/mlDisplayHelpers';
 import { useAuth } from '../../context/AuthContext';
 import { ErrorState, LoadingState } from '../../components/common/AsyncStatus';
+import { formatAmountMaybePhpAndUsd } from '../../lib/currency';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
 interface MetricState {
@@ -154,15 +155,6 @@ interface RecentDonationRow {
   currencyCode?: string | null;
   campaignName?: string | null;
   supporter?: { displayName?: string | null; organizationName?: string | null } | null;
-}
-
-function fmtDonationMoney(n: number | null | undefined, currency = 'PHP') {
-  if (n == null) return '—';
-  try {
-    return new Intl.NumberFormat('en-PH', { style: 'currency', currency, maximumFractionDigits: 0 }).format(n);
-  } catch {
-    return `${currency} ${n.toFixed(0)}`;
-  }
 }
 
 // ── Insights dashboard widgets (isolated fetch/error so one failure does not block others) ──
@@ -538,7 +530,7 @@ function UnallocatedDonationsWidget({ onUnallocatedCount }: { onUnallocatedCount
         const name = d.supporter?.displayName?.trim() || d.supporter?.organizationName?.trim() || `Donation #${d.donationId}`;
         const f = forms[d.donationId];
         const isExpanded = expandedId === d.donationId;
-        const amt = d.amount != null ? fmtDonationMoney(Number(d.amount), d.currencyCode ?? 'PHP') : '—';
+        const amt = d.amount != null ? formatAmountMaybePhpAndUsd(Number(d.amount), d.currencyCode ?? 'PHP') : '—';
         return (
           <li key={d.donationId} className="mb-2 border-bottom border-light pb-2" style={{ borderLeft: '3px solid #dc2626', paddingLeft: 8 }}>
             <div className="d-flex align-items-center justify-content-between gap-2">
@@ -572,7 +564,7 @@ function UnallocatedDonationsWidget({ onUnallocatedCount }: { onUnallocatedCount
                       value={f.programArea} onChange={(e) => setForms((p) => ({ ...p, [d.donationId]: { ...f, programArea: e.target.value } }))} />
                   </div>
                   <div>
-                    <label className="form-label mb-1" style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748B' }}>Amount (PHP)</label>
+                    <label className="form-label mb-1" style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748B' }}>Amount</label>
                     <input type="number" className="form-control form-control-sm" style={{ width: 100 }} placeholder="e.g. 5000"
                       value={f.amount} onChange={(e) => setForms((p) => ({ ...p, [d.donationId]: { ...f, amount: e.target.value } }))} />
                   </div>
@@ -702,7 +694,7 @@ function AdminDonorQuickModal({
                     ? 'Total given (known amounts):'
                     : 'Total (recent sample):'}
                 </strong>{' '}
-                {fmtDonationMoney(sumSample, cur)}
+                {formatAmountMaybePhpAndUsd(sumSample, cur)}
               </li>
             )}
           </ul>
@@ -1119,7 +1111,7 @@ export default function AdminHomePage() {
                             </td>
                             <td className="small">{d.donationType ?? '—'}</td>
                             <td className="small tabular-nums">
-                              {fmtDonationMoney(d.amount != null ? Number(d.amount) : null, d.currencyCode ?? 'PHP')}
+                              {formatAmountMaybePhpAndUsd(d.amount != null ? Number(d.amount) : null, d.currencyCode ?? 'PHP')}
                             </td>
                             <td className="pe-4 small text-muted">{d.campaignName ?? '—'}</td>
                           </tr>
