@@ -391,9 +391,6 @@ export default function ImpactPage() {
   const published = snapshots
     .filter((s) => s.is_published)
     .sort((a, b) => new Date(b.snapshot_date).getTime() - new Date(a.snapshot_date).getTime());
-  const featured = published[0];
-  const rest = published.slice(1);
-
   const validSnapshots = [...published]
     .reverse()
     .filter((s) => {
