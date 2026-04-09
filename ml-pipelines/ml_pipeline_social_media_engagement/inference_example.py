@@ -44,9 +44,27 @@ def main() -> None:
     clf = joblib.load(config.SERIALIZED_DIR / "any_referral_classifier_pipeline.joblib")
 
     pe = float(eng.predict(X)[0])
-    pr = float(ref.predict(X)[0])
+    ref_raw = np.asarray(ref.predict(X), dtype=float)
+    ref_post = meta.get("referrals_count_postprocess", {})
+    if ref_post.get("inverse") == "expm1":
+        ref_raw = np.expm1(ref_raw)
+    clip_max = ref_post.get("clip_max")
+    if clip_max is not None:
+        try:
+            ref_raw = np.clip(ref_raw, 0.0, float(clip_max))
+        except (TypeError, ValueError):
+            ref_raw = np.clip(ref_raw, 0.0, None)
+    else:
+        ref_raw = np.clip(ref_raw, 0.0, None)
+    pr = float(ref_raw[0])
     pv = float(np.expm1(dval.predict(X)[0]))
     p_any = float(clf.predict_proba(X)[0, 1])
+    p_cap = meta.get("prediction_guardrails", {}).get("p_any_referral_display_max")
+    if p_cap is not None:
+        try:
+            p_any = float(np.clip(p_any, 0.0, float(p_cap)))
+        except (TypeError, ValueError):
+            p_any = float(np.clip(p_any, 0.0, 1.0))
 
     print(
         json.dumps(

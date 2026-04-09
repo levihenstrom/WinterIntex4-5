@@ -97,6 +97,8 @@ def export_all(
     ref_pipe = ref["best_pipeline"]
     dval_pipe = dval["best_pipeline"]
     clf_pipe = any_ref["best_pipeline"]
+    ref_clip_q = float(getattr(config, "REFERRALS_COUNT_OUTPUT_CLIP_QUANTILE", 0.95))
+    ref_clip_max = float(np.nanquantile(df[meta["target_referrals"]].astype(float).values, ref_clip_q))
 
     referral_calibration_meta: dict[str, Any] = {
         "applied": False,
@@ -179,6 +181,13 @@ def export_all(
             "estimated_donation_value_php_log1p": "log1p(estimated_donation_value_php)",
             "any_referral_binary": meta["target_referrals_binary"],
             "referrals_ge_median": meta["target_referrals_high_median"],
+            "any_referral_binary_definition": meta.get("target_referrals_binary_definition"),
+            "any_referral_binary_threshold": meta.get("target_referrals_binary_threshold"),
+            "legacy_any_referral_definition": meta.get("target_referrals_any_definition"),
+        },
+        "class_balance": {
+            "legacy_any_referral_positive_rate": meta.get("target_referrals_any_rate"),
+            "current_any_referral_positive_rate": meta.get("target_referrals_binary_rate"),
         },
         "predictive_holdout": {
             "engagement": {
@@ -222,6 +231,21 @@ def export_all(
                 "comparison": pred["referrals_ge_median"]["all_results"].to_dict(orient="records"),
             },
         },
+        "referrals_count_postprocess": {
+            "trained_target_transform": pred["referrals_count"].get("target_transform", "none"),
+            "inverse": pred["referrals_count"].get("prediction_inverse", "identity"),
+            "clip_min": 0.0,
+            "clip_max": round(ref_clip_max, 4),
+            "clip_max_quantile": ref_clip_q,
+            "note": (
+                "Referrals-count model is trained on log1p(target) and inverted with expm1 at inference; "
+                "output is clipped to [0, q-quantile] for business-safe display/ranking."
+            ),
+        },
+        "prediction_guardrails": {
+            "p_any_referral_display_max": float(getattr(config, "P_ANY_REFERRAL_DISPLAY_MAX", 1.0)),
+            "note": "Guardrails apply to recommendation/display outputs; holdout metrics are computed without this clipping.",
+        },
         "permutation_importance_engagement_top": imp_eng,
         "any_referral_probability_calibration": referral_calibration_meta,
         "ethics": "Associations are not causal. Human judgment required for content and brand.",
@@ -244,9 +268,13 @@ def export_all(
         json.dump(inp, f, indent=2, default=str)
 
     pe = float(eng_pipe.predict(Xs)[0])
-    pr = float(ref_pipe.predict(Xs)[0])
+    ref_raw = np.asarray(ref_pipe.predict(Xs), dtype=float)
+    if pred["referrals_count"].get("target_transform") == "log1p":
+        ref_raw = np.expm1(ref_raw)
+    pr = float(np.clip(ref_raw, 0.0, ref_clip_max)[0])
     pv = float(np.expm1(dval_pipe.predict(Xs)[0]))
     pconv = float(clf_pipe.predict_proba(Xs)[0, 1])
+    pconv = float(np.clip(pconv, 0.0, float(getattr(config, "P_ANY_REFERRAL_DISPLAY_MAX", 1.0))))
     pos_e, neg_e = _top_coef_hints("explanatory_ridge_engagement_rate.csv")
     pos_r, neg_r = _top_coef_hints("explanatory_ridge_donation_referrals.csv")
 

@@ -1,7 +1,9 @@
 # Nightly (and on-demand) regeneration of bundled ML JSON + social assets under App_Data/ml.
-# Canonical local command: python3 refresh_ml_artifacts.py (repo root).
+# Canonical local commands:
+#   1) Social retrain/export: (cd ml-pipelines && python3 -m ml_pipeline_social_media_engagement.run_all)
+#   2) Bundle refresh: python3 refresh_ml_artifacts.py (repo root).
 
-name: Nightly ML artifact refresh
+name: Nightly ML artifact refresh and social ml_service redeploy
 
 on:
   schedule:
@@ -37,8 +39,20 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r ml-pipelines/requirements.txt
 
+      - name: Retrain social model from latest code
+        working-directory: ml-pipelines
+        run: |
+          set -e
+          echo "=== Social retraining started ==="
+          python3 -m ml_pipeline_social_media_engagement.run_all
+          echo "=== Social retraining succeeded ==="
+
       - name: Refresh App_Data/ml artifacts
-        run: python3 refresh_ml_artifacts.py
+        run: |
+          set -e
+          echo "=== Refreshing backend App_Data/ml artifacts ==="
+          python3 refresh_ml_artifacts.py
+          echo "=== Artifact refresh succeeded ==="
 
       - name: Verify required artifact paths
         run: |
@@ -48,6 +62,14 @@ jobs:
             "$base/reintegration/current_resident_scores.json" \
             "$base/donors/current_donor_scores.json" \
             "$base/social/social_recommender_manifest.json"
+          do
+            test -s "$f" || { echo "Missing or empty: $f"; exit 1; }
+          done
+          # Ensure social retrain produced serialized model outputs too.
+          for f in \
+            "ml-pipelines/ml_pipeline_social_media_engagement/serialized_models/social_media_engagement_metadata.json" \
+            "ml-pipelines/ml_pipeline_social_media_engagement/serialized_models/any_referral_classifier_pipeline.joblib" \
+            "ml-pipelines/ml_pipeline_social_media_engagement/serialized_models/donation_referrals_count_pipeline.joblib"
           do
             test -s "$f" || { echo "Missing or empty: $f"; exit 1; }
           done
@@ -64,3 +86,97 @@ jobs:
           fi
           git commit -m "chore(ml): refresh App_Data/ml artifacts [skip ci]"
           git push
+
+  build-and-deploy-ml-service:
+    name: Build and deploy social ml_service container
+    runs-on: ubuntu-latest
+    needs: refresh-and-commit
+    permissions:
+      id-token: write   # for azure/login OIDC
+      contents: read
+
+    env:
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+      AZURE_CONTAINERAPP_ENV: ${{ secrets.AZURE_CONTAINERAPP_ENV }}
+      AZURE_CONTAINERAPP_NAME: ${{ secrets.AZURE_CONTAINERAPP_NAME }}
+      AZURE_ACR_NAME: ${{ secrets.AZURE_ACR_NAME }}
+      AZURE_ACR_LOGIN_SERVER: ${{ secrets.AZURE_ACR_LOGIN_SERVER }}
+      ML_SERVICE_IMAGE_NAME: ${{ secrets.ML_SERVICE_IMAGE_NAME }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Sync to latest branch tip
+        run: |
+          set -e
+          BRANCH="${GITHUB_REF_NAME}"
+          echo "Syncing checkout to latest origin/${BRANCH} (including refresh commit if created)…"
+          git fetch origin "${BRANCH}"
+          git checkout "${BRANCH}"
+          git pull --ff-only origin "${BRANCH}"
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Azure CLI version
+        run: az version
+
+      - name: Log in to Azure Container Registry
+        run: |
+          if [ -z "${AZURE_ACR_NAME}" ]; then
+            echo "AZURE_ACR_NAME is not set; skipping ml_service build/push."
+            exit 0
+          fi
+          az acr login --name "$AZURE_ACR_NAME"
+
+      - name: Build ml_service image (linux/amd64)
+        run: |
+          if [ -z "${AZURE_ACR_LOGIN_SERVER}" ] || [ -z "${ML_SERVICE_IMAGE_NAME}" ]; then
+            echo "AZURE_ACR_LOGIN_SERVER or ML_SERVICE_IMAGE_NAME not set; skipping image build."
+            exit 0
+          fi
+          BUILD_SHA="$(git rev-parse --short=12 HEAD)"
+          IMAGE_TAG_SHA="${AZURE_ACR_LOGIN_SERVER}/${ML_SERVICE_IMAGE_NAME}:${BUILD_SHA}"
+          IMAGE_TAG_LATEST="${AZURE_ACR_LOGIN_SERVER}/${ML_SERVICE_IMAGE_NAME}:latest"
+          echo "Building image ${IMAGE_TAG_SHA} (and tagging latest)…"
+          docker build \
+            --platform linux/amd64 \
+            -f ml_service/Dockerfile \
+            -t "${IMAGE_TAG_SHA}" \
+            -t "${IMAGE_TAG_LATEST}" \
+            .
+          echo "=== Docker build succeeded ==="
+          echo "IMAGE_TAG_SHA=${IMAGE_TAG_SHA}" >> "$GITHUB_ENV"
+
+      - name: Push ml_service image to ACR
+        if: env.IMAGE_TAG_SHA != ''
+        run: |
+          echo "Pushing ${IMAGE_TAG_SHA}…"
+          docker push "${IMAGE_TAG_SHA}"
+          if [ -n "${AZURE_ACR_LOGIN_SERVER}" ] && [ -n "${ML_SERVICE_IMAGE_NAME}" ]; then
+            docker push "${AZURE_ACR_LOGIN_SERVER}/${ML_SERVICE_IMAGE_NAME}:latest"
+          fi
+          echo "=== Docker push succeeded ==="
+
+      - name: Update Azure Container App image
+        if: env.IMAGE_TAG_SHA != ''
+        run: |
+          if [ -z "${AZURE_CONTAINERAPP_NAME}" ] || [ -z "${AZURE_RESOURCE_GROUP}" ]; then
+            echo "AZURE_CONTAINERAPP_NAME or AZURE_RESOURCE_GROUP not set; skipping container app update."
+            exit 0
+          fi
+          echo "Updating Container App ${AZURE_CONTAINERAPP_NAME} to image ${IMAGE_TAG_SHA}…"
+          az containerapp update \
+            --name "${AZURE_CONTAINERAPP_NAME}" \
+            --resource-group "${AZURE_RESOURCE_GROUP}" \
+            --image "${IMAGE_TAG_SHA}" \
+            --query "properties.template.containers[].image"
+          echo "=== Container App update succeeded ==="

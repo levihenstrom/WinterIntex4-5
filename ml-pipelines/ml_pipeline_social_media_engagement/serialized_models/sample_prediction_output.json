@@ -4,9 +4,9 @@
   "post_hour": 18,
   "content_topic": "Education",
   "predicted_engagement_rate": 0.1103,
-  "predicted_donation_referrals": 15.28,
+  "predicted_donation_referrals": 4.37,
   "predicted_estimated_donation_value_php": 1761.2,
-  "predicted_p_any_referral": 0.8976,
+  "predicted_p_any_referral": 0.6259,
   "top_positive_factors_engagement_explanatory": [
     "cat__sentiment_tone_Celebratory (coef=0.02315)",
     "num__post_hour (coef=0.02198)",

@@ -71,7 +71,14 @@
     "donation_referrals_count": "donation_referrals",
     "estimated_donation_value_php_log1p": "log1p(estimated_donation_value_php)",
     "any_referral_binary": "referrals_positive",
-    "referrals_ge_median": "referrals_high"
+    "referrals_ge_median": "referrals_high",
+    "any_referral_binary_definition": "donation_referrals >= 5",
+    "any_referral_binary_threshold": 5,
+    "legacy_any_referral_definition": "donation_referrals > 0"
+  },
+  "class_balance": {
+    "legacy_any_referral_positive_rate": 0.6428571428571429,
+    "current_any_referral_positive_rate": 0.3706896551724138
   },
   "predictive_holdout": {
     "engagement": {
@@ -91,8 +98,8 @@
         {
           "model": "random_forest",
           "rmse": 0.029778731536941532,
-          "mae": 0.022576844814846748,
-          "r2": 0.6702272071609808
+          "mae": 0.02257684481484675,
+          "r2": 0.6702272071609809
         },
         {
           "model": "gradient_boosting",
@@ -105,28 +112,28 @@
     "donation_referrals_count": {
       "best_model": "ridge",
       "metrics": {
-        "rmse": 27.20028767182931,
-        "mae": 13.541791742284731,
-        "r2": 0.3142981024754601
+        "rmse": 27.03303562026144,
+        "mae": 9.568875133262267,
+        "r2": 0.3227048117446978
       },
       "comparison": [
         {
           "model": "ridge",
-          "rmse": 27.20028767182931,
-          "mae": 13.541791742284731,
-          "r2": 0.3142981024754601
+          "rmse": 27.03303562026144,
+          "mae": 9.568875133262267,
+          "r2": 0.3227048117446978
         },
         {
           "model": "random_forest",
-          "rmse": 28.113876155778993,
-          "mae": 12.251778916414976,
-          "r2": 0.267462584777475
+          "rmse": 28.62146067342302,
+          "mae": 9.804201807358604,
+          "r2": 0.2407724749284934
         },
         {
           "model": "gradient_boosting",
-          "rmse": 29.17836263558247,
-          "mae": 13.786530619168124,
-          "r2": 0.21093970246174265
+          "rmse": 27.176305073343492,
+          "mae": 9.71058189455077,
+          "r2": 0.31550674142192237
         }
       ]
     },
@@ -146,9 +153,9 @@
         },
         {
           "model": "random_forest",
-          "rmse": 3.2679340198919533,
+          "rmse": 3.2679340198919538,
           "mae": 2.511792256481719,
-          "r2": 0.5626386942730042
+          "r2": 0.5626386942730041
         },
         {
           "model": "gradient_boosting",
@@ -159,39 +166,39 @@
       ]
     },
     "any_referral": {
-      "best_model": "gradient_boosting",
+      "best_model": "logistic",
       "metrics": {
-        "model": "gradient_boosting",
-        "accuracy": 0.8282208588957055,
-        "precision": 0.8737864077669902,
-        "recall": 0.8571428571428571,
-        "f1": 0.8653846153846154,
-        "roc_auc": 0.9142857142857143
+        "model": "logistic",
+        "accuracy": 0.8098159509202454,
+        "precision": 0.7164179104477612,
+        "recall": 0.8,
+        "f1": 0.7559055118110236,
+        "roc_auc": 0.9266990291262136
       },
       "comparison": [
         {
           "model": "logistic",
-          "accuracy": 0.7914110429447853,
-          "precision": 0.9176470588235294,
-          "recall": 0.7428571428571429,
-          "f1": 0.8210526315789474,
-          "roc_auc": 0.9022988505747127
+          "accuracy": 0.8098159509202454,
+          "precision": 0.7164179104477612,
+          "recall": 0.8,
+          "f1": 0.7559055118110236,
+          "roc_auc": 0.9266990291262136
         },
         {
           "model": "random_forest",
-          "accuracy": 0.803680981595092,
-          "precision": 0.9101123595505618,
-          "recall": 0.7714285714285715,
-          "f1": 0.8350515463917526,
-          "roc_auc": 0.884072249589491
+          "accuracy": 0.8404907975460123,
+          "precision": 0.7575757575757576,
+          "recall": 0.8333333333333334,
+          "f1": 0.7936507936507936,
+          "roc_auc": 0.9254045307443366
         },
         {
           "model": "gradient_boosting",
-          "accuracy": 0.8282208588957055,
-          "precision": 0.8737864077669902,
-          "recall": 0.8571428571428571,
-          "f1": 0.8653846153846154,
-          "roc_auc": 0.9142857142857143
+          "accuracy": 0.8466257668711656,
+          "precision": 0.7966101694915254,
+          "recall": 0.7833333333333333,
+          "f1": 0.7899159663865546,
+          "roc_auc": 0.9215210355987056
         }
       ]
     },
@@ -232,6 +239,18 @@
         }
       ]
     }
+  },
+  "referrals_count_postprocess": {
+    "trained_target_transform": "log1p",
+    "inverse": "expm1+clip_min_0",
+    "clip_min": 0.0,
+    "clip_max": 63.45,
+    "clip_max_quantile": 0.95,
+    "note": "Referrals-count model is trained on log1p(target) and inverted with expm1 at inference; output is clipped to [0, q-quantile] for business-safe display/ranking."
+  },
+  "prediction_guardrails": {
+    "p_any_referral_display_max": 0.95,
+    "note": "Guardrails apply to recommendation/display outputs; holdout metrics are computed without this clipping."
   },
   "permutation_importance_engagement_top": [
     {

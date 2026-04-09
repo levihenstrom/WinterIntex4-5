@@ -22,3 +22,13 @@ CALIBRATE_ANY_REFERRAL_CLASSIFIER = True
 # "sigmoid" = Platt scaling (stable on ~hundreds of rows). "isotonic" can overfit small samples.
 CALIBRATION_METHOD: str = "sigmoid"
 CALIBRATION_N_SPLITS = 5
+
+# Stronger success target than "any referral > 0": post is considered conversion-successful
+# only when donation_referrals reaches this threshold.
+REFERRAL_SUCCESS_MIN_COUNT = 5
+
+# Optional guardrail to avoid overconfident display values from synthetic candidate grids.
+P_ANY_REFERRAL_DISPLAY_MAX = 0.95
+
+# Referrals-count postprocessing for business-readable outputs.
+REFERRALS_COUNT_OUTPUT_CLIP_QUANTILE = 0.95

@@ -8,7 +8,7 @@ From the **repository root** (same level as `ml-pipelines/` and `refresh_ml_arti
 python3 refresh_ml_artifacts.py
 ```
 
-This is the **only** supported refresh entrypoint at the repo root. It runs:
+This is the **backend bundle refresh** entrypoint at the repo root. It runs:
 
 1. **Reintegration** — scores residents and writes JSON under `backend/Intex.API/App_Data/ml/reintegration/`
 2. **Donors** — builds churn / outreach JSON under `backend/Intex.API/App_Data/ml/donors/`
@@ -47,9 +47,28 @@ The refresh flow does **not** require `ml_service` packages unless you are runni
 Workflow file: **[`.github/workflows/nightly-ml-refresh.yml`](../.github/workflows/nightly-ml-refresh.yml)**
 
 - **Schedule:** `cron: "15 6 * * *"` (06:15 UTC daily).
-- **Manual run:** GitHub → **Actions** → **Nightly ML artifact refresh** → **Run workflow**.
+- **Manual run:** GitHub → **Actions** → **Nightly ML artifact refresh and social ml_service redeploy** → **Run workflow**.
 
-Steps: checkout → Python 3.12 → `pip install -r ml-pipelines/requirements.txt` → `python3 refresh_ml_artifacts.py` → verify three core files exist → **commit and push** only `backend/Intex.API/App_Data/ml/` when there are diffs (author: `github-actions[bot]`, message includes `[skip ci]`).
+The workflow now does **fresh social retraining from current code** before packaging and deploy:
+
+1. checkout + Python deps  
+2. `cd ml-pipelines && python3 -m ml_pipeline_social_media_engagement.run_all`  
+3. `python3 refresh_ml_artifacts.py` to package `App_Data/ml/**`  
+4. verify required social/reintegration/donor artifacts  
+5. commit + push changes under `backend/Intex.API/App_Data/ml/**` (if any)  
+6. build `ml_service` Docker image (`linux/amd64`)  
+7. push image to ACR (`<image>:<sha>` and `:latest`)  
+8. update Azure Container App to the new image
+
+### Commit scope decision
+
+Nightly CI intentionally commits only:
+
+- `backend/Intex.API/App_Data/ml/**`
+
+It does **not** commit `ml-pipelines/ml_pipeline_social_media_engagement/serialized_models/**`.
+
+Why: `serialized_models` are treated as build-time intermediates in CI; `App_Data/ml/social/**` is the packaged/deployable source consumed by `ml_service` Docker builds. This avoids duplicating large model binaries in two locations while still ensuring deployed images include freshly retrained artifacts.
 
 ### Validated artifacts
 
@@ -65,6 +84,7 @@ The Python export enforces a full checklist of JSON (and related packaged files)
 
 - **Trained reintegration pipeline:** `score_all_current_residents` needs `ml-pipelines/ml_pipeline_reintegration_readiness_scorer/serialized_models/reintegration_readiness_pipeline.joblib` (and related metadata). If that file is missing in the checkout, the refresh step fails before validation.
 - **Social `.joblib` files:** Copied from `ml_pipeline_social_media_engagement/serialized_models/` when present; the manifest records `missing_source_artifacts` when upstream files are absent.
+- **Social code-to-prod path:** Changes under `ml-pipelines/ml_pipeline_social_media_engagement/**` now flow via nightly CI without manual local retraining, because nightly retrains before `refresh_ml_artifacts.py`.
 - **Branch protection / required reviews:** Pushes from `GITHUB_TOKEN` may be blocked on protected branches; adjust rules or use a PAT with appropriate permissions if needed.
 - **Forks:** Scheduled workflows run on the default branch of the repo; `workflow_dispatch` from a fork typically cannot push back to upstream.
 

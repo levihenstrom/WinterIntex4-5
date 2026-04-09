@@ -30,9 +30,10 @@
 |------|--------|-------------|----------------------|
 | Engagement | `engagement_rate` | Ridge → CSV | Ridge, RF, GB regressor |
 | Conversion count | `donation_referrals` | Ridge | Ridge, RF, GB regressor |
-| Conversion binary | `referrals_positive` (any referral) | Logistic | Logistic, RF, GB classifier |
+| Conversion binary | `referrals_positive` (`donation_referrals >= 5`) | Logistic | Logistic, RF, GB classifier |
 | High referrals | `referrals_high` (≥ median referrals) | — | Classifiers |
 | Donation value | `log1p(estimated_donation_value_php)` | Ridge | Same regressors |
+| Referrals count (predictive) | `log1p(donation_referrals)` | Ridge | Ridge, RF, GB regressor (inverted with `expm1`) |
 
 **Split:** 80% train / 20% test, `random_state=42` (stratified for classifiers).
 
@@ -86,7 +87,7 @@ Open **`social_media_engagement.ipynb`** (set working directory to `ml_pipeline`
 
 1. **Uncalibrated classifiers** — Random forests and gradient boosting often output `predict_proba` values pushed toward 0 or 1 even when ranking (AUC) is good. That is a known **calibration** issue, not necessarily leakage.
 
-2. **Base rate** — In the bundled extract, most posts have **at least one** donation referral (~64% positive). So “high” probabilities are partly consistent with the label distribution (still, **0.99** on many rows was often **overconfident**).
+2. **Target definition matters** — A target like “>0 referrals” can be too easy and inflate confidence. This pipeline now uses a stronger conversion label (`donation_referrals >= 3`) for `predicted_p_any_referral`.
 
 3. **Recommendation grid = favorable synthetic rows** — `recommend_posts.py` explores combinations that include **CTA on**, **resident story on**, **evening** hours, etc. Those settings **co-occur with positives in training** more often, so the model assigns a **high** \(P(\text{referral})\). That is **distribution shift**: you are scoring “idealized” drafts, not a random post from history.
 
@@ -95,6 +96,8 @@ Open **`social_media_engagement.ipynb`** (set working directory to `ml_pipeline`
 **Fix without collecting new data (implemented):**
 
 - The exported **`any_referral_classifier_pipeline.joblib`** is wrapped in **`CalibratedClassifierCV`** (Platt **sigmoid** scaling, stratified folds). See `any_referral_probability_calibration` in `social_media_engagement_metadata.json`. This **pulls extreme probabilities toward more realistic levels** while preserving ranking reasonably well.
+- Referrals-count ranking now trains on `log1p(donation_referrals)` and inverts with `expm1`; outputs are clipped to `[0, q95]` (see `referrals_count_postprocess` in metadata) to avoid unstable outlier-driven suggestions.
+- Recommendation/display probability now uses a conservative upper guardrail (`P_ANY_REFERRAL_DISPLAY_MAX`, default `0.95`) to prevent synthetic-grid scenarios from surfacing implausible 99% confidence values.
 
 **Optional toggles:** set `CALIBRATE_ANY_REFERRAL_CLASSIFIER = False` in `config.py` to compare raw vs calibrated behavior.
 

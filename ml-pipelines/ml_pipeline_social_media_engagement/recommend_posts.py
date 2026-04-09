@@ -60,6 +60,21 @@ def _minmax(s: pd.Series) -> pd.Series:
     return (s - lo) / (hi - lo)
 
 
+def _postprocess_referrals_count(
+    pred: np.ndarray | pd.Series,
+    *,
+    transformed: bool,
+    clip_max: float | None,
+) -> np.ndarray:
+    arr = np.asarray(pred, dtype=float)
+    if transformed:
+        arr = np.expm1(arr)
+    arr = np.clip(arr, 0.0, None)
+    if clip_max is not None and np.isfinite(clip_max):
+        arr = np.clip(arr, 0.0, float(clip_max))
+    return arr
+
+
 def _load_artifacts_at(serialized_dir: Path) -> tuple[dict[str, Any], Any, Any, Any]:
     meta_path = serialized_dir / "social_media_engagement_metadata.json"
     if not meta_path.is_file():
@@ -243,9 +258,19 @@ class SocialRecommenderSession:
         self.meta, self.eng_model, self.any_ref_model, self.ref_model = _load_artifacts_at(self.serialized_dir)
         self.dval_model = _load_dval_at(self.serialized_dir)
         self.raw = load_social_media_posts(self.social_posts_csv)
+        ref_meta = self.meta.get("referrals_count_postprocess", {})
+        self.referrals_count_is_log1p = bool(ref_meta.get("inverse") == "expm1")
+        self.referrals_count_clip_max: float | None = None
+        clip_max = ref_meta.get("clip_max")
+        if clip_max is not None:
+            try:
+                self.referrals_count_clip_max = float(clip_max)
+            except (TypeError, ValueError):
+                self.referrals_count_clip_max = None
         self.goal_weights: dict[str, dict[str, float]] = (
             {k: dict(v) for k, v in goal_weights.items()} if goal_weights is not None else {k: dict(v) for k, v in GOAL_WEIGHTS.items()}
         )
+        self.p_any_display_max = float(getattr(config, "P_ANY_REFERRAL_DISPLAY_MAX", 1.0))
 
     def recommend_next_post(
         self,
@@ -298,8 +323,14 @@ class SocialRecommenderSession:
             cand["predicted_p_any_referral"] = self.any_ref_model.predict_proba(X)[:, 1].astype(float)
         else:
             cand["predicted_p_any_referral"] = self.any_ref_model.predict(X).astype(float)
+        cand["predicted_p_any_referral"] = cand["predicted_p_any_referral"].clip(lower=0.0, upper=self.p_any_display_max)
         if self.ref_model is not None:
-            cand["predicted_referrals_count"] = self.ref_model.predict(X).astype(float)
+            ref_pred = self.ref_model.predict(X)
+            cand["predicted_referrals_count"] = _postprocess_referrals_count(
+                ref_pred,
+                transformed=self.referrals_count_is_log1p,
+                clip_max=self.referrals_count_clip_max,
+            )
         else:
             cand["predicted_referrals_count"] = np.nan
 
@@ -364,9 +395,17 @@ class SocialRecommenderSession:
             pany = float(self.any_ref_model.predict_proba(X)[0, 1])
         else:
             pany = float(self.any_ref_model.predict(X)[0])
+        pany = float(np.clip(pany, 0.0, self.p_any_display_max))
         ref_count: float | None
         if self.ref_model is not None:
-            ref_count = float(self.ref_model.predict(X)[0])
+            ref_raw = self.ref_model.predict(X)
+            ref_count = float(
+                _postprocess_referrals_count(
+                    ref_raw,
+                    transformed=self.referrals_count_is_log1p,
+                    clip_max=self.referrals_count_clip_max,
+                )[0]
+            )
         else:
             ref_count = None
         dval_php: float | None

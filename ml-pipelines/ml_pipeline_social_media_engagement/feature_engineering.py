@@ -13,6 +13,8 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from . import config
+
 # Used only for EDA / optional secondary models — never as main strategy features.
 LEAKAGE_COLUMNS = [
     "impressions",
@@ -161,9 +163,12 @@ def build_modeling_frame(raw: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, Any
             df[c] = df[c].fillna(0.0)
 
     # Classification helpers
-    df["referrals_positive"] = (df["donation_referrals"].fillna(0) > 0).astype(int)
+    referral_success_threshold = int(config.REFERRAL_SUCCESS_MIN_COUNT)
+    df["referrals_positive"] = (df["donation_referrals"].fillna(0) >= referral_success_threshold).astype(int)
     med_ref = float(df["donation_referrals"].median())
     df["referrals_high"] = (df["donation_referrals"].fillna(0) >= med_ref).astype(int)
+    any_ref_rate = float((df["donation_referrals"].fillna(0) > 0).mean())
+    success_rate = float(df["referrals_positive"].mean())
 
     meta: dict[str, Any] = {
         "leakage_columns": list(LEAKAGE_COLUMNS),
@@ -202,6 +207,11 @@ def build_modeling_frame(raw: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, Any
         "target_donation_value": "estimated_donation_value_php",
         "target_referrals_binary": "referrals_positive",
         "target_referrals_high_median": "referrals_high",
+        "target_referrals_binary_threshold": referral_success_threshold,
+        "target_referrals_binary_definition": f"donation_referrals >= {referral_success_threshold}",
+        "target_referrals_any_definition": "donation_referrals > 0",
+        "target_referrals_any_rate": any_ref_rate,
+        "target_referrals_binary_rate": success_rate,
         "secondary_targets_post_performance": ["click_throughs", "profile_visits"],
     }
 
