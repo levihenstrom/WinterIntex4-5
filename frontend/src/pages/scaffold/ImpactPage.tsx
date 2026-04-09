@@ -241,6 +241,103 @@ function ReportCard({ snap, featured = false, liveStats }: { snap: ImpactSnapsho
   );
 }
 
+/* ── Reports tab component ───────────────────────────────────── */
+function ReportsTab({
+  published,
+  liveStats,
+  reportMonthFilter,
+  setReportMonthFilter,
+  reportPage,
+  setReportPage,
+}: {
+  published: ImpactSnapshot[];
+  liveStats: LiveStats | null;
+  reportMonthFilter: string;
+  setReportMonthFilter: (v: string) => void;
+  reportPage: number;
+  setReportPage: (v: number) => void;
+}) {
+  const monthOptions = Array.from(
+    new Set(published.map(s => s.snapshot_date ? s.snapshot_date.slice(0, 7) : '').filter(Boolean))
+  ).sort((a, b) => b.localeCompare(a));
+
+  const filteredAll = reportMonthFilter
+    ? published.filter(s => s.snapshot_date && s.snapshot_date.startsWith(reportMonthFilter))
+    : published;
+
+  const filteredFeatured = filteredAll[0];
+  const filteredRest = filteredAll.slice(1);
+  const totalPages = Math.ceil(filteredRest.length / REPORTS_PAGE_SIZE);
+  const pagedRest = filteredRest.slice(reportPage * REPORTS_PAGE_SIZE, (reportPage + 1) * REPORTS_PAGE_SIZE);
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: '1.25rem' }}>
+        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.16em', color: '#0D9488', margin: 0 }}>
+          Anonymized · Public · Monthly
+        </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <label style={{ fontSize: '0.8rem', color: '#64748B', fontWeight: 600 }}>Filter by month:</label>
+          <select
+            value={reportMonthFilter}
+            onChange={e => { setReportMonthFilter(e.target.value); setReportPage(0); }}
+            style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid #E2E8F0', fontSize: '0.85rem', color: '#1E3A5F', cursor: 'pointer', background: '#fff' }}
+          >
+            <option value="">All months</option>
+            {monthOptions.map(m => (
+              <option key={m} value={m}>
+                {new Date(m + '-01T00:00:00').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+              </option>
+            ))}
+          </select>
+          {reportMonthFilter && (
+            <button onClick={() => { setReportMonthFilter(''); setReportPage(0); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>
+              ✕ Clear
+            </button>
+          )}
+        </div>
+      </div>
+
+      {filteredAll.length === 0 ? (
+        <p style={{ color: '#64748b', fontFamily: 'Inter, sans-serif', textAlign: 'center', padding: '2rem 0' }}>
+          {reportMonthFilter ? 'No reports found for this month.' : 'No published impact snapshots yet.'}
+        </p>
+      ) : (
+        <>
+          <ReportCard snap={filteredFeatured} featured liveStats={liveStats} />
+          {pagedRest.length > 0 && (
+            <>
+              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.14em', color: '#94a3b8', margin: '1.5rem 0 0.75rem' }}>Previous Reports</p>
+              {pagedRest.map(s => <ReportCard key={s.snapshot_id} snap={s} liveStats={liveStats} />)}
+              {totalPages > 1 && (
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 10, marginTop: '1.25rem' }}>
+                  <button
+                    onClick={() => setReportPage(Math.max(0, reportPage - 1))}
+                    disabled={reportPage === 0}
+                    style={{ padding: '6px 16px', borderRadius: 20, fontWeight: 600, fontSize: '0.82rem', cursor: reportPage === 0 ? 'not-allowed' : 'pointer', border: '1.5px solid #E2E8F0', background: reportPage === 0 ? '#f8fafc' : '#fff', color: reportPage === 0 ? '#CBD5E1' : '#1E3A5F' }}
+                  >
+                    ← Prev
+                  </button>
+                  <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.82rem', color: '#64748B' }}>
+                    Page {reportPage + 1} of {totalPages}
+                  </span>
+                  <button
+                    onClick={() => setReportPage(Math.min(totalPages - 1, reportPage + 1))}
+                    disabled={reportPage >= totalPages - 1}
+                    style={{ padding: '6px 16px', borderRadius: 20, fontWeight: 600, fontSize: '0.82rem', cursor: reportPage >= totalPages - 1 ? 'not-allowed' : 'pointer', border: '1.5px solid #E2E8F0', background: reportPage >= totalPages - 1 ? '#f8fafc' : '#1E3A5F', color: reportPage >= totalPages - 1 ? '#CBD5E1' : '#fff' }}
+                  >
+                    Next →
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 /* ── Tabs ────────────────────────────────────────────────────── */
 const TABS = ['Overview', 'Donations', 'Residents', 'Wellness', 'Reports'] as const;
 type Tab = typeof TABS[number];
@@ -680,105 +777,16 @@ export default function ImpactPage() {
           </div>
         )}
 
-        {tab === 'Reports' && (() => {
-          // Get unique year-month values for the filter dropdown
-          const monthOptions = Array.from(
-            new Set(published.map(s => s.snapshot_date?.slice(0, 7)).filter(Boolean))
-          ).sort((a, b) => b!.localeCompare(a!)) as string[];
-
-          // Filter all published by selected month
-          const filteredAll = reportMonthFilter
-            ? published.filter(s => s.snapshot_date?.startsWith(reportMonthFilter))
-            : published;
-
-          const filteredFeatured = filteredAll[0];
-          const filteredRest = filteredAll.slice(1);
-
-          // Paginate previous reports
-          const totalPages = Math.ceil(filteredRest.length / REPORTS_PAGE_SIZE);
-          const pagedRest = filteredRest.slice(
-            reportPage * REPORTS_PAGE_SIZE,
-            (reportPage + 1) * REPORTS_PAGE_SIZE
-          );
-
-          return (
-            <div>
-              {/* Filter + label row */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: '1.25rem' }}>
-                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.16em', color: '#0D9488', margin: 0 }}>
-                  Anonymized · Public · Monthly
-                </p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <label style={{ fontSize: '0.8rem', color: '#64748B', fontWeight: 600 }}>
-                    Filter by month:
-                  </label>
-                  <select
-                    value={reportMonthFilter}
-                    onChange={e => { setReportMonthFilter(e.target.value); setReportPage(0); }}
-                    style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid #E2E8F0', fontSize: '0.85rem', color: '#1E3A5F', cursor: 'pointer', background: '#fff' }}
-                  >
-                    <option value="">All months</option>
-                    {monthOptions.map(m => (
-                      <option key={m} value={m}>
-                        {new Date(m + '-01T00:00:00').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                      </option>
-                    ))}
-                  </select>
-                  {reportMonthFilter && (
-                    <button
-                      onClick={() => { setReportMonthFilter(''); setReportPage(0); }}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}
-                    >
-                      ✕ Clear
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {filteredAll.length === 0 ? (
-                <p style={{ color: '#64748b', fontFamily: 'Inter, sans-serif', textAlign: 'center', padding: '2rem 0' }}>
-                  {reportMonthFilter ? 'No reports found for this month.' : 'No published impact snapshots yet.'}
-                </p>
-              ) : (
-                <>
-                  {/* Featured / first result */}
-                  <ReportCard snap={filteredFeatured} featured liveStats={liveStats} />
-
-                  {/* Previous reports with pagination */}
-                  {pagedRest.length > 0 && (
-                    <>
-                      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.14em', color: '#94a3b8', margin: '1.5rem 0 0.75rem' }}>Previous Reports</p>
-                      {pagedRest.map(s => <ReportCard key={s.snapshot_id} snap={s} liveStats={liveStats} />)}
-
-                      {/* Pagination controls */}
-                      {totalPages > 1 && (
-                        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 10, marginTop: '1.25rem' }}>
-                          <button
-                            onClick={() => setReportPage(p => Math.max(0, p - 1))}
-                            disabled={reportPage === 0}
-                            style={{ padding: '6px 16px', borderRadius: 20, fontWeight: 600, fontSize: '0.82rem', cursor: reportPage === 0 ? 'not-allowed' : 'pointer', border: '1.5px solid #E2E8F0', background: reportPage === 0 ? '#f8fafc' : '#fff', color: reportPage === 0 ? '#CBD5E1' : '#1E3A5F' }}
-                          >
-                            ← Prev
-                          </button>
-                          <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.82rem', color: '#64748B' }}>
-                            Page {reportPage + 1} of {totalPages}
-                          </span>
-                          <button
-                            onClick={() => setReportPage(p => Math.min(totalPages - 1, p + 1))}
-                            disabled={reportPage >= totalPages - 1}
-                            style={{ padding: '6px 16px', borderRadius: 20, fontWeight: 600, fontSize: '0.82rem', cursor: reportPage >= totalPages - 1 ? 'not-allowed' : 'pointer', border: '1.5px solid #E2E8F0', background: reportPage >= totalPages - 1 ? '#f8fafc' : '#1E3A5F', color: reportPage >= totalPages - 1 ? '#CBD5E1' : '#fff' }}
-                          >
-                            Next →
-                          </button>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </>
-              )}
-            </div>
-          );
-        })()}
+        {tab === 'Reports' && (
+          <ReportsTab
+            published={published}
+            liveStats={liveStats}
+            reportMonthFilter={reportMonthFilter}
+            setReportMonthFilter={setReportMonthFilter}
+            reportPage={reportPage}
+            setReportPage={setReportPage}
+          />
+        )}
       </div>
 
       {/* ── CTA ── */}
