@@ -31,6 +31,10 @@ export default function MetricCard({
     if (isStatic) return;
     const el = ref.current;
     if (!el) return;
+    if (typeof window === 'undefined' || typeof window.IntersectionObserver === 'undefined') {
+      setStarted(true);
+      return;
+    }
     const observer = new IntersectionObserver(
       ([entry]) => { if (entry.isIntersecting && !started) setStarted(true); },
       { threshold: 0.4 }

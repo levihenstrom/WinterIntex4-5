@@ -125,6 +125,10 @@ function useFadeIn() {
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+    if (typeof window === 'undefined' || typeof window.IntersectionObserver === 'undefined') {
+      el.classList.add('hw-visible');
+      return;
+    }
     const obs = new IntersectionObserver(([e]) => {
       if (e.isIntersecting) el.classList.add('hw-visible');
     }, { threshold: 0.08 });
