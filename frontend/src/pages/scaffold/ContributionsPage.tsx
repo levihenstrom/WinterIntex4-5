@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { deleteJson, fetchAllPaged, postJson } from '../../lib/apiClient';
 import AdminKpiStrip from '../../components/admin/AdminKpiStrip';
 import DeleteConfirmModal from '../../components/DeleteConfirmModal';
 import { ErrorState, LoadingState } from '../../components/common/AsyncStatus';
 import { formatAmountMaybePhpAndUsd } from '../../lib/currency';
+import { formatDonationCashAmountCell, formatDonationQuantityCell } from '../../lib/donationDisplay';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
 
@@ -41,6 +43,13 @@ function fmtDetailDate(iso: string | null | undefined): string {
 
 export default function ContributionsPage() {
   const PAGE_SIZE = 20;
+  const [searchParams, setSearchParams] = useSearchParams();
+  const focusDonationId = useMemo(() => {
+    const raw = searchParams.get('donationId');
+    const n = raw ? Number(raw) : NaN;
+    return Number.isFinite(n) && n > 0 ? Math.trunc(n) : null;
+  }, [searchParams]);
+
   const [donations, setDonations] = useState<DonationRow[]>([]);
   const [supporters, setSupporters] = useState<SupporterOpt[]>([]);
   const [loading, setLoading] = useState(true);
@@ -94,6 +103,7 @@ export default function ContributionsPage() {
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
     return donations.filter((d) => {
+      if (focusDonationId != null && d.donationId !== focusDonationId) return false;
       const matchType = typeFilter === 'All' || (d.donationType ?? '') === typeFilter;
       const name = supporterName(d.supporter ?? undefined).toLowerCase();
       const matchSearch =
@@ -103,7 +113,7 @@ export default function ContributionsPage() {
         String(d.donationId).includes(q);
       return matchType && matchSearch;
     });
-  }, [donations, typeFilter, search]);
+  }, [donations, typeFilter, search, focusDonationId]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageRows = useMemo(
@@ -113,7 +123,21 @@ export default function ContributionsPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [typeFilter, search]);
+  }, [typeFilter, search, focusDonationId]);
+
+  const clearDonationFocus = useCallback(() => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.delete('donationId');
+      return next;
+    });
+  }, [setSearchParams]);
+
+  const focusMissing =
+    focusDonationId != null &&
+    !loading &&
+    donations.length > 0 &&
+    !donations.some((d) => d.donationId === focusDonationId);
 
   useEffect(() => {
     if (page > totalPages) setPage(totalPages);
@@ -232,6 +256,30 @@ export default function ContributionsPage() {
 
         {loading && <LoadingState message="Loading contributions…" />}
         {error && <ErrorState message={error} />}
+
+        {!loading && focusDonationId != null && !focusMissing && (
+          <div
+            className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3 px-3 py-2 rounded-3"
+            style={{ background: '#F0F9FF', border: '1px solid #BAE6FD' }}
+          >
+            <span className="small mb-0" style={{ color: '#0369A1' }}>
+              <i className="bi bi-funnel-fill me-2" aria-hidden />
+              Showing contribution <strong>#{focusDonationId}</strong> only (from dashboard link).
+            </span>
+            <button type="button" className="btn btn-sm btn-outline-primary fw-semibold" onClick={clearDonationFocus}>
+              Show all contributions
+            </button>
+          </div>
+        )}
+        {!loading && focusMissing && (
+          <div className="alert alert-warning small mb-3" role="status">
+            No gift found with ID {focusDonationId}. It may have been removed or you may not have access.
+            {' '}
+            <button type="button" className="btn btn-link btn-sm p-0 align-baseline" onClick={clearDonationFocus}>
+              Clear filter
+            </button>
+          </div>
+        )}
 
         {!loading && (
           <>
@@ -443,7 +491,8 @@ export default function ContributionsPage() {
                       <th>Date</th>
                       <th>Supporter</th>
                       <th>Type</th>
-                      <th>Amount / est.</th>
+                      <th>Cash amount</th>
+                      <th>Quantity</th>
                       <th>Campaign</th>
                     </tr>
                   </thead>
@@ -470,13 +519,8 @@ export default function ContributionsPage() {
                         </td>
                         <td className="fw-semibold">{supporterName(d.supporter ?? undefined)}</td>
                         <td>{d.donationType ?? '—'}</td>
-                        <td className="tabular-nums">
-                          {d.amount != null
-                            ? formatAmountMaybePhpAndUsd(Number(d.amount), d.currencyCode ?? 'PHP')
-                            : d.estimatedValue != null
-                              ? formatAmountMaybePhpAndUsd(Number(d.estimatedValue), d.currencyCode ?? 'PHP')
-                              : '—'}
-                        </td>
+                        <td className="tabular-nums">{formatDonationCashAmountCell(d)}</td>
+                        <td className="tabular-nums">{formatDonationQuantityCell(d)}</td>
                         <td>{d.campaignName ?? '—'}</td>
                       </tr>
                     ))}
@@ -527,25 +571,16 @@ export default function ContributionsPage() {
                           ['Supporter', `${supporterName(detailDonation.supporter ?? undefined)} (ID ${detailDonation.supporterId})`],
                           ['Gift type', detailDonation.donationType ?? '—'],
                           ['Donation date', fmtDetailDate(detailDonation.donationDate)],
+                          ['Cash amount (monetary gifts only)', formatDonationCashAmountCell(detailDonation)],
+                          ['Quantity (hours, items, campaigns, …)', formatDonationQuantityCell(detailDonation)],
                           [
-                            'Amount',
-                            detailDonation.amount != null
-                              ? formatAmountMaybePhpAndUsd(Number(detailDonation.amount), detailDonation.currencyCode ?? 'PHP')
-                              : '—',
-                          ],
-                          [
-                            'Estimated value',
-                            detailDonation.estimatedValue != null
-                              ? formatAmountMaybePhpAndUsd(
-                                  Number(detailDonation.estimatedValue),
-                                  detailDonation.currencyCode ?? 'PHP',
-                                )
-                              : '—',
+                            'Estimated value (raw)',
+                            detailDonation.estimatedValue != null ? String(detailDonation.estimatedValue) : '—',
                           ],
                           ['Currency', detailDonation.currencyCode ?? '—'],
                           ['Campaign', detailDonation.campaignName ?? '—'],
                           ['Channel / source', detailDonation.channelSource ?? '—'],
-                          ['Impact unit', detailDonation.impactUnit ?? '—'],
+                          ['Impact unit (raw)', detailDonation.impactUnit ?? '—'],
                           ['Notes', detailDonation.notes?.trim() || '—'],
                         ].map(([label, val]) => (
                           <div key={label} className="col-sm-6 py-2 border-bottom">

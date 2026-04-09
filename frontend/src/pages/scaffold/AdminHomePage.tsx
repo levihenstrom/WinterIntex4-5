@@ -17,6 +17,9 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { ErrorState, LoadingState } from '../../components/common/AsyncStatus';
 import { formatAmountMaybePhpAndUsd } from '../../lib/currency';
+import { formatDonationCashAmountCell, formatDonationQuantityCell, formatDonationValueOneLiner } from '../../lib/donationDisplay';
+import { SafehouseSearchCombobox } from '../../components/admin/lookupCombos';
+import { ALLOCATION_PROGRAM_AREA_PRESETS } from '../../lib/allocationProgramAreas';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
 interface MetricState {
@@ -151,10 +154,13 @@ interface RecentDonationRow {
   donationDate?: string | null;
   donationType?: string | null;
   amount?: number | null;
+  estimatedValue?: number | null;
   currencyCode?: string | null;
+  impactUnit?: string | null;
   campaignName?: string | null;
   supporter?: { displayName?: string | null; organizationName?: string | null } | null;
 }
+// ── Insights dashboard widgets (isolated fetch/error so one failure does not block others) ──
 
 // ── Insights dashboard widgets (isolated fetch/error so one failure does not block others) ──
 
@@ -222,20 +228,29 @@ function ResidentsNeedingAttentionWidget({ onCriticalCount, onOpenProfile }: { o
               onClick={() => { if (r.residentId != null) onOpenProfile?.(r.residentId); }}
               onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--hw-bg-lavender)'; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = ''; }}
+              title={[
+                formatResidentPriorityRank(r.supportPriorityRank, totalScored),
+                r.operationalBand,
+                r.topRiskFactors?.[0] ? `Factor: ${r.topRiskFactors[0]}` : '',
+              ].filter(Boolean).join(' · ')}
             >
-              <div className="fw-semibold" style={{ color: 'var(--hw-navy)' }}>
-                {r.residentCode}
-                {r.residentId != null && <i className="bi bi-box-arrow-up-right ms-1" style={{ fontSize: 10, opacity: 0.5 }} />}
+              <div className="d-flex align-items-center justify-content-between gap-2">
+                <span className="fw-semibold" style={{ color: 'var(--hw-navy)' }}>
+                  {r.residentCode}
+                  {r.residentId != null && <i className="bi bi-box-arrow-up-right ms-1" style={{ fontSize: 10, opacity: 0.5 }} />}
+                </span>
+                <span
+                  className="badge rounded-pill flex-shrink-0"
+                  style={{
+                    fontSize: '0.65rem',
+                    fontWeight: 700,
+                    background: rank <= 3 ? '#fee2e2' : rank <= 6 ? '#fef3c7' : '#f1f5f9',
+                    color: rank <= 3 ? '#991b1b' : rank <= 6 ? '#92400e' : '#64748b',
+                  }}
+                >
+                  Rank {rank}
+                </span>
               </div>
-              <div className="text-muted small">
-                {formatResidentPriorityRank(r.supportPriorityRank, totalScored)}
-              </div>
-              <div className="text-muted small">{r.operationalBand}</div>
-              {r.topRiskFactors?.[0] && (
-                <div className="text-truncate" title={r.topRiskFactors[0]} style={{ fontSize: 12, color: '#64748B' }}>
-                  Factor: {r.topRiskFactors[0]}
-                </div>
-              )}
             </button>
           </li>
         );
@@ -311,16 +326,22 @@ function AtRiskDonorsWidget({
               onClick={() => onSelectDonor?.(d)}
               onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--hw-bg-lavender)'; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = isCritical ? 'rgba(220,38,38,0.04)' : ''; }}
+              title={[
+                formatDonorOutreachSummary(d.riskBand, d.outreachPriorityRank),
+                d.topDrivers?.[0] ?? '',
+              ].filter(Boolean).join(' · ')}
             >
-              <div className="fw-semibold" style={{ color: 'var(--hw-navy)' }}>
-                {d.displayName || `Supporter #${d.supporterId}`}
+              <div className="d-flex align-items-center justify-content-between gap-2">
+                <span className="fw-semibold text-truncate" style={{ color: 'var(--hw-navy)' }}>
+                  {d.displayName || `Supporter #${d.supporterId}`}
+                </span>
+                <span
+                  className={`badge rounded-pill flex-shrink-0 ${isCritical ? 'text-bg-danger' : isHigh ? 'text-bg-warning' : 'text-bg-secondary'}`}
+                  style={{ fontSize: '0.65rem', fontWeight: 700 }}
+                >
+                  {d.riskBand}
+                </span>
               </div>
-              <div className="text-muted small">{formatDonorOutreachSummary(d.riskBand, d.outreachPriorityRank)}</div>
-              {d.topDrivers?.[0] && (
-                <div className="text-truncate" title={d.topDrivers[0]} style={{ fontSize: 12, color: '#64748B' }}>
-                  {d.topDrivers[0]}
-                </div>
-              )}
             </button>
           </li>
         );
@@ -391,14 +412,16 @@ interface UnallocatedDonation {
   donationId: number;
   donationDate?: string | null;
   amount?: number | null;
+  estimatedValue?: number | null;
   currencyCode?: string | null;
+  impactUnit?: string | null;
   donationType?: string | null;
   supporter?: { displayName?: string | null; organizationName?: string | null } | null;
 }
 
 interface AllocFormState {
   donationId: number;
-  safehouseId: string;
+  safehouseId: number;
   programArea: string;
   amount: string;
   submitting: boolean;
@@ -436,18 +459,22 @@ function UnallocatedDonationsWidget({ onUnallocatedCount }: { onUnallocatedCount
     setExpandedId((prev) => prev === id ? null : id);
     setForms((prev) => ({
       ...prev,
-      [id]: prev[id] ?? { donationId: id, safehouseId: '', programArea: '', amount: '', submitting: false, error: null, done: false },
+      [id]: prev[id] ?? { donationId: id, safehouseId: 0, programArea: '', amount: '', submitting: false, error: null, done: false },
     }));
   }
 
   async function submitAllocation(donationId: number) {
     const f = forms[donationId];
     if (!f) return;
+    if (!f.safehouseId) {
+      setForms((prev) => ({ ...prev, [donationId]: { ...f, error: 'Select a safehouse.' } }));
+      return;
+    }
     setForms((prev) => ({ ...prev, [donationId]: { ...f, submitting: true, error: null } }));
     try {
       await postJson('/api/donation-allocations', {
         donationId,
-        safehouseId: Number(f.safehouseId),
+        safehouseId: f.safehouseId,
         programArea: f.programArea || null,
         amountAllocated: f.amount ? Number(f.amount) : null,
         allocationDate: new Date().toISOString().split('T')[0],
@@ -470,20 +497,21 @@ function UnallocatedDonationsWidget({ onUnallocatedCount }: { onUnallocatedCount
         const name = d.supporter?.displayName?.trim() || d.supporter?.organizationName?.trim() || `Donation #${d.donationId}`;
         const f = forms[d.donationId];
         const isExpanded = expandedId === d.donationId;
-        const amt = d.amount != null ? formatAmountMaybePhpAndUsd(Number(d.amount), d.currencyCode ?? 'PHP') : '—';
+        const valueLine = formatDonationValueOneLiner(d);
+        const dateStr = d.donationDate ? new Date(d.donationDate).toLocaleDateString() : '';
+        const rowTitle = [dateStr, d.donationType, valueLine].filter(Boolean).join(' · ') || undefined;
         return (
           <li key={d.donationId} className="mb-2 border-bottom border-light pb-2" style={{ borderLeft: '3px solid #dc2626', paddingLeft: 8 }}>
             <div className="d-flex align-items-center justify-content-between gap-2">
-              <div>
-                <div className="fw-semibold small" style={{ color: 'var(--hw-navy)' }}>{name}</div>
-                <div className="text-muted" style={{ fontSize: 11 }}>
-                  {amt}{d.donationDate ? ` · ${new Date(d.donationDate).toLocaleDateString()}` : ''}
-                </div>
+              <div className="fw-semibold small text-truncate" style={{ color: 'var(--hw-navy)' }} title={rowTitle}>
+                {name}
+                <span className="text-muted fw-normal"> · {valueLine}</span>
               </div>
               <button
                 type="button"
                 className="btn btn-sm fw-semibold flex-shrink-0"
                 style={{ fontSize: 11, background: isExpanded ? '#f1f5f9' : 'var(--hw-purple)', color: isExpanded ? '#1E3A5F' : 'white', borderRadius: 6, padding: '3px 10px' }}
+                title={rowTitle}
                 onClick={() => toggleExpand(d.donationId)}
               >
                 {isExpanded ? 'Cancel' : 'Allocate →'}
@@ -493,15 +521,27 @@ function UnallocatedDonationsWidget({ onUnallocatedCount }: { onUnallocatedCount
               <div className="mt-2 p-2 rounded" style={{ background: '#f8fafc', border: '1px solid #e2e8f0' }}>
                 {f.error && <div className="text-danger small mb-1">{f.error}</div>}
                 <div className="d-flex flex-wrap gap-2 align-items-end">
-                  <div>
-                    <label className="form-label mb-1" style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748B' }}>Safehouse ID</label>
-                    <input type="number" className="form-control form-control-sm" style={{ width: 90 }} placeholder="ID"
-                      value={f.safehouseId} onChange={(e) => setForms((p) => ({ ...p, [d.donationId]: { ...f, safehouseId: e.target.value } }))} />
+                  <div style={{ minWidth: 200, flex: '1 1 200px' }}>
+                    <label className="form-label mb-1" style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748B' }}>Safehouse</label>
+                    <SafehouseSearchCombobox
+                      value={f.safehouseId}
+                      onChange={(safehouseId) => setForms((p) => ({ ...p, [d.donationId]: { ...f, safehouseId } }))}
+                      disabled={f.submitting}
+                    />
                   </div>
                   <div>
                     <label className="form-label mb-1" style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748B' }}>Program area</label>
-                    <input type="text" className="form-control form-control-sm" style={{ width: 120 }} placeholder="e.g. Education"
-                      value={f.programArea} onChange={(e) => setForms((p) => ({ ...p, [d.donationId]: { ...f, programArea: e.target.value } }))} />
+                    <select
+                      className="form-select form-select-sm"
+                      style={{ width: 148 }}
+                      value={f.programArea}
+                      onChange={(e) => setForms((p) => ({ ...p, [d.donationId]: { ...f, programArea: e.target.value } }))}
+                    >
+                      <option value="">Select…</option>
+                      {ALLOCATION_PROGRAM_AREA_PRESETS.map((p) => (
+                        <option key={p} value={p}>{p}</option>
+                      ))}
+                    </select>
                   </div>
                   <div>
                     <label className="form-label mb-1" style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748B' }}>Amount</label>
@@ -817,7 +857,7 @@ export default function AdminHomePage() {
           </div>
           {/* OKR chip — stretches to full height of the header left block */}
           <Link
-            to="/admin/residents?caseStatus=Closed"
+            to="/admin/residents?reintegrationStatus=Completed"
             className="text-decoration-none flex-shrink-0"
             style={{ display: 'flex', alignSelf: 'stretch' }}
           >
@@ -863,7 +903,7 @@ export default function AdminHomePage() {
                     {residentCriticalCount > 0 && (
                       <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#dc2626', flexShrink: 0, boxShadow: '0 0 6px 2px #dc262688' }} />
                     )}
-                    <h3 className="h6 fw-semibold mb-0" style={{ color: 'var(--hw-navy)', flex: 1 }}>Residents needing attention</h3>
+                    <h3 className="h5 fw-bold mb-0" style={{ color: 'var(--hw-navy)', flex: 1 }}>Residents needing attention</h3>
                     {residentCriticalCount > 0 && (
                       <span className="badge rounded-pill" style={{ background: '#dc2626', color: 'white', fontSize: '0.62rem' }}>
                         {residentCriticalCount} Critical
@@ -896,7 +936,7 @@ export default function AdminHomePage() {
                     {unallocatedCount > 0 && (
                       <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#dc2626', flexShrink: 0, boxShadow: '0 0 6px 2px #dc262688' }} />
                     )}
-                    <h3 className="h6 fw-semibold mb-0" style={{ color: 'var(--hw-navy)', flex: 1 }}>Donations to allocate</h3>
+                    <h3 className="h5 fw-bold mb-0" style={{ color: 'var(--hw-navy)', flex: 1 }}>Donations to allocate</h3>
                     {unallocatedCount > 0 && (
                       <span className="badge rounded-pill" style={{ background: '#dc2626', color: 'white', fontSize: '0.62rem' }}>
                         {unallocatedCount} unallocated
@@ -926,7 +966,7 @@ export default function AdminHomePage() {
                     {donorCriticalCount > 0 && (
                       <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#dc2626', flexShrink: 0, boxShadow: '0 0 6px 2px #dc262688' }} />
                     )}
-                    <h3 className="h6 fw-semibold mb-0" style={{ color: 'var(--hw-navy)', flex: 1 }}>Donors needing outreach</h3>
+                    <h3 className="h5 fw-bold mb-0" style={{ color: 'var(--hw-navy)', flex: 1 }}>Donors needing outreach</h3>
                     {donorCriticalCount > 0 && (
                       <span className="badge rounded-pill" style={{ background: '#dc2626', color: 'white', fontSize: '0.62rem' }}>
                         {donorCriticalCount} Critical
@@ -1027,7 +1067,8 @@ export default function AdminHomePage() {
                         <th className="ps-4 small text-muted">Date</th>
                         <th className="small text-muted">Supporter</th>
                         <th className="small text-muted">Type</th>
-                        <th className="small text-muted">Amount</th>
+                        <th className="small text-muted">Cash</th>
+                        <th className="small text-muted">Quantity</th>
                         <th className="pe-4 small text-muted">Campaign</th>
                       </tr>
                     </thead>
@@ -1038,7 +1079,21 @@ export default function AdminHomePage() {
                           d.supporter?.organizationName?.trim() ||
                           '—';
                         return (
-                          <tr key={d.donationId}>
+                          <tr
+                            key={d.donationId}
+                            role="button"
+                            tabIndex={0}
+                            className="cursor-pointer"
+                            style={{ cursor: 'pointer' }}
+                            onClick={() => navigate(`/admin/donations/contributions?donationId=${d.donationId}`)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                navigate(`/admin/donations/contributions?donationId=${d.donationId}`);
+                              }
+                            }}
+                            title="Open in Contributions (filtered to this gift)"
+                          >
                             <td className="ps-4 text-muted small">
                               {d.donationDate
                                 ? new Date(d.donationDate).toLocaleDateString()
@@ -1048,9 +1103,8 @@ export default function AdminHomePage() {
                               {name}
                             </td>
                             <td className="small">{d.donationType ?? '—'}</td>
-                            <td className="small tabular-nums">
-                              {formatAmountMaybePhpAndUsd(d.amount != null ? Number(d.amount) : null, d.currencyCode ?? 'PHP')}
-                            </td>
+                            <td className="small tabular-nums text-muted">{formatDonationCashAmountCell(d)}</td>
+                            <td className="small tabular-nums text-muted">{formatDonationQuantityCell(d)}</td>
                             <td className="pe-4 small text-muted">{d.campaignName ?? '—'}</td>
                           </tr>
                         );

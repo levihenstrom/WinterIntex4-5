@@ -1,8 +1,22 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+} from 'recharts';
 import { fetchJson, fetchPaged, postJson, putJson, deleteJson } from '../../lib/apiClient';
 import { useAuth } from '../../context/AuthContext';
 import DeleteConfirmModal from '../../components/DeleteConfirmModal';
+import {
+  isOkrSuccessfulReintegration,
+  OKR_PROFILE_HEADER_BAND,
+  OKR_REINTEGRATION_CHIP,
+} from '../../lib/residentOutcome';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -224,12 +238,13 @@ function scoreBar(val: number | null | undefined, max = 10) {
   if (val == null) return null;
   const pct = Math.min(100, Math.round((Number(val) / max) * 100));
   const color = pct >= 70 ? '#059669' : pct >= 40 ? '#D97706' : '#DC2626';
+  const suffix = max === 100 ? '%' : '';
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
       <div style={{ flex: 1, background: '#F1F5F9', borderRadius: 4, height: 6 }}>
         <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: 4 }} />
       </div>
-      <span style={{ fontSize: 12, fontWeight: 700, color, minWidth: 28 }}>{Number(val).toFixed(1)}</span>
+      <span style={{ fontSize: 12, fontWeight: 700, color, minWidth: 28 }}>{Number(val).toFixed(1)}{suffix}</span>
     </div>
   );
 }
@@ -321,45 +336,102 @@ function StaticSectionHeader({ icon, title }: { icon: string; title: string }) {
   );
 }
 
-// ── SVG Charts ────────────────────────────────────────────────────────────────
+const HEALTH_TREND_TOOLTIP = {
+  contentStyle: {
+    background: '#fff',
+    border: '1px solid #e2e8f0',
+    borderRadius: 10,
+    fontSize: 12,
+    boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+  },
+  labelStyle: { color: '#1E3A5F', fontWeight: 700 },
+} as const;
 
-function HealthChart({ records }: { records: HealthRecord[] }) {
-  const sorted = [...records]
-    .filter(r => r.generalHealthScore != null && r.recordDate)
-    .sort((a, b) => (a.recordDate ?? '').localeCompare(b.recordDate ?? ''));
-  if (sorted.length < 2) return null;
+function shortAxisDate(iso: string | null | undefined): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
 
-  const W = 400; const H = 80; const PAD_X = 20; const PAD_Y = 12;
-  const plotW = W - PAD_X * 2;
-  const plotH = H - PAD_Y * 2;
-  const n = sorted.length;
+/** Compact Recharts line — same visual language as Impact / reports. */
+function HealthScoreTrendChart({ records }: { records: HealthRecord[] }) {
+  const { chartData, yDomain } = useMemo(() => {
+    const sorted = [...records]
+      .filter(r => r.generalHealthScore != null && r.recordDate)
+      .sort((a, b) => (a.recordDate ?? '').localeCompare(b.recordDate ?? ''));
+    if (sorted.length < 2) return { chartData: [] as { label: string; score: number; fullDate: string }[], yDomain: [0, 10] as [number, number] };
 
-  const pts = sorted.map((rec, i) => {
-    const x = PAD_X + (i / (n - 1)) * plotW;
-    const y = PAD_Y + (1 - Number(rec.generalHealthScore!) / 10) * plotH;
-    return { x, y, val: rec.generalHealthScore!, date: rec.recordDate };
-  });
+    const scores = sorted.map(r => Number(r.generalHealthScore!));
+    const dataMin = Math.min(...scores);
+    const dataMax = Math.max(...scores);
+    const rawSpan = dataMax - dataMin;
+    let yLow: number;
+    let yHigh: number;
+    if (rawSpan < 1e-6) {
+      yLow = Math.max(0, dataMin - 0.75);
+      yHigh = Math.min(10, dataMax + 0.75);
+    } else {
+      const pad = Math.max(0.35, rawSpan * 0.12);
+      yLow = Math.max(0, dataMin - pad);
+      yHigh = Math.min(10, dataMax + pad);
+    }
+    if (yHigh - yLow < 0.5) {
+      const mid = (dataMin + dataMax) / 2;
+      yLow = Math.max(0, mid - 0.5);
+      yHigh = Math.min(10, mid + 0.5);
+    }
+    if (yHigh <= yLow) {
+      yLow = 0;
+      yHigh = 10;
+    }
 
-  const polyline = pts.map(p => `${p.x},${p.y}`).join(' ');
+    const chartData = sorted.map(r => ({
+      label: shortAxisDate(r.recordDate),
+      score: Number(r.generalHealthScore!),
+      fullDate: fmtDate(r.recordDate),
+    }));
+    return { chartData, yDomain: [yLow, yHigh] as [number, number] };
+  }, [records]);
+
+  if (chartData.length < 2) return null;
 
   return (
-    <div style={{ marginBottom: 12 }}>
-      <div style={{ fontSize: 11, fontWeight: 700, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Health score over time</div>
-      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 72, display: 'block' }} preserveAspectRatio="none">
-        {/* grid lines */}
-        {[0, 5, 10].map(v => {
-          const y = PAD_Y + (1 - v / 10) * plotH;
-          return <line key={v} x1={PAD_X} y1={y} x2={W - PAD_X} y2={y} stroke="#E2E8F0" strokeWidth={1} />;
-        })}
-        <polyline points={polyline} fill="none" stroke="#059669" strokeWidth={2} strokeLinejoin="round" />
-        {pts.map((p, i) => (
-          <circle key={i} cx={p.x} cy={p.y} r={3} fill="#059669" />
-        ))}
-        {/* Latest value label */}
-        <text x={pts[n - 1].x + 4} y={pts[n - 1].y + 4} fontSize={10} fill="#059669" fontWeight="700">
-          {Number(pts[n - 1].val).toFixed(1)}
-        </text>
-      </svg>
+    <div style={{ width: '100%', height: 128 }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={chartData} margin={{ top: 4, right: 4, left: 0, bottom: 2 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+          <XAxis
+            dataKey="label"
+            tick={{ fill: '#94a3b8', fontSize: 10 }}
+            axisLine={false}
+            tickLine={false}
+            interval="preserveStartEnd"
+          />
+          <YAxis
+            domain={yDomain}
+            tick={{ fill: '#94a3b8', fontSize: 10 }}
+            axisLine={false}
+            tickLine={false}
+            width={34}
+            tickFormatter={(v) => Number(v).toFixed(1)}
+          />
+          <Tooltip
+            {...HEALTH_TREND_TOOLTIP}
+            labelFormatter={(_, payload) => String((payload?.[0]?.payload as { fullDate?: string })?.fullDate ?? '')}
+            formatter={(v) => [`${Number(v ?? 0).toFixed(1)} / 10`, 'General health']}
+            itemStyle={{ color: '#0D9488' }}
+          />
+          <Line
+            type="monotone"
+            dataKey="score"
+            stroke="#0D9488"
+            strokeWidth={2}
+            dot={{ r: 3, fill: '#0D9488', strokeWidth: 2, stroke: '#fff' }}
+            activeDot={{ r: 5 }}
+          />
+        </LineChart>
+      </ResponsiveContainer>
     </div>
   );
 }
@@ -370,7 +442,7 @@ function EduChart({ records }: { records: EducationRecord[] }) {
     .sort((a, b) => (a.recordDate ?? '').localeCompare(b.recordDate ?? ''));
   if (sorted.length < 2) return null;
 
-  const W = 400; const H = 72; const PAD_X = 10; const PAD_Y = 8;
+  const W = 400; const H = 100; const PAD_X = 10; const PAD_Y = 10;
   const plotW = W - PAD_X * 2;
   const plotH = H - PAD_Y * 2;
   const n = sorted.length;
@@ -386,11 +458,12 @@ function EduChart({ records }: { records: EducationRecord[] }) {
           <span style={{ display: 'inline-block', width: 10, height: 10, background: '#0D9488', borderRadius: 2, marginLeft: 8, marginRight: 4 }} />Progress
         </span>
       </div>
-      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 64, display: 'block' }} preserveAspectRatio="none">
+      <div style={{ width: '100%', aspectRatio: `${W} / ${H}`, minHeight: 80 }}>
+        <svg viewBox={`0 0 ${W} ${H}`} width="100%" height="100%" style={{ display: 'block' }} preserveAspectRatio="xMidYMid meet">
         {sorted.map((rec, i) => {
           const cx = PAD_X + (i + 0.5) * barGroupW;
           const att = rec.attendanceRate != null ? Math.min(1, Number(rec.attendanceRate)) : 0;
-          const prg = rec.progressPercent != null ? Math.min(1, Number(rec.progressPercent)) : 0;
+          const prg = rec.progressPercent != null ? Math.min(1, Number(rec.progressPercent) / 100) : 0;
           const attH = att * plotH;
           const prgH = prg * plotH;
           return (
@@ -402,6 +475,7 @@ function EduChart({ records }: { records: EducationRecord[] }) {
         })}
         <line x1={PAD_X} y1={PAD_Y + plotH} x2={W - PAD_X} y2={PAD_Y + plotH} stroke="#E2E8F0" strokeWidth={1} />
       </svg>
+      </div>
     </div>
   );
 }
@@ -411,14 +485,8 @@ function EduChart({ records }: { records: EducationRecord[] }) {
 function RowActions({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) {
   return (
     <td style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>
-      <button
-        onClick={onEdit}
-        style={{ fontSize: 11, color: '#0369A1', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px', borderRadius: 4, fontWeight: 600 }}
-      >Edit</button>
-      <button
-        onClick={onDelete}
-        style={{ fontSize: 11, color: '#DC2626', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px', borderRadius: 4, fontWeight: 600 }}
-      >Delete</button>
+      <button type="button" className="hw-row-action hw-row-action--edit" onClick={onEdit}>Edit</button>
+      <button type="button" className="hw-row-action hw-row-action--delete ms-1" onClick={onDelete}>Delete</button>
     </td>
   );
 }
@@ -709,6 +777,7 @@ export default function ResidentProfilePage() {
   }
 
   const r = detail.resident;
+  const okrReintegrated = isOkrSuccessfulReintegration(r.reintegrationStatus);
   const site = r.safehouse?.name?.trim() || r.safehouse?.safehouseCode?.trim() || `Safehouse #${r.safehouseId}`;
   const statusCfg = STATUS_COLORS[r.caseStatus ?? ''] ?? { bg: '#F1F5F9', text: '#475569' };
   const riskCfg = r.currentRiskLevel ? (RISK_COLORS[r.currentRiskLevel] ?? { bg: '#F1F5F9', text: '#475569' }) : null;
@@ -725,6 +794,9 @@ export default function ResidentProfilePage() {
   const readinessPct = ml?.readinessPercentileAmongCurrentResidents != null
     ? Math.round(Number(ml.readinessPercentileAmongCurrentResidents))
     : null;
+
+  const healthTrendEligible =
+    detail.healthRecords.filter(h => h.generalHealthScore != null && h.recordDate).length >= 2;
 
   const scrollTo = (sectionId: string) => () => {
     document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -748,7 +820,17 @@ export default function ResidentProfilePage() {
         </div>
 
         {/* Page header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16, marginBottom: 28 }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            flexWrap: 'wrap',
+            gap: 16,
+            marginBottom: 28,
+            ...(okrReintegrated ? OKR_PROFILE_HEADER_BAND : {}),
+          }}
+        >
           <div>
             <span style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#0D9488', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6 }}>Resident profile</span>
             <h1 style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: 26, color: '#1E3A5F', margin: 0, lineHeight: 1.2 }}>
@@ -758,6 +840,15 @@ export default function ResidentProfilePage() {
               <span style={{ background: statusCfg.bg, color: statusCfg.text, borderRadius: 20, padding: '3px 12px', fontSize: 12, fontWeight: 700 }}>
                 {r.caseStatus || 'Unknown status'}
               </span>
+              {okrReintegrated && (
+                <span
+                  style={OKR_REINTEGRATION_CHIP}
+                  title="Reintegration status is Completed — counted in public impact successful reintegrations (OKR)."
+                >
+                  <i className="bi bi-award me-1" aria-hidden />
+                  Successful reintegration
+                </span>
+              )}
               {riskCfg && (
                 <span style={{ background: riskCfg.bg, color: riskCfg.text, borderRadius: 20, padding: '3px 12px', fontSize: 12, fontWeight: 700 }}>
                   {r.currentRiskLevel} risk
@@ -797,6 +888,7 @@ export default function ResidentProfilePage() {
             { icon: 'exclamation-triangle', label: 'Incident reports', value: String(incidentCount), accent: incidentCount > 0 ? '#991B1B' : '#64748B', sectionId: 'section-incidents' },
             { icon: 'graph-up-arrow', label: 'Reintegration readiness', value: readinessPct != null ? `${readinessPct}th %ile` : 'No ML data', accent: '#6B21A8', sectionId: 'section-ml' },
             { icon: 'calendar3', label: 'Length of stay', value: r.lengthOfStay || '—', accent: '#0D9488', sectionId: null },
+            { icon: 'diagram-3', label: 'Intervention plans', value: String(detail.interventionPlans.length), accent: '#6B21A8', sectionId: 'section-plans' },
             { icon: 'mortarboard', label: 'Education records', value: String(detail.educationRecords.length), accent: '#2563EB', sectionId: 'section-education' },
           ].map(k => (
             <div
@@ -841,8 +933,9 @@ export default function ResidentProfilePage() {
           </div>
         )}
 
-        {/* Main grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
+        {/* Main grid — stacks on small screens */}
+        <div className="row g-3 mb-4">
+          <div className="col-12 col-lg-6">
           <Card>
             <StaticSectionHeader icon="person-badge" title="Identification & placement" />
             <Field label="Database ID" value={String(r.residentId)} />
@@ -851,7 +944,9 @@ export default function ResidentProfilePage() {
             <Field label="Safehouse" value={site} />
             <Field label="Assigned social worker" value={r.assignedSocialWorker} />
           </Card>
+          </div>
 
+          <div className="col-12 col-lg-6">
           <Card>
             <StaticSectionHeader icon="folder2-open" title="Case classification" />
             <Field label="Case status" value={r.caseStatus} />
@@ -860,10 +955,12 @@ export default function ResidentProfilePage() {
             <Field label="Current risk level" value={r.currentRiskLevel} />
             <Field label="Sub-categories" value={subCatLabels.join(', ') || '—'} />
           </Card>
+          </div>
 
+          <div className="col-12 col-lg-6">
           <Card>
             <StaticSectionHeader icon="people" title="Demographics" />
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 148px), 1fr))', gap: 0 }}>
               <Field label="Sex" value={r.sex} />
               <Field label="Date of birth" value={fmtDate(r.dateOfBirth)} />
               <Field label="Birth status" value={r.birthStatus} />
@@ -875,7 +972,9 @@ export default function ResidentProfilePage() {
             </div>
             {r.specialNeedsDiagnosis && <Field label="Special needs diagnosis" value={r.specialNeedsDiagnosis} />}
           </Card>
+          </div>
 
+          <div className="col-12 col-lg-6">
           <Card>
             <StaticSectionHeader icon="house-heart" title="Family profile" />
             <Field label="4Ps beneficiary" value={yn(r.familyIs4ps)} />
@@ -884,6 +983,7 @@ export default function ResidentProfilePage() {
             <Field label="Parent with disability" value={yn(r.familyParentPwd)} />
             <Field label="Informal settler" value={yn(r.familyInformalSettler)} />
           </Card>
+          </div>
         </div>
 
         {/* Admission & Referral */}
@@ -908,17 +1008,62 @@ export default function ResidentProfilePage() {
         </Card>
 
         {/* Reintegration + Restricted notes */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
+        <div className="row g-3 mb-4">
+          <div className="col-12 col-md-6">
           <Card>
             <StaticSectionHeader icon="arrow-up-right-circle" title="Reintegration" />
             <Field label="Reintegration type" value={r.reintegrationType} />
             <Field label="Reintegration status" value={r.reintegrationStatus} />
           </Card>
+          </div>
+          <div className="col-12 col-md-6">
           <Card>
             <StaticSectionHeader icon="lock" title="Restricted notes" />
             <p style={{ fontSize: 13, color: '#1E3A5F', whiteSpace: 'pre-wrap', margin: 0 }}>{r.notesRestricted?.trim() || '—'}</p>
           </Card>
+          </div>
         </div>
+
+        {/* ── Intervention Plans ────────────────────────────────────────────────── */}
+        <Card id="section-plans" style={{ marginBottom: 20 }}>
+          <SectionCrudHeader
+            icon="diagram-3" title="Intervention plans" count={detail.interventionPlans.length}
+            accentBg="#F5F3FF" accentText="#6B21A8"
+            canWrite={canWrite} onAdd={openPlanCreate}
+          />
+          {detail.interventionPlans.length === 0 ? (
+            <p style={{ fontSize: 13, color: '#94A3B8', margin: 0 }}>No intervention plans on file.</p>
+          ) : (
+            <div className="table-responsive rounded" style={TABLE_SCROLL}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                <thead style={{ position: 'sticky', top: 0, zIndex: 1 }}>
+                  <tr style={{ background: '#F8FAFC', borderBottom: '2px solid #E2E8F0' }}>
+                    {['Category', 'Status', 'Target date', 'Conference date', 'Services provided', 'Description', ''].map(h => (
+                      <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 700, color: '#475569', whiteSpace: 'nowrap' }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {detail.interventionPlans.map((p, i) => (
+                    <tr key={p.planId} style={{ background: i % 2 === 0 ? '#fff' : '#FAFAFA', borderBottom: '1px solid #F1F5F9' }}>
+                      <td style={{ padding: '8px 12px', fontWeight: 600 }}>{p.planCategory || '—'}</td>
+                      <td style={{ padding: '8px 12px' }}>
+                        <span style={{ background: p.status === 'Completed' ? '#DCFCE7' : p.status === 'Active' ? '#DBEAFE' : '#F1F5F9', color: p.status === 'Completed' ? '#166534' : p.status === 'Active' ? '#1E40AF' : '#475569', borderRadius: 12, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>
+                          {p.status || '—'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '8px 12px', whiteSpace: 'nowrap' }}>{fmtDate(p.targetDate)}</td>
+                      <td style={{ padding: '8px 12px', whiteSpace: 'nowrap' }}>{fmtDate(p.caseConferenceDate)}</td>
+                      <td style={{ padding: '8px 12px', maxWidth: 180, color: '#64748B' }}>{p.servicesProvided?.trim() || '—'}</td>
+                      <td style={{ padding: '8px 12px', maxWidth: 220, color: '#64748B' }}>{p.planDescription?.trim().slice(0, 100) || '—'}{(p.planDescription?.length ?? 0) > 100 ? '…' : ''}</td>
+                      {canWrite && <RowActions onEdit={() => openPlanEdit(p)} onDelete={() => setPlanDeleteTarget(p)} />}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
 
         {/* ── Education Records ─────────────────────────────────────────────────── */}
         <Card id="section-education" style={{ marginBottom: 20 }}>
@@ -945,12 +1090,12 @@ export default function ResidentProfilePage() {
                   </div>
                   <div style={{ minWidth: 140 }}>
                     <div style={{ fontSize: 10, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: 4 }}>Progress</div>
-                    {scoreBar(latestEdu.progressPercent != null ? latestEdu.progressPercent * 10 : null)}
+                    {scoreBar(latestEdu.progressPercent != null ? latestEdu.progressPercent : null, 100)}
                   </div>
                 </div>
               )}
               <EduChart records={detail.educationRecords} />
-              <div style={TABLE_SCROLL}>
+              <div className="table-responsive rounded" style={TABLE_SCROLL}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
                   <thead style={{ position: 'sticky', top: 0, zIndex: 1 }}>
                     <tr style={{ background: '#F8FAFC', borderBottom: '2px solid #E2E8F0' }}>
@@ -967,7 +1112,7 @@ export default function ResidentProfilePage() {
                         <td style={{ padding: '8px 12px' }}>{e.schoolName || '—'}</td>
                         <td style={{ padding: '8px 12px' }}>{e.enrollmentStatus || '—'}</td>
                         <td style={{ padding: '8px 12px' }}>{e.attendanceRate != null ? `${(Number(e.attendanceRate) * 100).toFixed(0)}%` : '—'}</td>
-                        <td style={{ padding: '8px 12px' }}>{e.progressPercent != null ? `${(Number(e.progressPercent) * 100).toFixed(0)}%` : '—'}</td>
+                        <td style={{ padding: '8px 12px' }}>{e.progressPercent != null ? `${Number(e.progressPercent).toFixed(1)}%` : '—'}</td>
                         <td style={{ padding: '8px 12px' }}>{e.completionStatus || '—'}</td>
                         <td style={{ padding: '8px 12px', maxWidth: 180, color: '#64748B' }}>{e.notes?.trim() || '—'}</td>
                         {canWrite && <RowActions onEdit={() => openEduEdit(e)} onDelete={() => setEduDeleteTarget(e)} />}
@@ -992,35 +1137,67 @@ export default function ResidentProfilePage() {
           ) : (
             <>
               {latestHealth && (
-                <div style={{ background: '#F0FDF4', borderRadius: 8, padding: '16px 20px', marginBottom: 12 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
-                    Latest record — {fmtDate(latestHealth.recordDate)}
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 16 }}>
-                    {[
-                      { label: 'General health', val: latestHealth.generalHealthScore },
-                      { label: 'Nutrition', val: latestHealth.nutritionScore },
-                      { label: 'Sleep quality', val: latestHealth.sleepQualityScore },
-                      { label: 'Energy level', val: latestHealth.energyLevelScore },
-                    ].map(({ label, val }) => (
-                      <div key={label}>
-                        <div style={{ fontSize: 11, fontWeight: 600, color: '#475569', marginBottom: 6 }}>{label}</div>
-                        {val != null ? scoreBar(val) : <span style={{ fontSize: 12, color: '#94A3B8' }}>—</span>}
+                <div className="row g-3 mb-3 align-items-stretch">
+                  <div className={healthTrendEligible ? 'col-12 col-lg-7' : 'col-12'}>
+                    <div
+                      style={{
+                        background: '#F0FDF4',
+                        borderRadius: 8,
+                        padding: 'clamp(12px, 2.5vw, 20px)',
+                        minHeight: '100%',
+                      }}
+                    >
+                      <div style={{ fontSize: 11, fontWeight: 700, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
+                        Latest record — {fmtDate(latestHealth.recordDate)}
                       </div>
-                    ))}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 160px), 1fr))', gap: 16 }}>
+                        {[
+                          { label: 'General health', val: latestHealth.generalHealthScore },
+                          { label: 'Nutrition', val: latestHealth.nutritionScore },
+                          { label: 'Sleep quality', val: latestHealth.sleepQualityScore },
+                          { label: 'Energy level', val: latestHealth.energyLevelScore },
+                        ].map(({ label, val }) => (
+                          <div key={label}>
+                            <div style={{ fontSize: 11, fontWeight: 600, color: '#475569', marginBottom: 6 }}>{label}</div>
+                            {val != null ? scoreBar(val) : <span style={{ fontSize: 12, color: '#94A3B8' }}>—</span>}
+                          </div>
+                        ))}
+                      </div>
+                      <div style={{ display: 'flex', gap: 'clamp(12px, 3vw, 24px)', marginTop: 12, flexWrap: 'wrap' }}>
+                        {latestHealth.heightCm && <div style={{ fontSize: 12, color: '#475569' }}>Height: <strong>{Number(latestHealth.heightCm).toFixed(1)} cm</strong></div>}
+                        {latestHealth.weightKg && <div style={{ fontSize: 12, color: '#475569' }}>Weight: <strong>{Number(latestHealth.weightKg).toFixed(1)} kg</strong></div>}
+                        {latestHealth.bmi && <div style={{ fontSize: 12, color: '#475569' }}>BMI: <strong>{Number(latestHealth.bmi).toFixed(1)}</strong></div>}
+                        <div style={{ fontSize: 12, color: '#475569' }}>Medical: <strong>{yn(latestHealth.medicalCheckupDone)}</strong></div>
+                        <div style={{ fontSize: 12, color: '#475569' }}>Dental: <strong>{yn(latestHealth.dentalCheckupDone)}</strong></div>
+                        <div style={{ fontSize: 12, color: '#475569' }}>Psychological: <strong>{yn(latestHealth.psychologicalCheckupDone)}</strong></div>
+                      </div>
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', gap: 24, marginTop: 12, flexWrap: 'wrap' }}>
-                    {latestHealth.heightCm && <div style={{ fontSize: 12, color: '#475569' }}>Height: <strong>{Number(latestHealth.heightCm).toFixed(1)} cm</strong></div>}
-                    {latestHealth.weightKg && <div style={{ fontSize: 12, color: '#475569' }}>Weight: <strong>{Number(latestHealth.weightKg).toFixed(1)} kg</strong></div>}
-                    {latestHealth.bmi && <div style={{ fontSize: 12, color: '#475569' }}>BMI: <strong>{Number(latestHealth.bmi).toFixed(1)}</strong></div>}
-                    <div style={{ fontSize: 12, color: '#475569' }}>Medical: <strong>{yn(latestHealth.medicalCheckupDone)}</strong></div>
-                    <div style={{ fontSize: 12, color: '#475569' }}>Dental: <strong>{yn(latestHealth.dentalCheckupDone)}</strong></div>
-                    <div style={{ fontSize: 12, color: '#475569' }}>Psychological: <strong>{yn(latestHealth.psychologicalCheckupDone)}</strong></div>
-                  </div>
+                  {healthTrendEligible && (
+                    <div className="col-12 col-lg-5 d-flex">
+                      <div
+                        className="flex-grow-1 w-100"
+                        style={{
+                          background: '#fff',
+                          border: '1px solid #D1FAE5',
+                          borderRadius: 8,
+                          padding: '12px 14px',
+                          boxShadow: '0 1px 4px rgba(30,58,95,0.04)',
+                        }}
+                      >
+                        <div style={{ fontSize: 11, fontWeight: 700, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
+                          General health trend
+                        </div>
+                        <HealthScoreTrendChart records={detail.healthRecords} />
+                        <p className="mb-0 text-muted" style={{ fontSize: 10, marginTop: 6, lineHeight: 1.35 }}>
+                          0–10 scale. Vertical axis fits this resident&apos;s scores so changes are easy to see.
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
-              <HealthChart records={detail.healthRecords} />
-              <div style={TABLE_SCROLL}>
+              <div className="table-responsive rounded" style={TABLE_SCROLL}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
                   <thead style={{ position: 'sticky', top: 0, zIndex: 1 }}>
                     <tr style={{ background: '#F8FAFC', borderBottom: '2px solid #E2E8F0' }}>
@@ -1073,7 +1250,7 @@ export default function ResidentProfilePage() {
           {recordings.length === 0 ? (
             <p style={{ fontSize: 13, color: '#94A3B8', margin: 0 }}>No session recordings on file.</p>
           ) : (
-            <div style={TABLE_SCROLL}>
+            <div className="table-responsive rounded" style={TABLE_SCROLL}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
                 <thead style={{ position: 'sticky', top: 0, zIndex: 1 }}>
                   <tr style={{ background: '#F8FAFC', borderBottom: '2px solid #E2E8F0' }}>
@@ -1103,54 +1280,13 @@ export default function ResidentProfilePage() {
           )}
         </Card>
 
-        {/* ── Intervention Plans ────────────────────────────────────────────────── */}
-        <Card id="section-plans" style={{ marginBottom: 20 }}>
-          <SectionCrudHeader
-            icon="diagram-3" title="Intervention plans" count={detail.interventionPlans.length}
-            accentBg="#F5F3FF" accentText="#6B21A8"
-            canWrite={canWrite} onAdd={openPlanCreate}
-          />
-          {detail.interventionPlans.length === 0 ? (
-            <p style={{ fontSize: 13, color: '#94A3B8', margin: 0 }}>No intervention plans on file.</p>
-          ) : (
-            <div style={TABLE_SCROLL}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
-                <thead style={{ position: 'sticky', top: 0, zIndex: 1 }}>
-                  <tr style={{ background: '#F8FAFC', borderBottom: '2px solid #E2E8F0' }}>
-                    {['Category', 'Status', 'Target date', 'Conference date', 'Services provided', 'Description', ''].map(h => (
-                      <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 700, color: '#475569', whiteSpace: 'nowrap' }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {detail.interventionPlans.map((p, i) => (
-                    <tr key={p.planId} style={{ background: i % 2 === 0 ? '#fff' : '#FAFAFA', borderBottom: '1px solid #F1F5F9' }}>
-                      <td style={{ padding: '8px 12px', fontWeight: 600 }}>{p.planCategory || '—'}</td>
-                      <td style={{ padding: '8px 12px' }}>
-                        <span style={{ background: p.status === 'Completed' ? '#DCFCE7' : p.status === 'Active' ? '#DBEAFE' : '#F1F5F9', color: p.status === 'Completed' ? '#166534' : p.status === 'Active' ? '#1E40AF' : '#475569', borderRadius: 12, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>
-                          {p.status || '—'}
-                        </span>
-                      </td>
-                      <td style={{ padding: '8px 12px', whiteSpace: 'nowrap' }}>{fmtDate(p.targetDate)}</td>
-                      <td style={{ padding: '8px 12px', whiteSpace: 'nowrap' }}>{fmtDate(p.caseConferenceDate)}</td>
-                      <td style={{ padding: '8px 12px', maxWidth: 180, color: '#64748B' }}>{p.servicesProvided?.trim() || '—'}</td>
-                      <td style={{ padding: '8px 12px', maxWidth: 220, color: '#64748B' }}>{p.planDescription?.trim().slice(0, 100) || '—'}{(p.planDescription?.length ?? 0) > 100 ? '…' : ''}</td>
-                      {canWrite && <RowActions onEdit={() => openPlanEdit(p)} onDelete={() => setPlanDeleteTarget(p)} />}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </Card>
-
         {/* ── Incident Reports ──────────────────────────────────────────────────── */}
         <Card id="section-incidents" style={{ marginBottom: 20 }}>
           <StaticSectionHeader icon="shield-exclamation" title="Incident reports" />
           {detail.incidents.length === 0 ? (
             <p style={{ fontSize: 13, color: '#94A3B8', margin: 0 }}>No incident reports on file.</p>
           ) : (
-            <div style={TABLE_SCROLL}>
+            <div className="table-responsive rounded" style={TABLE_SCROLL}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
                 <thead style={{ position: 'sticky', top: 0, zIndex: 1 }}>
                   <tr style={{ background: '#F8FAFC', borderBottom: '2px solid #E2E8F0' }}>
@@ -1193,7 +1329,7 @@ export default function ResidentProfilePage() {
           {visits.length === 0 ? (
             <p style={{ fontSize: 13, color: '#94A3B8', margin: 0 }}>No home visitations on file.</p>
           ) : (
-            <div style={TABLE_SCROLL}>
+            <div className="table-responsive rounded" style={TABLE_SCROLL}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
                 <thead style={{ position: 'sticky', top: 0, zIndex: 1 }}>
                   <tr style={{ background: '#F8FAFC', borderBottom: '2px solid #E2E8F0' }}>
@@ -1229,7 +1365,7 @@ export default function ResidentProfilePage() {
           onClose={() => setEduEdit(null)} onSave={handleEduSave}
           saving={eduSaving} error={eduError}
         >
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: '0 16px' }}>
             <MF label="Record date"><input type="date" style={inputStyle} value={eduForm.recordDate} onChange={e => setEduForm(f => ({ ...f, recordDate: e.target.value }))} /></MF>
             <MF label="Education level"><input type="text" style={inputStyle} value={eduForm.educationLevel} onChange={e => setEduForm(f => ({ ...f, educationLevel: e.target.value }))} placeholder="e.g. Elementary, High School" /></MF>
             <MF label="School name"><input type="text" style={inputStyle} value={eduForm.schoolName} onChange={e => setEduForm(f => ({ ...f, schoolName: e.target.value }))} /></MF>
@@ -1239,7 +1375,7 @@ export default function ResidentProfilePage() {
               </select>
             </MF>
             <MF label="Attendance rate (0–1)"><input type="number" style={inputStyle} value={eduForm.attendanceRate} min={0} max={1} step={0.01} onChange={e => setEduForm(f => ({ ...f, attendanceRate: e.target.value }))} placeholder="e.g. 0.85" /></MF>
-            <MF label="Progress % (0–1)"><input type="number" style={inputStyle} value={eduForm.progressPercent} min={0} max={1} step={0.01} onChange={e => setEduForm(f => ({ ...f, progressPercent: e.target.value }))} placeholder="e.g. 0.70" /></MF>
+            <MF label="Progress % (0–100)"><input type="number" style={inputStyle} value={eduForm.progressPercent} min={0} max={100} step={0.1} onChange={e => setEduForm(f => ({ ...f, progressPercent: e.target.value }))} placeholder="e.g. 72.5" /></MF>
             <MF label="Completion status"><input type="text" style={inputStyle} value={eduForm.completionStatus} onChange={e => setEduForm(f => ({ ...f, completionStatus: e.target.value }))} /></MF>
           </div>
           <MF label="Notes"><textarea style={textareaStyle} value={eduForm.notes} onChange={e => setEduForm(f => ({ ...f, notes: e.target.value }))} /></MF>
@@ -1253,7 +1389,7 @@ export default function ResidentProfilePage() {
           onClose={() => setHealthEdit(null)} onSave={handleHealthSave}
           saving={healthSaving} error={healthError}
         >
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: '0 16px' }}>
             <MF label="Record date"><input type="date" style={inputStyle} value={healthForm.recordDate} onChange={e => setHealthForm(f => ({ ...f, recordDate: e.target.value }))} /></MF>
             <div />
             <MF label="General health (0–10)"><input type="number" style={inputStyle} value={healthForm.generalHealthScore} min={0} max={10} step={0.1} onChange={e => setHealthForm(f => ({ ...f, generalHealthScore: e.target.value }))} /></MF>
@@ -1287,7 +1423,7 @@ export default function ResidentProfilePage() {
           onClose={() => setPlanEdit(null)} onSave={handlePlanSave}
           saving={planSaving} error={planError}
         >
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: '0 16px' }}>
             <MF label="Plan category *"><input type="text" style={inputStyle} value={planForm.planCategory} onChange={e => setPlanForm(f => ({ ...f, planCategory: e.target.value }))} placeholder="e.g. Education, Health" /></MF>
             <MF label="Status *">
               <select style={selectStyle} value={planForm.status} onChange={e => setPlanForm(f => ({ ...f, status: e.target.value }))}>
@@ -1310,7 +1446,7 @@ export default function ResidentProfilePage() {
           onClose={() => setVisitEdit(null)} onSave={handleVisitSave}
           saving={visitSaving} error={visitError}
         >
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: '0 16px' }}>
             <MF label="Visit date"><input type="date" style={inputStyle} value={visitForm.visitDate} onChange={e => setVisitForm(f => ({ ...f, visitDate: e.target.value }))} /></MF>
             <MF label="Conducted by"><input type="text" style={inputStyle} value={visitForm.conductedBy} onChange={e => setVisitForm(f => ({ ...f, conductedBy: e.target.value }))} /></MF>
             <MF label="Purpose"><input type="text" style={inputStyle} value={visitForm.purpose} onChange={e => setVisitForm(f => ({ ...f, purpose: e.target.value }))} /></MF>

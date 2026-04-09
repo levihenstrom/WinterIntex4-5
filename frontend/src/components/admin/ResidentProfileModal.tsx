@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchJson, fetchPaged } from '../../lib/apiClient';
+import { isOkrSuccessfulReintegration } from '../../lib/residentOutcome';
 import { useAuth } from '../../context/AuthContext';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -205,6 +206,22 @@ export function ResidentProfileModal({ residentId, onClose, onEditResident }: Re
                 `Safehouse #${r.safehouseId}`;
               return (
                 <>
+                  {isOkrSuccessfulReintegration(r.reintegrationStatus) && (
+                    <div
+                      className="mb-3 py-2 px-3 small rounded-2"
+                      style={{
+                        background: 'rgba(255, 251, 235, 0.95)',
+                        border: '1px solid rgba(245, 158, 11, 0.35)',
+                        color: '#92400e',
+                      }}
+                      role="status"
+                    >
+                      <i className="bi bi-award me-2" aria-hidden />
+                      <strong>Successful reintegration</strong>
+                      {' '}
+                      — this resident counts toward the impact OKR (reintegration status: Completed). Case remains in the database for reporting and history.
+                    </div>
+                  )}
                   <h6 className="text-uppercase small fw-bold text-secondary mb-3">Identification &amp; placement</h6>
                   <div className="row mb-4">
                     {pairs('Resident ID (database)', String(r.residentId))}

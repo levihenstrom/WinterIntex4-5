@@ -9,6 +9,7 @@ import {
 } from '../../lib/apiClient';
 import { useAuth } from '../../context/AuthContext';
 import DeleteConfirmModal from '../../components/DeleteConfirmModal';
+import { ResidentSearchCombobox, SocialWorkerCombobox } from '../../components/admin/lookupCombos';
 import AdminKpiStrip from '../../components/admin/AdminKpiStrip';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
@@ -170,10 +171,6 @@ const thStyle: React.CSSProperties = {
   fontSize: 12, whiteSpace: 'nowrap', cursor: 'pointer', userSelect: 'none',
 };
 const tdStyle: React.CSSProperties = { padding: '12px 16px', fontSize: 13 };
-const actionBtn = (color: string, border: string): React.CSSProperties => ({
-  background: 'none', border: `1px solid ${border}`, borderRadius: 6,
-  color, fontSize: 11, fontWeight: 600, padding: '3px 10px', cursor: 'pointer', whiteSpace: 'nowrap',
-});
 const navBtn = (disabled: boolean): React.CSSProperties => ({
   background: disabled ? '#F1F5F9' : '#fff',
   border: '1px solid #CBD5E1', borderRadius: 8, padding: '6px 16px',
@@ -271,8 +268,12 @@ export default function ProcessRecordingPage() {
   }
 
   async function handleSave() {
-    setSaving(true);
     setFormError(null);
+    if (editTarget === 'new' && !residentId && (!form.residentId || form.residentId < 1)) {
+      setFormError('Select a resident.');
+      return;
+    }
+    setSaving(true);
     try {
       const payload = {
         ...form,
@@ -506,8 +507,12 @@ export default function ProcessRecordingPage() {
                           </td>
                           <td style={tdStyle}>
                             <div style={{ display: 'flex', gap: 4 }}>
-                              {canWrite && <button type="button" style={actionBtn('#1E40AF', '#93C5FD')} onClick={() => openEdit(r)}>Edit</button>}
-                              {canWrite && <button type="button" style={actionBtn('#DC2626', '#FCA5A5')} onClick={() => setDeleteTarget(r)}>Delete</button>}
+                              {canWrite && (
+                                <button type="button" className="hw-row-action hw-row-action--edit" onClick={() => openEdit(r)}>Edit</button>
+                              )}
+                              {canWrite && (
+                                <button type="button" className="hw-row-action hw-row-action--delete" onClick={() => setDeleteTarget(r)}>Delete</button>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -560,8 +565,12 @@ export default function ProcessRecordingPage() {
                 <div className="row g-3">
                   {!residentId && (
                     <div className="col-md-4">
-                      <label className="hw-label">Resident ID <span className="text-danger">*</span></label>
-                      <input type="number" min="1" className="hw-input" value={form.residentId || ''} onChange={(e) => setField('residentId', Number(e.target.value))} />
+                      <label className="hw-label">Resident <span className="text-danger">*</span></label>
+                      <ResidentSearchCombobox
+                        value={form.residentId}
+                        onChange={(id) => setField('residentId', id)}
+                        disabled={!canWrite}
+                      />
                     </div>
                   )}
                   <div className="col-md-4">
@@ -570,7 +579,11 @@ export default function ProcessRecordingPage() {
                   </div>
                   <div className="col-md-4">
                     <label className="hw-label">Social Worker <span className="text-danger">*</span></label>
-                    <input className="hw-input" value={form.socialWorker ?? ''} onChange={(e) => setField('socialWorker', e.target.value)} />
+                    <SocialWorkerCombobox
+                      value={form.socialWorker ?? ''}
+                      onChange={(v) => setField('socialWorker', v)}
+                      disabled={!canWrite}
+                    />
                   </div>
                   <div className="col-md-4">
                     <label className="hw-label">Session Type <span className="text-danger">*</span></label>

@@ -18,8 +18,10 @@ import {
   RESIDENT_RELATIVE_READINESS_HEADER,
   RESIDENT_RELATIVE_READINESS_TITLE,
 } from '../../lib/mlDisplayHelpers';
+import { isOkrSuccessfulReintegration, residentCaseloadRowStyle } from '../../lib/residentOutcome';
 import { useAuth } from '../../context/AuthContext';
 import DeleteConfirmModal from '../../components/DeleteConfirmModal';
+import { SafehouseSearchCombobox, SocialWorkerCombobox } from '../../components/admin/lookupCombos';
 import AdminKpiStrip from '../../components/admin/AdminKpiStrip';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
@@ -186,7 +188,7 @@ type FormData = Omit<Resident, 'residentId'>;
 
 function emptyForm(): FormData {
   return {
-    caseControlNo: '', internalCode: '', safehouseId: 1,
+    caseControlNo: '', internalCode: '', safehouseId: 0,
     caseStatus: 'Active', sex: '', dateOfBirth: '',
     birthStatus: '', placeOfBirth: '', religion: '',
     caseCategory: '',
@@ -283,7 +285,8 @@ export default function ResidentsListPage() {
   const { authSession } = useAuth();
   const canWrite = authSession.roles.includes('Admin') || authSession.roles.includes('Staff');
 
-  // URL-driven initial state — supports ?caseStatus=Active (and search)
+  // URL-driven initial state — supports /admin/residents/:id and ?caseStatus=Active
+  useParams<{ id?: string }>();
   const [searchParams] = useSearchParams();
 
   const [search, setSearch] = useState(() => searchParams.get('search') ?? '');
@@ -291,6 +294,8 @@ export default function ResidentsListPage() {
   const [categoryFilter, setCategoryFilter] = useState('');
   const [appliedSearch, setAppliedSearch] = useState(() => searchParams.get('search') ?? '');
   const [appliedStatus, setAppliedStatus] = useState(() => searchParams.get('caseStatus') ?? '');
+  const [reintegrationFilter, setReintegrationFilter] = useState(() => searchParams.get('reintegrationStatus') ?? '');
+  const [appliedReintegration, setAppliedReintegration] = useState(() => searchParams.get('reintegrationStatus') ?? '');
   const [appliedCategory, setAppliedCategory] = useState('');
 
   const [page, setPage] = useState(1);
@@ -333,6 +338,7 @@ export default function ResidentsListPage() {
     setError(null);
     const extra: Record<string, string | number | undefined> = {};
     if (appliedStatus) extra.caseStatus = appliedStatus;
+    if (appliedReintegration) extra.reintegrationStatus = appliedReintegration;
     if (appliedCategory) extra.caseCategory = appliedCategory;
     if (appliedSearch) extra.search = appliedSearch;
     fetchPaged<Resident>('/api/residents', page, 20, extra)
@@ -340,7 +346,7 @@ export default function ResidentsListPage() {
       .catch((e: Error) => { if (!cancelled) setError(e.message); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [page, appliedStatus, appliedCategory, appliedSearch, reloadToken]);
+  }, [page, appliedStatus, appliedReintegration, appliedCategory, appliedSearch, reloadToken]);
 
   useEffect(() => {
     let cancelled = false;
@@ -370,13 +376,14 @@ export default function ResidentsListPage() {
     setPage(1);
     setAppliedSearch(search);
     setAppliedStatus(statusFilter);
+    setAppliedReintegration(reintegrationFilter);
     setAppliedCategory(categoryFilter);
   }
 
   function resetFilters() {
-    setSearch(''); setStatusFilter(''); setCategoryFilter('');
+    setSearch(''); setStatusFilter(''); setCategoryFilter(''); setReintegrationFilter('');
     setPage(1);
-    setAppliedSearch(''); setAppliedStatus(''); setAppliedCategory('');
+    setAppliedSearch(''); setAppliedStatus(''); setAppliedCategory(''); setAppliedReintegration('');
   }
 
   function handleSort(col: SortCol) {
@@ -465,8 +472,12 @@ export default function ResidentsListPage() {
   }
 
   async function handleSave() {
-    setSaving(true);
     setFormError(null);
+    if (!form.safehouseId) {
+      setFormError('Select a safehouse.');
+      return;
+    }
+    setSaving(true);
     try {
       const payload = {
         ...form,
@@ -530,6 +541,10 @@ export default function ResidentsListPage() {
               Track each girl through intake, counseling, education, health, and reintegration. Use the table for quick triage; open a row for the full
               case file and incident history.
               {data ? ` ${data.totalCount} resident${data.totalCount !== 1 ? 's' : ''} match your filters.` : ''}
+            </p>
+            <p className="text-muted mb-0 mt-2 small" style={{ maxWidth: 720, color: '#94A3B8' }}>
+              <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: 2, background: 'rgba(255, 247, 230, 0.95)', boxShadow: 'inset 2px 0 0 0 rgba(217, 119, 6, 0.22)', verticalAlign: 'middle', marginRight: 6 }} aria-hidden />
+              Soft gold row = successful reintegration (<strong className="text-muted">Reintegration status: Completed</strong>), the same outcome counted in your public impact OKR.
             </p>
           </div>
           {canWrite && (
@@ -625,7 +640,7 @@ export default function ResidentsListPage() {
         </div>
 
         {/* Status filter pills */}
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12, alignItems: 'center' }}>
           {['', ...CASE_STATUSES].map(s => {
             const isActive = statusFilter === s;
             const cfg = s ? STATUS_COLORS[s] : null;
@@ -637,6 +652,42 @@ export default function ResidentsListPage() {
                 transition: 'all 0.15s',
               }}>
                 {s || 'All Statuses'}
+              </button>
+            );
+          })}
+        </div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20, alignItems: 'center' }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Reintegration</span>
+          {(['', 'Completed'] as const).map((v) => {
+            const isActive = reintegrationFilter === v;
+            const isOkr = v === 'Completed';
+            return (
+              <button
+                key={v || 'all-reint'}
+                type="button"
+                onClick={() => {
+                  setReintegrationFilter(v);
+                  setPage(1);
+                  setAppliedReintegration(v);
+                }}
+                style={{
+                  border: 'none',
+                  borderRadius: 20,
+                  padding: '5px 14px',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  background: isActive
+                    ? (isOkr ? 'rgba(254, 243, 199, 0.95)' : '#1E3A5F')
+                    : '#E2E8F0',
+                  color: isActive ? (isOkr ? '#92400e' : '#fff') : '#475569',
+                  borderWidth: 1,
+                  borderStyle: 'solid',
+                  borderColor: isActive && isOkr ? 'rgba(245, 158, 11, 0.4)' : 'transparent',
+                  transition: 'all 0.15s',
+                }}
+              >
+                {v === '' ? 'All' : 'Completed (OKR outcome)'}
               </button>
             );
           })}
@@ -725,16 +776,17 @@ export default function ResidentsListPage() {
                       const derivedRiskLabel = getRiskFromReadiness(readinessPct);
                       const rCfg =
                         derivedRiskLabel !== 'N/A' ? RISK_COLORS[derivedRiskLabel] : undefined;
+                      const okrDone = isOkrSuccessfulReintegration(r.reintegrationStatus);
                       return (
                         <tr
                           key={r.residentId}
-                          style={{
-                            background: i % 2 === 0 ? '#fff' : '#FAFAFA',
-                            borderBottom: '1px solid #F1F5F9',
-                            cursor: 'pointer',
-                          }}
+                          style={residentCaseloadRowStyle(okrDone, i % 2 === 0)}
                           onClick={() => openProfile(r.residentId)}
-                          title="Open full resident profile"
+                          title={
+                            okrDone
+                              ? 'Successful reintegration (OKR outcome) — open full resident profile'
+                              : 'Open full resident profile'
+                          }
                         >
                           <td style={{ ...tdStyle, fontWeight: 700, color: '#1E3A5F' }}>{r.residentId}</td>
                           <td style={{ ...tdStyle, fontWeight: 600, color: '#475569' }}>{r.caseControlNo || '—'}</td>
@@ -940,8 +992,12 @@ export default function ResidentsListPage() {
                       <input className="hw-input" value={form.internalCode ?? ''} onChange={(e) => setField('internalCode', e.target.value)} />
                     </div>
                     <div className="col-md-4">
-                      <label className="hw-label">Safehouse ID <span className="text-danger">*</span></label>
-                      <input type="number" min="1" className="hw-input" value={form.safehouseId} onChange={(e) => setField('safehouseId', Number(e.target.value))} />
+                      <label className="hw-label">Safehouse <span className="text-danger">*</span></label>
+                      <SafehouseSearchCombobox
+                        value={form.safehouseId}
+                        onChange={(id) => setField('safehouseId', id)}
+                        disabled={!canWrite}
+                      />
                     </div>
                   </div>
                 </fieldset>
@@ -964,7 +1020,11 @@ export default function ResidentsListPage() {
                     </div>
                     <div className="col-md-4">
                       <label className="hw-label">Assigned Social Worker</label>
-                      <input className="hw-input" value={form.assignedSocialWorker ?? ''} onChange={(e) => setField('assignedSocialWorker', e.target.value)} />
+                      <SocialWorkerCombobox
+                        value={form.assignedSocialWorker ?? ''}
+                        onChange={(v) => setField('assignedSocialWorker', v)}
+                        disabled={!canWrite}
+                      />
                     </div>
                   </div>
                   <div className="mt-3">

@@ -5,6 +5,7 @@ import Footer from '../../components/hw/Footer';
 import MetricCard from '../../components/hw/MetricCard';
 import { ErrorState, LoadingState } from '../../components/common/AsyncStatus';
 import { formatAmountMaybePhpAndUsd } from '../../lib/currency';
+import { formatDonationCashAmountCell, formatDonationQuantityCell } from '../../lib/donationDisplay';
 
 /* ── Types ───────────────────────────────────────────────────── */
 interface DonationAllocationApi {
@@ -16,6 +17,7 @@ interface DonationMine {
   donationId: number;
   donationDate?: string | null;
   amount?: number | null;
+  estimatedValue?: number | null;
   currencyCode?: string | null;
   donationType?: string | null;
   campaignName?: string | null;
@@ -676,11 +678,11 @@ export default function DonorDashboardPage() {
                             border: 0,
                           }}
                         >
-                          Your donations with date, amount, initiative, and plan type
+                          Your donations with date, cash amount, quantity, initiative, and plan type
                         </caption>
                         <thead>
                           <tr style={{ background: '#fafaf9', borderBottom: '1px solid #f1f5f9' }}>
-                            {['Date', 'Amount', 'Initiative', 'Plan'].map((h, i) => (
+                            {['Date', 'Cash amount', 'Quantity', 'Initiative', 'Plan'].map((h, i) => (
                               <th
                                 key={h}
                                 style={{
@@ -691,7 +693,7 @@ export default function DonorDashboardPage() {
                                   letterSpacing: '0.14em',
                                   color: '#94a3b8',
                                   padding: '0.85rem 1.25rem',
-                                  textAlign: i === 3 ? 'center' : 'left',
+                                  textAlign: i === 4 ? 'center' : 'left',
                                 }}
                               >
                                 {h}
@@ -707,7 +709,7 @@ export default function DonorDashboardPage() {
                               </td>
                               <td style={{ padding: '1rem 1.25rem' }}>
                                 <span style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 800, fontSize: '1.05rem', color: '#1E3A5F' }}>
-                                  {formatAmountMaybePhpAndUsd(d.amount, d.currencyCode ?? 'PHP')}
+                                  {formatDonationCashAmountCell(d)}
                                 </span>
                                 <span
                                   style={{
@@ -724,28 +726,13 @@ export default function DonorDashboardPage() {
                                   {d.donationType || 'Gift'}
                                 </span>
                               </td>
+                              <td style={{ padding: '1rem 1.25rem', fontFamily: 'Inter, sans-serif', fontWeight: 600, fontSize: '0.92rem', color: '#1E3A5F' }}>
+                                {formatDonationQuantityCell(d)}
+                              </td>
                               <td style={{ padding: '1rem 1.25rem' }}>
                                 <span style={{ fontFamily: 'Inter, sans-serif', fontWeight: 600, fontSize: '0.92rem', color: '#1E3A5F', display: 'block', marginBottom: 4 }}>
                                   {d.campaignName?.trim() || 'General mission'}
                                 </span>
-                                {d.impactUnit && (
-                                  <span
-                                    style={{
-                                      display: 'inline-block',
-                                      fontFamily: 'Inter, sans-serif',
-                                      fontSize: '0.62rem',
-                                      fontWeight: 600,
-                                      textTransform: 'uppercase',
-                                      letterSpacing: '0.06em',
-                                      background: '#f0fdf4',
-                                      color: '#0D9488',
-                                      padding: '0.2rem 0.45rem',
-                                      borderRadius: 6,
-                                    }}
-                                  >
-                                    {d.impactUnit}
-                                  </span>
-                                )}
                               </td>
                               <td style={{ padding: '1rem 1.25rem', textAlign: 'center' }}>
                                 {d.isRecurring ? (

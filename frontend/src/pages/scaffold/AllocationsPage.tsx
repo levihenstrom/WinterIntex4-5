@@ -4,7 +4,9 @@ import AdminKpiStrip from '../../components/admin/AdminKpiStrip';
 import DeleteConfirmModal from '../../components/DeleteConfirmModal';
 import { ErrorState, LoadingState } from '../../components/common/AsyncStatus';
 import { useAuth } from '../../context/AuthContext';
+import { DonationSearchCombobox, SafehouseSearchCombobox } from '../../components/admin/lookupCombos';
 import { formatAmountMaybePhpAndUsd } from '../../lib/currency';
+import { mergeAllocationProgramAreas } from '../../lib/allocationProgramAreas';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
 interface DonationAllocationRow {
@@ -19,12 +21,6 @@ interface DonationAllocationRow {
     supporter?: { displayName?: string | null; organizationName?: string | null } | null;
   } | null;
   safehouse?: { name?: string | null; safehouseCode?: string | null } | null;
-}
-
-interface SafehouseOption {
-  safehouseId: number;
-  name?: string | null;
-  safehouseCode?: string | null;
 }
 
 interface AllocForm {
@@ -93,15 +89,6 @@ export default function AllocationsPage() {
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<DonationAllocationRow | null>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
-  const safehouses = useMemo<SafehouseOption[]>(() => {
-    const map = new Map<number, SafehouseOption>();
-    for (const a of rows) {
-      if (a.safehouseId && !map.has(a.safehouseId)) {
-        map.set(a.safehouseId, { safehouseId: a.safehouseId, name: a.safehouse?.name, safehouseCode: a.safehouse?.safehouseCode });
-      }
-    }
-    return Array.from(map.values()).sort((x, y) => x.safehouseId - y.safehouseId);
-  }, [rows]);
 
   useEffect(() => {
     let cancelled = false;
@@ -136,6 +123,19 @@ export default function AllocationsPage() {
     }
     return ['All', ...Array.from(set).sort()];
   }, [rows]);
+
+  const programAreaFormOptions = useMemo(
+    () => mergeAllocationProgramAreas(rows.map((a) => a.programArea)),
+    [rows],
+  );
+
+  const allocationProgramSelectOptions = useMemo(() => {
+    const cur = form.programArea?.trim();
+    if (!cur || programAreaFormOptions.includes(cur)) return programAreaFormOptions;
+    return [...programAreaFormOptions, cur].sort((a, b) =>
+      a.localeCompare(b, undefined, { sensitivity: 'base' }),
+    );
+  }, [programAreaFormOptions, form.programArea]);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
@@ -213,8 +213,12 @@ export default function AllocationsPage() {
   }
 
   async function handleSave() {
-    setSaving(true);
     setFormError(null);
+    if (!form.safehouseId || !form.donationId) {
+      setFormError('Choose a safehouse and a donation.');
+      return;
+    }
+    setSaving(true);
     try {
       const payload = {
         safehouseId: Number(form.safehouseId),
@@ -343,7 +347,7 @@ export default function AllocationsPage() {
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 3 }}>
                         <span style={{ fontWeight: isActive ? 700 : 600, color: isActive ? '#0D9488' : '#475569' }}>{fmt(name)}</span>
                         <span style={{ color: '#1E3A5F', fontWeight: 700 }}>
-                          {fmtMoney(total)} <span style={{ color: '#94A3B8', fontWeight: 400 }}>({pct}%)</span>
+                          {formatAmountMaybePhpAndUsd(total, 'PHP')} <span style={{ color: '#94A3B8', fontWeight: 400 }}>({pct}%)</span>
                         </span>
                       </div>
                       <div style={{ background: '#F1F5F9', borderRadius: 4, height: 10, overflow: 'hidden', border: isActive ? '1.5px solid #0D9488' : 'none' }}>
@@ -477,22 +481,10 @@ export default function AllocationsPage() {
                               style={{ padding: '12px 8px', whiteSpace: 'nowrap' }}
                               onClick={(e) => e.stopPropagation()}
                             >
-                              <button
-                                type="button"
-                                className="btn btn-sm btn-link p-1"
-                                title="Edit"
-                                onClick={() => openEdit(a)}
-                              >
-                                <i className="bi bi-pencil" style={{ color: '#64748B' }} />
-                              </button>
-                              <button
-                                type="button"
-                                className="btn btn-sm btn-link p-1"
-                                title="Delete"
-                                onClick={() => setDeleteTarget(a)}
-                              >
-                                <i className="bi bi-trash" style={{ color: '#dc2626' }} />
-                              </button>
+                              <div className="d-flex gap-1">
+                                <button type="button" className="hw-row-action hw-row-action--edit" title="Edit" onClick={() => openEdit(a)}>Edit</button>
+                                <button type="button" className="hw-row-action hw-row-action--delete" title="Delete" onClick={() => setDeleteTarget(a)}>Delete</button>
+                              </div>
                             </td>
                           )}
                         </tr>
@@ -613,48 +605,33 @@ export default function AllocationsPage() {
                       <div className="row g-3">
                         <div className="col-md-6">
                           <label className="form-label fw-semibold small">Safehouse</label>
-                          {safehouses.length > 0 ? (
-                            <select
-                              className="form-select form-select-sm"
-                              value={form.safehouseId}
-                              onChange={(e) => setForm((f) => ({ ...f, safehouseId: Number(e.target.value) }))}
-                            >
-                              <option value={0}>Select…</option>
-                              {safehouses.map((s) => (
-                                <option key={s.safehouseId} value={s.safehouseId}>
-                                  {fmt(s.name ?? s.safehouseCode)} (ID {s.safehouseId})
-                                </option>
-                              ))}
-                            </select>
-                          ) : (
-                            <input
-                              type="number"
-                              className="form-control form-control-sm"
-                              placeholder="Safehouse ID"
-                              value={form.safehouseId || ''}
-                              onChange={(e) => setForm((f) => ({ ...f, safehouseId: Number(e.target.value) }))}
-                            />
-                          )}
+                          <SafehouseSearchCombobox
+                            value={form.safehouseId}
+                            onChange={(id) => setForm((f) => ({ ...f, safehouseId: id }))}
+                            disabled={!isAdmin || saving}
+                          />
                         </div>
                         <div className="col-md-6">
-                          <label className="form-label fw-semibold small">Donation ID</label>
-                          <input
-                            type="number"
-                            className="form-control form-control-sm"
-                            placeholder="e.g. 42"
-                            value={form.donationId || ''}
-                            onChange={(e) => setForm((f) => ({ ...f, donationId: Number(e.target.value) }))}
+                          <label className="form-label fw-semibold small">Donation</label>
+                          <DonationSearchCombobox
+                            value={form.donationId}
+                            onChange={(id) => setForm((f) => ({ ...f, donationId: id }))}
+                            disabled={!isAdmin || saving}
+                            unallocatedOnly={editTarget === 'new'}
                           />
                         </div>
                         <div className="col-md-6">
                           <label className="form-label fw-semibold small">Program area</label>
-                          <input
-                            type="text"
-                            className="form-control form-control-sm"
-                            placeholder="e.g. Education"
+                          <select
+                            className="form-select form-select-sm"
                             value={form.programArea}
                             onChange={(e) => setForm((f) => ({ ...f, programArea: e.target.value }))}
-                          />
+                          >
+                            <option value="">Select program area…</option>
+                            {allocationProgramSelectOptions.map((p) => (
+                              <option key={p} value={p}>{p}</option>
+                            ))}
+                          </select>
                         </div>
                         <div className="col-md-6">
                           <label className="form-label fw-semibold small">Amount allocated</label>
