@@ -161,9 +161,9 @@ function downloadReportPDF(snap: ImpactSnapshot, p: MetricPayload) {
   <div class="summary">${snap.summary_text}</div>
   <div class="grid">
     <div class="pill"><div class="pill-val">${p.total_residents.toLocaleString()}</div><div class="pill-lbl">Residents</div></div>
-    <div class="pill"><div class="pill-val">${p.avg_health_score.toFixed(2)}</div><div class="pill-lbl">Avg Health Score</div></div>
-    <div class="pill"><div class="pill-val">${p.avg_education_progress.toFixed(1)}%</div><div class="pill-lbl">Avg Education Progress</div></div>
-    <div class="pill"><div class="pill-val">₱${(p.donations_total_for_month / 1000).toFixed(1)}K</div><div class="pill-lbl">Donations</div></div>
+    <div class="pill"><div class="pill-val">${p.avg_health_score > 0 ? p.avg_health_score.toFixed(2) : '—'}</div><div class="pill-lbl">Avg Health Score</div></div>
+    <div class="pill"><div class="pill-val">${p.avg_education_progress > 0 ? p.avg_education_progress.toFixed(1) + '%' : '—'}</div><div class="pill-lbl">Avg Education Progress</div></div>
+    <div class="pill"><div class="pill-val">${p.donations_total_for_month > 0 ? '₱' + (p.donations_total_for_month / 1000).toFixed(1) + 'K' : '—'}</div><div class="pill-lbl">Donations</div></div>
   </div>
   <div class="footer">This report contains anonymized, aggregated data. No personally identifiable information is included. · Lighthouse Sanctuary</div>
   <script>window.onload = () => { window.print(); }<\/script>
@@ -180,20 +180,24 @@ function ReportCard({ snap, featured = false, liveStats }: { snap: ImpactSnapsho
   const [open, setOpen] = useState(featured);
   const rawP = parseMetricPayload(snap.metric_payload_json);
 
-  // For the featured (latest) card, fall back to live computed values when stored zeros exist
-  const p: MetricPayload = featured && liveStats ? {
-    total_residents: rawP.total_residents || liveStats.totalResidents || 0,
-    donations_total_for_month: rawP.donations_total_for_month || Number(liveStats.donationsRaisedTotal) || 0,
-    avg_health_score: rawP.avg_health_score || liveStats.avgHealthScore || 0,
-    avg_education_progress: rawP.avg_education_progress || liveStats.avgEducationProgress || 0,
-  } : rawP;
+  // Fall back to live computed values for ANY card that has zeros stored in the DB.
+  // Health and education averages are organization-wide and apply to all snapshots.
+  // Donations fall back to live total only for the featured (most recent) card.
+  const p: MetricPayload = {
+    total_residents: rawP.total_residents || (liveStats?.totalResidents ?? 0),
+    donations_total_for_month:
+      rawP.donations_total_for_month ||
+      (featured ? Number(liveStats?.donationsRaisedTotal ?? 0) : 0),
+    avg_health_score: rawP.avg_health_score || (liveStats?.avgHealthScore ?? 0),
+    avg_education_progress: rawP.avg_education_progress || (liveStats?.avgEducationProgress ?? 0),
+  };
 
   const ref = useFadeIn();
 
   const pills = [
-    { label: 'Residents', value: p.total_residents?.toLocaleString() || '—', color: '#6B21A8', bg: '#f5f3ff', border: '#e9d5ff' },
-    { label: 'Health Score', value: p.avg_health_score > 0 ? p.avg_health_score.toFixed(2) : '—', color: '#0D9488', bg: '#f0fdf4', border: '#bbf7d0' },
-    { label: 'Education', value: p.avg_education_progress > 0 ? `${p.avg_education_progress.toFixed(1)}%` : '—', color: '#1d4ed8', bg: '#eff6ff', border: '#bfdbfe' },
+    { label: 'Residents', value: p.total_residents > 0 ? p.total_residents.toLocaleString() : '—', color: '#6B21A8', bg: '#f5f3ff', border: '#e9d5ff' },
+    { label: 'Health Score', value: p.avg_health_score > 0 ? p.avg_health_score.toFixed(2) : (liveStats?.avgHealthScore ? liveStats.avgHealthScore.toFixed(2) : '—'), color: '#0D9488', bg: '#f0fdf4', border: '#bbf7d0' },
+    { label: 'Education', value: p.avg_education_progress > 0 ? `${p.avg_education_progress.toFixed(1)}%` : (liveStats?.avgEducationProgress ? `${liveStats.avgEducationProgress.toFixed(1)}%` : '—'), color: '#1d4ed8', bg: '#eff6ff', border: '#bfdbfe' },
     { label: 'Donations', value: p.donations_total_for_month > 0 ? formatUsdThousandsFromPhp(p.donations_total_for_month, 1) : '—', color: '#D97706', bg: '#fffbeb', border: '#fde68a' },
   ];
 
