@@ -34,32 +34,52 @@ async function readApiError(
 ): Promise<string> {
   const contentType = response.headers.get('content-type') ?? '';
 
-  if (!contentType.includes('application/json')) {
+  const isJsonLike =
+    contentType.includes('application/json') ||
+    contentType.includes('application/problem+json');
+
+  if (!isJsonLike) {
     return fallbackMessage;
   }
 
-  const data = await response.json();
-
-  if (typeof data?.detail === 'string' && data.detail.length > 0) {
-    return data.detail;
+  let data: unknown;
+  try {
+    data = await response.json();
+  } catch {
+    return fallbackMessage;
   }
 
-  if (typeof data?.title === 'string' && data.title.length > 0) {
-    return data.title;
+  if (!data || typeof data !== 'object') {
+    return fallbackMessage;
   }
 
-  if (data?.errors && typeof data.errors === 'object') {
-    const firstError = Object.values(data.errors)
-      .flat()
-      .find((value): value is string => typeof value === 'string');
+  const payload = data as {
+    detail?: unknown;
+    title?: unknown;
+    message?: unknown;
+    errors?: Record<string, unknown>;
+  };
+
+  if (payload.errors && typeof payload.errors === 'object') {
+    const firstError = Object.values(payload.errors)
+      .flatMap((value) => (Array.isArray(value) ? value : []))
+      .find((value): value is string => typeof value === 'string' && value.trim().length > 0);
 
     if (firstError) {
       return firstError;
     }
   }
 
-  if (typeof data?.message === 'string' && data.message.length > 0) {
-    return data.message;
+  if (typeof payload.detail === 'string' && payload.detail.length > 0) {
+    return payload.detail;
+  }
+
+  if (typeof payload.title === 'string' && payload.title.length > 0) {
+    return payload.title;
+  }
+
+  if (typeof payload.message === 'string' && payload.message.length > 0) {
+    return payload.message;
   }
 
   return fallbackMessage;
@@ -204,7 +224,7 @@ export async function registerUser(
   email: string,
   password: string
 ): Promise<void> {
-  const response = await fetch(`${apiBaseUrl}/api/auth/register`, {
+  const response = await fetch(`${apiBaseUrl}/api/auth/self-register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',

@@ -15,6 +15,7 @@ namespace Intex.API.Controllers;
 [Route("api/auth")]
 public class AuthController(
     UserManager<ApplicationUser> userManager,
+    RoleManager<IdentityRole> roleManager,
     SignInManager<ApplicationUser> signInManager,
     IConfiguration configuration,
     AppDbContext appDb,
@@ -74,16 +75,21 @@ public class AuthController(
     }
 
     [AllowAnonymous]
-    [HttpPost("register")]
+    [HttpPost("self-register")]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
             return BadRequest(new { message = "Email and password are required." });
 
+        var normalizedEmail = request.Email.Trim();
+        var existing = await userManager.FindByEmailAsync(normalizedEmail);
+        if (existing is not null)
+            return Conflict(new { message = "An account with this email already exists." });
+
         var user = new ApplicationUser
         {
-            UserName = request.Email,
-            Email = request.Email,
+            UserName = normalizedEmail,
+            Email = normalizedEmail,
             EmailConfirmed = true
         };
 
@@ -93,6 +99,18 @@ public class AuthController(
             foreach (var error in createResult.Errors)
                 ModelState.AddModelError(error.Code, error.Description);
             return ValidationProblem(ModelState);
+        }
+
+        if (!await roleManager.RoleExistsAsync(AuthRoles.Donor))
+        {
+            var roleCreateResult = await roleManager.CreateAsync(new IdentityRole(AuthRoles.Donor));
+            if (!roleCreateResult.Succeeded)
+            {
+                await userManager.DeleteAsync(user);
+                foreach (var error in roleCreateResult.Errors)
+                    ModelState.AddModelError(error.Code, error.Description);
+                return ValidationProblem(ModelState);
+            }
         }
 
         var roleResult = await userManager.AddToRoleAsync(user, AuthRoles.Donor);
