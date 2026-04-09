@@ -3,25 +3,25 @@
     {
       "route": "/assets/*.js",
       "headers": {
-        "Content-Type": "text/javascript; charset=utf-8"
+        "Content-Type": "application/javascript"
       }
     },
     {
       "route": "/assets/*.mjs",
       "headers": {
-        "Content-Type": "text/javascript; charset=utf-8"
+        "Content-Type": "application/javascript"
       }
     },
     {
       "route": "/*.js",
       "headers": {
-        "Content-Type": "text/javascript; charset=utf-8"
+        "Content-Type": "application/javascript"
       }
     },
     {
       "route": "/*.mjs",
       "headers": {
-        "Content-Type": "text/javascript; charset=utf-8"
+        "Content-Type": "application/javascript"
       }
     }
   ],
