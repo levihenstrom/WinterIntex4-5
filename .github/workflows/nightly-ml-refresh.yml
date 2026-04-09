@@ -96,7 +96,7 @@ jobs:
       contents: read
 
     env:
-      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_3540D8DD744944AA983B24ECF93D260E }}
       AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
       AZURE_CONTAINERAPP_ENV: ${{ secrets.AZURE_CONTAINERAPP_ENV }}
       AZURE_CONTAINERAPP_NAME: ${{ secrets.AZURE_CONTAINERAPP_NAME }}
@@ -122,9 +122,9 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_9EBA867E4AAC400CA0FC408ECE492409 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_BCD65C656F8B4C4FA89758706A591E79 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_3540D8DD744944AA983B24ECF93D260E }}
 
       - name: Azure CLI version
         run: az version
