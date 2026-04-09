@@ -222,6 +222,8 @@ export default function ResidentVisitsAndConferencesPage() {
   const [deleteBusy, setDeleteBusy] = useState(false);
 
   const [visitTypeFilter, setVisitTypeFilter] = useState('');
+  const [visitSearchInput, setVisitSearchInput] = useState('');
+  const [visitSearchQuery, setVisitSearchQuery] = useState('');
   const [visitSortCol, setVisitSortCol] = useState<VisitSortCol | null>(null);
   const [visitSortDir, setVisitSortDir] = useState<'asc' | 'desc'>('asc');
   const [quickFilter, setQuickFilter] = useState<VisitQuickFilter>(null);
@@ -238,30 +240,56 @@ export default function ResidentVisitsAndConferencesPage() {
 
   const [confSortCol, setConfSortCol] = useState<ConfSortCol | null>(null);
   const [confSortDir, setConfSortDir] = useState<'asc' | 'desc'>('asc');
+  const [confSearchInput, setConfSearchInput] = useState('');
+  const [confSearchQuery, setConfSearchQuery] = useState('');
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setVisitSearchQuery(visitSearchInput.trim()), 300);
+    return () => window.clearTimeout(timer);
+  }, [visitSearchInput]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setConfSearchQuery(confSearchInput.trim()), 300);
+    return () => window.clearTimeout(timer);
+  }, [confSearchInput]);
+
+  useEffect(() => {
+    setVisitPage(1);
+  }, [visitTypeFilter, quickFilter, visitSearchQuery]);
+
+  useEffect(() => {
+    setConfPage(1);
+  }, [confSearchQuery]);
 
   // ── Fetch visits ──────────────────────────────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
     setVisitLoading(true);
     setVisitError(null);
-    fetchPaged<HomeVisitation>('/api/home-visitations', visitPage, 20)
+    fetchPaged<HomeVisitation>('/api/home-visitations', visitPage, 20, {
+      ...(visitTypeFilter ? { visitType: visitTypeFilter } : {}),
+      ...(quickFilter === 'followUp' ? { followUpNeeded: 'true' } : {}),
+      ...(quickFilter === 'safety' ? { safetyConcernsNoted: 'true' } : {}),
+      ...(quickFilter === 'emergency' ? { visitType: 'Emergency' } : {}),
+      ...(visitSearchQuery ? { search: visitSearchQuery } : {}),
+    })
       .then((r) => { if (!cancelled) setVisitData(r); })
       .catch((e: Error) => { if (!cancelled) setVisitError(e.message); })
       .finally(() => { if (!cancelled) setVisitLoading(false); });
     return () => { cancelled = true; };
-  }, [visitPage, visitReload]);
+  }, [visitPage, visitReload, visitTypeFilter, quickFilter, visitSearchQuery]);
 
   // ── Fetch conferences ─────────────────────────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
     setConfLoading(true);
     setConfError(null);
-    fetchPaged<CaseConference>('/api/case-conferences', confPage, 10, { upcoming: 'true' })
+    fetchPaged<CaseConference>('/api/case-conferences', confPage, 10, { upcoming: 'true', ...(confSearchQuery ? { search: confSearchQuery } : {}) })
       .then((r) => { if (!cancelled) setConfData(r); })
       .catch((e: Error) => { if (!cancelled) setConfError(e.message); })
       .finally(() => { if (!cancelled) setConfLoading(false); });
     return () => { cancelled = true; };
-  }, [confPage]);
+  }, [confPage, confSearchQuery]);
 
   // ── Visit sort/filter ─────────────────────────────────────────────────────────
   function handleVisitSort(col: VisitSortCol) {
@@ -271,10 +299,6 @@ export default function ResidentVisitsAndConferencesPage() {
 
   const filteredVisits = useMemo(() => {
     let items = visitData?.items ?? [];
-    if (visitTypeFilter) items = items.filter(v => v.visitType === visitTypeFilter);
-    if (quickFilter === 'followUp') items = items.filter(v => v.followUpNeeded === true);
-    else if (quickFilter === 'safety') items = items.filter(v => v.safetyConcernsNoted === true);
-    else if (quickFilter === 'emergency') items = items.filter(v => v.visitType === 'Emergency');
     if (visitSortCol) {
       items = [...items].sort((a, b) => compareValues(
         a[visitSortCol] as string | number | boolean | null,
@@ -283,7 +307,7 @@ export default function ResidentVisitsAndConferencesPage() {
       ));
     }
     return items;
-  }, [visitData?.items, visitTypeFilter, quickFilter, visitSortCol, visitSortDir]);
+  }, [visitData?.items, visitSortCol, visitSortDir]);
 
   // ── Conference sort ───────────────────────────────────────────────────────────
   function handleConfSort(col: ConfSortCol) {
@@ -409,7 +433,7 @@ export default function ResidentVisitsAndConferencesPage() {
               Visits &amp; conferences
             </h1>
             <p className="text-muted mb-0" style={{ fontSize: 14 }}>
-              {visitData ? `${visitData.totalCount} visit${visitData.totalCount !== 1 ? 's' : ''} logged` : 'Loading visits…'}
+              {visitData ? `${visitData.totalCount} visit${visitData.totalCount !== 1 ? 's' : ''} logged. Click a row to review full visit details.` : 'Loading visits…'}
             </p>
           </div>
           {canWrite && (
@@ -453,6 +477,41 @@ export default function ResidentVisitsAndConferencesPage() {
             )}
           </>
         )}
+
+        <div
+          style={{
+            background: '#fff',
+            borderRadius: 12,
+            padding: '16px 20px',
+            border: '1px solid #E2E8F0',
+            boxShadow: '0 2px 8px rgba(30,58,95,0.06)',
+            marginBottom: 16,
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 12,
+            alignItems: 'center',
+          }}
+        >
+          <input
+            type="search"
+            placeholder="Search visits by social worker, location, notes, or resident ID…"
+            aria-label="Search visits"
+            value={visitSearchInput}
+            onChange={(e) => setVisitSearchInput(e.target.value)}
+            style={{ flex: '1 1 260px', padding: '8px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13 }}
+          />
+          <button
+            type="button"
+            onClick={() => {
+              setVisitSearchInput('');
+              setVisitTypeFilter('');
+              setQuickFilter(null);
+            }}
+            style={{ background: 'none', border: '1px solid #CBD5E1', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: '#64748B' }}
+          >
+            Reset filters
+          </button>
+        </div>
 
         {/* Visit type filter pills */}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
@@ -599,8 +658,39 @@ export default function ResidentVisitsAndConferencesPage() {
             Upcoming Case Conferences
           </h2>
           <p className="text-muted mb-0" style={{ fontSize: 13 }}>
-            Pulled from intervention plans with a scheduled conference date.
+            Pulled from intervention plans with a scheduled conference date. Click a row to jump to resident context.
           </p>
+        </div>
+
+        <div
+          style={{
+            background: '#fff',
+            borderRadius: 12,
+            padding: '16px 20px',
+            border: '1px solid #E2E8F0',
+            boxShadow: '0 2px 8px rgba(30,58,95,0.06)',
+            marginBottom: 16,
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 12,
+            alignItems: 'center',
+          }}
+        >
+          <input
+            type="search"
+            placeholder="Search conferences by resident, category, or status…"
+            aria-label="Search case conferences"
+            value={confSearchInput}
+            onChange={(e) => setConfSearchInput(e.target.value)}
+            style={{ flex: '1 1 260px', padding: '8px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13 }}
+          />
+          <button
+            type="button"
+            onClick={() => setConfSearchInput('')}
+            style={{ background: 'none', border: '1px solid #CBD5E1', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: '#64748B' }}
+          >
+            Clear search
+          </button>
         </div>
 
         {confError && (

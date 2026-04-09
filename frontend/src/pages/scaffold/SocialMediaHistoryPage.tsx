@@ -117,7 +117,8 @@ export default function SocialMediaHistoryPage() {
   const [platform, setPlatform] = useState('');
   const [campaignInput, setCampaignInput] = useState('');
   const [appliedCampaign, setAppliedCampaign] = useState('');
-  const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [data, setData] = useState<PagedResult<SocialMediaPost> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -131,19 +132,29 @@ export default function SocialMediaHistoryPage() {
   const [detailPost, setDetailPost] = useState<SocialMediaPost | null>(null);
 
   useEffect(() => {
+    const timer = window.setTimeout(() => setSearchQuery(searchInput.trim()), 300);
+    return () => window.clearTimeout(timer);
+  }, [searchInput]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [platform, appliedCampaign, searchQuery]);
+
+  useEffect(() => {
     let cancelled = false;
     setLoading(true);
     setError(null);
     const extra: Record<string, string | undefined> = {};
     if (platform) extra.platform = platform;
     if (appliedCampaign.trim()) extra.campaignName = appliedCampaign.trim();
+    if (searchQuery) extra.search = searchQuery;
 
     fetchPaged<SocialMediaPost>('/api/social-media-posts', page, 20, extra)
       .then((r) => { if (!cancelled) setData(r); })
       .catch((e: Error) => { if (!cancelled) setError(e.message); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [page, platform, appliedCampaign, reloadToken]);
+  }, [page, platform, appliedCampaign, searchQuery, reloadToken]);
 
   function handleSort(col: SortCol) {
     if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
@@ -154,17 +165,7 @@ export default function SocialMediaHistoryPage() {
   }
 
   const displayItems = useMemo(() => {
-    let items = data?.items ?? [];
-    const q = search.trim().toLowerCase();
-    if (q) {
-      items = items.filter((p) => {
-        const cap = (p.caption ?? '').toLowerCase();
-        const tags = (p.hashtags ?? '').toLowerCase();
-        const pt = (p.postType ?? '').toLowerCase();
-        const pl = (p.platform ?? '').toLowerCase();
-        return cap.includes(q) || tags.includes(q) || pt.includes(q) || pl.includes(q);
-      });
-    }
+    const items = data?.items ?? [];
     if (!sortCol) return items;
     return [...items].sort((a, b) => {
       switch (sortCol) {
@@ -186,7 +187,7 @@ export default function SocialMediaHistoryPage() {
           return 0;
       }
     });
-  }, [data?.items, search, sortCol, sortDir]);
+  }, [data?.items, sortCol, sortDir]);
 
   async function confirmDelete() {
     if (!deleteTarget) return;
@@ -223,7 +224,7 @@ export default function SocialMediaHistoryPage() {
               Social Media — Post History
             </h1>
             <p className="text-muted mb-0" style={{ fontSize: 14 }}>
-              Paginated posts from your database with engagement metrics. Filter by platform or campaign; search narrows the current page.
+              Click a row to view full post details. Filters and search run across the full dataset.
             </p>
           </div>
           <Link
@@ -246,9 +247,9 @@ export default function SocialMediaHistoryPage() {
         }}>
           <input
             type="search"
-            placeholder="Search caption, hashtags, type on this page…"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
+            placeholder="Search caption, hashtags, type, or platform…"
+            value={searchInput}
+            onChange={e => setSearchInput(e.target.value)}
             style={{ flex: '1 1 220px', padding: '8px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13 }}
           />
           <input
@@ -338,8 +339,8 @@ export default function SocialMediaHistoryPage() {
             </div>
           ) : displayItems.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '48px 0', color: '#94A3B8' }}>
-              <p className="fw-semibold mb-1">No rows match your search on this page.</p>
-              <p className="small mb-0">Clear search or move to another results page.</p>
+              <p className="fw-semibold mb-1">No posts match your filters.</p>
+              <p className="small mb-0">Try clearing search, campaign, or platform filters.</p>
             </div>
           ) : (
             <>

@@ -20,6 +20,7 @@ public class SocialMediaPostsController(AppDbContext db) : ControllerBase
         [FromQuery] int pageSize = Pagination.DefaultPageSize,
         [FromQuery] string? platform = null,
         [FromQuery] string? campaignName = null,
+        [FromQuery] string? search = null,
         CancellationToken cancellationToken = default)
     {
         var query = db.SocialMediaPosts.AsNoTracking().AsQueryable();
@@ -27,6 +28,21 @@ public class SocialMediaPostsController(AppDbContext db) : ControllerBase
             query = query.Where(p => p.Platform == platform);
         if (!string.IsNullOrWhiteSpace(campaignName))
             query = query.Where(p => p.CampaignName == campaignName);
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var q = search.Trim();
+            if (int.TryParse(q, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var postId))
+                query = query.Where(p => p.PostId == postId);
+            else
+            {
+                var needle = q.ToLower();
+                query = query.Where(p =>
+                    (p.Caption != null && p.Caption.ToLower().Contains(needle)) ||
+                    (p.Hashtags != null && p.Hashtags.ToLower().Contains(needle)) ||
+                    (p.PostType != null && p.PostType.ToLower().Contains(needle)) ||
+                    (p.Platform != null && p.Platform.ToLower().Contains(needle)));
+            }
+        }
 
         query = query.OrderByDescending(p => p.CreatedAt).ThenBy(p => p.PostId);
         var result = await query.ToPagedResultAsync(page, pageSize, cancellationToken);
