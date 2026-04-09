@@ -97,15 +97,15 @@ public sealed class PublicImpactController(AppDbContext db) : ControllerBase
             ? Math.Round((double)reintegrated / totalResidents * 100, 1)
             : 0;
 
-        var liveAvgHealth = await db.HealthWellbeingRecords
+        var fallbackAvgHealth = await db.HealthWellbeingRecords
             .Where(h => h.GeneralHealthScore != null)
             .AverageAsync(h => (double?)h.GeneralHealthScore, cancellationToken);
 
-        var liveAvgEdu = await db.EducationRecords
+        var fallbackAvgEdu = await db.EducationRecords
             .Where(e => e.ProgressPercent != null)
             .AverageAsync(e => (double?)e.ProgressPercent, cancellationToken);
 
-        var liveDonations = (await db.Donations
+        var fallbackDonations = (await db.Donations
             .SumAsync(d => (decimal?)d.Amount, cancellationToken)) ?? 0m;
 
         var liveSnapshot = new PublicImpactSnapshot
@@ -113,16 +113,16 @@ public sealed class PublicImpactController(AppDbContext db) : ControllerBase
             SnapshotId = 0,
             SnapshotDate = DateTime.UtcNow,
             Headline = $"Lighthouse Sanctuary Impact Update – {DateTime.UtcNow:MMMM yyyy}",
-            SummaryText = $"Anonymized aggregate report: {totalResidents} residents active, average health score {(liveAvgHealth.HasValue ? liveAvgHealth.Value.ToString("0.##") : "0")}, average education progress {(liveAvgEdu.HasValue ? liveAvgEdu.Value.ToString("0.#") : "0")}%.",
+            SummaryText = $"Anonymized aggregate report: {totalResidents} residents active, average health score {(fallbackAvgHealth.HasValue ? fallbackAvgHealth.Value.ToString("0.##") : "0")}, average education progress {(fallbackAvgEdu.HasValue ? fallbackAvgEdu.Value.ToString("0.#") : "0")}%.",
             MetricPayloadJson = JsonSerializer.Serialize(new
             {
                 total_residents = totalResidents,
                 residents_served = totalResidents,
                 safehouses_active = safehousesActive,
                 reintegration_rate_pct = reintegrationRate,
-                avg_health_score = liveAvgHealth.HasValue ? Math.Round(liveAvgHealth.Value, 2) : 0,
-                avg_education_progress = liveAvgEdu.HasValue ? Math.Round(liveAvgEdu.Value, 1) : 0,
-                donations_total_for_month = liveDonations,
+                avg_health_score = fallbackAvgHealth.HasValue ? Math.Round(fallbackAvgHealth.Value, 2) : 0,
+                avg_education_progress = fallbackAvgEdu.HasValue ? Math.Round(fallbackAvgEdu.Value, 1) : 0,
+                donations_total_for_month = fallbackDonations,
             }),
             IsPublished = true,
             PublishedAt = DateTime.UtcNow,
