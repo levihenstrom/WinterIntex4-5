@@ -3,7 +3,12 @@ import { fetchJson } from '../../lib/apiClient';
 import NavBar from '../../components/hw/NavBar';
 import Footer from '../../components/hw/Footer';
 import MetricCard from '../../components/hw/MetricCard';
-import { convertPhpToUsd, formatAmountMaybePhpAndUsd, formatUsdThousandsFromPhp } from '../../lib/currency';
+import {
+  convertPhpToUsd,
+  formatAmountMaybePhpAndUsd,
+  formatPhpOriginAsUsd,
+  formatUsdThousandsFromPhp,
+} from '../../lib/currency';
 import {
   ResponsiveContainer, AreaChart, Area, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
 } from 'recharts';
@@ -411,6 +416,19 @@ export default function ImpactPage() {
     };
   });
 
+  // Donations tab uses its own live series so summary stats are based on
+  // actual donation months, independent from the overview chart cutoff.
+  const donationSeries = [...published]
+    .reverse()
+    .map((s) => {
+      const p = parseMetricPayload(s.metric_payload_json);
+      return {
+        month: fmtShort(s.snapshot_date),
+        donations: p.donations_total_for_month,
+      };
+    })
+    .filter((row) => row.donations > 0);
+
   const maxResidents =
     published.length > 0
       ? Math.max(...published.map((s) => parseMetricPayload(s.metric_payload_json).total_residents ?? 0))
@@ -420,20 +438,17 @@ export default function ImpactPage() {
     0,
   );
 
-  const totalDonationsCharts = chartSnapshots.reduce(
-    (n, s) => n + parseMetricPayload(s.metric_payload_json).donations_total_for_month,
-    0,
-  );
+  const totalDonationsCharts = donationSeries.reduce((n, row) => n + row.donations, 0);
   const latestHealth = chartSnapshots.length > 0
     ? parseMetricPayload(chartSnapshots[chartSnapshots.length - 1].metric_payload_json).avg_health_score
     : 0;
   const peakEducation = chartSnapshots.length > 0
     ? Math.max(...chartSnapshots.map((s) => parseMetricPayload(s.metric_payload_json).avg_education_progress))
     : 0;
-  const monthsOfData = chartSnapshots.length;
+  const monthsOfData = donationSeries.length;
 
-  const bestDonationMonth = chartData.length
-    ? chartData.reduce((best, row) => (row.donations > best.donations ? row : best), chartData[0])
+  const bestDonationMonth = donationSeries.length
+    ? donationSeries.reduce((best, row) => (row.donations > best.donations ? row : best), donationSeries[0])
     : null;
 
   return (
@@ -678,7 +693,7 @@ export default function ImpactPage() {
               hint="Use this to see whether giving is steady, seasonal, or spiky—so you know if we can plan long-term or need to bridge a gap."
             >
               <ResponsiveContainer width="100%" height={270}>
-                <AreaChart data={chartData} margin={{ top: 5, right: 16, left: 0, bottom: 0 }}>
+                <AreaChart data={donationSeries} margin={{ top: 5, right: 16, left: 0, bottom: 0 }}>
                   <defs><linearGradient id="gDon2" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#D97706" stopOpacity={0.18}/><stop offset="95%" stopColor="#D97706" stopOpacity={0}/></linearGradient></defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                   <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={false} tickLine={false} />
@@ -692,14 +707,14 @@ export default function ImpactPage() {
               <StatBox label="Total Raised (chart months)" value={formatUsdThousandsFromPhp(totalDonationsCharts, 0)} color="#D97706" bg="#fffbeb" border="#fde68a" />
               <StatBox
                 label="Monthly Average"
-                value={monthsOfData > 0 ? formatUsdThousandsFromPhp(totalDonationsCharts / monthsOfData, 0) : '$0K'}
+                value={monthsOfData > 0 ? formatPhpOriginAsUsd(totalDonationsCharts / monthsOfData) : '$0.00'}
                 color="#6B21A8"
                 bg="#f5f3ff"
                 border="#e9d5ff"
               />
               <StatBox
                 label={bestDonationMonth ? `Best month (${bestDonationMonth.month})` : 'Best month'}
-                value={bestDonationMonth ? formatUsdThousandsFromPhp(bestDonationMonth.donations, 0) : '—'}
+                value={bestDonationMonth ? formatPhpOriginAsUsd(bestDonationMonth.donations) : '—'}
                 color="#0D9488"
                 bg="#f0fdf4"
                 border="#bbf7d0"
