@@ -361,7 +361,7 @@ export default function ReportsAnalyticsPage() {
               <select
                 value={safehouseId}
                 onChange={(e) => setSafehouseId(e.target.value)}
-                style={{ padding: 8, borderRadius: 8, border: '1px solid #CBD5E1', minWidth: 200 }}
+                style={{ padding: 8, borderRadius: 8, border: '1px solid #CBD5E1', minWidth: 200, width: '100%' }}
               >
                 <option value="">All in scope</option>
                 {safehouseOptions.map((s) => (
@@ -376,7 +376,7 @@ export default function ReportsAnalyticsPage() {
               <select
                 value={donationType}
                 onChange={(e) => setDonationType(e.target.value)}
-                style={{ padding: 8, borderRadius: 8, border: '1px solid #CBD5E1', minWidth: 170 }}
+                style={{ padding: 8, borderRadius: 8, border: '1px solid #CBD5E1', minWidth: 170, width: '100%' }}
               >
                 <option value="">All types</option>
                 {donationTypeOptions.map((t) => (

@@ -369,6 +369,15 @@ export default function ImpactPage() {
   const [liveStats, setLiveStats] = useState<LiveStats | null>(null);
   const [reportMonthFilter, setReportMonthFilter] = useState('');
   const [reportPage, setReportPage] = useState(0);
+  const [viewportWidth, setViewportWidth] = useState<number>(
+    typeof window === 'undefined' ? 1200 : window.innerWidth,
+  );
+
+  useEffect(() => {
+    const onResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -450,6 +459,9 @@ export default function ImpactPage() {
   const bestDonationMonth = donationSeries.length
     ? donationSeries.reduce((best, row) => (row.donations > best.donations ? row : best), donationSeries[0])
     : null;
+  const isMobile = viewportWidth < 768;
+  const isTablet = viewportWidth < 1024;
+  const kpiColumns = isMobile ? 1 : (isTablet ? 2 : 4);
 
   return (
     <div style={{ fontFamily: 'var(--hw-font-body)', minHeight: '100vh', background: '#f8fafc' }}>
@@ -537,7 +549,9 @@ export default function ImpactPage() {
                   fontSize: 'clamp(1rem, 2vw, 1.15rem)',
                   textDecoration: 'none',
                   display: 'inline-block',
-                  whiteSpace: 'nowrap',
+                  whiteSpace: isMobile ? 'normal' : 'nowrap',
+                  width: isMobile ? '100%' : undefined,
+                  textAlign: 'center',
                 }}
               >
                 Donate now →
@@ -550,7 +564,7 @@ export default function ImpactPage() {
       {/* ── KPI strip ── */}
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 1.5rem' }}>
         <div style={{ marginTop: -44, background: 'rgba(30,58,95,0.92)', backdropFilter: 'blur(14px)', borderRadius: 20, border: '1px solid rgba(255,255,255,0.13)', boxShadow: '0 20px 60px rgba(30,58,95,0.28)', position: 'relative', zIndex: 10 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${kpiColumns}, 1fr)` }}>
             {[
               {
                 target: liveStats?.totalResidents ?? maxResidents,
@@ -582,7 +596,12 @@ export default function ImpactPage() {
                 description: 'Gifts that keep rooms staffed, food on the table, and services running.',
               },
             ].map((kpi, i) => (
-              <div key={kpi.label} style={{ borderRight: i < 3 ? '1px solid rgba(255,255,255,0.1)' : 'none' }}>
+              <div
+                key={kpi.label}
+                style={{
+                  borderRight: (i + 1) % kpiColumns !== 0 ? '1px solid rgba(255,255,255,0.1)' : 'none',
+                }}
+              >
                 <MetricCard
                   target={kpi.target}
                   suffix={kpi.suffix}
@@ -609,7 +628,7 @@ export default function ImpactPage() {
       </div>
 
       {/* ── Tab content ── */}
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '2rem 1.5rem 5rem' }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: isMobile ? '1.4rem 1rem 4rem' : '2rem 1.5rem 5rem' }}>
 
         {tab === 'Overview' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
@@ -780,7 +799,7 @@ export default function ImpactPage() {
                 </AreaChart>
               </ResponsiveContainer>
             </Card>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '1rem' }}>
               <StatBox label="Latest Health Score" value={chartSnapshots.length ? latestHealth.toFixed(2) : '—'} color="#0D9488" bg="#f0fdf4" border="#bbf7d0" />
               <StatBox label="Peak Education" value={`${Math.round(peakEducation)}%`} color="#6B21A8" bg="#f5f3ff" border="#e9d5ff" />
               <StatBox label="Months of Data" value={String(monthsOfData)} color="#1d4ed8" bg="#eff6ff" border="#bfdbfe" />

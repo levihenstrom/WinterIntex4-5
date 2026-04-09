@@ -199,6 +199,15 @@ export default function DonorDashboardPage() {
   const [giveError, setGiveError] = useState<string | null>(null);
   const [giveSubmitting, setGiveSubmitting] = useState(false);
   const [hoveredCategory, setHoveredCategory] = useState<ProgramImpactRow | null>(null);
+  const [viewportWidth, setViewportWidth] = useState<number>(
+    typeof window === 'undefined' ? 1200 : window.innerWidth,
+  );
+
+  useEffect(() => {
+    const onResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   const loadDonations = useCallback((opts?: { silent?: boolean }) => {
     if (!opts?.silent) {
@@ -252,6 +261,9 @@ export default function DonorDashboardPage() {
   const heroRef = useFadeIn();
 
   const impactTotalTarget = Math.max(0, Math.round(totals.sum));
+  const isMobile = viewportWidth < 768;
+  const isTablet = viewportWidth < 1024;
+  const kpiColumns = isMobile ? 1 : (isTablet ? 2 : 3);
 
   function resetGiveForm() {
     setGiveForm({
@@ -375,7 +387,9 @@ export default function DonorDashboardPage() {
                 fontSize: 'clamp(1rem, 2vw, 1.15rem)',
                 border: 'none',
                 cursor: 'pointer',
-                whiteSpace: 'nowrap',
+                whiteSpace: isMobile ? 'normal' : 'nowrap',
+                width: isMobile ? '100%' : undefined,
+                textAlign: 'center',
               }}
             >
               Give again now →
@@ -399,13 +413,26 @@ export default function DonorDashboardPage() {
           }}
         >
           {loading || !donations ? (
-            <KpiStripPlaceholder />
+            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${kpiColumns}, 1fr)` }}>
+              {[0, 1, 2].map((i) => (
+                <div
+                  key={i}
+                  style={{
+                    borderRight: (i + 1) % kpiColumns !== 0 ? '1px solid rgba(255,255,255,0.1)' : 'none',
+                    padding: '2.25rem 1.5rem',
+                    textAlign: 'center',
+                  }}
+                >
+                  <span className="hw-metric-num text-4xl font-extrabold text-white/40">—</span>
+                </div>
+              ))}
+            </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)' }}>
-              <div style={{ borderRight: '1px solid rgba(255,255,255,0.1)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${kpiColumns}, 1fr)` }}>
+              <div style={{ borderRight: kpiColumns > 1 ? '1px solid rgba(255,255,255,0.1)' : 'none' }}>
                 <MetricCard target={totals.count} label="Gifts" />
               </div>
-              <div style={{ borderRight: '1px solid rgba(255,255,255,0.1)' }}>
+              <div style={{ borderRight: kpiColumns === 3 ? '1px solid rgba(255,255,255,0.1)' : 'none' }}>
                 <MetricCard
                   target={impactTotalTarget}
                   prefix=""
@@ -422,7 +449,7 @@ export default function DonorDashboardPage() {
       </div>
 
       <main id="donor-dashboard-main">
-        <div style={{ maxWidth: CONTENT_MAX, margin: '0 auto', padding: '2rem 1.5rem 5rem' }}>
+        <div style={{ maxWidth: CONTENT_MAX, margin: '0 auto', padding: isMobile ? '1.4rem 1rem 4rem' : '2rem 1.5rem 5rem' }}>
           {loading && (
             <LoadingState message="Loading your giving data…" />
           )}
@@ -783,7 +810,7 @@ export default function DonorDashboardPage() {
                       </table>
                     </div>
                     {ledgerTotalPages > 1 && (
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 1.5rem 0.25rem', borderTop: '1px solid #f1f5f9', marginTop: '0.5rem' }}>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '1rem 1.5rem 0.25rem', borderTop: '1px solid #f1f5f9', marginTop: '0.5rem' }}>
                         <button
                           onClick={() => setLedgerPage((p) => p - 1)}
                           disabled={ledgerPage <= 1}
@@ -936,7 +963,7 @@ export default function DonorDashboardPage() {
                 )}
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 14 }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', flexWrap: 'wrap', gap: 10, marginTop: 14 }}>
                 <button
                   type="button"
                   onClick={() => setShowGiveModal(false)}

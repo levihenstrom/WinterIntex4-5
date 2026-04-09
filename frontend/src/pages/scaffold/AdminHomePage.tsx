@@ -533,7 +533,7 @@ function UnallocatedDonationsWidget({ onUnallocatedCount }: { onUnallocatedCount
                     <label className="form-label mb-1" style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748B' }}>Program area</label>
                     <select
                       className="form-select form-select-sm"
-                      style={{ width: 148 }}
+                      style={{ width: '100%', minWidth: 148 }}
                       value={f.programArea}
                       onChange={(e) => setForms((p) => ({ ...p, [d.donationId]: { ...f, programArea: e.target.value } }))}
                     >
@@ -545,7 +545,7 @@ function UnallocatedDonationsWidget({ onUnallocatedCount }: { onUnallocatedCount
                   </div>
                   <div>
                     <label className="form-label mb-1" style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748B' }}>Amount</label>
-                    <input type="number" className="form-control form-control-sm" style={{ width: 100 }} placeholder="e.g. 5000"
+                    <input type="number" className="form-control form-control-sm" style={{ width: '100%', minWidth: 100 }} placeholder="e.g. 5000"
                       value={f.amount} onChange={(e) => setForms((p) => ({ ...p, [d.donationId]: { ...f, amount: e.target.value } }))} />
                   </div>
                   <button type="button" className="btn btn-sm btn-success fw-semibold" disabled={f.submitting} onClick={() => void submitAllocation(d.donationId)}>
@@ -1150,7 +1150,7 @@ export default function AdminHomePage() {
                 background: 'rgba(255,255,255,0.2)',
                 border: '1.5px solid rgba(255,255,255,0.6)',
                 color: 'white',
-                whiteSpace: 'nowrap',
+                whiteSpace: 'normal',
               }}
             >
               View →
