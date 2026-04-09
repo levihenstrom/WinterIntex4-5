@@ -7,6 +7,7 @@ import HealingWingsLogo from '../components/hw/HealingWingsLogo';
 import {
   buildExternalLoginUrl,
   getExternalProviders,
+  loginUser,
   registerUser,
   type ExternalAuthProvider,
 } from '../lib/authAPI';
@@ -36,7 +37,7 @@ function PasswordRule({ ok, children }: { ok: boolean; children: React.ReactNode
 
 function RegisterPage() {
   const navigate = useNavigate();
-  const { isAuthenticated, isLoading, authSession } = useAuth();
+  const { isAuthenticated, isLoading, authSession, refreshAuthState } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -78,8 +79,21 @@ function RegisterPage() {
     setIsSubmitting(true);
     try {
       await registerUser(email, password);
-      setSuccessMessage('Registration succeeded. You can log in now.');
-      setTimeout(() => navigate('/login'), 800);
+      // Auto-login after successful registration
+      const loginResult = await loginUser(email, password, false);
+      const session = {
+        isAuthenticated: true,
+        userName: loginResult.userName,
+        email: loginResult.email,
+        roles: loginResult.roles,
+      };
+      
+      const { storeSession } = await import('../lib/authAPI');
+      storeSession(session, loginResult.refreshToken);
+      await refreshAuthState({ session });
+
+      setSuccessMessage('Registration succeeded! Logging you in...');
+      // Success will trigger re-render and Move user to their dashboard via NavLink/Navigate in this component
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Unable to register.');
     } finally {

@@ -83,7 +83,8 @@ public class AuthController(
         var user = new ApplicationUser
         {
             UserName = request.Email,
-            Email = request.Email
+            Email = request.Email,
+            EmailConfirmed = true
         };
 
         var createResult = await userManager.CreateAsync(user, request.Password);
