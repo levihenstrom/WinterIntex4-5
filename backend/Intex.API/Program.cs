@@ -272,6 +272,21 @@ builder.Services.Configure<CookieAuthenticationOptions>(IdentityConstants.Extern
     options.Cookie.SameSite = isDevelopment ? SameSiteMode.Lax : SameSiteMode.None;
 });
 
+// Keep the temporary MFA sign-in cookie usable between cross-site SPA/API requests.
+// Without this, GetTwoFactorAuthenticationUserAsync can return null immediately.
+builder.Services.Configure<CookieAuthenticationOptions>(IdentityConstants.TwoFactorUserIdScheme, options =>
+{
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SameSite = isDevelopment ? SameSiteMode.Lax : SameSiteMode.None;
+    options.ExpireTimeSpan = TimeSpan.FromMinutes(10);
+});
+
+builder.Services.Configure<CookieAuthenticationOptions>(IdentityConstants.TwoFactorRememberMeScheme, options =>
+{
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SameSite = isDevelopment ? SameSiteMode.Lax : SameSiteMode.None;
+});
+
 // CORS — endpoints must opt in with RequireCors(...) or [EnableCors] or the browser gets 200 without ACAO headers.
 builder.Services.AddCors(options =>
 {
