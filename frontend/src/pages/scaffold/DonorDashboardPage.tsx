@@ -158,28 +158,6 @@ function DashboardCard({ title, sub, titleId, children }: { title: string; sub?:
   );
 }
 
-function KpiStripPlaceholder() {
-  return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)' }}>
-      {[0, 1].map((i) => (
-        <div
-          key={i}
-          style={{
-            borderRight: '1px solid rgba(255,255,255,0.1)',
-            padding: '2.25rem 1.5rem',
-            textAlign: 'center',
-          }}
-        >
-          <span className="hw-metric-num text-4xl font-extrabold text-white/40">—</span>
-        </div>
-      ))}
-      <div style={{ padding: '2.25rem 1.5rem', textAlign: 'center' }}>
-        <span className="hw-metric-num text-4xl font-extrabold text-white/40">—</span>
-      </div>
-    </div>
-  );
-}
-
 const LEDGER_PAGE_SIZE = 10;
 
 /* ── Main Page Component ─────────────────────────────────────── */
