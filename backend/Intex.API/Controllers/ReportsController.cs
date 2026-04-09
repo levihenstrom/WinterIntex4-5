@@ -51,11 +51,13 @@ public sealed class ReportsController(AppDbContext db, StaffScopeResolver scopeR
                 d.DonationDate,
                 d.DonationType,
                 d.Amount,
+                d.EstimatedValue,
+                d.ImpactUnit,
                 SupporterType = d.Supporter != null ? d.Supporter.SupporterType : null,
             })
             .ToListAsync(cancellationToken);
 
-        var grandTotal = donationsList.Sum(d => d.Amount ?? 0m);
+        var grandTotal = donationsList.Sum(d => FinancialContributionPhp(d.Amount, d.EstimatedValue, d.DonationType, d.ImpactUnit));
         var donationCount = donationsList.Count;
 
         var byMonth = donationsList
@@ -65,7 +67,7 @@ public sealed class ReportsController(AppDbContext db, StaffScopeResolver scopeR
             {
                 PeriodLabel = g.Key.ToString("yyyy-MM"),
                 SortKey = g.Key,
-                TotalAmount = g.Sum(x => x.Amount ?? 0m),
+                TotalAmount = g.Sum(x => FinancialContributionPhp(x.Amount, x.EstimatedValue, x.DonationType, x.ImpactUnit)),
                 Count = g.Count(),
             })
             .OrderBy(x => x.SortKey)
@@ -78,15 +80,51 @@ public sealed class ReportsController(AppDbContext db, StaffScopeResolver scopeR
             })
             .ToList();
 
-        var byType = donationsList
+        var byTypeFinancial = donationsList
             .GroupBy(d => d.DonationType ?? "Unknown")
-            .Select(g => new NamedAmountDto { Name = g.Key, Amount = g.Sum(x => x.Amount ?? 0m), Count = g.Count() })
+            .Select(g => new NamedAmountDto
+            {
+                Name = g.Key,
+                Amount = g.Sum(x => FinancialContributionPhp(x.Amount, x.EstimatedValue, x.DonationType, x.ImpactUnit)),
+                Count = g.Count(),
+            })
+            .Where(x => x.Amount > 0)
             .OrderByDescending(x => x.Amount)
             .ToList();
 
-        var bySupporterSegment = donationsList
+        var byTypeVolunteerHours = donationsList
+            .GroupBy(d => d.DonationType ?? "Unknown")
+            .Select(g => new NamedAmountDto
+            {
+                Name = g.Key,
+                Amount = g.Sum(x => VolunteerHoursTotal(x.Amount, x.EstimatedValue, x.DonationType, x.ImpactUnit)),
+                Count = g.Count(),
+            })
+            .Where(x => x.Amount > 0)
+            .OrderByDescending(x => x.Amount)
+            .ToList();
+
+        var bySupporterFinancial = donationsList
             .GroupBy(d => d.SupporterType ?? "Unknown")
-            .Select(g => new NamedAmountDto { Name = g.Key, Amount = g.Sum(x => x.Amount ?? 0m), Count = g.Count() })
+            .Select(g => new NamedAmountDto
+            {
+                Name = g.Key,
+                Amount = g.Sum(x => FinancialContributionPhp(x.Amount, x.EstimatedValue, x.DonationType, x.ImpactUnit)),
+                Count = g.Count(),
+            })
+            .Where(x => x.Amount > 0)
+            .OrderByDescending(x => x.Amount)
+            .ToList();
+
+        var bySupporterVolunteerHours = donationsList
+            .GroupBy(d => d.SupporterType ?? "Unknown")
+            .Select(g => new NamedAmountDto
+            {
+                Name = g.Key,
+                Amount = g.Sum(x => VolunteerHoursTotal(x.Amount, x.EstimatedValue, x.DonationType, x.ImpactUnit)),
+                Count = g.Count(),
+            })
+            .Where(x => x.Amount > 0)
             .OrderByDescending(x => x.Amount)
             .ToList();
 
@@ -129,8 +167,10 @@ public sealed class ReportsController(AppDbContext db, StaffScopeResolver scopeR
             GrandTotal = grandTotal,
             DonationCount = donationCount,
             ByMonth = byMonth,
-            ByDonationType = byType,
-            BySupporterType = bySupporterSegment,
+            ByDonationTypeFinancial = byTypeFinancial,
+            ByDonationTypeVolunteerHours = byTypeVolunteerHours,
+            BySupporterTypeFinancial = bySupporterFinancial,
+            BySupporterTypeVolunteerHours = bySupporterVolunteerHours,
             ByProgramArea = byProgramArea,
             BySafehouse = bySafehouse,
             FilterOptions = new ReportFilterOptionsDto
@@ -313,7 +353,7 @@ public sealed class ReportsController(AppDbContext db, StaffScopeResolver scopeR
                     Label = "Healing (health & wellbeing)",
                     ServiceUnits = healingRecords,
                     Detail = healingRecords > 0
-                        ? $"Avg. general health score {(avgHealth.HasValue ? avgHealth.Value.ToString("0.##") : "n/a")} across records; medical checkups documented on {medicalDone:N0} visits."
+                        ? $"{healingRecords:N0} health & wellbeing records in this scope (see site table for averages)."
                         : "No health records in scope for the selected filter.",
                 },
                 Teaching = new DomainServicesDto
@@ -321,7 +361,7 @@ public sealed class ReportsController(AppDbContext db, StaffScopeResolver scopeR
                     Label = "Teaching (education & development)",
                     ServiceUnits = teachingRecords,
                     Detail = teachingRecords > 0
-                        ? $"{teachingRecords:N0} education updates; avg. learning progress {(avgProgress.HasValue ? avgProgress.Value.ToString("0.#") : "n/a")}%."
+                        ? $"{teachingRecords:N0} education updates in this scope (see site table for learning progress)."
                         : "No education records in scope for the selected filter.",
                 },
             },
@@ -353,6 +393,28 @@ public sealed class ReportsController(AppDbContext db, StaffScopeResolver scopeR
             })
             .ToListAsync(ct);
     }
+
+    /// <summary>Volunteer time is stored in estimated value with types like Time/Skills or impact_unit hours — never mix with peso totals.</summary>
+    private static bool IsVolunteerHoursDonation(string? donationType, string? impactUnit)
+    {
+        var t = (donationType ?? "").Trim();
+        if (string.Equals(t, "Time", StringComparison.OrdinalIgnoreCase)) return true;
+        if (string.Equals(t, "Skills", StringComparison.OrdinalIgnoreCase)) return true;
+        var u = (impactUnit ?? "").Trim();
+        return u.Contains("hour", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static decimal FinancialContributionPhp(decimal? amount, decimal? estimatedValue, string? donationType, string? impactUnit)
+    {
+        if (IsVolunteerHoursDonation(donationType, impactUnit)) return 0;
+        return amount ?? estimatedValue ?? 0m;
+    }
+
+    private static decimal VolunteerHoursTotal(decimal? amount, decimal? estimatedValue, string? donationType, string? impactUnit)
+    {
+        if (!IsVolunteerHoursDonation(donationType, impactUnit)) return 0;
+        return estimatedValue ?? amount ?? 0m;
+    }
 }
 
 public sealed class DonationTrendsReportDto
@@ -360,8 +422,10 @@ public sealed class DonationTrendsReportDto
     public decimal GrandTotal { get; set; }
     public int DonationCount { get; set; }
     public List<TimeSeriesPointDto> ByMonth { get; set; } = new();
-    public List<NamedAmountDto> ByDonationType { get; set; } = new();
-    public List<NamedAmountDto> BySupporterType { get; set; } = new();
+    public List<NamedAmountDto> ByDonationTypeFinancial { get; set; } = new();
+    public List<NamedAmountDto> ByDonationTypeVolunteerHours { get; set; } = new();
+    public List<NamedAmountDto> BySupporterTypeFinancial { get; set; } = new();
+    public List<NamedAmountDto> BySupporterTypeVolunteerHours { get; set; } = new();
     public List<NamedAmountDto> ByProgramArea { get; set; } = new();
     public List<SafehouseAmountDto> BySafehouse { get; set; } = new();
     public ReportFilterOptionsDto FilterOptions { get; set; } = new();

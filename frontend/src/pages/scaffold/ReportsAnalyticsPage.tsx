@@ -47,6 +47,12 @@ function fmtMoney(n: number) {
   return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(n);
 }
 
+function fmtHours(n: number) {
+  if (!Number.isFinite(n)) return '—';
+  const v = n >= 100 ? Math.round(n) : Math.round(n * 10) / 10;
+  return `${v.toLocaleString('en-PH')} hrs`;
+}
+
 interface NamedAmount {
   name: string;
   amount: number;
@@ -75,8 +81,10 @@ interface DonationTrends {
   grandTotal: number;
   donationCount: number;
   byMonth: TimePoint[];
-  byDonationType: NamedAmount[];
-  bySupporterType: NamedAmount[];
+  byDonationTypeFinancial: NamedAmount[];
+  byDonationTypeVolunteerHours: NamedAmount[];
+  bySupporterTypeFinancial: NamedAmount[];
+  bySupporterTypeVolunteerHours: NamedAmount[];
   byProgramArea: NamedAmount[];
   bySafehouse: SafehouseAmt[];
   filterOptions: { safehouses: SafehouseOpt[]; donationTypes: string[] };
@@ -250,15 +258,6 @@ export default function ReportsAnalyticsPage() {
     [donData],
   );
 
-  const enrollmentChart = useMemo(
-    () =>
-      (outData?.education.enrollmentBreakdown ?? []).map((e) => ({
-        name: e.name,
-        residents: e.count,
-      })),
-    [outData],
-  );
-
   const loadingAny = donLoading || outLoading;
 
   return (
@@ -420,7 +419,7 @@ export default function ReportsAnalyticsPage() {
                 }}
               >
                 <KPI label="Gifts (current filters)" value={String(donData.donationCount)} accent="#1E3A5F" />
-                <KPI label="Total recorded amount" value={fmtMoney(Number(donData.grandTotal))} accent="#0D9488" />
+                <KPI label="Total value (PHP)" value={fmtMoney(Number(donData.grandTotal))} sub="Cash & in-kind; volunteer hours below" accent="#0D9488" />
                 <KPI label="Period buckets" value={String(donData.byMonth.length)} sub="Months in chart" accent="#7C3AED" />
               </div>
 
@@ -439,38 +438,111 @@ export default function ReportsAnalyticsPage() {
                 </div>
               </div>
 
+              <p style={{ color: '#64748B', fontSize: 13, marginBottom: 14, maxWidth: 720 }}>
+                Financial charts use peso value (cash and in-kind estimates). Volunteer time uses recorded hours only—never combined with money on the same axis.
+              </p>
+
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16, marginBottom: 20 }}>
                 <div style={card}>
-                  <h3 style={{ fontSize: 15, color: '#1E3A5F', marginBottom: 12 }}>By contribution type</h3>
-                  <div style={{ width: '100%', height: 260 }}>
-                    <ResponsiveContainer>
-                      <BarChart data={donData.byDonationType.map((x) => ({ name: x.name, amount: Number(x.amount) }))} layout="vertical">
-                        <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                        <XAxis type="number" tickFormatter={(v: any) => fmtMoney(Number(v))} />
-                        <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 11 }} />
-                        <Tooltip formatter={(v: any) => fmtMoney(Number(v ?? 0))} />
-                        <Bar dataKey="amount" name="Amount" radius={[0, 4, 4, 0]}>
-                          {donData.byDonationType.map((_, i) => (
-                            <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                          ))}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
+                  <h3 style={{ fontSize: 15, color: '#1E3A5F', marginBottom: 4 }}>Financial value by contribution type</h3>
+                  <p style={{ fontSize: 12, color: '#94A3B8', marginBottom: 10 }}>PHP (cash & in-kind)</p>
+                  {donData.byDonationTypeFinancial.length > 0 ? (
+                    <div style={{ width: '100%', height: 260 }}>
+                      <ResponsiveContainer>
+                        <BarChart
+                          data={donData.byDonationTypeFinancial.map((x) => ({ name: x.name, amount: Number(x.amount) }))}
+                          layout="vertical"
+                        >
+                          <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                          <XAxis type="number" tickFormatter={(v: any) => fmtMoney(Number(v))} />
+                          <YAxis type="category" dataKey="name" width={108} tick={{ fontSize: 11 }} />
+                          <Tooltip formatter={(v: any) => fmtMoney(Number(v ?? 0))} />
+                          <Bar dataKey="amount" name="PHP" radius={[0, 4, 4, 0]}>
+                            {donData.byDonationTypeFinancial.map((_, i) => (
+                              <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  ) : (
+                    <p style={{ color: '#94A3B8', fontSize: 13, minHeight: 200, display: 'flex', alignItems: 'center' }}>
+                      No financial contributions in this period for the selected filters.
+                    </p>
+                  )}
                 </div>
                 <div style={card}>
-                  <h3 style={{ fontSize: 15, color: '#1E3A5F', marginBottom: 12 }}>By donor segment</h3>
-                  <div style={{ width: '100%', height: 260 }}>
-                    <ResponsiveContainer>
-                      <BarChart data={donData.bySupporterType.map((x) => ({ name: x.name, amount: Number(x.amount) }))}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                        <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-                        <YAxis tickFormatter={(v: any) => fmtMoney(Number(v))} width={72} />
-                        <Tooltip formatter={(v: any) => fmtMoney(Number(v ?? 0))} />
-                        <Bar dataKey="amount" fill="#1E3A5F" radius={[4, 4, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
+                  <h3 style={{ fontSize: 15, color: '#1E3A5F', marginBottom: 4 }}>Financial value by donor segment</h3>
+                  <p style={{ fontSize: 12, color: '#94A3B8', marginBottom: 10 }}>PHP (cash & in-kind)</p>
+                  {donData.bySupporterTypeFinancial.length > 0 ? (
+                    <div style={{ width: '100%', height: 260 }}>
+                      <ResponsiveContainer>
+                        <BarChart data={donData.bySupporterTypeFinancial.map((x) => ({ name: x.name, amount: Number(x.amount) }))}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                          <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={0} angle={-18} textAnchor="end" height={64} />
+                          <YAxis tickFormatter={(v: any) => fmtMoney(Number(v))} width={72} />
+                          <Tooltip formatter={(v: any) => fmtMoney(Number(v ?? 0))} />
+                          <Bar dataKey="amount" fill="#1E3A5F" name="PHP" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  ) : (
+                    <p style={{ color: '#94A3B8', fontSize: 13, minHeight: 200, display: 'flex', alignItems: 'center' }}>
+                      No financial contributions in this period for the selected filters.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16, marginBottom: 20 }}>
+                <div style={card}>
+                  <h3 style={{ fontSize: 15, color: '#1E3A5F', marginBottom: 4 }}>Volunteer time by contribution type</h3>
+                  <p style={{ fontSize: 12, color: '#94A3B8', marginBottom: 10 }}>Hours (Time / Skills)</p>
+                  {donData.byDonationTypeVolunteerHours.length > 0 ? (
+                    <div style={{ width: '100%', height: 260 }}>
+                      <ResponsiveContainer>
+                        <BarChart
+                          data={donData.byDonationTypeVolunteerHours.map((x) => ({ name: x.name, hours: Number(x.amount) }))}
+                          layout="vertical"
+                        >
+                          <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                          <XAxis type="number" tickFormatter={(v: any) => fmtHours(Number(v))} />
+                          <YAxis type="category" dataKey="name" width={108} tick={{ fontSize: 11 }} />
+                          <Tooltip formatter={(v: any) => fmtHours(Number(v ?? 0))} />
+                          <Bar dataKey="hours" name="Hours" radius={[0, 4, 4, 0]}>
+                            {donData.byDonationTypeVolunteerHours.map((_, i) => (
+                              <Cell key={i} fill={CHART_COLORS[(i + 2) % CHART_COLORS.length]} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  ) : (
+                    <p style={{ color: '#94A3B8', fontSize: 13, minHeight: 200, display: 'flex', alignItems: 'center' }}>
+                      No volunteer hours recorded for this period (or scope filters out time/skills gifts).
+                    </p>
+                  )}
+                </div>
+                <div style={card}>
+                  <h3 style={{ fontSize: 15, color: '#1E3A5F', marginBottom: 4 }}>Volunteer time by donor segment</h3>
+                  <p style={{ fontSize: 12, color: '#94A3B8', marginBottom: 10 }}>Hours (Time / Skills)</p>
+                  {donData.bySupporterTypeVolunteerHours.length > 0 ? (
+                    <div style={{ width: '100%', height: 260 }}>
+                      <ResponsiveContainer>
+                        <BarChart data={donData.bySupporterTypeVolunteerHours.map((x) => ({ name: x.name, hours: Number(x.amount) }))}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                          <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={0} angle={-18} textAnchor="end" height={64} />
+                          <YAxis tickFormatter={(v: any) => fmtHours(Number(v))} width={76} />
+                          <Tooltip formatter={(v: any) => fmtHours(Number(v ?? 0))} />
+                          <Bar dataKey="hours" fill="#059669" name="Hours" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  ) : (
+                    <p style={{ color: '#94A3B8', fontSize: 13, minHeight: 200, display: 'flex', alignItems: 'center' }}>
+                      No volunteer hours recorded for this period (or scope filters out time/skills gifts).
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -586,45 +658,6 @@ export default function ReportsAnalyticsPage() {
                   }
                   accent="#7C3AED"
                 />
-              </div>
-
-              <h2 style={{ ...sectionTitle, fontSize: 18 }} id="education-health">
-                Learning &amp; wellbeing
-              </h2>
-              <p style={{ color: '#64748B', fontSize: 14, marginBottom: 16 }}>Education progress and health indicators for the selected scope.</p>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16, marginBottom: 28 }}>
-                <div style={card}>
-                  <h3 style={{ fontSize: 15, color: '#1E3A5F', marginBottom: 12 }}>Education</h3>
-                  <p style={{ fontSize: 13, color: '#64748B', marginBottom: 10 }}>
-                    Average progress {outData.education.avgProgressPercent != null ? `${outData.education.avgProgressPercent}%` : '—'} ·{' '}
-                    {outData.education.educationRecordCount} update(s) on file
-                  </p>
-                  {enrollmentChart.length > 0 ? (
-                    <div style={{ width: '100%', height: 220 }}>
-                      <ResponsiveContainer>
-                        <BarChart data={enrollmentChart}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                          <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-                          <YAxis allowDecimals={false} />
-                          <Tooltip />
-                          <Bar dataKey="residents" fill="#D97706" name="Residents" radius={[4, 4, 0, 0]} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  ) : (
-                    <p style={{ color: '#94A3B8', fontSize: 13 }}>No enrollment breakdown for this scope.</p>
-                  )}
-                </div>
-                <div style={card}>
-                  <h3 style={{ fontSize: 15, color: '#1E3A5F', marginBottom: 12 }}>Health &amp; wellbeing</h3>
-                  <ul style={{ margin: 0, paddingLeft: 18, color: '#475569', fontSize: 14, lineHeight: 1.7 }}>
-                    <li>Average general health score: {outData.health.avgGeneralHealthScore ?? '—'}</li>
-                    <li>Medical checkup documented on {outData.health.medicalCheckupRate != null ? `${outData.health.medicalCheckupRate}%` : '—'} of records</li>
-                    <li>Dental checkup documented on {outData.health.dentalCheckupRate != null ? `${outData.health.dentalCheckupRate}%` : '—'} of records</li>
-                    <li>Health records: {outData.health.healthRecordCount}</li>
-                  </ul>
-                </div>
               </div>
 
               <h2 style={{ ...sectionTitle, fontSize: 18 }} id="sites">
