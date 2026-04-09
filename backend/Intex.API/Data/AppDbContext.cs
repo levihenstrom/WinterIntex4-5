@@ -26,6 +26,7 @@ public class AppDbContext : DbContext
     public DbSet<IncidentReport> IncidentReports => Set<IncidentReport>();
     public DbSet<SafehouseMonthlyMetric> SafehouseMonthlyMetrics => Set<SafehouseMonthlyMetric>();
     public DbSet<PublicImpactSnapshot> PublicImpactSnapshots => Set<PublicImpactSnapshot>();
+    public DbSet<Story> Stories => Set<Story>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
