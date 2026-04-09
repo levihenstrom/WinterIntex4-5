@@ -42,6 +42,6 @@
   },
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/assets/*", "*.css", "*.js", "*.mjs", "*.svg", "*.ico", "*.png", "*.woff2", "*.woff", "*.ttf", "/favicon.svg"]
+    "exclude": ["/assets/*", "*.css", "*.js", "*.mjs", "*.svg", "*.ico", "*.png", "*.jpg", "*.jpeg", "*.webp", "*.avif", "*.gif", "*.woff2", "*.woff", "*.ttf", "/favicon.svg"]
   }
 }

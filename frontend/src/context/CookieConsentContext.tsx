@@ -9,6 +9,48 @@ import type { ReactNode } from 'react';
 const CONSENT_COOKIE_NAME = 'cookie_consent';
 const LEGACY_STORAGE_KEY = 'intex-cookie-consent';
 
+function safeLocalStorageRemoveItem(key: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.removeItem(key);
+  } catch {
+    // Ignore blocked-storage errors in hardened/private browsers.
+  }
+}
+
+function safeLocalStorageSetItem(key: string, value: string): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    window.localStorage.setItem(key, value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function safeLocalStorageGetItem(key: string): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function safeLocalStorageKeys(): string[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const keys: string[] = [];
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const k = window.localStorage.key(i);
+      if (k) keys.push(k);
+    }
+    return keys;
+  } catch {
+    return [];
+  }
+}
+
 export type CookieConsentChoice = 'necessary' | 'all';
 
 const OPTIONAL_KEY_PREFIX = 'intex-optional-';
@@ -38,7 +80,7 @@ function readInitialChoice(): CookieConsentChoice | null {
   if (cookieValue === 'declined') return 'necessary';
 
   // Clear any previous localStorage-backed consent so state comes from cookies only.
-  window.localStorage.removeItem(LEGACY_STORAGE_KEY);
+  safeLocalStorageRemoveItem(LEGACY_STORAGE_KEY);
   return null;
 }
 
@@ -49,13 +91,8 @@ function writeConsentCookie(value: 'accepted' | 'declined'): void {
 }
 
 function clearOptionalLocalStorage(): void {
-  if (typeof window === 'undefined') return;
-  const keys: string[] = [];
-  for (let i = 0; i < window.localStorage.length; i++) {
-    const k = window.localStorage.key(i);
-    if (k?.startsWith(OPTIONAL_KEY_PREFIX)) keys.push(k);
-  }
-  for (const k of keys) window.localStorage.removeItem(k);
+  const keys = safeLocalStorageKeys().filter((k) => k.startsWith(OPTIONAL_KEY_PREFIX));
+  for (const k of keys) safeLocalStorageRemoveItem(k);
 }
 
 export function CookieConsentProvider({ children }: { children: ReactNode }) {
@@ -63,7 +100,7 @@ export function CookieConsentProvider({ children }: { children: ReactNode }) {
 
   const persist = useCallback((next: CookieConsentChoice) => {
     writeConsentCookie(next === 'all' ? 'accepted' : 'declined');
-    window.localStorage.removeItem(LEGACY_STORAGE_KEY);
+    safeLocalStorageRemoveItem(LEGACY_STORAGE_KEY);
     setChoice(next);
     if (next === 'necessary') {
       clearOptionalLocalStorage();
@@ -101,12 +138,11 @@ export function useCookieConsent() {
 export function setOptionalLocalStorage(key: string, value: string): boolean {
   if (typeof window === 'undefined') return false;
   if (readInitialChoice() !== 'all') return false;
-  window.localStorage.setItem(`${OPTIONAL_KEY_PREFIX}${key}`, value);
-  return true;
+  return safeLocalStorageSetItem(`${OPTIONAL_KEY_PREFIX}${key}`, value);
 }
 
 export function getOptionalLocalStorage(key: string): string | null {
   if (typeof window === 'undefined') return null;
   if (readInitialChoice() !== 'all') return null;
-  return window.localStorage.getItem(`${OPTIONAL_KEY_PREFIX}${key}`);
+  return safeLocalStorageGetItem(`${OPTIONAL_KEY_PREFIX}${key}`);
 }
