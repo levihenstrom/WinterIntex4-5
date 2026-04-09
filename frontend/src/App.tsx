@@ -134,10 +134,11 @@ function App() {
   return (
     <CookieConsentProvider>
       <AuthProvider>
-        <Router>
-          <ScrollToTop />
-          <RouteTitleManager />
-          <Routes>
+        <div className="hw-app">
+          <Router>
+            <ScrollToTop />
+            <RouteTitleManager />
+            <Routes>
             {/* Public routes */}
             <Route path="/" element={<HealingWingsHome />} />
             <Route path="/impact" element={<ImpactPage />} />
@@ -237,9 +238,10 @@ function App() {
               <Route path="reports/donations" element={<Navigate to="/admin/reports" replace />} />
               <Route path="reports/outcomes" element={<Navigate to="/admin/reports" replace />} />
             </Route>
-          </Routes>
-          <CookieConsentBanner />
-        </Router>
+            </Routes>
+            <CookieConsentBanner />
+          </Router>
+        </div>
       </AuthProvider>
     </CookieConsentProvider>
   );

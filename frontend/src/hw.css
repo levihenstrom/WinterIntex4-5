@@ -706,3 +706,54 @@
   will-change: transform;
 }
 
+/* ── Global responsive baseline (all routes) ─────────────────── */
+.hw-app,
+.hw-app * {
+  box-sizing: border-box;
+}
+
+.hw-app img,
+.hw-app svg,
+.hw-app video,
+.hw-app canvas {
+  max-width: 100%;
+  height: auto;
+}
+
+.hw-app input,
+.hw-app select,
+.hw-app textarea,
+.hw-app button {
+  max-width: 100%;
+}
+
+.hw-app .recharts-wrapper,
+.hw-app .recharts-responsive-container {
+  min-width: 0 !important;
+}
+
+@media (max-width: 767.98px) {
+  .hw-app .container,
+  .hw-app .container-sm,
+  .hw-app .container-md,
+  .hw-app .container-lg,
+  .hw-app .container-xl,
+  .hw-app .container-xxl {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .hw-app .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .hw-app table {
+    min-width: 640px;
+  }
+
+  .hw-app .card {
+    border-radius: 12px;
+  }
+}
+
