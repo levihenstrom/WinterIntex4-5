@@ -915,7 +915,7 @@ export default function ResidentProfilePage() {
           <div id="section-ml" style={{ background: '#F5F3FF', border: '1px solid #C4B5FD', borderRadius: 12, padding: '14px 20px', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
             <i className="bi bi-stars" style={{ fontSize: 20, color: '#6B21A8' }} />
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#6B21A8', marginBottom: 2 }}>ML Reintegration Readiness</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#6B21A8', marginBottom: 2 }}>Reintegration Readiness</div>
               <div style={{ fontSize: 13, color: '#4C1D95' }}>
                 Support priority rank <strong>#{ml.supportPriorityRank}</strong>
                 {ml.operationalBand && <> · Band: <strong>{ml.operationalBand}</strong></>}
