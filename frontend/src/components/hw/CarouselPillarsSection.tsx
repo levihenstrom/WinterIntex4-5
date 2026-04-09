@@ -86,7 +86,14 @@ export default function CarouselPillarsSection() {
                   src={pillar.imgUrl} 
                   alt={pillar.title} 
                   className="hw-card-img relative z-0 w-full h-full object-cover transition-transform"
-                  style={{ transitionDuration: '350ms', transitionTimingFunction: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)' }}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    display: 'block',
+                    transitionDuration: '350ms',
+                    transitionTimingFunction: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+                  }}
                 />
                 
                 {/* Default Bottom Gradient Overlay (Subtle) */}
