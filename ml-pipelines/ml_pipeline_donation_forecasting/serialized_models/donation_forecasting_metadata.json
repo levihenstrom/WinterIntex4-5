@@ -12,7 +12,7 @@
   "best_amount_model": "random_forest",
   "holdout_amount_metrics": {
     "rmse": 803.5735037032164,
-    "mae": 545.869716984146,
+    "mae": 545.8697169841458,
     "r2": -0.055826333570533127
   },
   "amount_model_comparison": [
@@ -28,12 +28,12 @@
     },
     {
       "model": "random_forest",
-      "rmse": 803.5735037032164,
-      "mae": 545.8697169841458,
-      "r2": -0.05582633357053335,
-      "r2_log": -0.025167173474190063,
-      "rmse_log": 0.6732295960857108,
-      "cv_rmse_log_mean": 0.7121110381715652,
+      "rmse": 803.5735037032163,
+      "mae": 545.869716984146,
+      "r2": -0.055826333570532904,
+      "r2_log": -0.02516717347418962,
+      "rmse_log": 0.6732295960857106,
+      "cv_rmse_log_mean": 0.7121110381715651,
       "cv_n_splits": 5.0
     },
     {
@@ -56,8 +56,8 @@
       "model__max_depth": 5
     },
     "cv_n_splits": 5,
-    "cv_rmse_log_mean": 0.7121110381715652,
-    "cv_neg_mse_std": 0.11671319534085076
+    "cv_rmse_log_mean": 0.7121110381715651,
+    "cv_neg_mse_std": 0.1167131953408508
   },
   "allocation_holdout": {
     "per_area_mae": {
@@ -102,10 +102,10 @@
   "combined_predicted_funding_test_rows": {
     "total_predicted_php_sample": 38378.86336496927,
     "predicted_php_by_program_area": {
-      "y_alloc_Education": 7003.387829629062,
+      "y_alloc_Education": 7003.387829629061,
       "y_alloc_Maintenance": 4861.471950967296,
       "y_alloc_Operations": 10050.246231558971,
-      "y_alloc_Outreach": 3938.811297451902,
+      "y_alloc_Outreach": 3938.8112974519017,
       "y_alloc_Transport": 4138.871472344834,
       "y_alloc_Wellbeing": 8386.074583017205
     },

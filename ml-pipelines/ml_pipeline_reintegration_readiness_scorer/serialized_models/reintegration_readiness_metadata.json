@@ -385,9 +385,9 @@
     }
   ],
   "output_plots": {
-    "roc_png": "/Users/jooyoung/Downloads/intex2026/WinterIntex4-5/ml_pipeline/ml_pipeline_reintegration_readiness_scorer/outputs/holdout_roc_curve.png",
-    "pr_png": "/Users/jooyoung/Downloads/intex2026/WinterIntex4-5/ml_pipeline/ml_pipeline_reintegration_readiness_scorer/outputs/holdout_pr_curve.png",
-    "calibration_png": "/Users/jooyoung/Downloads/intex2026/WinterIntex4-5/ml_pipeline/ml_pipeline_reintegration_readiness_scorer/outputs/holdout_calibration_curve.png"
+    "roc_png": "/Users/jooyoung/Downloads/intex2026/WinterIntex4-5/ml-pipelines/ml_pipeline_reintegration_readiness_scorer/outputs/holdout_roc_curve.png",
+    "pr_png": "/Users/jooyoung/Downloads/intex2026/WinterIntex4-5/ml-pipelines/ml_pipeline_reintegration_readiness_scorer/outputs/holdout_pr_curve.png",
+    "calibration_png": "/Users/jooyoung/Downloads/intex2026/WinterIntex4-5/ml-pipelines/ml_pipeline_reintegration_readiness_scorer/outputs/holdout_calibration_curve.png"
   },
   "ethics": "Readiness scores are statistical associations on historical snapshots, not deterministic outcomes."
 }
