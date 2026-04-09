@@ -1,7 +1,33 @@
 {
+  "routes": [
+    {
+      "route": "/assets/*.js",
+      "headers": {
+        "Content-Type": "text/javascript; charset=utf-8"
+      }
+    },
+    {
+      "route": "/assets/*.mjs",
+      "headers": {
+        "Content-Type": "text/javascript; charset=utf-8"
+      }
+    },
+    {
+      "route": "/*.js",
+      "headers": {
+        "Content-Type": "text/javascript; charset=utf-8"
+      }
+    },
+    {
+      "route": "/*.mjs",
+      "headers": {
+        "Content-Type": "text/javascript; charset=utf-8"
+      }
+    }
+  ],
   "mimeTypes": {
-    ".js": "application/javascript",
-    ".mjs": "application/javascript",
+    ".js": "text/javascript; charset=utf-8",
+    ".mjs": "text/javascript; charset=utf-8",
     ".css": "text/css",
     ".svg": "image/svg+xml",
     ".woff2": "font/woff2",
