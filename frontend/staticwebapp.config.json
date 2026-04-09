@@ -1,0 +1,21 @@
+{
+  "mimeTypes": {
+    ".js": "application/javascript",
+    ".mjs": "application/javascript",
+    ".css": "text/css",
+    ".svg": "image/svg+xml",
+    ".woff2": "font/woff2",
+    ".woff": "font/woff",
+    ".ttf": "font/ttf",
+    ".ico": "image/x-icon",
+    ".png": "image/png",
+    ".json": "application/json"
+  },
+  "globalHeaders": {
+    "Content-Security-Policy": "default-src 'self'; base-uri 'self'; frame-ancestors 'none'; object-src 'none'; img-src 'self' data: https: https://givebutter.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net; frame-src 'self' https://givebutter.com; script-src 'self'; connect-src 'self' https://intex-group4-5-backend-dna7b3ddfvf8dxgb.centralus-01.azurewebsites.net https://givebutter.com"
+  },
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": ["/assets/*", "*.css", "*.js", "*.mjs", "*.svg", "*.ico", "*.png", "*.woff2", "*.woff", "*.ttf", "/favicon.svg"]
+  }
+}
