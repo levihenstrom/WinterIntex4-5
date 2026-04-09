@@ -1,14 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ResponsiveContainer,
-  LineChart,
+  ComposedChart,
   Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
+  Legend,
   BarChart,
   Bar,
+  PieChart,
+  Pie,
   Cell,
 } from 'recharts';
 import { fetchJson } from '../../lib/apiClient';
@@ -51,12 +54,6 @@ function fmtMoney(n: number) {
 /** Shorter peso-only labels for chart axes (avoids cramped dual-currency ticks). */
 function fmtMoneyChart(n: number) {
   return formatPesoCompact(n);
-}
-
-function fmtHours(n: number) {
-  if (!Number.isFinite(n)) return '—';
-  const v = n >= 100 ? Math.round(n) : Math.round(n * 10) / 10;
-  return `${v.toLocaleString('en-PH')} hrs`;
 }
 
 interface NamedAmount {
@@ -264,6 +261,17 @@ export default function ReportsAnalyticsPage() {
     [donData],
   );
 
+  /** Share of total PHP by contribution type — for pie chart. */
+  const financialMixPie = useMemo(() => {
+    const rows = donData?.byDonationTypeFinancial ?? [];
+    const total = rows.reduce((s, x) => s + Number(x.amount), 0);
+    if (total <= 0) return [];
+    return rows.map((x) => ({
+      name: x.name,
+      value: Number(x.amount),
+    }));
+  }, [donData]);
+
   const loadingAny = donLoading || outLoading;
 
   return (
@@ -425,128 +433,107 @@ export default function ReportsAnalyticsPage() {
                 }}
               >
                 <KPI label="Gifts (current filters)" value={String(donData.donationCount)} accent="#1E3A5F" />
-                <KPI label="Total value (PHP)" value={fmtMoney(Number(donData.grandTotal))} sub="Cash & in-kind; volunteer hours below" accent="#0D9488" />
+                <KPI label="Total value (PHP)" value={fmtMoney(Number(donData.grandTotal))} sub="Cash & in-kind in scope" accent="#0D9488" />
                 <KPI label="Period buckets" value={String(donData.byMonth.length)} sub="Months in chart" accent="#7C3AED" />
               </div>
 
-              <div style={{ ...card, marginBottom: 20 }}>
-                <h3 style={{ fontFamily: 'Poppins, sans-serif', fontSize: 17, color: '#1E3A5F', marginBottom: 16 }}>Giving over time</h3>
-                <div style={{ width: '100%', height: 320 }}>
-                  <ResponsiveContainer>
-                    <LineChart data={monthChartData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                      <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                      <YAxis tickFormatter={(v: any) => fmtMoneyChart(Number(v))} width={88} tick={{ fontSize: 10 }} />
-                      <Tooltip formatter={(v: any) => fmtMoney(Number(v ?? 0))} labelStyle={{ color: '#334155' }} />
-                      <Line type="monotone" dataKey="amount" name="Amount" stroke="#0D9488" strokeWidth={2} dot={{ r: 3 }} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-
               <p style={{ color: '#64748B', fontSize: 13, marginBottom: 14, maxWidth: 720 }}>
-                Financial charts use peso value (cash and in-kind estimates). Volunteer time uses recorded hours only—never combined with money on the same axis.
+                Four views: monthly value and gift volume, where recorded PHP comes from by type, then how allocations flow to programs and sites.
               </p>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16, marginBottom: 20 }}>
                 <div style={card}>
-                  <h3 style={{ fontSize: 15, color: '#1E3A5F', marginBottom: 4 }}>Financial value by contribution type</h3>
-                  <p style={{ fontSize: 12, color: '#94A3B8', marginBottom: 10 }}>PHP (cash & in-kind)</p>
-                  {donData.byDonationTypeFinancial.length > 0 ? (
-                    <div style={{ width: '100%', height: 260 }}>
+                  <h3 style={{ fontFamily: 'Poppins, sans-serif', fontSize: 17, color: '#1E3A5F', marginBottom: 4 }}>
+                    Monthly value &amp; gift volume
+                  </h3>
+                  <p style={{ fontSize: 12, color: '#94A3B8', marginBottom: 12 }}>
+                    Bars = peso value recorded per month; line = number of gifts (same filters).
+                  </p>
+                  {monthChartData.length > 0 ? (
+                    <div style={{ width: '100%', height: 320 }}>
                       <ResponsiveContainer>
-                        <BarChart
-                          data={donData.byDonationTypeFinancial.map((x) => ({ name: x.name, amount: Number(x.amount) }))}
-                          layout="vertical"
-                        >
+                        <ComposedChart data={monthChartData}>
                           <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                          <XAxis type="number" tickFormatter={(v: any) => fmtMoneyChart(Number(v))} />
-                          <YAxis type="category" dataKey="name" width={108} tick={{ fontSize: 11 }} />
-                          <Tooltip formatter={(v: any) => fmtMoney(Number(v ?? 0))} />
-                          <Bar dataKey="amount" name="PHP" radius={[0, 4, 4, 0]}>
-                            {donData.byDonationTypeFinancial.map((_, i) => (
+                          <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                          <YAxis
+                            yAxisId="php"
+                            tickFormatter={(v: any) => fmtMoneyChart(Number(v))}
+                            width={82}
+                            tick={{ fontSize: 10 }}
+                            label={{ value: 'PHP', angle: -90, position: 'insideLeft', fill: '#64748B', fontSize: 11 }}
+                          />
+                          <YAxis
+                            yAxisId="gifts"
+                            orientation="right"
+                            allowDecimals={false}
+                            width={44}
+                            tick={{ fontSize: 10 }}
+                            label={{ value: 'Gifts', angle: 90, position: 'insideRight', fill: '#64748B', fontSize: 11 }}
+                          />
+                          <Tooltip
+                            formatter={(value: unknown, name: unknown) => {
+                              const n = String(name ?? '');
+                              if (n === 'PHP value' || n === 'amount') {
+                                return [fmtMoney(Number(value)), 'PHP value'] as [string, string];
+                              }
+                              return [String(value ?? ''), n || 'Gifts'] as [string, string];
+                            }}
+                            labelStyle={{ color: '#334155' }}
+                          />
+                          <Legend wrapperStyle={{ fontSize: 12 }} />
+                          <Bar yAxisId="php" dataKey="amount" name="PHP value" fill="#0D9488" radius={[4, 4, 0, 0]} maxBarSize={48} />
+                          <Line
+                            yAxisId="gifts"
+                            type="monotone"
+                            dataKey="gifts"
+                            name="Gifts"
+                            stroke="#1E3A5F"
+                            strokeWidth={2}
+                            dot={{ r: 3 }}
+                          />
+                        </ComposedChart>
+                      </ResponsiveContainer>
+                    </div>
+                  ) : (
+                    <p style={{ color: '#94A3B8', fontSize: 13, minHeight: 200 }}>No monthly data for the selected filters.</p>
+                  )}
+                </div>
+
+                <div style={card}>
+                  <h3 style={{ fontFamily: 'Poppins, sans-serif', fontSize: 17, color: '#1E3A5F', marginBottom: 4 }}>
+                    Financial mix by contribution type
+                  </h3>
+                  <p style={{ fontSize: 12, color: '#94A3B8', marginBottom: 12 }}>Share of total PHP in scope (cash &amp; in-kind).</p>
+                  {financialMixPie.length > 0 ? (
+                    <div style={{ width: '100%', height: 320 }}>
+                      <ResponsiveContainer>
+                        <PieChart>
+                          <Pie
+                            data={financialMixPie}
+                            dataKey="value"
+                            nameKey="name"
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={58}
+                            outerRadius={100}
+                            paddingAngle={2}
+                            labelLine={{ stroke: '#94A3B8' }}
+                            label={({ name, percent }) =>
+                              `${name} ${percent != null ? `${(percent * 100).toFixed(0)}%` : ''}`
+                            }
+                          >
+                            {financialMixPie.map((_, i) => (
                               <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
                             ))}
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  ) : (
-                    <p style={{ color: '#94A3B8', fontSize: 13, minHeight: 200, display: 'flex', alignItems: 'center' }}>
-                      No financial contributions in this period for the selected filters.
-                    </p>
-                  )}
-                </div>
-                <div style={card}>
-                  <h3 style={{ fontSize: 15, color: '#1E3A5F', marginBottom: 4 }}>Financial value by donor segment</h3>
-                  <p style={{ fontSize: 12, color: '#94A3B8', marginBottom: 10 }}>PHP (cash & in-kind)</p>
-                  {donData.bySupporterTypeFinancial.length > 0 ? (
-                    <div style={{ width: '100%', height: 260 }}>
-                      <ResponsiveContainer>
-                        <BarChart data={donData.bySupporterTypeFinancial.map((x) => ({ name: x.name, amount: Number(x.amount) }))}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                          <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={0} angle={-18} textAnchor="end" height={64} />
-                          <YAxis tickFormatter={(v: any) => fmtMoneyChart(Number(v))} width={72} />
+                          </Pie>
                           <Tooltip formatter={(v: any) => fmtMoney(Number(v ?? 0))} />
-                          <Bar dataKey="amount" fill="#1E3A5F" name="PHP" radius={[4, 4, 0, 0]} />
-                        </BarChart>
+                          <Legend wrapperStyle={{ fontSize: 12 }} />
+                        </PieChart>
                       </ResponsiveContainer>
                     </div>
                   ) : (
                     <p style={{ color: '#94A3B8', fontSize: 13, minHeight: 200, display: 'flex', alignItems: 'center' }}>
                       No financial contributions in this period for the selected filters.
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16, marginBottom: 20 }}>
-                <div style={card}>
-                  <h3 style={{ fontSize: 15, color: '#1E3A5F', marginBottom: 4 }}>Volunteer time by contribution type</h3>
-                  <p style={{ fontSize: 12, color: '#94A3B8', marginBottom: 10 }}>Hours (Time / Skills)</p>
-                  {donData.byDonationTypeVolunteerHours.length > 0 ? (
-                    <div style={{ width: '100%', height: 260 }}>
-                      <ResponsiveContainer>
-                        <BarChart
-                          data={donData.byDonationTypeVolunteerHours.map((x) => ({ name: x.name, hours: Number(x.amount) }))}
-                          layout="vertical"
-                        >
-                          <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                          <XAxis type="number" tickFormatter={(v: any) => fmtHours(Number(v))} />
-                          <YAxis type="category" dataKey="name" width={108} tick={{ fontSize: 11 }} />
-                          <Tooltip formatter={(v: any) => fmtHours(Number(v ?? 0))} />
-                          <Bar dataKey="hours" name="Hours" radius={[0, 4, 4, 0]}>
-                            {donData.byDonationTypeVolunteerHours.map((_, i) => (
-                              <Cell key={i} fill={CHART_COLORS[(i + 2) % CHART_COLORS.length]} />
-                            ))}
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  ) : (
-                    <p style={{ color: '#94A3B8', fontSize: 13, minHeight: 200, display: 'flex', alignItems: 'center' }}>
-                      No volunteer hours recorded for this period (or scope filters out time/skills gifts).
-                    </p>
-                  )}
-                </div>
-                <div style={card}>
-                  <h3 style={{ fontSize: 15, color: '#1E3A5F', marginBottom: 4 }}>Volunteer time by donor segment</h3>
-                  <p style={{ fontSize: 12, color: '#94A3B8', marginBottom: 10 }}>Hours (Time / Skills)</p>
-                  {donData.bySupporterTypeVolunteerHours.length > 0 ? (
-                    <div style={{ width: '100%', height: 260 }}>
-                      <ResponsiveContainer>
-                        <BarChart data={donData.bySupporterTypeVolunteerHours.map((x) => ({ name: x.name, hours: Number(x.amount) }))}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                          <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={0} angle={-18} textAnchor="end" height={64} />
-                          <YAxis tickFormatter={(v: any) => fmtHours(Number(v))} width={76} />
-                          <Tooltip formatter={(v: any) => fmtHours(Number(v ?? 0))} />
-                          <Bar dataKey="hours" fill="#059669" name="Hours" radius={[4, 4, 0, 0]} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  ) : (
-                    <p style={{ color: '#94A3B8', fontSize: 13, minHeight: 200, display: 'flex', alignItems: 'center' }}>
-                      No volunteer hours recorded for this period (or scope filters out time/skills gifts).
                     </p>
                   )}
                 </div>
