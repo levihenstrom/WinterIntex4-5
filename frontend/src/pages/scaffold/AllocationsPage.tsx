@@ -40,6 +40,10 @@ interface AllocForm {
 const fmt = (name: string | null | undefined): string =>
   (name ?? '').replace(/^Lighthouse\s+/i, '') || name || '—';
 
+function fmtMoney(amount: number | null | undefined): string {
+  return formatAmountMaybePhpAndUsd(amount);
+}
+
 function supporterLabel(a: DonationAllocationRow): string {
   const s = a.donation?.supporter;
   const name = s?.displayName?.trim() || s?.organizationName?.trim();
@@ -307,7 +311,7 @@ export default function AllocationsPage() {
           <>
             <AdminKpiStrip
               items={[
-                { label: 'Total allocated (USD)', value: formatAmountMaybePhpAndUsd(allocationKpis.totalPhp, 'PHP'), sub: 'all loaded rows', accent: '#059669', icon: 'cash-stack' },
+                { label: 'Total allocated (USD)', value: fmtMoney(allocationKpis.totalPhp), sub: 'all loaded rows', accent: '#059669', icon: 'cash-stack' },
                 { label: 'Allocation rows', value: String(allocationKpis.count), accent: '#1E3A5F', icon: 'list-ul' },
                 { label: 'Sites', value: String(allocationKpis.safehouses), sub: 'distinct safehouses', accent: '#0D9488', icon: 'building' },
                 { label: 'Program areas', value: String(allocationKpis.programs), sub: 'distinct labels', accent: '#7C3AED', icon: 'diagram-3' },
@@ -328,7 +332,7 @@ export default function AllocationsPage() {
                   }}
                 >
                   <div style={{ fontSize: 13, fontWeight: 700, color: '#1E3A5F', marginBottom: 8 }}>{fmt(name)}</div>
-                  <div style={{ fontSize: 22, fontWeight: 800, color: '#1E3A5F' }}>{formatAmountMaybePhpAndUsd(total, 'PHP')}</div>
+                  <div style={{ fontSize: 22, fontWeight: 800, color: '#1E3A5F' }}>{fmtMoney(total)}</div>
                   <div style={{ fontSize: 11, color: '#64748B' }}>total allocated</div>
                 </div>
               ))}
@@ -345,7 +349,7 @@ export default function AllocationsPage() {
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 3 }}>
                         <span style={{ fontWeight: 600, color: '#475569' }}>{name}</span>
                         <span style={{ color: '#1E3A5F', fontWeight: 700 }}>
-                          {formatAmountMaybePhpAndUsd(total, 'PHP')} <span style={{ color: '#94A3B8', fontWeight: 400 }}>({pct}%)</span>
+                          {fmtMoney(total)} <span style={{ color: '#94A3B8', fontWeight: 400 }}>({pct}%)</span>
                         </span>
                       </div>
                       <div style={{ background: '#F1F5F9', borderRadius: 4, height: 8, overflow: 'hidden' }}>
@@ -401,7 +405,7 @@ export default function AllocationsPage() {
                 ))}
               </select>
               <div style={{ marginLeft: 'auto', fontSize: 12, color: '#64748B' }}>
-                <strong style={{ color: '#1E3A5F' }}>{formatAmountMaybePhpAndUsd(totalFiltered, 'PHP')}</strong> filtered · page {page} of {totalPages}
+                <strong style={{ color: '#1E3A5F' }}>{fmtMoney(totalFiltered)}</strong> filtered · page {page} of {totalPages}
               </div>
             </div>
 
@@ -441,7 +445,7 @@ export default function AllocationsPage() {
                           <td style={{ padding: '12px 16px', fontWeight: 700, color: '#6B21A8', fontSize: 12 }}>{a.donationId}</td>
                           <td style={{ padding: '12px 16px', fontWeight: 600, color: '#1E3A5F' }}>{supporterLabel(a)}</td>
                           <td style={{ padding: '12px 16px', fontWeight: 700, color: '#166534' }}>
-                            {formatAmountMaybePhpAndUsd(Number(a.amountAllocated ?? 0), 'PHP')}
+                            {fmtMoney(Number(a.amountAllocated ?? 0))}
                           </td>
                           <td style={{ padding: '12px 16px', color: '#475569' }}>{fmt(a.safehouse?.name ?? a.safehouse?.safehouseCode)}</td>
                           <td style={{ padding: '12px 16px', color: '#475569' }}>{a.programArea ?? '—'}</td>
@@ -530,7 +534,7 @@ export default function AllocationsPage() {
                       <dl className="row small mb-4">
                         <div className="col-sm-6 py-2 border-bottom">
                           <dt className="text-uppercase fw-semibold text-muted" style={{ fontSize: 10, letterSpacing: '0.04em' }}>Amount allocated</dt>
-                          <dd className="mb-0 mt-1 fw-semibold text-success">{formatAmountMaybePhpAndUsd(Number(detailRow.amountAllocated ?? 0), 'PHP')}</dd>
+                          <dd className="mb-0 mt-1 fw-semibold text-success">{fmtMoney(Number(detailRow.amountAllocated ?? 0))}</dd>
                         </div>
                         <div className="col-sm-6 py-2 border-bottom">
                           <dt className="text-uppercase fw-semibold text-muted" style={{ fontSize: 10, letterSpacing: '0.04em' }}>Allocated on</dt>

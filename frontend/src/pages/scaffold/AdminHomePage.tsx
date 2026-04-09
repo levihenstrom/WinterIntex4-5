@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type MouseEvent, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchJson, fetchPaged, postJson, type PagedResult } from '../../lib/apiClient';
 import { ResidentProfileModal } from '../../components/admin/ResidentProfileModal';
@@ -128,11 +128,11 @@ function QuickLink({ to, icon, title, description }: QuickLinkProps) {
           border: '1px solid rgba(107,33,168,0.08)',
           transition: 'border-color 0.2s, background 0.2s',
         }}
-        onMouseEnter={(e: React.MouseEvent) => {
+        onMouseEnter={(e: MouseEvent<HTMLElement>) => {
           (e.currentTarget as HTMLElement).style.borderColor = 'var(--hw-purple-soft)';
           (e.currentTarget as HTMLElement).style.background = 'var(--hw-bg-lavender)';
         }}
-        onMouseLeave={(e: React.MouseEvent) => {
+        onMouseLeave={(e: MouseEvent<HTMLElement>) => {
           (e.currentTarget as HTMLElement).style.borderColor = 'rgba(107,33,168,0.08)';
           (e.currentTarget as HTMLElement).style.background = 'var(--hw-bg-white)';
         }}

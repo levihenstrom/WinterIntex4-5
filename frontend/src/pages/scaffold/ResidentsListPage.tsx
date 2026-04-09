@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
   deleteJson,
@@ -501,9 +501,9 @@ export default function ResidentsListPage() {
     setProfileViewId(null);
   }
 
-  function openProfile(residentId: number) {
+  const openProfile = useCallback((residentId: number) => {
     setProfileViewId(residentId);
-  }
+  }, []);
 
   // Auto-open profile modal when navigated to /admin/residents/:id
   const autoOpenedRef = useRef(false);
@@ -514,9 +514,7 @@ export default function ResidentsListPage() {
       autoOpenedRef.current = true;
       openProfile(numId);
     }
-  // openProfile is stable within the component lifecycle
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [urlId]);
+  }, [urlId, openProfile]);
 
   const isEditing = editTarget !== null && editTarget !== 'new';
 
