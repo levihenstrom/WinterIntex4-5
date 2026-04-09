@@ -93,6 +93,32 @@
 /* Poppins heading font (replaces inline style fontFamily) */
 .hw-heading-font  { font-family: var(--hw-font-heading); }
 
+/* Table row Edit / Delete: minimal text; hover fills like a small button */
+.hw-row-action {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  background: transparent;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  line-height: 1.25;
+}
+.hw-row-action--edit {
+  color: #0369A1;
+}
+.hw-row-action--edit:hover {
+  background: #0369A1;
+  color: #fff;
+}
+.hw-row-action--delete {
+  color: #DC2626;
+}
+.hw-row-action--delete:hover {
+  background: #DC2626;
+  color: #fff;
+}
 
 /* ── Scroll-triggered fade-in ─────────────────────────────────── */
 .hw-fade-in {

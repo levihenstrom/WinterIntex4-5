@@ -23,6 +23,7 @@ public class DonationsController(AppDbContext db, StaffScopeResolver scopeResolv
         [FromQuery] int? supporterId = null,
         [FromQuery] string? donationType = null,
         [FromQuery] bool? unallocated = null,
+        [FromQuery] string? search = null,
         CancellationToken cancellationToken = default)
     {
         var scope = await scopeResolver.GetForUserAsync(User, cancellationToken);
@@ -36,6 +37,18 @@ public class DonationsController(AppDbContext db, StaffScopeResolver scopeResolv
             query = query.Where(d => d.DonationType == donationType);
         if (unallocated == true)
             query = query.Where(d => !db.DonationAllocations.Any(a => a.DonationId == d.DonationId));
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var t = search.Trim();
+            if (int.TryParse(t, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var did))
+                query = query.Where(d => d.DonationId == did);
+            else
+                query = query.Where(d =>
+                    d.Supporter != null &&
+                    ((d.Supporter.DisplayName != null && d.Supporter.DisplayName.Contains(t)) ||
+                     (d.Supporter.OrganizationName != null && d.Supporter.OrganizationName.Contains(t))));
+        }
 
         query = query.OrderByDescending(d => d.DonationDate).ThenBy(d => d.DonationId);
         var result = await query.ToPagedResultAsync(page, pageSize, cancellationToken);
@@ -126,7 +139,10 @@ public class DonationsController(AppDbContext db, StaffScopeResolver scopeResolv
     public async Task<ActionResult<Donation>> GetById(int id, CancellationToken cancellationToken)
     {
         var scope = await scopeResolver.GetForUserAsync(User, cancellationToken);
-        var entity = await scope.Apply(db.Donations.AsNoTracking().AsQueryable())
+        var entity = await scope.Apply(
+                db.Donations.AsNoTracking()
+                    .Include(d => d.Supporter)
+                    .AsQueryable())
             .FirstOrDefaultAsync(d => d.DonationId == id, cancellationToken);
         if (entity is null)
             return NotFound();

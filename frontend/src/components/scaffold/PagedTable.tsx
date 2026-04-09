@@ -136,7 +136,7 @@ export default function PagedTable({
                         <td>
                           <button
                             type="button"
-                            className="btn btn-sm btn-outline-danger"
+                            className="hw-row-action hw-row-action--delete"
                             onClick={() => setDeleteTarget(row)}
                           >
                             Delete

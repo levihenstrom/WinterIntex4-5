@@ -9,6 +9,7 @@ import {
 } from '../../lib/apiClient';
 import { useAuth } from '../../context/AuthContext';
 import DeleteConfirmModal from '../../components/DeleteConfirmModal';
+import { ResidentSearchCombobox, SocialWorkerCombobox } from '../../components/admin/lookupCombos';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -163,8 +164,12 @@ export default function VisitsPage() {
   }
 
   async function handleSave() {
-    setSaving(true);
     setFormError(null);
+    if (editTarget === 'new' && !residentId && (!form.residentId || form.residentId < 1)) {
+      setFormError('Select a resident.');
+      return;
+    }
+    setSaving(true);
     try {
       const payload = {
         ...form,
@@ -354,22 +359,10 @@ export default function VisitsPage() {
                         <td className="pe-3">
                           <div className="d-flex gap-1">
                             {canWrite && (
-                              <button
-                                type="button"
-                                className="btn btn-sm btn-outline-primary"
-                                onClick={() => openEdit(v)}
-                              >
-                                Edit
-                              </button>
+                              <button type="button" className="hw-row-action hw-row-action--edit" onClick={() => openEdit(v)}>Edit</button>
                             )}
                             {canWrite && (
-                              <button
-                                type="button"
-                                className="btn btn-sm btn-outline-danger"
-                                onClick={() => setDeleteTarget(v)}
-                              >
-                                Delete
-                              </button>
+                              <button type="button" className="hw-row-action hw-row-action--delete" onClick={() => setDeleteTarget(v)}>Delete</button>
                             )}
                           </div>
                         </td>
@@ -440,14 +433,12 @@ export default function VisitsPage() {
                   {!residentId && (
                     <div className="col-md-4">
                       <label className="hw-label">
-                        Resident ID <span className="text-danger">*</span>
+                        Resident <span className="text-danger">*</span>
                       </label>
-                      <input
-                        type="number"
-                        min="1"
-                        className="hw-input"
-                        value={form.residentId || ''}
-                        onChange={(e) => setField('residentId', Number(e.target.value))}
+                      <ResidentSearchCombobox
+                        value={form.residentId}
+                        onChange={(id) => setField('residentId', id)}
+                        disabled={!canWrite}
                       />
                     </div>
                   )}
@@ -467,10 +458,10 @@ export default function VisitsPage() {
                     <label className="hw-label">
                       Social Worker <span className="text-danger">*</span>
                     </label>
-                    <input
-                      className="hw-input"
+                    <SocialWorkerCombobox
                       value={form.socialWorker ?? ''}
-                      onChange={(e) => setField('socialWorker', e.target.value)}
+                      onChange={(v) => setField('socialWorker', v)}
+                      disabled={!canWrite}
                     />
                   </div>
                   <div className="col-md-4">

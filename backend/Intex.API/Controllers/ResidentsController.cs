@@ -22,6 +22,7 @@ public class ResidentsController(AppDbContext db, StaffScopeResolver scopeResolv
         [FromQuery] int? safehouseId = null,
         [FromQuery] string? caseStatus = null,
         [FromQuery] string? caseCategory = null,
+        [FromQuery] string? reintegrationStatus = null,
         [FromQuery] string? search = null,
         CancellationToken cancellationToken = default)
     {
@@ -33,11 +34,19 @@ public class ResidentsController(AppDbContext db, StaffScopeResolver scopeResolv
             query = query.Where(r => r.CaseStatus == caseStatus);
         if (!string.IsNullOrWhiteSpace(caseCategory))
             query = query.Where(r => r.CaseCategory == caseCategory);
+        if (!string.IsNullOrWhiteSpace(reintegrationStatus))
+            query = query.Where(r => r.ReintegrationStatus == reintegrationStatus);
         if (!string.IsNullOrWhiteSpace(search))
-            query = query.Where(r =>
-                (r.CaseControlNo != null && r.CaseControlNo.Contains(search)) ||
-                (r.InternalCode != null && r.InternalCode.Contains(search)) ||
-                (r.AssignedSocialWorker != null && r.AssignedSocialWorker.Contains(search)));
+        {
+            var s = search.Trim();
+            if (int.TryParse(s, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var rid))
+                query = query.Where(r => r.ResidentId == rid);
+            else
+                query = query.Where(r =>
+                    (r.CaseControlNo != null && r.CaseControlNo.Contains(s)) ||
+                    (r.InternalCode != null && r.InternalCode.Contains(s)) ||
+                    (r.AssignedSocialWorker != null && r.AssignedSocialWorker.Contains(s)));
+        }
 
         query = query.OrderBy(r => r.ResidentId);
         var result = await query.ToPagedResultAsync(page, pageSize, cancellationToken);
