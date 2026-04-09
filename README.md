@@ -48,6 +48,8 @@ python3 refresh_ml_artifacts.py
 
 Nightly automation and manual **Actions** runs are described in [`docs/ML_NIGHTLY_REFRESH.md`](docs/ML_NIGHTLY_REFRESH.md).
 
+To **deploy the social ML Container App** from your machine (build → ACR → `az containerapp update`) when CI deploy is blocked, see **Manual ML service deployment** in [`docs/ML_SERVICE_DEPLOYMENT.md`](docs/ML_SERVICE_DEPLOYMENT.md) (`./scripts/deploy_ml_service.sh`).
+
 ---
 
 *This repository also contains internal technical notes (for example `plan.md`, `claude.md`) for the development team; they are not required reading for understanding the product from a client or user perspective.*

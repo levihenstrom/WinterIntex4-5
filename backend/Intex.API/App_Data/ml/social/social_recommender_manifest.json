@@ -108,7 +108,7 @@
     "semantics": "Output of sklearn ColumnTransformer prep (same space as joblib pipelines).",
     "shape": [
       null,
-      101
+      102
     ],
     "tensor_name": "X"
   },

@@ -3,37 +3,37 @@
   "post_type": "FundraisingAppeal",
   "post_hour": 18,
   "content_topic": "Education",
-  "predicted_engagement_rate": 0.1074,
-  "predicted_donation_referrals": 8.06,
-  "predicted_estimated_donation_value_php": 1748.71,
-  "predicted_p_any_referral": 0.6262,
+  "predicted_engagement_rate": 0.1103,
+  "predicted_donation_referrals": 4.37,
+  "predicted_estimated_donation_value_php": 1761.2,
+  "predicted_p_any_referral": 0.6259,
   "top_positive_factors_engagement_explanatory": [
-    "cat__sentiment_tone_Celebratory (coef=0.02312)",
+    "cat__sentiment_tone_Celebratory (coef=0.02315)",
     "num__post_hour (coef=0.02198)",
     "cat__sentiment_tone_Emotional (coef=0.01904)",
-    "cat__time_of_day_bucket_morning (coef=0.01747)",
-    "cat__time_of_day_bucket_evening (coef=0.01282)"
+    "cat__time_of_day_bucket_morning (coef=0.01746)",
+    "cat__time_of_day_bucket_evening (coef=0.01281)"
   ],
   "top_negative_factors_engagement_explanatory": [
-    "cat__sentiment_tone_Informative (coef=-0.03278)",
+    "cat__sentiment_tone_Informative (coef=-0.03282)",
     "cat__time_of_day_bucket_night (coef=-0.02837)",
-    "cat__sentiment_tone_Grateful (coef=-0.01508)",
-    "cat__platform_post_type_Facebook|FundraisingAppeal (coef=-0.005139)",
-    "cat__platform_Facebook (coef=-0.004035)"
+    "cat__sentiment_tone_Grateful (coef=-0.01504)",
+    "cat__platform_post_type_Facebook|FundraisingAppeal (coef=-0.005175)",
+    "cat__platform_Facebook (coef=-0.004061)"
   ],
   "top_positive_factors_referrals_explanatory": [
-    "num__features_resident_story (coef=9.924)",
-    "cat__post_type_ImpactStory (coef=5.254)",
-    "cat__platform_post_type_WhatsApp|ImpactStory (coef=4.838)",
-    "num__caption_length (coef=3.483)",
-    "num__post_hour (coef=3.109)"
+    "num__features_resident_story (coef=9.928)",
+    "cat__post_type_ImpactStory (coef=5.267)",
+    "cat__platform_post_type_WhatsApp|ImpactStory (coef=4.839)",
+    "num__caption_length (coef=3.479)",
+    "num__post_hour (coef=3.107)"
   ],
   "top_negative_factors_referrals_explanatory": [
-    "cat__time_of_day_bucket_night (coef=-3.525)",
-    "cat__platform_post_type_Twitter|ImpactStory (coef=-3.401)",
-    "cat__sentiment_tone_Informative (coef=-3.231)",
-    "cat__platform_Twitter (coef=-3.179)",
-    "cat__post_type_EducationalContent (coef=-3.108)"
+    "cat__time_of_day_bucket_night (coef=-3.528)",
+    "cat__platform_post_type_Twitter|ImpactStory (coef=-3.396)",
+    "cat__sentiment_tone_Informative (coef=-3.24)",
+    "cat__platform_Twitter (coef=-3.175)",
+    "cat__post_type_EducationalContent (coef=-3.086)"
   ],
   "note": "Explanatory factors are Ridge coefficients; predictions from best holdout models."
 }

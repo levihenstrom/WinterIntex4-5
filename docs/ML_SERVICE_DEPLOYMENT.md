@@ -9,6 +9,28 @@ The **social ML inference** app is a **FastAPI** service under `ml_service/`. It
 
 The **frontend** and **contract** stay on the **Intex.API** proxy; in Azure you point the .NET app at this service’s base URL (for example `MlInferenceService__BaseUrl`).
 
+## Manual ML service deployment
+
+**When to use:** After you change social model code, retrain/export locally, and refresh `backend/Intex.API/App_Data/ml/social/` (so the Docker build picks up current artifacts). Use this path when GitHub Actions cannot deploy the container (for example Azure RBAC blocks the GitHub OIDC identity from `az containerapp update`).
+
+**Prerequisites:** Docker (with `buildx`), Azure CLI (`az`) logged into the right subscription, permission to push to ACR `intexmlacr17550` and update Container App `intex-ml-service` in resource group `appsvc_windows_centralus`.
+
+From the **repository root**:
+
+```bash
+chmod +x scripts/deploy_ml_service.sh   # once
+./scripts/deploy_ml_service.sh
+```
+
+**What it does:** Builds `ml_service/Dockerfile` for **linux/amd64** with `docker buildx build --push`, tags `${ACR}/ml-service:<git-short-sha>` and `:latest`, then runs `az containerapp update` to roll the app to the **SHA tag**.
+
+Optional verification (prints the image Azure shows; curls `/health` if you set a base URL):
+
+```bash
+export ML_SERVICE_BASE_URL='https://<your-container-app-fqdn>'
+./scripts/check_ml_service.sh
+```
+
 ## What the container includes
 
 The production image (see `ml_service/Dockerfile`) copies:

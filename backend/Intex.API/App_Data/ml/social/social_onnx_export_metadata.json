@@ -61,39 +61,39 @@
   "models": {
     "engagement_rate": {
       "onnx_input_name": "X",
-      "onnx_bytes": 186908,
-      "max_abs_diff_sklearn_vs_onnx": 5.271769118464498e-09,
-      "sklearn_preview": 0.10739137759480531,
-      "onnx_preview": 0.1073913723230362,
+      "onnx_bytes": 182543,
+      "max_abs_diff_sklearn_vs_onnx": 1.3226663514442905e-09,
+      "sklearn_preview": 0.11033877117578143,
+      "onnx_preview": 0.11033876985311508,
       "joblib_source": "engagement_rate_pipeline.joblib"
     },
     "donation_referrals_count": {
       "onnx_input_name": "X",
-      "onnx_bytes": 184335,
-      "max_abs_diff_sklearn_vs_onnx": 4.629283445467536e-08,
-      "sklearn_preview": 2.2043526635566284,
-      "onnx_preview": 2.204352617263794,
+      "onnx_bytes": 757,
+      "max_abs_diff_sklearn_vs_onnx": 1.002200724631308e-07,
+      "sklearn_preview": 1.6802130747684123,
+      "onnx_preview": 1.6802129745483398,
       "joblib_source": "donation_referrals_count_pipeline.joblib"
     },
     "donation_value_log1p": {
       "onnx_input_name": "X",
-      "onnx_bytes": 752,
-      "max_abs_diff_sklearn_vs_onnx": 2.6183341717000985e-07,
-      "sklearn_preview": 7.467207169959796,
-      "onnx_preview": 7.467207431793213,
+      "onnx_bytes": 757,
+      "max_abs_diff_sklearn_vs_onnx": 4.452274460220451e-08,
+      "sklearn_preview": 7.474317595181924,
+      "onnx_preview": 7.47431755065918,
       "joblib_source": "donation_value_log1p_pipeline.joblib"
     },
     "p_any_referral": {
       "onnx_input_name": "X",
-      "onnx_bytes": 1378,
-      "max_abs_diff_inner_sklearn_vs_onnx": 2.0261068822691186e-08,
-      "inner_sklearn_proba_preview": 0.8196983730838103,
-      "onnx_proba_preview": 0.8196983933448792,
+      "onnx_bytes": 1388,
+      "max_abs_diff_inner_sklearn_vs_onnx": 1.8204537211019556e-08,
+      "inner_sklearn_proba_preview": 0.8179818209754555,
+      "onnx_proba_preview": 0.8179818391799927,
       "joblib_source": "any_referral_classifier_pipeline.joblib",
       "unwrap": "used_fold0_inner_pipeline"
     }
   },
-  "n_transformed_features": 101,
+  "n_transformed_features": 102,
   "transformed_feature_names": [
     "num__post_hour",
     "num__num_hashtags",
@@ -139,6 +139,7 @@
     "cat__call_to_action_type_LearnMore",
     "cat__call_to_action_type_ShareStory",
     "cat__call_to_action_type_SignUp",
+    "cat__call_to_action_type___none__",
     "cat__content_topic_AwarenessRaising",
     "cat__content_topic_CampaignLaunch",
     "cat__content_topic_DonorImpact",
@@ -203,7 +204,7 @@
     "dtype": "float32",
     "shape": [
       null,
-      101
+      102
     ],
     "semantics": "Output of sklearn ColumnTransformer prep (same space as joblib pipelines)."
   }
