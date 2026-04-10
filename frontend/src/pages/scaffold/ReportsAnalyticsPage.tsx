@@ -16,7 +16,7 @@ import {
 } from 'recharts';
 import { fetchJson } from '../../lib/apiClient';
 import { ErrorState, LoadingState } from '../../components/common/AsyncStatus';
-import { formatAmountMaybePhpAndUsd, formatPesoCompact } from '../../lib/currency';
+import { formatAmountMaybePhpAndUsd, formatUsdThousandsFromPhp } from '../../lib/currency';
 
 
 const card: React.CSSProperties = {
@@ -51,9 +51,8 @@ function fmtMoney(n: number) {
   return formatAmountMaybePhpAndUsd(n, 'PHP');
 }
 
-/** Shorter peso-only labels for chart axes (avoids cramped dual-currency ticks). */
 function fmtMoneyChart(n: number) {
-  return formatPesoCompact(n);
+  return formatUsdThousandsFromPhp(n);
 }
 
 interface NamedAmount {
@@ -267,7 +266,7 @@ export default function ReportsAnalyticsPage() {
     [donData],
   );
 
-  /** Share of total PHP by contribution type — for pie chart. */
+  /** Share of total USD by contribution type — for pie chart. */
   const financialMixPie = useMemo(() => {
     const rows = donData?.byDonationTypeFinancial ?? [];
     const total = rows.reduce((s, x) => s + Number(x.amount), 0);
@@ -424,12 +423,12 @@ export default function ReportsAnalyticsPage() {
                 }}
               >
                 <KPI label="Gifts (current filters)" value={String(donData.donationCount)} accent="#1E3A5F" />
-                <KPI label="Total value (PHP)" value={fmtMoney(Number(donData.grandTotal))} sub="Cash & in-kind in scope" accent="#0D9488" />
-                <KPI label="Period buckets" value={String(donData.byMonth.length)} sub="Months in chart" accent="#7C3AED" />
+                <KPI label="Total value (USD)" value={fmtMoney(Number(donData.grandTotal))} sub="Cash & in-kind in scope" accent="#0D9488" />
+                <KPI label="Avg. gift value" value={donData.donationCount > 0 ? fmtMoney(Number(donData.grandTotal) / donData.donationCount) : '—'} sub="USD per gift" accent="#7C3AED" />
               </div>
 
               <p style={{ color: '#64748B', fontSize: 13, marginBottom: 14, maxWidth: 720 }}>
-                Four views: monthly value and gift volume, where recorded PHP comes from by type, then how allocations flow to programs and sites.
+                Four views: monthly value and gift volume, where contributions come from by type, then how allocations flow to programs and sites.
               </p>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16, marginBottom: 20 }}>
@@ -438,7 +437,7 @@ export default function ReportsAnalyticsPage() {
                     Monthly value &amp; gift volume
                   </h3>
                   <p style={{ fontSize: 12, color: '#94A3B8', marginBottom: 12 }}>
-                    Bars = peso value recorded per month; line = number of gifts (same filters).
+                    Bars = USD value per month; line = number of gifts (same filters).
                   </p>
                   {monthChartData.length > 0 ? (
                     <div style={{ width: '100%', height: 320 }}>
@@ -447,11 +446,11 @@ export default function ReportsAnalyticsPage() {
                           <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
                           <XAxis dataKey="name" tick={{ fontSize: 11 }} />
                           <YAxis
-                            yAxisId="php"
+                            yAxisId="usd"
                             tickFormatter={(v: any) => fmtMoneyChart(Number(v))}
                             width={82}
                             tick={{ fontSize: 10 }}
-                            label={{ value: 'PHP', angle: -90, position: 'insideLeft', fill: '#64748B', fontSize: 11 }}
+                            label={{ value: 'USD', angle: -90, position: 'insideLeft', fill: '#64748B', fontSize: 11 }}
                           />
                           <YAxis
                             yAxisId="gifts"
@@ -464,15 +463,15 @@ export default function ReportsAnalyticsPage() {
                           <Tooltip
                             formatter={(value: unknown, name: unknown) => {
                               const n = String(name ?? '');
-                              if (n === 'PHP value' || n === 'amount') {
-                                return [fmtMoney(Number(value)), 'PHP value'] as [string, string];
+                              if (n === 'USD value' || n === 'amount') {
+                                return [fmtMoney(Number(value)), 'USD value'] as [string, string];
                               }
                               return [String(value ?? ''), n || 'Gifts'] as [string, string];
                             }}
                             labelStyle={{ color: '#334155' }}
                           />
                           <Legend wrapperStyle={{ fontSize: 12 }} />
-                          <Bar yAxisId="php" dataKey="amount" name="PHP value" fill="#0D9488" radius={[4, 4, 0, 0]} maxBarSize={48} />
+                          <Bar yAxisId="usd" dataKey="amount" name="USD value" fill="#0D9488" radius={[4, 4, 0, 0]} maxBarSize={48} />
                           <Line
                             yAxisId="gifts"
                             type="monotone"
@@ -494,7 +493,7 @@ export default function ReportsAnalyticsPage() {
                   <h3 style={{ fontFamily: 'Poppins, sans-serif', fontSize: 17, color: '#1E3A5F', marginBottom: 4 }}>
                     Financial mix by contribution type
                   </h3>
-                  <p style={{ fontSize: 12, color: '#94A3B8', marginBottom: 12 }}>Share of total PHP in scope (cash &amp; in-kind).</p>
+                  <p style={{ fontSize: 12, color: '#94A3B8', marginBottom: 12 }}>Share of total USD in scope (cash &amp; in-kind).</p>
                   {financialMixPie.length > 0 ? (
                     <div style={{ width: '100%', height: 320 }}>
                       <ResponsiveContainer>

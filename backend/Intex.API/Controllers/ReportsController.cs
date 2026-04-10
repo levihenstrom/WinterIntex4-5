@@ -407,6 +407,7 @@ public sealed class ReportsController(AppDbContext db, StaffScopeResolver scopeR
     private static decimal FinancialContributionPhp(decimal? amount, decimal? estimatedValue, string? donationType, string? impactUnit)
     {
         if (IsVolunteerHoursDonation(donationType, impactUnit)) return 0;
+        if (string.Equals((donationType ?? "").Trim(), "SocialMedia", StringComparison.OrdinalIgnoreCase)) return 0;
         return amount ?? estimatedValue ?? 0m;
     }
 
