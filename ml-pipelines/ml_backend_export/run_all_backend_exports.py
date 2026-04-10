@@ -41,6 +41,11 @@ import sys
 from pathlib import Path
 from typing import Any
 
+# Ensure sibling packages (e.g. ``ml_pipeline_social_media_engagement``) resolve whenever this module loads.
+_ML_PIPELINES_ROOT = Path(__file__).resolve().parent.parent
+if str(_ML_PIPELINES_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ML_PIPELINES_ROOT))
+
 
 def _collect_strings(obj: Any, out: list[str]) -> None:
     if isinstance(obj, dict):

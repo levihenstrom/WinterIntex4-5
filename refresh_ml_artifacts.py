@@ -26,8 +26,10 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-_ROOT = Path(__file__).resolve().parent
-sys.path.insert(0, str(_ROOT / "ml-pipelines"))
+REPO_ROOT = Path(__file__).resolve().parent
+ML_PIPELINES_DIR = REPO_ROOT / "ml-pipelines"
+if str(ML_PIPELINES_DIR) not in sys.path:
+    sys.path.insert(0, str(ML_PIPELINES_DIR))
 
 from ml_backend_export.run_all_backend_exports import main
 

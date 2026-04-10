@@ -48,6 +48,8 @@ jobs:
           echo "=== Social retraining succeeded ==="
 
       - name: Refresh App_Data/ml artifacts
+        env:
+          PYTHONPATH: ${{ github.workspace }}/ml-pipelines
         run: |
           set -e
           echo "=== Refreshing backend App_Data/ml artifacts ==="
