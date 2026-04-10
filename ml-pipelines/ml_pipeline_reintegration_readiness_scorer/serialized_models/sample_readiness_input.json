@@ -1,0 +1,33 @@
+{
+  "schema": "reintegration_readiness_snapshot_v1",
+  "resident_id": 15,
+  "internal_code": "LS-0015",
+  "observation_date": "2026-04-18 00:00:00",
+  "features": {
+    "pr_sessions_total": 20.0,
+    "pr_sessions_last_30d": 2.0,
+    "pr_mean_duration": 68.4,
+    "pr_progress_rate": 0.9,
+    "pr_concern_rate": 0.2,
+    "pr_mean_gap_days": 18.31578947368421,
+    "pr_emotional_improvement_trend": 4.4676999366079024e-05,
+    "hv_total_visits": 11.0,
+    "hv_favorable_rate": 0.8181818181818182,
+    "hv_family_cooperation_rate": 0.8181818181818182,
+    "edu_mean_attendance": 0.8064,
+    "edu_mean_progress": 100.0,
+    "edu_progress_trend": 1.4381510728971338e-16,
+    "hw_mean_general_health": 3.774,
+    "hw_health_trend": 0.002503076857785518,
+    "inc_total": 1.0,
+    "inc_last_30d": 0.0,
+    "inc_mean_severity": 1.0,
+    "ip_total_plans": 3.0,
+    "ip_achieved_rate": 0.0,
+    "ip_overdue_count": 3.0,
+    "age_at_admission_years": 18.083333333333332,
+    "initial_risk_ord": 1.0,
+    "days_since_enrollment": 547.0,
+    "case_category": "Surrendered"
+  }
+}

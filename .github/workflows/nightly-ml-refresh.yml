@@ -1,7 +1,8 @@
 # Nightly (and on-demand) regeneration of bundled ML JSON + social assets under App_Data/ml.
 # Canonical local commands:
 #   1) Social retrain/export: (cd ml-pipelines && python3 -m ml_pipeline_social_media_engagement.run_all)
-#   2) Bundle refresh: python3 refresh_ml_artifacts.py (repo root).
+#   2) Reintegration train/export: (cd ml-pipelines && python3 -m ml_pipeline_reintegration_readiness_scorer.run_all)
+#   3) Bundle refresh: python3 refresh_ml_artifacts.py (repo root).
 
 name: Nightly ML artifact refresh
 
@@ -47,6 +48,14 @@ jobs:
           python3 -m ml_pipeline_social_media_engagement.run_all
           echo "=== Social retraining succeeded ==="
 
+      - name: Retrain reintegration readiness model from latest code
+        working-directory: ml-pipelines
+        run: |
+          set -e
+          echo "=== Reintegration retraining started ==="
+          python3 -m ml_pipeline_reintegration_readiness_scorer.run_all
+          echo "=== Reintegration retraining succeeded ==="
+
       - name: Refresh App_Data/ml artifacts
         env:
           PYTHONPATH: ${{ github.workspace }}/ml-pipelines
@@ -72,6 +81,13 @@ jobs:
             "ml-pipelines/ml_pipeline_social_media_engagement/serialized_models/social_media_engagement_metadata.json" \
             "ml-pipelines/ml_pipeline_social_media_engagement/serialized_models/any_referral_classifier_pipeline.joblib" \
             "ml-pipelines/ml_pipeline_social_media_engagement/serialized_models/donation_referrals_count_pipeline.joblib"
+          do
+            test -s "$f" || { echo "Missing or empty: $f"; exit 1; }
+          done
+          # Reintegration scoring reads these before packaging App_Data/ml/reintegration.
+          for f in \
+            "ml-pipelines/ml_pipeline_reintegration_readiness_scorer/serialized_models/reintegration_readiness_metadata.json" \
+            "ml-pipelines/ml_pipeline_reintegration_readiness_scorer/serialized_models/reintegration_readiness_pipeline.joblib"
           do
             test -s "$f" || { echo "Missing or empty: $f"; exit 1; }
           done
