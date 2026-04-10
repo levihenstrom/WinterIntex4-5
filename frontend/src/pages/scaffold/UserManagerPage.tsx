@@ -4,6 +4,13 @@ import { fetchJson, postJson } from '../../lib/apiClient';
 interface UserRecord {
   email: string;
   roles: string[];
+  partnerId: number | null;
+}
+
+interface PartnerOption {
+  partnerId: number;
+  displayName: string;
+  safehouses: string[];
 }
 
 const ROLE_OPTIONS = ['Admin', 'Staff', 'Donor'];
@@ -24,6 +31,11 @@ export default function UserManagerPage() {
   const [saving, setSaving]         = useState<string | null>(null);
   const [toast, setToast]           = useState<{ msg: string; ok: boolean } | null>(null);
 
+  // Partner assignment state
+  const [partners, setPartners]               = useState<PartnerOption[]>([]);
+  const [pendingPartner, setPendingPartner]   = useState<Record<string, string>>({});
+  const [savingPartner, setSavingPartner]     = useState<string | null>(null);
+
   // User creation state
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newEmail, setNewEmail]           = useState('');
@@ -32,7 +44,7 @@ export default function UserManagerPage() {
   const [creating, setCreating]           = useState(false);
   const [showPass, setShowPass]           = useState(false);
 
-  useEffect(() => { loadUsers(); }, []);
+  useEffect(() => { loadUsers(); loadPartners(); }, []);
 
   async function loadUsers() {
     setLoading(true);
@@ -44,6 +56,32 @@ export default function UserManagerPage() {
       setError('Failed to load user list.'); // put this in english
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadPartners() {
+    try {
+      const data = await fetchJson<PartnerOption[]>('/api/lookups/partners');
+      setPartners(data);
+    } catch { /* non-critical */ }
+  }
+
+  async function handleAssignPartner(email: string) {
+    const val = pendingPartner[email];
+    if (!val) return;
+    setSavingPartner(email);
+    try {
+      await postJson('/api/auth/assign-staff-partner', { email, partnerId: Number(val) });
+      setUsers(prev =>
+        prev.map(u => u.email === email ? { ...u, partnerId: Number(val) } : u)
+      );
+      setPendingPartner(prev => { const n = { ...prev }; delete n[email]; return n; });
+      const p = partners.find(p => p.partnerId === Number(val));
+      showToast(`Partner set to "${p?.displayName ?? val}" for ${email}. User must re-login.`, true);
+    } catch {
+      showToast('Error assigning partner.', false);
+    } finally {
+      setSavingPartner(null);
     }
   }
 
@@ -327,6 +365,9 @@ export default function UserManagerPage() {
                     <th style={{ fontWeight: 700, color: '#6B7280', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, padding: '10px 16px', background: 'transparent', border: 'none', width: 300 }}>
                       Change Role
                     </th>
+                    <th style={{ fontWeight: 700, color: '#6B7280', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, padding: '10px 16px', background: 'transparent', border: 'none', width: 340 }}>
+                      Safehouse Partner
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -415,6 +456,72 @@ export default function UserManagerPage() {
                               )}
                             </button>
                           </div>
+                        </td>
+
+                        {/* Partner assignment (Staff/Admin only) */}
+                        <td style={{ padding: '13px 16px' }}>
+                          {user.roles.includes('Staff') ? (() => {
+                            const currentPartner = partners.find(p => p.partnerId === user.partnerId);
+                            const selectedVal = pendingPartner[user.email] ?? '';
+                            const isSavingP = savingPartner === user.email;
+                            return (
+                              <div>
+                                {currentPartner && (
+                                  <div style={{ fontSize: 12, color: '#065F46', fontWeight: 600, marginBottom: 4 }}>
+                                    <i className="bi bi-house-door-fill me-1" />
+                                    {currentPartner.displayName}
+                                    {currentPartner.safehouses.length > 0 && (
+                                      <span style={{ fontWeight: 400, color: '#6B7280' }}>
+                                        {' '}({currentPartner.safehouses.join(', ')})
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                                {!currentPartner && user.partnerId == null && (
+                                  <div style={{ fontSize: 12, color: '#DC2626', fontWeight: 600, marginBottom: 4 }}>
+                                    <i className="bi bi-exclamation-triangle-fill me-1" />
+                                    No partner assigned
+                                  </div>
+                                )}
+                                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                                  <select
+                                    className="form-select form-select-sm"
+                                    value={selectedVal}
+                                    onChange={e => setPendingPartner(prev => ({ ...prev, [user.email]: e.target.value }))}
+                                    disabled={isSavingP}
+                                    style={{ borderRadius: 8, border: '1px solid #E5E7EB', fontSize: 12, maxWidth: 200, color: selectedVal ? '#1E3A5F' : '#9CA3AF' }}
+                                  >
+                                    <option value="">Change partner...</option>
+                                    {partners.map(p => (
+                                      <option key={p.partnerId} value={p.partnerId}>
+                                        {p.displayName}{p.safehouses.length > 0 ? ` (${p.safehouses.join(', ')})` : ''}
+                                      </option>
+                                    ))}
+                                  </select>
+                                  <button
+                                    onClick={() => handleAssignPartner(user.email)}
+                                    disabled={!selectedVal || isSavingP}
+                                    style={{
+                                      background: selectedVal && !isSavingP ? '#0D9488' : '#E5E7EB',
+                                      color: selectedVal && !isSavingP ? 'white' : '#9CA3AF',
+                                      border: 'none', borderRadius: 8, padding: '4px 12px',
+                                      fontSize: 12, fontWeight: 600,
+                                      cursor: selectedVal && !isSavingP ? 'pointer' : 'not-allowed',
+                                      display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap',
+                                    }}
+                                  >
+                                    {isSavingP ? (
+                                      <span className="spinner-border spinner-border-sm" role="status" />
+                                    ) : (
+                                      <><i className="bi bi-check2" /> Set</>
+                                    )}
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })() : (
+                            <span style={{ fontSize: 12, color: '#9CA3AF' }}>—</span>
+                          )}
                         </td>
                       </tr>
                     );

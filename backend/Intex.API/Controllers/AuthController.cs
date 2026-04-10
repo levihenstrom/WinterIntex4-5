@@ -137,10 +137,15 @@ public class AuthController(
         foreach (var user in users)
         {
             var roles = await userManager.GetRolesAsync(user);
+            var claims = await userManager.GetClaimsAsync(user);
+            var partnerClaim = claims.FirstOrDefault(c => c.Type == StaffScopeResolver.PartnerIdClaimType);
+            int? partnerId = partnerClaim is not null && int.TryParse(partnerClaim.Value, out var pid) ? pid : null;
+
             result.Add(new
             {
                 email = user.Email,
-                roles = roles.OrderBy(r => r).ToArray()
+                roles = roles.OrderBy(r => r).ToArray(),
+                partnerId
             });
         }
 
@@ -247,10 +252,9 @@ public class AuthController(
         if (partner is null)
             return NotFound(new { message = "Partner not found." });
 
-        if (!await userManager.IsInRoleAsync(user, AuthRoles.Staff)
-            && !await userManager.IsInRoleAsync(user, AuthRoles.Admin))
+        if (!await userManager.IsInRoleAsync(user, AuthRoles.Staff))
         {
-            return BadRequest(new { message = "User must have Staff or Admin role before assigning a partner." });
+            return BadRequest(new { message = "Only Staff users can be assigned a partner. Admins already see all safehouses." });
         }
 
         var existingClaims = await userManager.GetClaimsAsync(user);

@@ -157,7 +157,7 @@ public class DonationAllocationsController(AppDbContext db, StaffScopeResolver s
     }
 
     [HttpDelete("{id:int}")]
-    [Authorize(Policy = AuthPolicies.StaffWrite)]
+    [Authorize(Policy = AuthPolicies.AdminOnly)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

@@ -93,7 +93,7 @@ public class SocialMediaPostsController(AppDbContext db) : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
-    [Authorize(Policy = AuthPolicies.StaffWrite)]
+    [Authorize(Policy = AuthPolicies.AdminOnly)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)

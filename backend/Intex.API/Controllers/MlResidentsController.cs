@@ -1,3 +1,4 @@
+using Intex.API.Authorization;
 using Intex.API.Contracts.Ml;
 using Intex.API.Data;
 using Intex.API.Services;
@@ -10,21 +11,26 @@ namespace Intex.API.Controllers;
 [ApiController]
 [Route("api/ml/residents")]
 [Authorize(Policy = AuthPolicies.StaffRead)]
-public sealed class MlResidentsController(MlArtifactService ml, AppDbContext db) : ControllerBase
+public sealed class MlResidentsController(MlArtifactService ml, AppDbContext db, StaffScopeResolver scopeResolver) : ControllerBase
 {
-    /// <summary>
-    /// Builds a code→id lookup from the residents table and enriches each DTO with the numeric ResidentId.
-    /// Single DB round-trip regardless of list size.
-    /// </summary>
-    private async Task<IReadOnlyList<ResidentReadinessDto>> EnrichAsync(
+    private async Task<IReadOnlyList<ResidentReadinessDto>> EnrichAndScopeAsync(
         IReadOnlyList<ResidentReadinessDto> list, CancellationToken ct)
     {
-        var lookup = await db.Residents.AsNoTracking()
-            .Where(r => r.InternalCode != null)
-            .ToDictionaryAsync(r => r.InternalCode!, r => (int?)r.ResidentId, ct);
-        return list.Select(d =>
-            lookup.TryGetValue(d.ResidentCode, out var id) ? d.WithResidentId(id) : d
-        ).ToList();
+        var scope = await scopeResolver.GetForUserAsync(User, ct);
+
+        var query = db.Residents.AsNoTracking().Where(r => r.InternalCode != null);
+        if (!scope.IsAdmin)
+        {
+            if (scope.SafehouseIds.Count == 0)
+                return [];
+            query = query.Where(r => scope.SafehouseIds.Contains(r.SafehouseId));
+        }
+
+        var lookup = await query.ToDictionaryAsync(r => r.InternalCode!, r => (int?)r.ResidentId, ct);
+        return list
+            .Where(d => lookup.ContainsKey(d.ResidentCode))
+            .Select(d => lookup.TryGetValue(d.ResidentCode, out var id) ? d.WithResidentId(id) : d)
+            .ToList();
     }
 
     [HttpGet("priority")]
@@ -46,7 +52,7 @@ public sealed class MlResidentsController(MlArtifactService ml, AppDbContext db)
         try
         {
             var list = await ml.GetResidentsPriorityAsync(limit, cancellationToken);
-            return Ok(await EnrichAsync(list, cancellationToken));
+            return Ok(await EnrichAndScopeAsync(list, cancellationToken));
         }
         catch (FileNotFoundException ex)
         {
@@ -76,7 +82,7 @@ public sealed class MlResidentsController(MlArtifactService ml, AppDbContext db)
         try
         {
             var list = await ml.GetResidentsCurrentScoresAsync(cancellationToken);
-            return Ok(await EnrichAsync(list, cancellationToken));
+            return Ok(await EnrichAndScopeAsync(list, cancellationToken));
         }
         catch (FileNotFoundException ex)
         {
