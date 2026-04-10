@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import NavBar from '../components/hw/NavBar';
 import MetricCard from '../components/hw/MetricCard';
 import DonationWidget from '../components/hw/DonationWidget';
@@ -207,6 +207,7 @@ function DonationBanner() {
       id="donate"
       ref={sectionRef}
       className="hw-snap-section relative flex items-center overflow-hidden"
+      style={{ backgroundColor: '#1E3A5F' }}
     >
       {/* Full-bleed background photo */}
       <img
@@ -219,11 +220,11 @@ function DonationBanner() {
         background: 'linear-gradient(to right, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.20) 45%, transparent 75%)'
       }} />
 
-      {/* Floating form card — left side */}
+      {/* Floating form card — shifted right */}
       <div
         ref={cardRef}
-        className="hw-donate-slide relative z-10 ml-8 lg:ml-16
-                   w-full max-w-[400px] lg:max-w-[440px]
+        className="hw-donate-slide relative z-10 ml-16 lg:ml-28
+                   w-full max-w-[420px] lg:max-w-[460px]
                    bg-white/95 backdrop-blur-sm rounded-2xl px-8 py-9
                    shadow-[0_20px_60px_rgba(0,0,0,0.22)]"
         style={{ opacity: 0, transform: 'translateX(-40px)' }}
@@ -248,89 +249,6 @@ function DonationBanner() {
             </svg>
             Secure Giving
           </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Donor Wall (final, no snap — natural scroll after last chapter)
-// ─────────────────────────────────────────────────────────────────────────────
-const ALL_DONORS = [
-  { name: "Maria F. Santos", size: "text-3xl", weight: "font-bold", opacity: 0.95 },
-  { name: "Benjamin A. Clark", size: "text-lg", weight: "font-medium", opacity: 0.6 },
-  { name: "Liam & Sofia Walker", size: "text-2xl", weight: "font-semibold", opacity: 0.85 },
-  { name: "Elena Rossi", size: "text-sm", weight: "font-normal", opacity: 0.45 },
-  { name: "Dr. Noah P. Smith", size: "text-xl", weight: "font-medium", opacity: 0.7 },
-  { name: "The Johnson Family", size: "text-2xl", weight: "font-bold", opacity: 0.9 },
-  { name: "Ava Martinez", size: "text-sm", weight: "font-normal", opacity: 0.4 },
-  { name: "Lucas Chen", size: "text-lg", weight: "font-medium", opacity: 0.65 },
-  { name: "Isabella Kim", size: "text-3xl", weight: "font-bold", opacity: 1 },
-  { name: "Mateo & Clara Silva", size: "text-xl", weight: "font-semibold", opacity: 0.8 },
-  { name: "Harper & James Lewis", size: "text-sm", weight: "font-light", opacity: 0.35 },
-  { name: "Charlotte M. Lee", size: "text-2xl", weight: "font-medium", opacity: 0.75 },
-  { name: "Grace Allen", size: "text-lg", weight: "font-medium", opacity: 0.55 },
-  { name: "Amelia R. Taylor", size: "text-3xl", weight: "font-extrabold", opacity: 0.9 },
-  { name: "Oliver N. Brown", size: "text-sm", weight: "font-normal", opacity: 0.4 },
-  { name: "The Davis Foundation", size: "text-2xl", weight: "font-bold", opacity: 0.85 },
-  { name: "Sophia White", size: "text-xl", weight: "font-medium", opacity: 0.7 },
-  { name: "Ethan Hall", size: "text-sm", weight: "font-light", opacity: 0.38 },
-  { name: "Mia & Jack Thompson", size: "text-2xl", weight: "font-semibold", opacity: 0.82 },
-  { name: "Chloe D. Wright", size: "text-lg", weight: "font-medium", opacity: 0.6 },
-  { name: "Alexander Scott", size: "text-3xl", weight: "font-bold", opacity: 0.95 },
-  { name: "Emma L. Wilson", size: "text-sm", weight: "font-normal", opacity: 0.42 },
-  { name: "James R. Anderson", size: "text-xl", weight: "font-medium", opacity: 0.72 },
-  { name: "Lily Chen", size: "text-2xl", weight: "font-semibold", opacity: 0.8 },
-  { name: "Ryan & Megan Moore", size: "text-sm", weight: "font-light", opacity: 0.36 },
-  { name: "Victoria Torres", size: "text-xl", weight: "font-medium", opacity: 0.68 },
-  { name: "Andrés Peña", size: "text-3xl", weight: "font-bold", opacity: 0.92 },
-  { name: "Natalie Santos", size: "text-sm", weight: "font-normal", opacity: 0.44 },
-  { name: "Joshua Bennett", size: "text-2xl", weight: "font-semibold", opacity: 0.78 },
-  { name: "Samantha Cox", size: "text-lg", weight: "font-medium", opacity: 0.58 },
-];
-
-function DonorWallSection() {
-  type DonorParticle = {
-    id: number; name: string; size: string; weight: string; opacity: number;
-    left: string; top: string; duration: string; delay: string;
-  };
-  const particles: DonorParticle[] = useMemo(() =>
-    ALL_DONORS.map((donor, i) => ({
-      id: i, ...donor,
-      left: `${(i * 7 + 3) % 90}%`,
-      top: `${(i * 11 + 5) % 82}%`,
-      duration: `${20 + (i % 7) * 5}s`,
-      delay: `${-(i * 2.3) % 18}s`,
-    }))
-  , []);
-
-  return (
-    <section className="relative overflow-hidden bg-white" style={{ minHeight: '420px' }}>
-      <div className="absolute inset-0 bg-gradient-to-b from-[#FAFAF9] to-white z-0" />
-      <div className="absolute inset-0 overflow-hidden pointer-events-none select-none z-10">
-        {particles.map((p) => (
-          <div
-            key={p.id}
-            className={`absolute hw-animate-float hw-donor-name ${p.size} ${p.weight} text-[#B45309]`}
-            style={{
-              left: p.left, top: p.top, opacity: p.opacity,
-              '--float-duration': p.duration, '--float-delay': p.delay,
-              letterSpacing: '0.01em',
-            } as React.CSSProperties & { '--float-duration': string; '--float-delay': string }}
-          >
-            {p.name}
-          </div>
-        ))}
-      </div>
-      <div className="relative z-10 flex flex-col items-center justify-center text-center pointer-events-none" style={{ minHeight: '420px', padding: '80px 24px' }}>
-        <div className="bg-white/10 backdrop-blur-md rounded-3xl p-8 lg:p-12 shadow-[0_8px_32px_rgba(30,58,95,0.06)] max-w-3xl">
-          <h2 className="hw-heading-font text-[#1E3A5F] font-semibold text-4xl lg:text-5xl leading-tight mix-blend-multiply mb-4">
-            Thank you to our Donors
-          </h2>
-          <p className="text-stone-600/90 text-lg lg:text-xl font-light tracking-wide">
-            Each of these names has made a contribution and a lasting impact on the lives of our children.
-          </p>
         </div>
       </div>
     </section>
@@ -381,9 +299,8 @@ export default function HealingWingsHome() {
       <MissionSection />
       <ApproachSection />
       <DonationBanner />
-      {/* Final snap — donor wall + footer together */}
+      {/* Final snap — footer */}
       <div className="hw-snap-final">
-        <DonorWallSection />
         <Footer />
       </div>
     </div>
