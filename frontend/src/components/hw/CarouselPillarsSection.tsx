@@ -2,32 +2,32 @@ const CAROUSEL_PILLARS = [
   {
     title: 'Physiological Needs',
     description: 'Secure shelter, nutritious meals, and clean environments to meet every basic physical need.',
-    imgUrl: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&auto=format&fit=crop&q=80'
+    imgUrl: '/food.jpg'
   },
   {
     title: 'Biological Needs',
     description: 'Regular medical and dental care to closely monitor and support physical health.',
-    imgUrl: 'https://images.unsplash.com/photo-1505751172876-fa1923c5c528?w=800&auto=format&fit=crop&q=80'
+    imgUrl: '/doctor.jpg'
   },
   {
     title: 'Spiritual Needs',
     description: 'Faith-based counseling to help children find inner strength and renewed hope.',
-    imgUrl: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?w=800&auto=format&fit=crop&q=80'
+    imgUrl: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&auto=format&fit=crop&q=80'
   },
   {
     title: 'Psychological Needs',
     description: 'Trauma-informed therapy sessions to safely heal deep psychological wounds.',
-    imgUrl: 'https://images.unsplash.com/photo-1573497620053-ea5300f94f21?w=800&auto=format&fit=crop&q=80'
+    imgUrl: '/phycology.jpg'
   },
   {
     title: 'Social Needs',
     description: 'Positive peer activities and ongoing education to rebuild active community trust.',
-    imgUrl: 'https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?w=800&auto=format&fit=crop&q=80'
+    imgUrl: '/social.jpg'
   },
   {
     title: 'Love and Belonging',
     description: 'A deeply nurturing environment preparing each child for a safe, supportive family reunion.',
-    imgUrl: 'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=800&auto=format&fit=crop&q=80'
+    imgUrl: '/sisters.jpg'
   }
 ];
 
@@ -66,6 +66,7 @@ export default function CarouselPillarsSection() {
                 src={pillar.imgUrl}
                 alt={pillar.title}
                 className="hw-pillar-img"
+                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
               />
 
               {/* Always-visible bottom gradient + title */}
