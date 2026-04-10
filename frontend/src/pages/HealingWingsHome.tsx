@@ -47,18 +47,24 @@ function HeroSection({
       />
       <div className="absolute inset-0 hw-hero-overlay" />
 
-      {/* Hero text — upper portion */}
+      {/* Hero text — centered, matching MissionSection style */}
       <div className="relative z-10 flex-1 flex flex-col items-center justify-center text-center px-6 pb-8" style={{ paddingTop: '18vh' }}>
-        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-semibold text-white leading-tight max-w-4xl hw-heading-font hw-text-shadow-heavy">
-          Every child deserves
-          <br />
-          <em>to heal and soar</em>
+        <span
+          className="hw-eyebrow mb-3 px-3 py-1 rounded-full text-white tracking-widest"
+          style={{ background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', letterSpacing: '0.18em' }}
+        >
+          Our Story
+        </span>
+        <h1
+          className="hw-heading-font text-white font-semibold leading-[1.1] max-w-2xl"
+          style={{ fontSize: 'clamp(2rem, 4.5vw, 3.75rem)' }}
+        >
+          Every child deserves<br /><em>to heal and soar</em>
         </h1>
-        <p className="mt-3 text-base md:text-lg text-white/75 max-w-xl leading-relaxed hw-text-shadow-heavy font-light tracking-wide">
-          HealingWings provides safe homes, counseling, and education for children who are survivors of
-          trafficking and abuse in the World.
+        <p className="mt-4 text-white/70 text-[15px] font-light leading-relaxed max-w-lg">
+          HealingWings provides safe homes, counseling, and education for children who are survivors of trafficking and abuse.
         </p>
-        <div className="mt-4 flex flex-col sm:flex-row gap-4 justify-center">
+        <div className="mt-6 flex flex-col sm:flex-row gap-4 justify-center">
           <a
             href="#donate"
             className="hw-btn-magenta inline-flex items-center gap-2 px-8 py-3.5 rounded-full font-semibold text-sm tracking-wide no-underline shadow-xl"
@@ -185,6 +191,7 @@ function ApproachSection() {
 // ─────────────────────────────────────────────────────────────────────────────
 function DonationBanner() {
   const sectionRef = useRef<HTMLElement>(null);
+  const frameRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -193,10 +200,15 @@ function DonationBanner() {
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          setTimeout(() => cardRef.current?.classList.add('hw-donate-in-left'), 100);
+          setTimeout(() => {
+            sectionRef.current?.classList.add('hw-donate-framed');
+            cardRef.current?.classList.add('hw-donate-in-right');
+          }, 100);
+        } else {
+          sectionRef.current?.classList.remove('hw-donate-framed');
         }
       },
-      { threshold: 0.25 }
+      { threshold: 0.6 }
     );
     observer.observe(section);
     return () => observer.disconnect();
@@ -206,48 +218,46 @@ function DonationBanner() {
     <section
       id="donate"
       ref={sectionRef}
-      className="hw-snap-section relative flex items-center overflow-hidden"
-      style={{ backgroundColor: '#1E3A5F' }}
+      className="hw-snap-section hw-donate-cinematic relative flex items-center justify-center overflow-hidden"
+      style={{ backgroundColor: '#ffffff' }}
     >
-      {/* Full-bleed background photo */}
-      <img
-        src="/ninadonacion.png"
-        alt="HealingWings child"
-        className="absolute inset-0 w-full h-full object-cover object-right"
-      />
-      {/* Gradient: dark on left so form is readable, fades to transparent right */}
-      <div className="absolute inset-0" style={{
-        background: 'linear-gradient(to right, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.20) 45%, transparent 75%)'
-      }} />
+      {/* Frame wrapper — animates from full-bleed to inset+rounded */}
+      <div ref={frameRef} className="hw-donate-img-frame absolute overflow-hidden flex items-center">
+        <img
+          src="/sandia.jpeg"
+          alt="HealingWings child"
+          className="w-full h-full object-cover object-left"
+        />
 
-      {/* Floating form card — shifted right */}
-      <div
-        ref={cardRef}
-        className="hw-donate-slide relative z-10 ml-16 lg:ml-28
-                   w-full max-w-[420px] lg:max-w-[460px]
-                   bg-white/95 backdrop-blur-sm rounded-2xl px-8 py-9
-                   shadow-[0_20px_60px_rgba(0,0,0,0.22)]"
-        style={{ opacity: 0, transform: 'translateX(-40px)' }}
-      >
-        <span className="hw-eyebrow text-amber-600 mb-2 block">Make an Impact</span>
-        <h2 className="hw-heading-font text-3xl lg:text-4xl font-semibold text-[#1E3A5F] leading-tight mb-5">
-          Your donation<br />changes lives
-        </h2>
+        {/* Floating form card — right side, inside frame */}
+        <div
+          ref={cardRef}
+          className="hw-donate-slide absolute right-8 lg:right-14
+                     w-full max-w-[400px] lg:max-w-[440px]
+                     bg-white/95 backdrop-blur-sm rounded-2xl px-8 py-9
+                     shadow-[0_20px_60px_rgba(0,0,0,0.22)]"
+          style={{ opacity: 0, transform: 'translateX(40px)' }}
+        >
+          <span className="hw-eyebrow text-amber-600 mb-2 block">Make an Impact</span>
+          <h2 className="hw-heading-font text-3xl lg:text-4xl font-semibold text-[#1E3A5F] leading-tight mb-5">
+            Your donation<br />changes lives
+          </h2>
 
-        <DonationWidget />
+          <DonationWidget />
 
-        <div className="mt-5 flex gap-5 border-t border-stone-100 pt-4 text-xs text-stone-400">
-          <div className="flex items-center gap-1.5">
-            <svg className="w-3.5 h-3.5 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-            </svg>
-            Impact Driven
-          </div>
-          <div className="flex items-center gap-1.5">
-            <svg className="w-3.5 h-3.5 text-[#1E3A5F]" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-            </svg>
-            Secure Giving
+          <div className="mt-5 flex gap-5 border-t border-stone-100 pt-4 text-xs text-stone-400">
+            <div className="flex items-center gap-1.5">
+              <svg className="w-3.5 h-3.5 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              Impact Driven
+            </div>
+            <div className="flex items-center gap-1.5">
+              <svg className="w-3.5 h-3.5 text-[#1E3A5F]" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+              </svg>
+              Secure Giving
+            </div>
           </div>
         </div>
       </div>
