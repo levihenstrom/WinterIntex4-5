@@ -280,12 +280,12 @@ function DonationBanner() {
           ref={girlRef}
           className="absolute bottom-0 pointer-events-none z-30"
           style={{
-            left: 'clamp(260px, 30vw, 380px)',
+            left: 'clamp(270px, 30vw, 390px)',
             width: 'clamp(280px, 34vw, 480px)',
             transformOrigin: 'bottom center',
             transform: 'scale(0.72) translateY(48px)',
             transition: 'transform 0.08s linear',
-            marginBottom: '-60px',
+            marginBottom: '0px',
           }}
         >
           <img
