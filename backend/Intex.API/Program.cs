@@ -199,6 +199,16 @@ builder.Services.AddAuthentication(options =>
                     .ToString()
                     .StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase);
 
+                // Prefer the Identity application cookie whenever the browser sends it.
+                // The SPA also stores an in-memory refresh token and sends Authorization: Bearer …
+                // for mobile / no-cookie fallbacks, but RefreshTokenStore is process-local (singleton).
+                // After an Azure restart or a different scale-out instance, that bearer becomes invalid
+                // while the cookie can still be valid — forwarding Bearer first caused blanket 401s.
+                // Default application cookie name: ".AspNetCore." + scheme ("Identity.Application").
+                var applicationCookieName = CookieAuthenticationDefaults.CookiePrefix + IdentityConstants.ApplicationScheme;
+                if (context.Request.Cookies.ContainsKey(applicationCookieName))
+                    return IdentityConstants.ApplicationScheme;
+
                 return hasBearerToken
                     ? RefreshTokenAuthenticationHandler.SchemeName
                     : IdentityConstants.ApplicationScheme;
@@ -308,6 +318,14 @@ builder.Services.AddHsts(options =>
 });
 
 var app = builder.Build();
+
+if (!isDevelopment)
+{
+    app.Logger.LogInformation(
+        "CORS policy {Policy} allows origins: {Origins}. Set FrontendUrl in Azure App Settings if the SPA origin is missing.",
+        FrontendCorsPolicy,
+        string.Join("; ", corsOrigins));
+}
 
 {
     var mlOpt = app.Services.GetRequiredService<Microsoft.Extensions.Options.IOptions<MlInferenceServiceOptions>>().Value;
