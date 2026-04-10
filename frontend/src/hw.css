@@ -43,8 +43,8 @@
   --hw-gradient-partner-logo:  rgba(107,33,168,0.10);
 
   /* Typography */
-  --hw-font-heading: 'Poppins', 'Inter', system-ui, sans-serif;
-  --hw-font-body:    'Inter', 'Poppins', system-ui, sans-serif;
+  --hw-font-heading: 'Cormorant Garamond', 'Georgia', serif;
+  --hw-font-body:    'Inter', system-ui, sans-serif;
 }
 
 /* ── Utility classes (use these in JSX instead of inline styles) ─ */
@@ -194,27 +194,71 @@
 
 /* ── Nav ghost Log In button ─────────────────────────────────── */
 .hw-nav-login {
-  background: rgba(255, 255, 255, 0.2);
-  border: 1.5px solid rgba(255, 255, 255, 0.8);
-  color: white;
-  transition: background 0.2s, border-color 0.2s;
-  backdrop-filter: blur(4px);
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.8);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  transition: color 0.2s;
+  padding: 6px 14px;
 }
 .hw-nav-login:hover {
-  background: rgba(255, 255, 255, 0.35);
-  border-color: rgba(255, 255, 255, 1);
+  color: rgba(255,255,255,1);
 }
 
-/* ── Nav Sign Up (amber-gold) ───────────────────────────────────── */
+/* ── Nav Sign Up (pill solid white) ───────────────────────────────────── */
 .hw-nav-signup {
-  background: #D97706;
-  color: white;
+  background: white;
+  color: #1E3A5F;
   border: none;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
   transition: background 0.2s, box-shadow 0.2s;
+  padding: 7px 18px;
 }
 .hw-nav-signup:hover {
-  background: #B45309;
-  box-shadow: 0 4px 16px rgba(180,83,9,0.4);
+  background: rgba(255,255,255,0.88);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+}
+
+/* ── Nav link dot separators ───────────────────────────────────── */
+.hw-nav-link {
+  position: relative;
+  font-size: 0.8125rem;
+  font-weight: 450;
+  color: rgba(255,255,255,0.75);
+  text-decoration: none;
+  letter-spacing: 0.01em;
+  padding: 4px 0;
+  transition: color 0.2s;
+}
+.hw-nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(255,255,255,0.6);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.25s ease;
+}
+.hw-nav-link:hover {
+  color: rgba(255,255,255,1);
+}
+.hw-nav-link:hover::after {
+  transform: scaleX(1);
+}
+
+.hw-nav-dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.35);
+  flex-shrink: 0;
 }
 
 /* ── Scroll indicator bounce ──────────────────────────────────── */

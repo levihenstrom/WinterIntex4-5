@@ -124,8 +124,8 @@ export default function NavBar() {
   );
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 shadow-sm bg-[#1E3A5F]/75 backdrop-blur-xl border-b border-white/20 transition-all duration-300">
-      <div className="max-w-7xl mx-auto px-6 lg:px-10 flex items-center justify-between h-16 lg:h-18">
+    <header className="fixed top-0 left-0 right-0 z-50 flex flex-col items-center pt-4 pointer-events-none">
+      <div className="pointer-events-auto w-[92%] max-w-5xl bg-[#1E3A5F]/80 backdrop-blur-xl rounded-full shadow-[0_4px_24px_rgba(0,0,0,0.22)] transition-all duration-300 px-5 lg:px-7 flex items-center justify-between h-[52px]">
 
         {/* Logo */}
         <a
@@ -134,66 +134,65 @@ export default function NavBar() {
         >
           <HealingWingsLogo size={36} />
           <span
-            className="font-bold text-lg text-white tracking-tight"
-            style={{ fontFamily: 'Poppins, sans-serif' }}
+            className="font-semibold text-[15px] text-white tracking-tight"
+            style={{ fontFamily: 'Inter, sans-serif', letterSpacing: '-0.01em' }}
           >
             HealingWings
           </span>
         </a>
 
         {/* Desktop nav links */}
-        <nav className="hidden lg:flex items-center gap-7">
+        <nav className="hidden lg:flex items-center gap-1">
           {isAdminPortalUser ? (
             <>
-              {ADMIN_NAV_LINKS.map((link) => (
-                <NavLink
-                  key={link.label}
-                  to={link.to}
-                  className={({ isActive }: { isActive: boolean }) =>
-                    'text-sm font-medium no-underline transition-colors ' +
-                    (isActive ? 'text-white' : 'text-white/75 hover:text-white')
-                  }
-                >
-                  {link.label}
-                </NavLink>
+              {ADMIN_NAV_LINKS.map((link, i) => (
+                <span key={link.label} className="flex items-center gap-1">
+                  {i > 0 && <span className="hw-nav-dot" />}
+                  <NavLink
+                    to={link.to}
+                    className={({ isActive }: { isActive: boolean }) =>
+                      'hw-nav-link px-3 ' + (isActive ? '!text-white' : '')
+                    }
+                  >
+                    {link.label}
+                  </NavLink>
+                </span>
               ))}
               {isAdmin && (
-                <NavLink
-                  to="/admin/social-media"
-                  className={({ isActive }: { isActive: boolean }) =>
-                    'text-sm font-medium no-underline transition-colors ' +
-                    (isActive ? 'text-white' : 'text-white/75 hover:text-white')
-                  }
-                >
-                  Social Media
-                </NavLink>
+                <span className="flex items-center gap-1">
+                  <span className="hw-nav-dot" />
+                  <NavLink
+                    to="/admin/social-media"
+                    className={({ isActive }: { isActive: boolean }) =>
+                      'hw-nav-link px-3 ' + (isActive ? '!text-white' : '')
+                    }
+                  >
+                    Social Media
+                  </NavLink>
+                </span>
               )}
             </>
           ) : (
             <>
-              {NAV_LINKS.map((link) =>
-                link.to ? (
-                  <Link
-                    key={link.label}
-                    to={link.to}
-                    className="text-sm font-medium text-white/75 hover:text-white transition-colors no-underline"
-                  >
-                    {link.label}
-                  </Link>
-                ) : (
-                  <Link
-                    key={link.label}
-                    to={{ pathname: '/', hash: link.hash }}
-                    className="text-sm font-medium text-white/75 hover:text-white transition-colors no-underline"
-                  >
-                    {link.label}
-                  </Link>
-                )
-              )}
+              {NAV_LINKS.map((link, i) => (
+                <span key={link.label} className="flex items-center gap-1">
+                  {i > 0 && <span className="hw-nav-dot" />}
+                  {link.to ? (
+                    <Link to={link.to} className="hw-nav-link px-3">
+                      {link.label}
+                    </Link>
+                  ) : (
+                    <Link to={{ pathname: '/', hash: link.hash }} className="hw-nav-link px-3">
+                      {link.label}
+                    </Link>
+                  )}
+                </span>
+              ))}
               {isAuthenticated && (
-                <Link to="/donor" className="text-sm font-medium text-white/75 hover:text-white transition-colors no-underline">
-                  My Portal
-                </Link>
+                <span className="flex items-center gap-1">
+                  <span className="hw-nav-dot" />
+                  <Link to="/donor" className="hw-nav-link px-3">My Portal</Link>
+                </span>
               )}
             </>
           )}
@@ -281,7 +280,7 @@ export default function NavBar() {
 
       {/* Mobile drawer */}
       {menuOpen && (
-        <div className="lg:hidden border-t border-white/20 px-6 py-4 bg-[#1E3A5F]/75 backdrop-blur-xl">
+        <div className="lg:hidden mt-2 w-[92%] mx-auto rounded-2xl border border-white/20 px-6 py-4 bg-[#1E3A5F]/90 backdrop-blur-xl pointer-events-auto">
           {isAdminPortalUser ? (
             <>
               {ADMIN_NAV_LINKS.map((link) => (
@@ -430,3 +429,4 @@ export default function NavBar() {
     </header>
   );
 }
+
