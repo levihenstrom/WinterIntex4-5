@@ -267,29 +267,10 @@
   },
   {
     "operational_band": "Routine Monitoring",
-    "readiness_percentile_among_current_residents": 65.2174,
-    "reintegration_readiness_score": 0.0063,
-    "resident_code": "LS-0007",
-    "support_priority_rank": 15,
-    "top_positive_factors_short": [
-      "edu progress trend: below typical for similar residents",
-      "pr mean duration: above typical for similar residents",
-      "edu mean progress: below typical for similar residents",
-      "edu mean attendance: below typical for similar residents"
-    ],
-    "top_risk_factors_short": [
-      "hv total visits: below typical for similar residents",
-      "days since enrollment: above typical for similar residents",
-      "pr concern rate: below typical for similar residents",
-      "pr sessions total: below typical for similar residents"
-    ]
-  },
-  {
-    "operational_band": "Routine Monitoring",
-    "readiness_percentile_among_current_residents": 65.2174,
-    "reintegration_readiness_score": 0.0063,
+    "readiness_percentile_among_current_residents": 63.0435,
+    "reintegration_readiness_score": 0.0062,
     "resident_code": "LS-0012",
-    "support_priority_rank": 16,
+    "support_priority_rank": 15,
     "top_positive_factors_short": [
       "pr concern rate: above typical for similar residents",
       "edu progress trend: below typical for similar residents",
@@ -301,6 +282,25 @@
       "days since enrollment: above typical for similar residents",
       "pr sessions total: below typical for similar residents",
       "pr sessions last 30d: below typical for similar residents"
+    ]
+  },
+  {
+    "operational_band": "Routine Monitoring",
+    "readiness_percentile_among_current_residents": 67.3913,
+    "reintegration_readiness_score": 0.0063,
+    "resident_code": "LS-0007",
+    "support_priority_rank": 16,
+    "top_positive_factors_short": [
+      "edu progress trend: below typical for similar residents",
+      "pr mean duration: above typical for similar residents",
+      "edu mean progress: below typical for similar residents",
+      "edu mean attendance: below typical for similar residents"
+    ],
+    "top_risk_factors_short": [
+      "hv total visits: below typical for similar residents",
+      "days since enrollment: above typical for similar residents",
+      "pr concern rate: below typical for similar residents",
+      "pr sessions total: below typical for similar residents"
     ]
   },
   {
