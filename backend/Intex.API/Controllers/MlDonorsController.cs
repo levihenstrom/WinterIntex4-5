@@ -1,16 +1,34 @@
+using Intex.API.Authorization;
 using Intex.API.Contracts.Ml;
 using Intex.API.Data;
 using Intex.API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Intex.API.Controllers;
 
 [ApiController]
 [Route("api/ml/donors")]
 [Authorize(Policy = AuthPolicies.StaffRead)]
-public sealed class MlDonorsController(MlArtifactService ml) : ControllerBase
+public sealed class MlDonorsController(MlArtifactService ml, AppDbContext db, StaffScopeResolver scopeResolver) : ControllerBase
 {
+    private async Task<IReadOnlyList<DonorChurnScoreDto>> ScopeAsync(
+        IReadOnlyList<DonorChurnScoreDto> list, CancellationToken ct)
+    {
+        var scope = await scopeResolver.GetForUserAsync(User, ct);
+        if (scope.IsAdmin)
+            return list;
+        if (scope.SafehouseIds.Count == 0)
+            return [];
+
+        var visibleIds = await scope.Apply(db.Supporters.AsNoTracking())
+            .Select(s => s.SupporterId)
+            .ToHashSetAsync(ct);
+
+        return list.Where(d => visibleIds.Contains(d.SupporterId)).ToList();
+    }
+
     [HttpGet("at-risk")]
     [ProducesResponseType(typeof(IReadOnlyList<DonorChurnScoreDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -30,7 +48,7 @@ public sealed class MlDonorsController(MlArtifactService ml) : ControllerBase
         try
         {
             var list = await ml.GetDonorsAtRiskAsync(limit, cancellationToken);
-            return Ok(list);
+            return Ok(await ScopeAsync(list, cancellationToken));
         }
         catch (FileNotFoundException ex)
         {
@@ -51,7 +69,7 @@ public sealed class MlDonorsController(MlArtifactService ml) : ControllerBase
         try
         {
             var list = await ml.GetDonorsCurrentScoresAsync(cancellationToken);
-            return Ok(list);
+            return Ok(await ScopeAsync(list, cancellationToken));
         }
         catch (FileNotFoundException ex)
         {

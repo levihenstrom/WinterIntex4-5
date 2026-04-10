@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { deleteJson, fetchAllPaged, postJson } from '../../lib/apiClient';
+import { useAuth } from '../../context/AuthContext';
 import AdminKpiStrip from '../../components/admin/AdminKpiStrip';
 import DeleteConfirmModal from '../../components/DeleteConfirmModal';
 import { ErrorState, LoadingState } from '../../components/common/AsyncStatus';
@@ -42,6 +43,8 @@ function fmtDetailDate(iso: string | null | undefined): string {
 }
 
 export default function ContributionsPage() {
+  const { authSession } = useAuth();
+  const isAdmin = authSession.roles.includes('Admin');
   const PAGE_SIZE = 20;
   const [searchParams, setSearchParams] = useSearchParams();
   const focusDonationId = useMemo(() => {
@@ -610,13 +613,15 @@ export default function ContributionsPage() {
                       </dl>
                     </div>
                     <div className="modal-footer border-top">
-                      <button
-                        type="button"
-                        className="btn btn-outline-danger"
-                        onClick={() => setDeleteConfirmId(detailDonation.donationId)}
-                      >
-                        Delete record
-                      </button>
+                      {isAdmin && (
+                        <button
+                          type="button"
+                          className="btn btn-outline-danger"
+                          onClick={() => setDeleteConfirmId(detailDonation.donationId)}
+                        >
+                          Delete record
+                        </button>
+                      )}
                       <button type="button" className="btn btn-primary" onClick={() => setDetailDonation(null)}>
                         Close
                       </button>

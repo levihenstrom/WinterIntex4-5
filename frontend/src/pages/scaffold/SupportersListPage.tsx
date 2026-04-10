@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { deleteJson, fetchAllPaged, postJson, putJson } from '../../lib/apiClient';
+import { useAuth } from '../../context/AuthContext';
 import AdminKpiStrip from '../../components/admin/AdminKpiStrip';
 import DeleteConfirmModal from '../../components/DeleteConfirmModal';
 import { ErrorState, LoadingState } from '../../components/common/AsyncStatus';
@@ -151,6 +152,8 @@ const emptyForm: FormState = {
 
 /* ── Main Page ───────────────────────────────────────────────── */
 export default function SupportersListPage() {
+  const { authSession } = useAuth();
+  const isAdmin = authSession.roles.includes('Admin');
   const PAGE_SIZE = 20;
   const [supporters, setSupporters] = useState<SupporterApi[]>([]);
   const [monetaryTotalPhp, setMonetaryTotalPhp] = useState(0);
@@ -957,23 +960,27 @@ export default function SupportersListPage() {
                                 Edit
                               </button>
                             </li>
-                            <li>
-                              <hr className="dropdown-divider" />
-                            </li>
-                            <li>
-                              <button
-                                type="button"
-                                className="dropdown-item text-danger"
-                                onClick={() =>
-                                  setDeleteTarget({
-                                    id: s.supporterId,
-                                    label: supporterDisplayLabel(s),
-                                  })
-                                }
-                              >
-                                Delete
-                              </button>
-                            </li>
+                            {isAdmin && (
+                              <>
+                                <li>
+                                  <hr className="dropdown-divider" />
+                                </li>
+                                <li>
+                                  <button
+                                    type="button"
+                                    className="dropdown-item text-danger"
+                                    onClick={() =>
+                                      setDeleteTarget({
+                                        id: s.supporterId,
+                                        label: supporterDisplayLabel(s),
+                                      })
+                                    }
+                                  >
+                                    Delete
+                                  </button>
+                                </li>
+                              </>
+                            )}
                           </ul>
                         </div>
                       </div>

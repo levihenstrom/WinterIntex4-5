@@ -83,6 +83,26 @@ public sealed class LookupsController(AppDbContext db, StaffScopeResolver scopeR
 
         return Ok(list.Take(150).ToList());
     }
+
+    /// <summary>All partners (admin-only, for staff-partner assignment).</summary>
+    [HttpGet("partners")]
+    [Authorize(Policy = AuthPolicies.AdminOnly)]
+    [ProducesResponseType(typeof(IReadOnlyList<PartnerLookupDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<PartnerLookupDto>>> GetPartners(CancellationToken cancellationToken)
+    {
+        var rows = await db.Partners.AsNoTracking()
+            .OrderBy(p => p.PartnerName ?? "")
+            .Select(p => new PartnerLookupDto(
+                p.PartnerId,
+                p.PartnerName ?? $"Partner #{p.PartnerId}",
+                p.PartnerAssignments
+                    .Where(pa => pa.SafehouseId != null && pa.Status == "Active")
+                    .Select(pa => pa.Safehouse!.Name ?? pa.Safehouse.SafehouseCode)
+                    .ToList()))
+            .ToListAsync(cancellationToken);
+        return Ok(rows);
+    }
 }
 
 public sealed record SafehouseLookupDto(int SafehouseId, string DisplayName, string SafehouseCode);
+public sealed record PartnerLookupDto(int PartnerId, string DisplayName, IReadOnlyList<string> Safehouses);

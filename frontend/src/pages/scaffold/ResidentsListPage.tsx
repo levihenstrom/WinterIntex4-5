@@ -281,6 +281,7 @@ const navBtn = (disabled: boolean): React.CSSProperties => ({
 export default function ResidentsListPage() {
   const { authSession } = useAuth();
   const canWrite = authSession.roles.includes('Admin') || authSession.roles.includes('Staff');
+  const isAdmin = authSession.roles.includes('Admin');
 
   // URL-driven initial state — supports /admin/residents/:id and ?caseStatus=Active
   useParams<{ id?: string }>();
@@ -577,13 +578,11 @@ export default function ResidentsListPage() {
               Residents
             </h1>
             <p className="text-muted mb-0" style={{ fontSize: 14, maxWidth: 720 }}>
-              Track each girl through intake, counseling, education, health, and reintegration. Use the table for quick triage; open a row for the full
-              case file and incident history.
-              {data ? ` ${data.totalCount} resident${data.totalCount !== 1 ? 's' : ''} match your filters.` : ''}
+              Manage cases. Click a row for details.
             </p>
             <p className="text-muted mb-0 mt-2 small" style={{ maxWidth: 720, color: '#94A3B8' }}>
               <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: 2, background: 'rgba(255, 247, 230, 0.95)', boxShadow: 'inset 2px 0 0 0 rgba(217, 119, 6, 0.22)', verticalAlign: 'middle', marginRight: 6 }} aria-hidden />
-              Soft gold row = successful reintegration (<strong className="text-muted">Reintegration status: Completed</strong>), the same outcome counted in your public impact OKR.
+              Soft gold row = successfully reintegrated
             </p>
           </div>
           {canWrite && (
@@ -931,7 +930,7 @@ export default function ResidentsListPage() {
                                     Field visits
                                   </Link>
                                 </li>
-                                {canWrite ? (
+                                {isAdmin ? (
                                   <>
                                     <li><hr className="dropdown-divider" /></li>
                                     <li>
