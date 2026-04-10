@@ -82,7 +82,7 @@ function parseMetricPayload(raw: string): MetricPayload {
     avg_education_progress: asNumber(parsed.avg_education_progress),
   };
 }
-const fmtMonth = (iso: string) => new Date(iso + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
 const fmtShort = (iso: string) => new Date(iso + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
 
 /** Last snapshot date included on charts (14 days before 2026-03-01) — drops placeholder Mar 2026 zeros. */
@@ -143,212 +143,8 @@ function StatBox({ label, value, color, bg, border }: { label: string; value: st
   );
 }
 
-/* ── Report download helper ──────────────────────────────────── */
-function downloadReportPDF(snap: ImpactSnapshot, p: MetricPayload) {
-  const monthLabel = snap.snapshot_date ? fmtMonth(snap.snapshot_date) : 'Report';
-  const html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8"/>
-  <title>${snap.headline}</title>
-  <style>
-    body { font-family: 'Georgia', serif; margin: 40px; color: #1E293B; }
-    h1 { font-size: 1.4rem; color: #1E3A5F; margin-bottom: 4px; }
-    .sub { font-size: 0.8rem; color: #64748B; margin-bottom: 24px; }
-    .summary { font-size: 0.95rem; line-height: 1.7; margin-bottom: 28px; }
-    .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 28px; }
-    .pill { border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 18px; }
-    .pill-val { font-size: 1.5rem; font-weight: 800; color: #1E3A5F; }
-    .pill-lbl { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #64748B; margin-top: 4px; }
-    .footer { font-size: 0.72rem; color: #94A3B8; border-top: 1px solid #e2e8f0; padding-top: 16px; }
-    @media print { body { margin: 20px; } }
-  </style>
-</head>
-<body>
-  <h1>${snap.headline}</h1>
-  <div class="sub">Published ${monthLabel} · Anonymized · Public Report</div>
-  <div class="summary">${snap.summary_text}</div>
-  <div class="grid">
-    <div class="pill"><div class="pill-val">${p.total_residents.toLocaleString()}</div><div class="pill-lbl">Residents</div></div>
-    <div class="pill"><div class="pill-val">${p.avg_health_score > 0 ? p.avg_health_score.toFixed(2) : '—'}</div><div class="pill-lbl">Avg Health Score</div></div>
-    <div class="pill"><div class="pill-val">${p.avg_education_progress > 0 ? p.avg_education_progress.toFixed(1) + '%' : '—'}</div><div class="pill-lbl">Avg Education Progress</div></div>
-    <div class="pill"><div class="pill-val">${p.donations_total_for_month > 0 ? '₱' + (p.donations_total_for_month / 1000).toFixed(1) + 'K' : '—'}</div><div class="pill-lbl">Donations</div></div>
-  </div>
-  <div class="footer">This report contains anonymized, aggregated data. No personally identifiable information is included. · Lighthouse Sanctuary</div>
-  <script>window.onload = () => { window.print(); }<\/script>
-</body>
-</html>`;
-  const blob = new Blob([html], { type: 'text/html' });
-  const url = URL.createObjectURL(blob);
-  window.open(url, '_blank');
-  setTimeout(() => URL.revokeObjectURL(url), 30000);
-}
-
-/* ── Report card ─────────────────────────────────────────────── */
-function ReportCard({ snap, featured = false, liveStats }: { snap: ImpactSnapshot; featured?: boolean; liveStats?: LiveStats | null }) {
-  const [open, setOpen] = useState(featured);
-  const rawP = parseMetricPayload(snap.metric_payload_json);
-
-  // Fall back to live computed values for ANY card that has zeros stored in the DB.
-  // Health and education averages are organization-wide and apply to all snapshots.
-  // Donations fall back to live total only for the featured (most recent) card.
-  const p: MetricPayload = {
-    total_residents: rawP.total_residents || (liveStats?.totalResidents ?? 0),
-    donations_total_for_month:
-      rawP.donations_total_for_month ||
-      (featured ? Number(liveStats?.donationsRaisedTotal ?? 0) : 0),
-    avg_health_score: rawP.avg_health_score || (liveStats?.avgHealthScore ?? 0),
-    avg_education_progress: rawP.avg_education_progress || (liveStats?.avgEducationProgress ?? 0),
-  };
-
-  const ref = useFadeIn();
-
-  const pills = [
-    { label: 'Residents', value: p.total_residents > 0 ? p.total_residents.toLocaleString() : '—', color: '#6B21A8', bg: '#f5f3ff', border: '#e9d5ff' },
-    { label: 'Health Score', value: p.avg_health_score > 0 ? p.avg_health_score.toFixed(2) : (liveStats?.avgHealthScore ? liveStats.avgHealthScore.toFixed(2) : '—'), color: '#0D9488', bg: '#f0fdf4', border: '#bbf7d0' },
-    { label: 'Education', value: p.avg_education_progress > 0 ? `${p.avg_education_progress.toFixed(1)}%` : (liveStats?.avgEducationProgress ? `${liveStats.avgEducationProgress.toFixed(1)}%` : '—'), color: '#1d4ed8', bg: '#eff6ff', border: '#bfdbfe' },
-    { label: 'Donations', value: p.donations_total_for_month > 0 ? formatUsdThousandsFromPhp(p.donations_total_for_month, 1) : '—', color: '#D97706', bg: '#fffbeb', border: '#fde68a' },
-  ];
-
-  return (
-    <div ref={ref} className="hw-fade-in" style={{ background: '#fff', borderRadius: 16, border: featured ? '2px solid #6B21A8' : '1px solid #e2e8f0', boxShadow: featured ? '0 4px 24px rgba(107,33,168,0.1)' : '0 2px 12px rgba(30,58,95,0.06)', overflow: 'hidden', marginBottom: '0.75rem' }}>
-      <div style={{ padding: '1.25rem 1.5rem' }}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-          {featured && <span style={{ fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.14em', background: '#fffbeb', color: '#D97706', border: '1px solid #fde68a', padding: '0.2rem 0.6rem', borderRadius: 50 }}>Latest</span>}
-          <span style={{ fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.14em', background: '#f0fdf4', color: '#0D9488', border: '1px solid #bbf7d0', padding: '0.2rem 0.6rem', borderRadius: 50 }}>{snap.snapshot_date ? fmtMonth(snap.snapshot_date) : '—'}</span>
-          <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontFamily: 'Inter, sans-serif' }}>Published {snap.published_at ? fmtMonth(snap.published_at) : '—'}</span>
-        </div>
-        <h3 style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 800, color: '#1E3A5F', fontSize: featured ? '1.1rem' : '0.95rem', margin: '0 0 0.5rem', lineHeight: 1.3 }}>{snap.headline}</h3>
-        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.88rem', color: '#64748b', lineHeight: 1.65, margin: 0, display: !open ? '-webkit-box' : 'block', WebkitLineClamp: !open ? 2 : undefined, WebkitBoxOrient: !open ? 'vertical' : undefined, overflow: !open ? 'hidden' : 'visible' }}>{snap.summary_text}</p>
-      </div>
-
-      {open && (
-        <div style={{ padding: '0.75rem 1.5rem 1.25rem', background: '#fafaf9', borderTop: '1px solid #f1f5f9', display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          {pills.map(pill => (
-            <div key={pill.label} style={{ background: pill.bg, border: `1px solid ${pill.border}`, borderRadius: 12, padding: '0.5rem 0.85rem', textAlign: 'center', minWidth: 90 }}>
-              <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 800, fontSize: '1.1rem', color: pill.color, lineHeight: 1 }}>{pill.value}</div>
-              <div style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.62rem', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.1em', color: pill.color, opacity: 0.65, marginTop: 4 }}>{pill.label}</div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div style={{ padding: '0.6rem 1.5rem', borderTop: '1px solid #f1f5f9', display: 'flex', gap: 16, alignItems: 'center' }}>
-        <button onClick={() => setOpen(x => !x)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 600, fontSize: '0.8rem', color: '#6B21A8', display: 'flex', alignItems: 'center', gap: 4, padding: 0 }}>
-          {open ? 'Collapse ↑' : 'View Metrics ↓'}
-        </button>
-        <span style={{ color: '#e2e8f0' }}>·</span>
-        <button
-          onClick={() => downloadReportPDF(snap, p)}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 600, fontSize: '0.8rem', color: '#0D9488', display: 'flex', alignItems: 'center', gap: 4, padding: 0 }}
-        >
-          <svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
-          Download PDF
-        </button>
-      </div>
-    </div>
-  );
-}
-
-/* ── Reports tab component ───────────────────────────────────── */
-function ReportsTab({
-  published,
-  liveStats,
-  reportMonthFilter,
-  setReportMonthFilter,
-  reportPage,
-  setReportPage,
-}: {
-  published: ImpactSnapshot[];
-  liveStats: LiveStats | null;
-  reportMonthFilter: string;
-  setReportMonthFilter: (v: string) => void;
-  reportPage: number;
-  setReportPage: (v: number) => void;
-}) {
-  const monthOptions = Array.from(
-    new Set(published.map(s => s.snapshot_date ? s.snapshot_date.slice(0, 7) : '').filter(Boolean))
-  ).sort((a, b) => b.localeCompare(a));
-
-  const filteredAll = reportMonthFilter
-    ? published.filter(s => s.snapshot_date && s.snapshot_date.startsWith(reportMonthFilter))
-    : published;
-
-  const filteredFeatured = filteredAll[0];
-  const filteredRest = filteredAll.slice(1);
-  const totalPages = Math.ceil(filteredRest.length / REPORTS_PAGE_SIZE);
-  const pagedRest = filteredRest.slice(reportPage * REPORTS_PAGE_SIZE, (reportPage + 1) * REPORTS_PAGE_SIZE);
-
-  return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: '1.25rem' }}>
-        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.16em', color: '#0D9488', margin: 0 }}>
-          Anonymized · Public · Monthly
-        </p>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <label style={{ fontSize: '0.8rem', color: '#64748B', fontWeight: 600 }}>Filter by month:</label>
-          <select
-            value={reportMonthFilter}
-            onChange={e => { setReportMonthFilter(e.target.value); setReportPage(0); }}
-            style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid #E2E8F0', fontSize: '0.85rem', color: '#1E3A5F', cursor: 'pointer', background: '#fff' }}
-          >
-            <option value="">All months</option>
-            {monthOptions.map(m => (
-              <option key={m} value={m}>
-                {new Date(m + '-01T00:00:00').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-              </option>
-            ))}
-          </select>
-          {reportMonthFilter && (
-            <button onClick={() => { setReportMonthFilter(''); setReportPage(0); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>
-              ✕ Clear
-            </button>
-          )}
-        </div>
-      </div>
-
-      {filteredAll.length === 0 ? (
-        <p style={{ color: '#64748b', fontFamily: 'Inter, sans-serif', textAlign: 'center', padding: '2rem 0' }}>
-          {reportMonthFilter ? 'No reports found for this month.' : 'No published impact snapshots yet.'}
-        </p>
-      ) : (
-        <>
-          <ReportCard snap={filteredFeatured} featured liveStats={liveStats} />
-          {pagedRest.length > 0 && (
-            <>
-              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.14em', color: '#94a3b8', margin: '1.5rem 0 0.75rem' }}>Previous Reports</p>
-              {pagedRest.map(s => <ReportCard key={s.snapshot_id} snap={s} liveStats={liveStats} />)}
-              {totalPages > 1 && (
-                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 10, marginTop: '1.25rem' }}>
-                  <button
-                    onClick={() => setReportPage(Math.max(0, reportPage - 1))}
-                    disabled={reportPage === 0}
-                    style={{ padding: '6px 16px', borderRadius: 20, fontWeight: 600, fontSize: '0.82rem', cursor: reportPage === 0 ? 'not-allowed' : 'pointer', border: '1.5px solid #E2E8F0', background: reportPage === 0 ? '#f8fafc' : '#fff', color: reportPage === 0 ? '#CBD5E1' : '#1E3A5F' }}
-                  >
-                    ← Prev
-                  </button>
-                  <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.82rem', color: '#64748B' }}>
-                    Page {reportPage + 1} of {totalPages}
-                  </span>
-                  <button
-                    onClick={() => setReportPage(Math.min(totalPages - 1, reportPage + 1))}
-                    disabled={reportPage >= totalPages - 1}
-                    style={{ padding: '6px 16px', borderRadius: 20, fontWeight: 600, fontSize: '0.82rem', cursor: reportPage >= totalPages - 1 ? 'not-allowed' : 'pointer', border: '1.5px solid #E2E8F0', background: reportPage >= totalPages - 1 ? '#f8fafc' : '#1E3A5F', color: reportPage >= totalPages - 1 ? '#CBD5E1' : '#fff' }}
-                  >
-                    Next →
-                  </button>
-                </div>
-              )}
-            </>
-          )}
-        </>
-      )}
-    </div>
-  );
-}
-
 /* ── Tabs ────────────────────────────────────────────────────── */
-const TABS = ['Overview', 'Donations', 'Residents', 'Wellness', 'Reports'] as const;
+const TABS = ['Overview', 'Donations', 'Residents', 'Wellness'] as const;
 type Tab = typeof TABS[number];
 
 interface LiveStats {
@@ -363,7 +159,7 @@ interface LiveStats {
   avgEducationProgress?: number | null;
 }
 
-const REPORTS_PAGE_SIZE = 4;
+
 
 /* ── Page ────────────────────────────────────────────────────── */
 export default function ImpactPage() {
@@ -371,8 +167,7 @@ export default function ImpactPage() {
   const [snapshots, setSnapshots] = useState<ImpactSnapshot[]>([]);
   const [impactLoadError, setImpactLoadError] = useState<string | null>(null);
   const [liveStats, setLiveStats] = useState<LiveStats | null>(null);
-  const [reportMonthFilter, setReportMonthFilter] = useState('');
-  const [reportPage, setReportPage] = useState(0);
+
   const [viewportWidth, setViewportWidth] = useState<number>(
     typeof window === 'undefined' ? 1200 : window.innerWidth,
   );
@@ -812,16 +607,7 @@ export default function ImpactPage() {
           </div>
         )}
 
-        {tab === 'Reports' && (
-          <ReportsTab
-            published={published}
-            liveStats={liveStats}
-            reportMonthFilter={reportMonthFilter}
-            setReportMonthFilter={setReportMonthFilter}
-            reportPage={reportPage}
-            setReportPage={setReportPage}
-          />
-        )}
+
       </div>
 
       {/* ── CTA ── */}
