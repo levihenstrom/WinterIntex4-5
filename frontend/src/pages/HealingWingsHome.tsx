@@ -6,25 +6,6 @@ import Footer from '../components/hw/Footer';
 import CarouselPillarsSection from '../components/hw/CarouselPillarsSection';
 import { fetchJson } from '../lib/apiClient';
 
-// ── Scroll fade-in hook ───────────────────────────────────────────────────────
-function useFadeIn() {
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    if (typeof window === 'undefined' || typeof window.IntersectionObserver === 'undefined') {
-      el.classList.add('hw-visible');
-      return;
-    }
-    const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) el.classList.add('hw-visible'); },
-      { threshold: 0.1 }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-  return ref;
-}
 
 const HERO_IMG = '/girls.avif';
 const MISSION_IMG = '/free.avif';
@@ -231,7 +212,7 @@ function DonationBanner() {
       <img
         src="/girl-portrait.png"
         alt="HealingWings child"
-        className="absolute inset-0 w-full h-full object-cover object-center"
+        className="absolute inset-0 w-full h-full object-cover object-top"
       />
       {/* Right-side vignette so photo stays vibrant on right, darker on left */}
       <div className="absolute inset-0" style={{
