@@ -688,35 +688,132 @@
   box-shadow: 0 0 24px rgba(225, 29, 116, 0.15);
 }
 
-/* ── Carousel Animation ─────────────────────────────────────────── */
+/* ── Pillar Carousel ────────────────────────────────────────────── */
 @keyframes hw-marquee {
-  0% { transform: translateX(0); }
+  0%   { transform: translateX(0); }
   100% { transform: translateX(-50%); }
 }
 
-.hw-carousel-track {
-  display: flex;
-  width: max-content;
-  gap: 1.5rem;
-  padding: 0 1.5rem;
-  animation: hw-marquee 40s linear infinite;
+.hw-pillar-strip {
+  /* Fade edges so cards dissolve at the sides */
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+  mask-image:         linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
 }
 
-.hw-carousel-track:hover {
+.hw-pillar-track {
+  display: flex;
+  width: max-content;
+  gap: 20px;
+  padding: 0 40px;
+  animation: hw-marquee 50s linear infinite;
+}
+
+.hw-pillar-track:hover {
   animation-play-state: paused;
 }
 
-/* Bulletproof Carousel Hover States */
-.hw-carousel-card:hover .hw-hover-overlay {
-  opacity: 1 !important;
+/* Individual card */
+.hw-pillar-card {
+  position: relative;
+  width: 300px;
+  aspect-ratio: 3 / 4;
+  border-radius: 20px;
+  overflow: hidden;
+  flex-shrink: 0;
+  cursor: pointer;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.28);
+  transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              box-shadow 0.4s ease;
 }
 
-.hw-carousel-card:hover .hw-default-overlay {
-  opacity: 0 !important;
+.hw-pillar-card:hover {
+  transform: scale(1.03);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.42);
 }
 
-.hw-carousel-card:hover .hw-card-img {
-  transform: scale(1.04) !important;
+@media (min-width: 768px) {
+  .hw-pillar-card { width: 340px; }
+}
+@media (min-width: 1024px) {
+  .hw-pillar-card { width: 380px; }
+}
+
+/* Photo fills the entire card */
+.hw-pillar-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.hw-pillar-card:hover .hw-pillar-img {
+  transform: scale(1.07);
+}
+
+/* Default state — subtle gradient + title at bottom */
+.hw-pillar-default {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 28px 24px;
+  background: linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.15) 50%, transparent 100%);
+  transition: opacity 0.35s ease;
+}
+
+.hw-pillar-card:hover .hw-pillar-default {
+  opacity: 0;
+}
+
+.hw-pillar-title {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 22px;
+  font-weight: 600;
+  color: #fff;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+}
+
+/* Hover state — dark wash over the image, description reveals */
+.hw-pillar-hover {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 32px 28px;
+  background: rgba(10, 26, 46, 0.82);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+
+.hw-pillar-card:hover .hw-pillar-hover {
+  opacity: 1;
+}
+
+.hw-pillar-hover-title {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 14px;
+  line-height: 1.15;
+}
+
+.hw-pillar-hover-desc {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: rgba(255,255,255,0.85);
+  line-height: 1.65;
 }
 
 .no-scrollbar::-webkit-scrollbar {
