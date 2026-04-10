@@ -834,6 +834,18 @@
   max-width: 340px;
 }
 
+/* ── Donation Section Slide-in Transition ───────────────────────── */
+.hw-donate-slide {
+  transition: opacity 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.hw-donate-in-left,
+.hw-donate-in-right {
+  opacity: 1 !important;
+  transform: translateX(0) !important;
+}
+
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }

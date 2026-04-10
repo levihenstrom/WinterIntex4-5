@@ -203,59 +203,86 @@ function ApproachSection() {
 // Section 4 — Donate  (snap chapter 4)
 // ─────────────────────────────────────────────────────────────────────────────
 function DonationBanner() {
-  const ref = useFadeIn();
+  const sectionRef = useRef<HTMLElement>(null);
+  const leftRef = useRef<HTMLDivElement>(null);
+  const rightRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          leftRef.current?.classList.add('hw-donate-in-left');
+          setTimeout(() => rightRef.current?.classList.add('hw-donate-in-right'), 150);
+        }
+      },
+      { threshold: 0.3 }
+    );
+    observer.observe(section);
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <section
       id="donate"
-      ref={ref}
-      className="hw-snap-section relative flex flex-col justify-center bg-[#f6f1ff] px-6 lg:px-16"
+      ref={sectionRef}
+      className="hw-snap-section relative flex items-center justify-center bg-white overflow-hidden"
     >
-      <div className="mx-auto max-w-5xl w-full py-10">
-        <div className="mb-8 text-center">
-          <span className="hw-eyebrow">Make an Impact</span>
-          <h2 className="hw-heading-font mt-3 text-4xl md:text-5xl font-semibold text-[#1E3A5F] leading-tight">
-            Your donation<br />changes lives
-          </h2>
+      {/* Subtle warm texture */}
+      <div className="absolute inset-0 pointer-events-none" style={{
+        background: 'radial-gradient(ellipse at 20% 50%, rgba(217,119,6,0.06) 0%, transparent 60%), radial-gradient(ellipse at 80% 50%, rgba(30,58,95,0.05) 0%, transparent 60%)'
+      }} />
+
+      <div className="relative w-full max-w-6xl mx-auto px-6 lg:px-16 py-12 grid grid-cols-1 lg:grid-cols-2 gap-0 items-stretch min-h-[520px]">
+
+        {/* Left — image with quote */}
+        <div
+          ref={leftRef}
+          className="hw-donate-slide relative rounded-l-3xl overflow-hidden min-h-[360px] lg:min-h-0"
+          style={{ opacity: 0, transform: 'translateX(-40px)' }}
+        >
+          <img
+            src="/ninos.jpeg"
+            alt="Children at HealingWings"
+            className="absolute inset-0 w-full h-full object-cover object-center"
+          />
+          <div className="absolute inset-0" style={{
+            background: 'linear-gradient(to top, rgba(10,20,40,0.80) 0%, rgba(10,20,40,0.20) 55%, transparent 100%)'
+          }} />
+          <div className="absolute bottom-8 left-8 right-8">
+            <p className="text-white/90 text-lg font-light leading-relaxed italic" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>
+              "Every child deserves safety, healing, and a future full of hope."
+            </p>
+            <div className="mt-3 w-10 h-[2px] bg-amber-400" />
+          </div>
         </div>
 
-        <div className="border-[5px] border-[#6B21A8]">
-          <div className="p-[12px]">
-            <div className="bg-[#efe6ff] shadow-lg">
-              <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] min-h-[300px]">
-                <div className="relative overflow-hidden min-h-[200px]">
-                  <img
-                    src="/girl-portrait.png"
-                    alt="HealingWings Resident"
-                    className="h-full w-full object-cover object-center"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-black/10 to-transparent" />
-                  <div className="absolute bottom-5 left-5 max-w-[220px] text-white">
-                    <p className="text-sm leading-5 font-medium">Every contribution helps provide safety and hope.</p>
-                  </div>
-                </div>
-                <div className="flex items-center px-8 py-7 lg:px-10">
-                  <div className="w-full">
-                    <div className="bg-white p-5 shadow-md border border-stone-200">
-                      <DonationWidget />
-                      <div className="mt-4 flex gap-6 border-t pt-4 text-sm">
-                        <div className="flex items-center gap-2 text-stone-600">
-                          <svg className="w-4 h-4 text-[#0D9488]" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                          </svg>
-                          Impact Driven
-                        </div>
-                        <div className="flex items-center gap-2 text-stone-600">
-                          <svg className="w-4 h-4 text-[#6B21A8]" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-                          </svg>
-                          Secure Giving
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+        {/* Right — form panel */}
+        <div
+          ref={rightRef}
+          className="hw-donate-slide flex flex-col justify-center bg-white rounded-r-3xl px-8 py-10 lg:px-12 shadow-[0_8px_48px_rgba(0,0,0,0.10)] border border-stone-100"
+          style={{ opacity: 0, transform: 'translateX(40px)' }}
+        >
+          <span className="hw-eyebrow text-amber-600 mb-3">Make an Impact</span>
+          <h2 className="hw-heading-font text-3xl md:text-4xl font-semibold text-[#1E3A5F] leading-tight mb-6">
+            Your donation<br />changes lives
+          </h2>
+
+          <DonationWidget />
+
+          <div className="mt-5 flex gap-6 border-t border-stone-100 pt-4 text-sm text-stone-500">
+            <div className="flex items-center gap-2">
+              <svg className="w-4 h-4 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              Impact Driven
+            </div>
+            <div className="flex items-center gap-2">
+              <svg className="w-4 h-4 text-[#1E3A5F]" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+              </svg>
+              Secure Giving
             </div>
           </div>
         </div>
