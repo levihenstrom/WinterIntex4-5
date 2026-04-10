@@ -694,65 +694,65 @@
   100% { transform: translateX(-50%); }
 }
 
+/* Strip — fade edges so side cards dissolve cleanly */
 .hw-pillar-strip {
-  /* Fade edges so cards dissolve at the sides */
-  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
-  mask-image:         linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 12%, black 88%, transparent 100%);
+  mask-image:         linear-gradient(to right, transparent 0%, black 12%, black 88%, transparent 100%);
 }
 
 .hw-pillar-track {
   display: flex;
   width: max-content;
-  gap: 20px;
-  padding: 0 40px;
-  animation: hw-marquee 50s linear infinite;
+  gap: 24px;
+  padding: 32px 60px;
+  animation: hw-marquee 55s linear infinite;
 }
 
 .hw-pillar-track:hover {
   animation-play-state: paused;
 }
 
-/* Individual card */
+/* Individual card — tall editorial portrait */
 .hw-pillar-card {
   position: relative;
-  width: 300px;
-  aspect-ratio: 3 / 4;
-  border-radius: 20px;
+  width: 340px;
+  height: 520px;
+  border-radius: 24px;
   overflow: hidden;
   flex-shrink: 0;
   cursor: pointer;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.28);
-  transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-              box-shadow 0.4s ease;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  transition: transform 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              box-shadow 0.45s ease;
 }
 
 .hw-pillar-card:hover {
-  transform: scale(1.03);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.42);
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
 }
 
 @media (min-width: 768px) {
-  .hw-pillar-card { width: 340px; }
+  .hw-pillar-card { width: 380px; height: 580px; }
 }
-@media (min-width: 1024px) {
-  .hw-pillar-card { width: 380px; }
+@media (min-width: 1280px) {
+  .hw-pillar-card { width: 420px; height: 640px; }
 }
 
-/* Photo fills the entire card */
+/* Photo fills the card */
 .hw-pillar-img {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition: transform 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .hw-pillar-card:hover .hw-pillar-img {
-  transform: scale(1.07);
+  transform: scale(1.08);
 }
 
-/* Default state — subtle gradient + title at bottom */
+/* Default state — strong gradient at bottom, large bold title bottom-left */
 .hw-pillar-default {
   position: absolute;
   inset: 0;
@@ -760,9 +760,14 @@
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  padding: 28px 24px;
-  background: linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.15) 50%, transparent 100%);
-  transition: opacity 0.35s ease;
+  padding: 32px 28px;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.80) 0%,
+    rgba(0, 0, 0, 0.30) 45%,
+    transparent 100%
+  );
+  transition: opacity 0.38s ease;
 }
 
 .hw-pillar-card:hover .hw-pillar-default {
@@ -770,29 +775,36 @@
 }
 
 .hw-pillar-title {
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 22px;
-  font-weight: 600;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 26px;
+  font-weight: 800;
   color: #fff;
-  line-height: 1.2;
-  letter-spacing: 0.01em;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  text-align: left;
 }
 
-/* Hover state — dark wash over the image, description reveals */
+@media (min-width: 768px) {
+  .hw-pillar-title { font-size: 30px; }
+}
+
+/* Hover state — keeps image visible, dark navy wash fades in */
 .hw-pillar-hover {
   position: absolute;
   inset: 0;
   z-index: 20;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: flex-start;
-  padding: 32px 28px;
-  background: rgba(10, 26, 46, 0.82);
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
+  justify-content: flex-end;
+  padding: 36px 30px;
+  background: linear-gradient(
+    to top,
+    rgba(8, 20, 40, 0.94) 0%,
+    rgba(8, 20, 40, 0.65) 55%,
+    rgba(8, 20, 40, 0.20) 100%
+  );
   opacity: 0;
-  transition: opacity 0.35s ease;
+  transition: opacity 0.38s ease;
 }
 
 .hw-pillar-card:hover .hw-pillar-hover {
@@ -800,20 +812,26 @@
 }
 
 .hw-pillar-hover-title {
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 24px;
-  font-weight: 700;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 26px;
+  font-weight: 800;
   color: #fff;
   margin-bottom: 14px;
   line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+@media (min-width: 768px) {
+  .hw-pillar-hover-title { font-size: 28px; }
 }
 
 .hw-pillar-hover-desc {
   font-family: 'Inter', system-ui, sans-serif;
   font-size: 14px;
   font-weight: 400;
-  color: rgba(255,255,255,0.85);
-  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.82);
+  line-height: 1.7;
+  max-width: 340px;
 }
 
 .no-scrollbar::-webkit-scrollbar {
