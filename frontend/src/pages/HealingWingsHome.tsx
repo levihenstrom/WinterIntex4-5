@@ -185,42 +185,18 @@ function ApproachSection() {
 // ─────────────────────────────────────────────────────────────────────────────
 function DonationBanner() {
   const sectionRef = useRef<HTMLElement>(null);
-  const girlRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
-  const textRef = useRef<HTMLDivElement>(null);
 
-  // Scroll-based scale — slower & more pronounced: 0.72 → 1.0
-  useEffect(() => {
-    const container = document.querySelector('.hw-snap-container') as HTMLElement;
-    if (!container) return;
-    const onScroll = () => {
-      const section = sectionRef.current;
-      const girl = girlRef.current;
-      if (!section || !girl) return;
-      const rect = section.getBoundingClientRect();
-      const viewH = window.innerHeight;
-      const progress = Math.max(0, Math.min(1, 1 - rect.top / viewH));
-      const scale = 0.72 + progress * 0.28;       // 0.72 → 1.0 (very noticeable)
-      const translateY = (1 - progress) * 48;      // slides up 48px
-      girl.style.transform = `scale(${scale}) translateY(${translateY}px)`;
-    };
-    container.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
-    return () => container.removeEventListener('scroll', onScroll);
-  }, []);
-
-  // Fade-in card and text
   useEffect(() => {
     const section = sectionRef.current;
     if (!section) return;
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          setTimeout(() => cardRef.current?.classList.add('hw-donate-in-left'), 80);
-          setTimeout(() => textRef.current?.classList.add('hw-donate-in-right'), 250);
+          setTimeout(() => cardRef.current?.classList.add('hw-donate-in-left'), 100);
         }
       },
-      { threshold: 0.2 }
+      { threshold: 0.25 }
     );
     observer.observe(section);
     return () => observer.disconnect();
@@ -230,89 +206,48 @@ function DonationBanner() {
     <section
       id="donate"
       ref={sectionRef}
-      className="hw-snap-section relative overflow-visible"
-      style={{ background: 'linear-gradient(135deg, #f8f4ef 0%, #eee8e0 100%)' }}
+      className="hw-snap-section relative flex items-center overflow-hidden"
     >
-      {/* Warm glow behind girl */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div style={{
-          position: 'absolute', left: '42%', top: '5%',
-          width: '480px', height: '480px', borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(217,119,6,0.09) 0%, transparent 70%)'
-        }} />
-      </div>
+      {/* Full-bleed background photo */}
+      <img
+        src="/ninadonacion.png"
+        alt="HealingWings child"
+        className="absolute inset-0 w-full h-full object-cover object-right"
+      />
+      {/* Gradient: dark on left so form is readable, fades to transparent right */}
+      <div className="absolute inset-0" style={{
+        background: 'linear-gradient(to right, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.20) 45%, transparent 75%)'
+      }} />
 
-      {/* ── Main 3-col layout: [FORM] [GIRL overlapping left] [QUOTE] ── */}
-      <div className="relative w-full h-full flex items-end lg:items-center px-6 lg:px-14 gap-0">
+      {/* Floating form card — left side */}
+      <div
+        ref={cardRef}
+        className="hw-donate-slide relative z-10 ml-8 lg:ml-16
+                   w-full max-w-[400px] lg:max-w-[440px]
+                   bg-white/95 backdrop-blur-sm rounded-2xl px-8 py-9
+                   shadow-[0_20px_60px_rgba(0,0,0,0.22)]"
+        style={{ opacity: 0, transform: 'translateX(-40px)' }}
+      >
+        <span className="hw-eyebrow text-amber-600 mb-2 block">Make an Impact</span>
+        <h2 className="hw-heading-font text-3xl lg:text-4xl font-semibold text-[#1E3A5F] leading-tight mb-5">
+          Your donation<br />changes lives
+        </h2>
 
-        {/* COL 1 — Donation form, wide on desktop */}
-        <div
-          ref={cardRef}
-          className="hw-donate-slide relative z-10 shrink-0
-                     w-full max-w-[420px] lg:max-w-[460px]
-                     bg-white rounded-2xl px-8 py-9
-                     shadow-[0_20px_60px_rgba(0,0,0,0.12)]"
-          style={{ opacity: 0, transform: 'translateX(-40px)' }}
-        >
-          <span className="hw-eyebrow text-amber-600 mb-2 block">Make an Impact</span>
-          <h2 className="hw-heading-font text-3xl lg:text-4xl font-semibold text-[#1E3A5F] leading-tight mb-5">
-            Your donation<br />changes lives
-          </h2>
-          <DonationWidget />
-          <div className="mt-5 flex gap-5 border-t border-stone-100 pt-4 text-xs text-stone-400">
-            <div className="flex items-center gap-1.5">
-              <svg className="w-3.5 h-3.5 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
-              Impact Driven
-            </div>
-            <div className="flex items-center gap-1.5">
-              <svg className="w-3.5 h-3.5 text-[#1E3A5F]" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-              </svg>
-              Secure Giving
-            </div>
+        <DonationWidget />
+
+        <div className="mt-5 flex gap-5 border-t border-stone-100 pt-4 text-xs text-stone-400">
+          <div className="flex items-center gap-1.5">
+            <svg className="w-3.5 h-3.5 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+            Impact Driven
           </div>
-        </div>
-
-        {/* COL 2 — Girl: sits to the right of form, hand overlaps form (z-30 > z-10) */}
-        <div
-          ref={girlRef}
-          className="absolute bottom-0 pointer-events-none z-30"
-          style={{
-            left: 'clamp(270px, 30vw, 390px)',
-            width: 'clamp(280px, 34vw, 480px)',
-            transformOrigin: 'bottom center',
-            transform: 'scale(0.72) translateY(48px)',
-            transition: 'transform 0.08s linear',
-            marginBottom: '0px',
-          }}
-        >
-          <img
-            src="/girlwithoutbg.png"
-            alt="Girl supported by HealingWings"
-            className="w-full"
-            style={{ filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.15))' }}
-          />
-        </div>
-
-        {/* COL 3 — Quote, far right */}
-        <div
-          ref={textRef}
-          className="hw-donate-slide ml-auto relative z-20 max-w-[240px] text-right shrink-0 hidden lg:block pb-8"
-          style={{ opacity: 0, transform: 'translateX(40px)' }}
-        >
-          <div className="w-8 h-[2px] bg-amber-400 ml-auto mb-5" />
-          <p
-            className="text-[#1E3A5F] leading-[1.45] font-light"
-            style={{
-              fontFamily: "'Cormorant Garamond', Georgia, serif",
-              fontSize: 'clamp(1.4rem, 2vw, 1.85rem)',
-            }}
-          >
-            Every dollar provides safety, health, and hope for a girl in need.
-          </p>
-          <div className="w-8 h-[2px] bg-amber-400 ml-auto mt-5" />
+          <div className="flex items-center gap-1.5">
+            <svg className="w-3.5 h-3.5 text-[#1E3A5F]" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+            </svg>
+            Secure Giving
+          </div>
         </div>
       </div>
     </section>
