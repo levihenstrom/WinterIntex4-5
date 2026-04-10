@@ -235,7 +235,18 @@
   height: 100svh;
   scroll-snap-align: start;
   scroll-snap-stop: always;
-  overflow: hidden;
+  /* allow internal scroll if content exceeds viewport */
+  overflow-y: auto;
+  /* hide inner scrollbar */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.hw-snap-section::-webkit-scrollbar { display: none; }
+
+/* Final snap section — donor wall + footer */
+.hw-snap-final {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
 }
 
 /* ── Nav link dot separators ───────────────────────────────────── */

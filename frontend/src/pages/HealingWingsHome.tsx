@@ -382,8 +382,11 @@ export default function HealingWingsHome() {
       <MissionSection />
       <ApproachSection />
       <DonationBanner />
-      <DonorWallSection />
-      <Footer />
+      {/* Final snap — donor wall + footer together */}
+      <div className="hw-snap-final">
+        <DonorWallSection />
+        <Footer />
+      </div>
     </div>
   );
 }
