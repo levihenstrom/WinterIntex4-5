@@ -185,34 +185,31 @@ function ApproachSection() {
 // ─────────────────────────────────────────────────────────────────────────────
 function DonationBanner() {
   const sectionRef = useRef<HTMLElement>(null);
-  const girlRef = useRef<HTMLImageElement>(null);
+  const girlRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
 
-  // Scroll-based parallax scale for the girl
+  // Scroll-based scale — slower & more pronounced: 0.72 → 1.0
   useEffect(() => {
     const container = document.querySelector('.hw-snap-container') as HTMLElement;
     if (!container) return;
-
     const onScroll = () => {
       const section = sectionRef.current;
       const girl = girlRef.current;
       if (!section || !girl) return;
       const rect = section.getBoundingClientRect();
       const viewH = window.innerHeight;
-      // progress: 0 when section bottom enters view, 1 when fully in view
       const progress = Math.max(0, Math.min(1, 1 - rect.top / viewH));
-      const scale = 0.88 + progress * 0.12;       // 0.88 → 1.0
-      const translateY = (1 - progress) * 24;      // slides up subtly
+      const scale = 0.72 + progress * 0.28;       // 0.72 → 1.0 (very noticeable)
+      const translateY = (1 - progress) * 48;      // slides up 48px
       girl.style.transform = `scale(${scale}) translateY(${translateY}px)`;
     };
-
     container.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
     return () => container.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Fade-in card and text on enter
+  // Fade-in card and text
   useEffect(() => {
     const section = sectionRef.current;
     if (!section) return;
@@ -220,10 +217,10 @@ function DonationBanner() {
       ([entry]) => {
         if (entry.isIntersecting) {
           setTimeout(() => cardRef.current?.classList.add('hw-donate-in-left'), 80);
-          setTimeout(() => textRef.current?.classList.add('hw-donate-in-right'), 200);
+          setTimeout(() => textRef.current?.classList.add('hw-donate-in-right'), 250);
         }
       },
-      { threshold: 0.25 }
+      { threshold: 0.2 }
     );
     observer.observe(section);
     return () => observer.disconnect();
@@ -236,33 +233,32 @@ function DonationBanner() {
       className="hw-snap-section relative overflow-visible"
       style={{ background: 'linear-gradient(135deg, #f8f4ef 0%, #eee8e0 100%)' }}
     >
-      {/* Subtle warm texture rings */}
+      {/* Warm glow behind girl */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div style={{
-          position: 'absolute', right: '30%', top: '10%',
-          width: '500px', height: '500px', borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(217,119,6,0.07) 0%, transparent 70%)'
+          position: 'absolute', left: '42%', top: '5%',
+          width: '480px', height: '480px', borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(217,119,6,0.09) 0%, transparent 70%)'
         }} />
       </div>
 
-      {/* ── Main layout ── */}
-      <div className="relative w-full h-full flex items-center px-6 lg:px-16">
+      {/* ── Main 3-col layout: [FORM] [GIRL overlapping left] [QUOTE] ── */}
+      <div className="relative w-full h-full flex items-end lg:items-center px-6 lg:px-14 gap-0">
 
-        {/* LEFT — donation form card */}
+        {/* COL 1 — Donation form, wide on desktop */}
         <div
           ref={cardRef}
-          className="hw-donate-slide relative z-20 w-full max-w-[340px] shrink-0
-                     bg-white rounded-2xl px-7 py-8
-                     shadow-[0_20px_60px_rgba(0,0,0,0.13)]"
+          className="hw-donate-slide relative z-10 shrink-0
+                     w-full max-w-[420px] lg:max-w-[460px]
+                     bg-white rounded-2xl px-8 py-9
+                     shadow-[0_20px_60px_rgba(0,0,0,0.12)]"
           style={{ opacity: 0, transform: 'translateX(-40px)' }}
         >
           <span className="hw-eyebrow text-amber-600 mb-2 block">Make an Impact</span>
-          <h2 className="hw-heading-font text-3xl font-semibold text-[#1E3A5F] leading-tight mb-5">
+          <h2 className="hw-heading-font text-3xl lg:text-4xl font-semibold text-[#1E3A5F] leading-tight mb-5">
             Your donation<br />changes lives
           </h2>
-
           <DonationWidget />
-
           <div className="mt-5 flex gap-5 border-t border-stone-100 pt-4 text-xs text-stone-400">
             <div className="flex items-center gap-1.5">
               <svg className="w-3.5 h-3.5 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
@@ -279,37 +275,39 @@ function DonationBanner() {
           </div>
         </div>
 
-        {/* CENTER — transparent girl, overlaps below */}
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 z-30 pointer-events-none"
-             style={{ width: 'clamp(300px, 38vw, 520px)' }}>
+        {/* COL 2 — Girl: sits to the right of form, hand overlaps form (z-30 > z-10) */}
+        <div
+          ref={girlRef}
+          className="absolute bottom-0 pointer-events-none z-30"
+          style={{
+            left: 'clamp(260px, 30vw, 380px)',
+            width: 'clamp(280px, 34vw, 480px)',
+            transformOrigin: 'bottom center',
+            transform: 'scale(0.72) translateY(48px)',
+            transition: 'transform 0.08s linear',
+            marginBottom: '-60px',
+          }}
+        >
           <img
-            ref={girlRef}
             src="/girlwithoutbg.png"
             alt="Girl supported by HealingWings"
             className="w-full"
-            style={{
-              transformOrigin: 'bottom center',
-              transform: 'scale(0.88) translateY(24px)',
-              transition: 'transform 0.05s linear',
-              // overlap: let her stick out ~80px below the section
-              marginBottom: '-80px',
-              filter: 'drop-shadow(0 24px 48px rgba(0,0,0,0.18))',
-            }}
+            style={{ filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.15))' }}
           />
         </div>
 
-        {/* RIGHT — editorial text block */}
+        {/* COL 3 — Quote, far right */}
         <div
           ref={textRef}
-          className="hw-donate-slide ml-auto relative z-20 max-w-[280px] text-right hidden lg:block"
+          className="hw-donate-slide ml-auto relative z-20 max-w-[240px] text-right shrink-0 hidden lg:block pb-8"
           style={{ opacity: 0, transform: 'translateX(40px)' }}
         >
           <div className="w-8 h-[2px] bg-amber-400 ml-auto mb-5" />
           <p
-            className="text-[#1E3A5F] leading-[1.4] font-light"
+            className="text-[#1E3A5F] leading-[1.45] font-light"
             style={{
               fontFamily: "'Cormorant Garamond', Georgia, serif",
-              fontSize: 'clamp(1.5rem, 2.2vw, 2rem)',
+              fontSize: 'clamp(1.4rem, 2vw, 1.85rem)',
             }}
           >
             Every dollar provides safety, health, and hope for a girl in need.
