@@ -3,6 +3,7 @@ import {
   ResponsiveContainer,
   ComposedChart,
   Line,
+  LineChart,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -13,6 +14,8 @@ import {
   PieChart,
   Pie,
   Cell,
+  AreaChart,
+  Area,
 } from 'recharts';
 import { fetchJson } from '../../lib/apiClient';
 import { ErrorState, LoadingState } from '../../components/common/AsyncStatus';
@@ -54,6 +57,56 @@ function fmtMoney(n: number) {
 function fmtMoneyChart(n: number) {
   return formatUsdThousandsFromPhp(n);
 }
+
+/* ── Impact-snapshot helpers (mirrored from ImpactPage) ─────── */
+
+interface ApiImpactSnapshot {
+  snapshotId: number;
+  snapshotDate?: string | null;
+  metricPayloadJson?: string | null;
+  isPublished?: boolean | null;
+}
+
+interface MetricPayload {
+  total_residents: number;
+  donations_total_for_month: number;
+  avg_health_score: number;
+  avg_education_progress: number;
+}
+
+function asNum(v: unknown, fallback = 0): number {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function parseMetricPayload(raw: string): MetricPayload {
+  let parsed: Record<string, unknown> = {};
+  try {
+    parsed = JSON.parse(raw) as Record<string, unknown>;
+  } catch {
+    try { parsed = JSON.parse(raw.replace(/'/g, '"')) as Record<string, unknown>; } catch { parsed = {}; }
+  }
+  return {
+    total_residents: asNum(parsed.total_residents ?? parsed.residents_served),
+    donations_total_for_month: asNum(parsed.donations_total_for_month ?? parsed.donations_received_usd ?? parsed.donations_total),
+    avg_health_score: asNum(parsed.avg_health_score),
+    avg_education_progress: asNum(parsed.avg_education_progress),
+  };
+}
+
+const fmtShortMonth = (iso: string) =>
+  new Date(iso + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+
+const CHART_SNAPSHOT_LAST_INCLUSIVE = '2026-02-15';
+
+function snapshotIncludedInCharts(d: string): boolean {
+  return Boolean(d && d <= CHART_SNAPSHOT_LAST_INCLUSIVE);
+}
+
+const impactTT = {
+  contentStyle: { background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, fontFamily: 'Inter, sans-serif', fontSize: 12, boxShadow: '0 4px 20px rgba(0,0,0,0.08)' },
+  labelStyle: { color: '#1E3A5F', fontWeight: 700 as const },
+};
 
 interface NamedAmount {
   name: string;
@@ -276,6 +329,36 @@ export default function ReportsAnalyticsPage() {
       value: Number(x.amount),
     }));
   }, [donData]);
+
+  const [impactChartData, setImpactChartData] = useState<
+    { month: string; donations: number; healthScore: number; educationProgress: number }[]
+  >([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const rows = await fetchJson<ApiImpactSnapshot[]>('/api/public-impact/snapshots');
+        if (cancelled) return;
+        const published = rows
+          .filter((s) => s.isPublished)
+          .sort((a, b) => new Date(b.snapshotDate ?? '').getTime() - new Date(a.snapshotDate ?? '').getTime());
+        const valid = [...published].reverse().filter((s) => {
+          const p = parseMetricPayload(s.metricPayloadJson ?? '{}');
+          return p.avg_health_score > 0 || p.donations_total_for_month > 0;
+        });
+        const charted = valid.filter((s) => snapshotIncludedInCharts(s.snapshotDate ? new Date(s.snapshotDate).toISOString().slice(0, 10) : ''));
+        setImpactChartData(
+          charted.map((s) => {
+            const d = s.snapshotDate ? new Date(s.snapshotDate).toISOString().slice(0, 10) : '';
+            const p = parseMetricPayload(s.metricPayloadJson ?? '{}');
+            return { month: fmtShortMonth(d), donations: p.donations_total_for_month, healthScore: p.avg_health_score, educationProgress: p.avg_education_progress };
+          }),
+        );
+      } catch { /* non-critical — charts simply stay empty */ }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const loadingAny = donLoading || outLoading;
 
@@ -657,6 +740,82 @@ export default function ReportsAnalyticsPage() {
                   </table>
                 </div>
               </div>
+
+              {impactChartData.length > 0 && (
+                <>
+                  <h2 style={{ ...sectionTitle, fontSize: 18, marginTop: 28 }} id="resident-trends">
+                    Resident health &amp; education trends
+                  </h2>
+                  <p style={{ color: '#64748B', fontSize: 14, marginBottom: 16, maxWidth: 720 }}>
+                    Monthly snapshot trends for donations, wellness scores, and education progress across all residents.
+                  </p>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16, marginBottom: 16 }}>
+                    <div style={card}>
+                      <h3 style={{ fontFamily: 'Poppins, sans-serif', fontSize: 15, color: '#1E3A5F', marginBottom: 2 }}>Donations Raised</h3>
+                      <p style={{ fontSize: 12, color: '#94A3B8', marginBottom: 10 }}>Monthly &middot; USD</p>
+                      <ResponsiveContainer width="100%" height={210}>
+                        <AreaChart data={impactChartData} margin={{ top: 5, right: 8, left: 0, bottom: 0 }}>
+                          <defs><linearGradient id="gDonR" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#D97706" stopOpacity={0.18}/><stop offset="95%" stopColor="#D97706" stopOpacity={0}/></linearGradient></defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                          <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
+                          <YAxis tickFormatter={(v) => formatUsdThousandsFromPhp(Number(v), 1)} tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={52} />
+                          <Tooltip {...impactTT} itemStyle={{ color: '#D97706' }} formatter={(v) => [formatAmountMaybePhpAndUsd(Number(v), 'PHP'), 'Donations']} />
+                          <Area type="monotone" dataKey="donations" stroke="#D97706" strokeWidth={2.5} fill="url(#gDonR)" dot={{ r: 4, fill: '#D97706', strokeWidth: 0 }} activeDot={{ r: 6 }} />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
+
+                    <div style={card}>
+                      <h3 style={{ fontFamily: 'Poppins, sans-serif', fontSize: 15, color: '#1E3A5F', marginBottom: 2 }}>Average Health Score</h3>
+                      <p style={{ fontSize: 12, color: '#94A3B8', marginBottom: 10 }}>Monthly avg &middot; 1&ndash;5 scale</p>
+                      <ResponsiveContainer width="100%" height={210}>
+                        <LineChart data={impactChartData} margin={{ top: 5, right: 8, left: 0, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                          <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
+                          <YAxis domain={[2.5, 4.5]} tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={36} />
+                          <Tooltip {...impactTT} itemStyle={{ color: '#0D9488' }} formatter={(v) => [String(v), 'Wellness Score']} />
+                          <Line type="monotone" dataKey="healthScore" stroke="#0D9488" strokeWidth={2.5} dot={{ r: 5, fill: '#0D9488', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 7 }} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
+                    <div style={card}>
+                      <h3 style={{ fontFamily: 'Poppins, sans-serif', fontSize: 15, color: '#1E3A5F', marginBottom: 2 }}>Education Progress</h3>
+                      <p style={{ fontSize: 12, color: '#94A3B8', marginBottom: 10 }}>Monthly avg completion %</p>
+                      <ResponsiveContainer width="100%" height={200}>
+                        <AreaChart data={impactChartData} margin={{ top: 5, right: 8, left: 0, bottom: 0 }}>
+                          <defs><linearGradient id="gEduR" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#6B21A8" stopOpacity={0.16}/><stop offset="95%" stopColor="#6B21A8" stopOpacity={0}/></linearGradient></defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                          <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
+                          <YAxis domain={[0, 105]} tickFormatter={(v) => `${v}%`} tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={40} />
+                          <Tooltip {...impactTT} itemStyle={{ color: '#6B21A8' }} formatter={(v) => [`${v}%`, 'Progress']} />
+                          <Area type="monotone" dataKey="educationProgress" stroke="#6B21A8" strokeWidth={2} fill="url(#gEduR)" dot={{ r: 4, fill: '#6B21A8', strokeWidth: 0 }} activeDot={{ r: 6 }} />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
+
+                    <div style={card}>
+                      <h3 style={{ fontFamily: 'Poppins, sans-serif', fontSize: 15, color: '#1E3A5F', marginBottom: 2 }}>Health &amp; Education Trends</h3>
+                      <p style={{ fontSize: 12, color: '#94A3B8', marginBottom: 10 }}>Dual-axis &middot; score &amp; progress</p>
+                      <ResponsiveContainer width="100%" height={200}>
+                        <LineChart data={impactChartData} margin={{ top: 5, right: 12, left: 0, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                          <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
+                          <YAxis yAxisId="left" domain={[0, 105]} tickFormatter={(v) => `${v}%`} tick={{ fill: '#6B21A8', fontSize: 11 }} axisLine={false} tickLine={false} width={44} />
+                          <YAxis yAxisId="right" orientation="right" domain={[2.5, 4.5]} tick={{ fill: '#0D9488', fontSize: 11 }} axisLine={false} tickLine={false} width={36} />
+                          <Tooltip {...impactTT} />
+                          <Legend wrapperStyle={{ fontSize: '0.75rem', color: '#64748b' }} />
+                          <Line yAxisId="left" type="monotone" dataKey="educationProgress" name="Education %" stroke="#6B21A8" strokeWidth={2} dot={{ r: 3, fill: '#6B21A8', strokeWidth: 0 }} />
+                          <Line yAxisId="right" type="monotone" dataKey="healthScore" name="Health score" stroke="#0D9488" strokeWidth={2} dot={{ r: 3, fill: '#0D9488', strokeWidth: 0 }} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                </>
+              )}
             </>
           )}
         </section>
