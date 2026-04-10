@@ -26,7 +26,6 @@ function useFadeIn() {
   return ref;
 }
 
-// ── Image URLs ────────────────────────────────────────────────────────────────
 const HERO_IMG = '/girls.avif';
 const MISSION_IMG = '/free.avif';
 
@@ -41,14 +40,24 @@ interface PublicLiveStats {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Section 1 — Hero  (full-screen, chapter 1)
+// Section 1 — Hero  (snap chapter 1)
+// Glass metrics box lives at the bottom of this section.
 // ─────────────────────────────────────────────────────────────────────────────
-function HeroSection() {
+function HeroSection({
+  residentsServed,
+  safehousesActive,
+  reintegrationRatePct,
+  yearsOfImpact,
+}: {
+  residentsServed: number;
+  safehousesActive: number;
+  reintegrationRatePct: number;
+  yearsOfImpact: number;
+}) {
   return (
     <section
       id="hero"
-      className="relative flex flex-col"
-      style={{ minHeight: '100svh' }}
+      className="hw-snap-section relative flex flex-col"
     >
       {/* Full-bleed bg */}
       <div
@@ -57,18 +66,18 @@ function HeroSection() {
       />
       <div className="absolute inset-0 hw-hero-overlay" />
 
-      {/* Content — vertically centered */}
-      <div className="relative z-10 flex-1 flex flex-col items-center justify-center text-center px-6">
+      {/* Hero text — upper portion */}
+      <div className="relative z-10 flex-1 flex flex-col items-center justify-center text-center px-6 pb-8">
         <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-semibold text-white leading-tight max-w-4xl hw-heading-font hw-text-shadow-heavy">
           Every child deserves
           <br />
           <em>to heal and soar</em>
         </h1>
-        <p className="mt-6 text-base md:text-lg text-white/75 max-w-xl leading-relaxed hw-text-shadow-heavy font-light tracking-wide">
+        <p className="mt-5 text-base md:text-lg text-white/75 max-w-xl leading-relaxed hw-text-shadow-heavy font-light tracking-wide">
           HealingWings provides safe homes, counseling, and education for children who are survivors of
           trafficking and abuse in the World.
         </p>
-        <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
+        <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
           <a
             href="#donate"
             className="hw-btn-magenta inline-flex items-center gap-2 px-8 py-3.5 rounded-full font-semibold text-sm tracking-wide no-underline shadow-xl"
@@ -84,13 +93,17 @@ function HeroSection() {
         </div>
       </div>
 
-      {/* Scroll indicator */}
-      <div className="relative z-10 flex justify-center pb-10">
-        <div className="hw-scroll-bounce flex flex-col items-center gap-1 text-white/40">
-          <span className="text-[10px] tracking-widest uppercase">Scroll</span>
-          <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
+      {/* Glass metrics bar — pinned to bottom of hero */}
+      <div className="relative z-10 w-full px-4 pb-8">
+        <div className="mx-auto max-w-4xl bg-[#1E3A5F]/70 backdrop-blur-xl rounded-2xl shadow-2xl">
+          <div className="py-7 px-4 sm:px-8">
+            <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-white/20 gap-y-6 lg:gap-y-0 text-center">
+              <MetricCard target={residentsServed} suffix="+" label="Children Served" />
+              <MetricCard target={safehousesActive} label="Safe Homes" />
+              <MetricCard target={reintegrationRatePct} suffix="%" label="Reintegration Rate" />
+              <MetricCard target={yearsOfImpact} label="Years of Impact" />
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -98,46 +111,23 @@ function HeroSection() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Section 2 — Mission / About  (full-screen, chapter 2)
-// KPI numbers are embedded at the top of this section.
+// Section 2 — Mission / About  (snap chapter 2)
 // ─────────────────────────────────────────────────────────────────────────────
-function MissionSection({
-  residentsServed,
-  safehousesActive,
-  reintegrationRatePct,
-  yearsOfImpact,
-}: {
-  residentsServed: number;
-  safehousesActive: number;
-  reintegrationRatePct: number;
-  yearsOfImpact: number;
-}) {
+function MissionSection() {
   const fadeRef = useFadeIn();
 
   return (
     <section
       id="mission"
-      className="relative hw-bg-offwhite flex flex-col justify-center overflow-hidden"
-      style={{ minHeight: '100svh' }}
+      className="hw-snap-section relative hw-bg-offwhite flex items-center overflow-hidden"
     >
-      {/* KPI strip — top of section */}
-      <div className="w-full border-b border-stone-200/70 bg-white/60 backdrop-blur-sm">
-        <div className="max-w-5xl mx-auto px-6 py-8 grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
-          <MetricCard target={residentsServed} suffix="+" label="Children Served" />
-          <MetricCard target={safehousesActive} label="Safe Homes" />
-          <MetricCard target={reintegrationRatePct} suffix="%" label="Reintegration Rate" />
-          <MetricCard target={yearsOfImpact} label="Years of Impact" />
-        </div>
-      </div>
-
-      {/* Main content — 2-col photo + text */}
-      <div className="flex-1 flex items-center w-[95%] max-w-[1400px] mx-auto py-12 lg:py-16">
+      <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-8 py-10">
         <div
-          className="hw-fade-in hw-mission-card grid grid-cols-1 lg:grid-cols-2 w-full group cursor-default"
+          className="hw-fade-in hw-mission-card grid grid-cols-1 lg:grid-cols-2 w-full group cursor-default rounded-2xl overflow-hidden shadow-xl"
           ref={fadeRef}
         >
           {/* Photo */}
-          <div className="w-full h-[300px] md:h-[400px] lg:h-[520px] overflow-hidden rounded-2xl lg:rounded-r-none">
+          <div className="w-full h-[260px] md:h-[360px] lg:h-full overflow-hidden">
             <img
               src={MISSION_IMG}
               alt="A child in a safe space"
@@ -146,27 +136,27 @@ function MissionSection({
           </div>
 
           {/* Text */}
-          <div className="p-8 md:p-12 lg:p-14 flex flex-col justify-center bg-white lg:rounded-r-2xl">
+          <div className="p-7 md:p-10 lg:p-12 flex flex-col justify-center bg-white">
             <span className="hw-eyebrow">Our Mission</span>
-            <h2 className="hw-heading mt-3 text-3xl md:text-4xl font-semibold leading-snug hw-heading-font">
+            <h2 className="hw-heading mt-3 text-2xl md:text-3xl lg:text-4xl font-semibold leading-snug hw-heading-font">
               We believe every child deserves safety, healing, and a future.
             </h2>
-            <div className="mt-6 space-y-4 text-stone-500 leading-relaxed text-[15px] font-light">
+            <div className="mt-4 space-y-3 text-stone-500 leading-relaxed text-[14px] font-light">
               <p>
-                HealingWings provides safe homes and professional rehabilitation services for girl survivors of sexual abuse and trafficking, helping them successfully reintegrate into family life and society. With residential shelters serving girls aged 8 to 18, we work alongside local authorities and social welfare agencies to rescue, shelter, and restore.
+                HealingWings provides safe homes and professional rehabilitation services for girl survivors of sexual abuse and trafficking, helping them successfully reintegrate into family life and society.
               </p>
               <p>
-                The children are rescued by the local police department or anti-trafficking agents who refer the children through the Department of Social Welfare and Development (DSWD) to Lighthouse Sanctuary. The social worker in the sanctuary will assist the child in transitioning into their new environment.
+                With residential shelters serving girls aged 8 to 18, we work alongside local authorities and the Department of Social Welfare and Development (DSWD) to rescue, shelter, and restore.
               </p>
             </div>
-            <div className="mt-7 grid grid-cols-2 gap-3">
+            <div className="mt-5 grid grid-cols-2 gap-2.5">
               {[
-                { icon: <svg width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M3 12L12 3l9 9" /><path d="M9 21V12h6v9" /><path d="M3 12v9h18v-9" /></svg>, label: 'Safe Residential Homes' },
-                { icon: <svg width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M12 21C12 21 4 14.5 4 9a8 8 0 0 1 16 0c0 5.5-8 12-8 12z" /><path d="M12 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2z" fill="currentColor" /><path d="M12 11v3" /></svg>, label: 'Trauma Counseling' },
-                { icon: <svg width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" /></svg>, label: 'Education Programs' },
-                { icon: <svg width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>, label: 'Family Reintegration' },
+                { icon: <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M3 12L12 3l9 9" /><path d="M9 21V12h6v9" /><path d="M3 12v9h18v-9" /></svg>, label: 'Safe Residential Homes' },
+                { icon: <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M12 21C12 21 4 14.5 4 9a8 8 0 0 1 16 0c0 5.5-8 12-8 12z" /><path d="M12 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2z" fill="currentColor" /><path d="M12 11v3" /></svg>, label: 'Trauma Counseling' },
+                { icon: <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" /></svg>, label: 'Education Programs' },
+                { icon: <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>, label: 'Family Reintegration' },
               ].map((item) => (
-                <div key={item.label} className="flex items-center gap-2.5 text-stone-600 text-sm font-medium">
+                <div key={item.label} className="flex items-center gap-2 text-stone-600 text-[13px] font-medium">
                   <span className="hw-text-teal flex-shrink-0">{item.icon}</span>
                   <span>{item.label}</span>
                 </div>
@@ -174,7 +164,7 @@ function MissionSection({
             </div>
             <a
               href="#donate"
-              className="hw-btn-magenta inline-flex items-center gap-2 px-7 py-3 rounded-full font-semibold text-sm mt-8 no-underline self-start"
+              className="hw-btn-magenta inline-flex items-center gap-2 px-6 py-2.5 rounded-full font-semibold text-sm mt-6 no-underline self-start"
             >
               How We Help →
             </a>
@@ -186,15 +176,14 @@ function MissionSection({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Section 3 — Approach / Programs  (full-screen, chapter 3)
-// CarouselPillarsSection handles its own markup; wrap it in a full-screen shell.
+// Section 3 — Approach  (snap chapter 3)
 // ─────────────────────────────────────────────────────────────────────────────
 function ApproachSection() {
   return (
     <div
       id="programs"
-      className="flex flex-col justify-center"
-      style={{ minHeight: '100svh', background: '#D97706' }}
+      className="hw-snap-section flex flex-col justify-center"
+      style={{ background: '#D97706' }}
     >
       <CarouselPillarsSection />
     </div>
@@ -202,7 +191,7 @@ function ApproachSection() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Section 4 — Donate  (full-screen, chapter 4)
+// Section 4 — Donate  (snap chapter 4)
 // ─────────────────────────────────────────────────────────────────────────────
 function DonationBanner() {
   const ref = useFadeIn();
@@ -211,42 +200,32 @@ function DonationBanner() {
     <section
       id="donate"
       ref={ref}
-      className="relative flex flex-col justify-center bg-[#f6f1ff] px-6 lg:px-16"
-      style={{ minHeight: '100svh' }}
+      className="hw-snap-section relative flex flex-col justify-center bg-[#f6f1ff] px-6 lg:px-16"
     >
-      <div className="mx-auto max-w-5xl w-full py-16 lg:py-20">
-
-        {/* Section label */}
-        <div className="mb-10 text-center">
+      <div className="mx-auto max-w-5xl w-full py-10">
+        <div className="mb-8 text-center">
           <span className="hw-eyebrow">Make an Impact</span>
           <h2 className="hw-heading-font mt-3 text-4xl md:text-5xl font-semibold text-[#1E3A5F] leading-tight">
             Your donation<br />changes lives
           </h2>
         </div>
 
-        {/* PURPLE FRAME */}
         <div className="border-[5px] border-[#6B21A8]">
           <div className="p-[12px]">
             <div className="bg-[#efe6ff] shadow-lg">
-              <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] min-h-[320px]">
-
-                {/* IMAGE */}
-                <div className="relative overflow-hidden min-h-[220px]">
+              <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] min-h-[300px]">
+                <div className="relative overflow-hidden min-h-[200px]">
                   <img
                     src="/girl-portrait.png"
                     alt="HealingWings Resident"
                     className="h-full w-full object-cover object-center"
                   />
                   <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-black/10 to-transparent" />
-                  <div className="absolute bottom-6 left-6 max-w-[240px] text-white">
-                    <p className="text-sm leading-5 font-medium">
-                      Every contribution helps provide safety and hope.
-                    </p>
+                  <div className="absolute bottom-5 left-5 max-w-[220px] text-white">
+                    <p className="text-sm leading-5 font-medium">Every contribution helps provide safety and hope.</p>
                   </div>
                 </div>
-
-                {/* RIGHT SIDE */}
-                <div className="flex items-center px-8 py-8 lg:px-12">
+                <div className="flex items-center px-8 py-7 lg:px-10">
                   <div className="w-full">
                     <div className="bg-white p-5 shadow-md border border-stone-200">
                       <DonationWidget />
@@ -267,19 +246,17 @@ function DonationBanner() {
                     </div>
                   </div>
                 </div>
-
               </div>
             </div>
           </div>
         </div>
-
       </div>
     </section>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Donor Wall (final cap section)
+// Donor Wall (final, no snap — natural scroll after last chapter)
 // ─────────────────────────────────────────────────────────────────────────────
 const ALL_DONORS = [
   { name: "Maria F. Santos", size: "text-3xl", weight: "font-bold", opacity: 0.95 },
@@ -393,22 +370,18 @@ export default function HealingWingsHome() {
   }, []);
 
   return (
-    <div style={{ fontFamily: 'var(--hw-font-body)' }}>
+    // hw-snap-container enables CSS scroll snapping
+    <div className="hw-snap-container" style={{ fontFamily: 'var(--hw-font-body)' }}>
       <NavBar />
-      {/* Chapter 1 — Hero */}
-      <HeroSection />
-      {/* Chapter 2 — Mission / About (includes KPIs) */}
-      <MissionSection
+      <HeroSection
         residentsServed={impactKpis.residentsServed}
         safehousesActive={impactKpis.safehousesActive}
         reintegrationRatePct={impactKpis.reintegrationRatePct}
         yearsOfImpact={impactKpis.yearsOfImpact}
       />
-      {/* Chapter 3 — Programs / Approach */}
+      <MissionSection />
       <ApproachSection />
-      {/* Chapter 4 — Donate */}
       <DonationBanner />
-      {/* Final — Donor Wall */}
       <DonorWallSection />
       <Footer />
     </div>

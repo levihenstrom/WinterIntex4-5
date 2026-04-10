@@ -223,6 +223,21 @@
   box-shadow: 0 2px 12px rgba(0,0,0,0.15);
 }
 
+/* ── Scroll snap — cinematic chapter-by-chapter scrolling ──────── */
+.hw-snap-container {
+  height: 100svh;
+  overflow-y: scroll;
+  scroll-snap-type: y mandatory;
+  scroll-behavior: smooth;
+}
+
+.hw-snap-section {
+  height: 100svh;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  overflow: hidden;
+}
+
 /* ── Nav link dot separators ───────────────────────────────────── */
 .hw-nav-link {
   position: relative;
