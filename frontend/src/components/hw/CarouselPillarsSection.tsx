@@ -59,10 +59,10 @@ export default function CarouselPillarsSection() {
 // ... existing imports and array ...
 
   return (
-    <section id="programs" className="pt-16 pb-0" style={{ background: '#D97706' }}>
+    <section className="pt-16 pb-0">
       <div className="max-w-7xl mx-auto px-6 lg:px-10 mb-14 text-center">
         <span className="hw-eyebrow text-white/80" style={{ color: 'rgba(255,255,255,0.85)' }}>Our Approach</span>
-        <h2 className="text-3xl md:text-4xl font-extrabold mt-3 text-white" style={{ fontFamily: 'Poppins, sans-serif' }}>
+        <h2 className="text-3xl md:text-4xl font-semibold mt-3 text-white" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>
           Our Programs and Services
         </h2>
       </div>

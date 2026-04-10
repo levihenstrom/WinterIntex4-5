@@ -26,7 +26,6 @@ function useFadeIn() {
   return ref;
 }
 
-// ── Image URLs ────────────────────────────────────────────────────────────────
 const HERO_IMG = '/girls.avif';
 const MISSION_IMG = '/free.avif';
 
@@ -41,56 +40,10 @@ interface PublicLiveStats {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Section 1 — Hero
+// Section 1 — Hero  (snap chapter 1)
+// Glass metrics box lives at the bottom of this section.
 // ─────────────────────────────────────────────────────────────────────────────
-function HeroSection() {
-  return (
-    <section id="hero" className="relative flex flex-col" style={{ minHeight: '100svh' }}>
-      {/* Full-bleed bg */}
-      <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${HERO_IMG})` }} />
-      {/* Single transparent purple overlay — adjust opacity in hw.css :root */}
-      <div className="absolute inset-0 hw-hero-overlay" />
-      {/* Nav spacer */}
-      <div className="h-16 lg:h-[72px] flex-shrink-0" />
-      {/* Content */}
-      <div className="relative z-10 flex-1 flex flex-col items-center justify-center text-center px-6 py-16">
-        <h1
-          className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-white leading-tight max-w-4xl hw-heading-font hw-text-shadow-heavy"
-        >
-          Every child deserves
-          <br />
-          <span>to heal and soar</span>
-        </h1>
-        <p className="mt-6 text-base md:text-lg text-white/80 max-w-2xl leading-relaxed hw-text-shadow-heavy">
-          HealingWings provides safe homes, counseling, and education for children who are survivors of
-          trafficking and abuse in the World.
-        </p>
-        <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
-          <a href="#donate" className="hw-btn-magenta inline-flex items-center gap-2 px-8 py-3.5 rounded-full font-bold text-sm tracking-wide no-underline shadow-xl">
-            Donate Now →
-          </a>
-          <a href="#mission" className="hw-btn-ghost-white inline-flex items-center gap-2 px-8 py-3.5 rounded-full font-semibold text-sm tracking-wide no-underline shadow-xl">
-            Learn Our Story
-          </a>
-        </div>
-      </div>
-      {/* Scroll indicator */}
-      <div className="relative z-10 flex justify-center pb-10">
-        <div className="hw-scroll-bounce flex flex-col items-center gap-1 text-white/50">
-          <span className="text-[10px] tracking-widest uppercase">Scroll</span>
-          <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Section 2 — Impact Numbers Bar
-// ─────────────────────────────────────────────────────────────────────────────
-function ImpactBar({
+function HeroSection({
   residentsServed,
   safehousesActive,
   reintegrationRatePct,
@@ -102,13 +55,55 @@ function ImpactBar({
   yearsOfImpact: number;
 }) {
   return (
-    <section id="impact" className="relative z-20 mx-auto max-w-7xl w-[92%] -mt-20 sm:-mt-24 lg:-mt-28 bg-[#1E3A5F]/75 backdrop-blur-xl rounded-[2rem] shadow-2xl">
-      <div className="py-10 px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-white/20 gap-y-10 lg:gap-y-0 text-center">
-          <MetricCard target={residentsServed} suffix="+" label="children Served" />
-          <MetricCard target={safehousesActive} label="Safe Homes" />
-          <MetricCard target={reintegrationRatePct} suffix="%" label="Reintegration Rate" />
-          <MetricCard target={yearsOfImpact} label="Years of Impact" />
+    <section
+      id="hero"
+      className="hw-snap-section relative flex flex-col"
+    >
+      {/* Full-bleed bg */}
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: `url(${HERO_IMG})` }}
+      />
+      <div className="absolute inset-0 hw-hero-overlay" />
+
+      {/* Hero text — upper portion */}
+      <div className="relative z-10 flex-1 flex flex-col items-center justify-center text-center px-6 pb-8" style={{ paddingTop: '18vh' }}>
+        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-semibold text-white leading-tight max-w-4xl hw-heading-font hw-text-shadow-heavy">
+          Every child deserves
+          <br />
+          <em>to heal and soar</em>
+        </h1>
+        <p className="mt-3 text-base md:text-lg text-white/75 max-w-xl leading-relaxed hw-text-shadow-heavy font-light tracking-wide">
+          HealingWings provides safe homes, counseling, and education for children who are survivors of
+          trafficking and abuse in the World.
+        </p>
+        <div className="mt-4 flex flex-col sm:flex-row gap-4 justify-center">
+          <a
+            href="#donate"
+            className="hw-btn-magenta inline-flex items-center gap-2 px-8 py-3.5 rounded-full font-semibold text-sm tracking-wide no-underline shadow-xl"
+          >
+            Donate Now →
+          </a>
+          <a
+            href="#mission"
+            className="hw-btn-ghost-white inline-flex items-center gap-2 px-8 py-3.5 rounded-full font-medium text-sm tracking-wide no-underline"
+          >
+            Learn Our Story
+          </a>
+        </div>
+      </div>
+
+      {/* Glass metrics bar — pinned to bottom of hero */}
+      <div className="relative z-10 w-full px-4 pb-8">
+        <div className="mx-auto max-w-4xl bg-[#1E3A5F]/70 backdrop-blur-xl rounded-2xl shadow-2xl">
+          <div className="py-7 px-4 sm:px-8">
+            <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-white/20 gap-y-6 lg:gap-y-0 text-center">
+              <MetricCard target={residentsServed} suffix="+" label="Children Served" />
+              <MetricCard target={safehousesActive} label="Safe Homes" />
+              <MetricCard target={reintegrationRatePct} suffix="%" label="Reintegration Rate" />
+              <MetricCard target={yearsOfImpact} label="Years of Impact" />
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -116,106 +111,97 @@ function ImpactBar({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Section 3 — Mission Statement
+// Section 2 — Mission / About  (snap chapter 2)
+// Full-bleed image that transitions to a framed editorial layout on settle.
 // ─────────────────────────────────────────────────────────────────────────────
 function MissionSection() {
-  return (
-    <section id="mission" className="py-10 overflow-hidden hw-bg-offwhite">
-      <div className="w-[95%] max-w-[1600px] mx-auto">
-        <div className="hw-fade-in hw-mission-card grid grid-cols-1 lg:grid-cols-2 p-0 group cursor-default" ref={useFadeIn()}>
-          {/* Photo */}
-          <div className="w-full h-[320px] md:h-[420px] lg:h-auto overflow-hidden">
-            <img 
-              src={MISSION_IMG} 
-              alt="A child in a safe space" 
-              className="w-full h-full object-cover transition-transform duration-[1500ms] ease-out group-hover:scale-105" 
-            />
-          </div>
-          {/* Text */}
-          <div className="p-8 md:p-12 lg:p-14 flex flex-col justify-center">
-            <span className="hw-eyebrow">Our Mission</span>
-            <h2 className="hw-heading mt-3 text-3xl md:text-4xl font-extrabold leading-snug">
-              We believe every child deserves safety, healing, and a future.
-            </h2>
-            <div className="mt-6 space-y-4 text-stone-600 leading-relaxed text-base">
-              <p>
-                HealingWings provides safe homes and professional rehabilitation services for girl survivors of sexual abuse and trafficking, helping them successfully reintegrate into family life and society. With residential shelters serving girls aged 8 to 18, we work alongside local authorities and social welfare agencies to rescue, shelter, and restore.
-              </p>
-              <p>
-                 The children are rescued by the local police department or anti-trafficking agents who refer the children through the Department of Social Welfare and Development (DSWD) to Lighthouse Sanctuary. The social worker in the sanctuary will assist the child in transitioning into their new environment.
+  const sectionRef = useRef<HTMLElement>(null);
 
-              </p>
-            </div>
-            <div className="mt-7 grid grid-cols-2 gap-3">
-              {[
-                {
-                  icon: (
-                    <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-                      <path d="M3 12L12 3l9 9" /><path d="M9 21V12h6v9" /><path d="M3 12v9h18v-9" />
-                    </svg>
-                  ),
-                  label: 'Safe Residential Homes',
-                },
-                {
-                  icon: (
-                    <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-                      <path d="M12 21C12 21 4 14.5 4 9a8 8 0 0 1 16 0c0 5.5-8 12-8 12z" />
-                      <path d="M12 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2z" fill="currentColor" />
-                      <path d="M12 11v3" />
-                    </svg>
-                  ),
-                  label: 'Trauma Counseling',
-                },
-                {
-                  icon: (
-                    <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-                      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
-                      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
-                    </svg>
-                  ),
-                  label: 'Education Programs',
-                },
-                {
-                  icon: (
-                    <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                      <circle cx="9" cy="7" r="4" />
-                      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                    </svg>
-                  ),
-                  label: 'Family Reintegration',
-                },
-              ].map((item) => (
-                <div key={item.label} className="flex items-center gap-2.5 text-stone-700 text-sm font-medium">
-                  <span className="hw-text-teal flex-shrink-0">{item.icon}</span>
-                  <span>{item.label}</span>
-                </div>
-              ))}
-            </div>
-            <a
-              href="#donate"
-              className="hw-btn-magenta inline-flex items-center gap-2 px-7 py-3 rounded-full font-bold text-sm mt-8 no-underline"
-            >
-              How We Help →
-            </a>
-          </div>
-        </div>
-      </div>
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          // Short delay so user sees the full-bleed first, then the frame settles in
+          setTimeout(() => el.classList.add('hw-mission-framed'), 300);
+        } else {
+          el.classList.remove('hw-mission-framed');
+        }
+      },
+      { threshold: 0.6 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <section
+      id="mission"
+      ref={sectionRef}
+      className="hw-snap-section hw-mission-cinematic relative bg-white flex items-center justify-center overflow-hidden"
+    >
+      {/* Image wrapper — transitions from full-bleed to framed, contains text too */}
+      <div className="hw-mission-img-frame absolute inset-0 transition-all duration-700 ease-out overflow-hidden">
+        <img
+          src={MISSION_IMG}
+          alt="A child in a safe space"
+          className="w-full h-full object-cover"
+        />
+        {/* Gradient overlay for text readability */}
+        <div className="absolute inset-0" style={{
+          background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.3) 55%, rgba(0,0,0,0.05) 100%)'
+        }} />
+
+        {/* Text — lives inside the frame so it clips with rounded corners */}
+        <div className="absolute inset-0 flex flex-col justify-end px-8 md:px-16 lg:px-20 pb-10 md:pb-14">
+        {/* Eyebrow with pill backdrop */}
+        <span
+          className="hw-eyebrow mb-3 self-start px-3 py-1 rounded-full text-white tracking-widest"
+          style={{ background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', letterSpacing: '0.18em' }}
+        >
+          Our Mission
+        </span>
+        <h2
+          className="hw-heading-font text-white font-semibold leading-[1.1] max-w-2xl"
+          style={{ fontSize: 'clamp(2rem, 4.5vw, 3.75rem)' }}
+        >
+          We believe every child deserves safety, healing, and a future.
+        </h2>
+        <p className="mt-4 text-white/70 text-[15px] font-light leading-relaxed max-w-lg">
+          Safe homes, counseling, and education for girl survivors of trafficking and abuse — helping them heal and return to family life.
+        </p>
+        <a
+          href="#donate"
+          className="mt-5 inline-flex items-center gap-2 px-7 py-3 rounded-full font-semibold text-sm no-underline self-start text-white"
+          style={{ background: '#D97706' }}
+        >
+          How to Help →
+        </a>
+        </div>{/* end text */}
+      </div>{/* end hw-mission-img-frame */}
     </section>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Section 4 — Three Pillars
+// Section 3 — Approach  (snap chapter 3)
 // ─────────────────────────────────────────────────────────────────────────────
-// Legacy static Pillars Section removed — now using CarouselPillarsSection
-
-
+function ApproachSection() {
+  return (
+    <div
+      id="programs"
+      className="hw-snap-section flex flex-col justify-center"
+      style={{ background: '#D97706' }}
+    >
+      <CarouselPillarsSection />
+    </div>
+  );
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Section 4 — Donate  (snap chapter 4)
 // ─────────────────────────────────────────────────────────────────────────────
-// Section 8 — Donation CTA Banner (Legacy/Redesigned to "Broken Grid")
 function DonationBanner() {
   const ref = useFadeIn();
 
@@ -223,111 +209,65 @@ function DonationBanner() {
     <section
       id="donate"
       ref={ref}
-      className="bg-[#f6f1ff] px-6 py-10 lg:px-16"
+      className="hw-snap-section relative flex flex-col justify-center bg-[#f6f1ff] px-6 lg:px-16"
     >
-      <div className="mx-auto max-w-7xl">
+      <div className="mx-auto max-w-5xl w-full py-10">
+        <div className="mb-8 text-center">
+          <span className="hw-eyebrow">Make an Impact</span>
+          <h2 className="hw-heading-font mt-3 text-4xl md:text-5xl font-semibold text-[#1E3A5F] leading-tight">
+            Your donation<br />changes lives
+          </h2>
+        </div>
 
-        {/* PURPLE FRAME */}
-        <div className="border-[6px] border-[#6B21A8]">
-
-          {/* SPACE BETWEEN BORDER AND PANEL */}
-          <div className="p-[15px]">
-
-            {/* MAIN PANEL */}
+        <div className="border-[5px] border-[#6B21A8]">
+          <div className="p-[12px]">
             <div className="bg-[#efe6ff] shadow-lg">
-
-              <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] min-h-[280px]">
-
-                {/* IMAGE */}
-                <div className="relative overflow-hidden">
+              <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] min-h-[300px]">
+                <div className="relative overflow-hidden min-h-[200px]">
                   <img
                     src="/girl-portrait.png"
                     alt="HealingWings Resident"
                     className="h-full w-full object-cover object-center"
                   />
-
                   <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-black/10 to-transparent" />
-
-                  <div className="absolute bottom-6 left-6 max-w-[240px] text-white">
-                    <p className="text-sm leading-5 font-medium">
-                      Every contribution helps provide safety and hope.
-                    </p>
+                  <div className="absolute bottom-5 left-5 max-w-[220px] text-white">
+                    <p className="text-sm leading-5 font-medium">Every contribution helps provide safety and hope.</p>
                   </div>
                 </div>
-
-                {/* RIGHT SIDE */}
-                <div className="flex items-center px-8 py-6 lg:px-12">
+                <div className="flex items-center px-8 py-7 lg:px-10">
                   <div className="w-full">
-
-                    <div className="mb-4">
-                      <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#6B21A8]">
-                        Make an impact
-                      </p>
-
-                      <h2 className="hw-heading-font text-3xl font-extrabold text-stone-900">
-                        Your donation changes lives
-                      </h2>
-                    </div>
-
                     <div className="bg-white p-5 shadow-md border border-stone-200">
                       <DonationWidget />
-
                       <div className="mt-4 flex gap-6 border-t pt-4 text-sm">
-
                         <div className="flex items-center gap-2 text-stone-600">
-                          <svg
-                            className="w-4 h-4 text-[#0D9488]"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                              clipRule="evenodd"
-                            />
+                          <svg className="w-4 h-4 text-[#0D9488]" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                           </svg>
                           Impact Driven
                         </div>
-
                         <div className="flex items-center gap-2 text-stone-600">
-                          <svg
-                            className="w-4 h-4 text-[#6B21A8]"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-                              clipRule="evenodd"
-                            />
+                          <svg className="w-4 h-4 text-[#6B21A8]" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
                           </svg>
                           Secure Giving
                         </div>
-
                       </div>
                     </div>
-
                   </div>
                 </div>
-
               </div>
-
             </div>
-
           </div>
         </div>
-
       </div>
     </section>
   );
 }
 
-
 // ─────────────────────────────────────────────────────────────────────────────
-// Section 9 — Partners
+// Donor Wall (final, no snap — natural scroll after last chapter)
 // ─────────────────────────────────────────────────────────────────────────────
 const ALL_DONORS = [
-  // Row 1 - Large, prominent names
   { name: "Maria F. Santos", size: "text-3xl", weight: "font-bold", opacity: 0.95 },
   { name: "Benjamin A. Clark", size: "text-lg", weight: "font-medium", opacity: 0.6 },
   { name: "Liam & Sofia Walker", size: "text-2xl", weight: "font-semibold", opacity: 0.85 },
@@ -362,21 +302,12 @@ const ALL_DONORS = [
 
 function DonorWallSection() {
   type DonorParticle = {
-    id: number;
-    name: string;
-    size: string;
-    weight: string;
-    opacity: number;
-    left: string;
-    top: string;
-    duration: string;
-    delay: string;
+    id: number; name: string; size: string; weight: string; opacity: number;
+    left: string; top: string; duration: string; delay: string;
   };
-
   const particles: DonorParticle[] = useMemo(() =>
     ALL_DONORS.map((donor, i) => ({
-      id: i,
-      ...donor,
+      id: i, ...donor,
       left: `${(i * 7 + 3) % 90}%`,
       top: `${(i * 11 + 5) % 82}%`,
       duration: `${20 + (i % 7) * 5}s`,
@@ -386,21 +317,15 @@ function DonorWallSection() {
 
   return (
     <section className="relative overflow-hidden bg-white" style={{ minHeight: '420px' }}>
-      {/* Soft off-white gradient for depth */}
       <div className="absolute inset-0 bg-gradient-to-b from-[#FAFAF9] to-white z-0" />
-      
-      {/* Floating donor names in dark amber (#B45309) */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none select-none z-10">
         {particles.map((p) => (
           <div
             key={p.id}
             className={`absolute hw-animate-float hw-donor-name ${p.size} ${p.weight} text-[#B45309]`}
             style={{
-              left: p.left,
-              top: p.top,
-              opacity: p.opacity,
-              '--float-duration': p.duration,
-              '--float-delay': p.delay,
+              left: p.left, top: p.top, opacity: p.opacity,
+              '--float-duration': p.duration, '--float-delay': p.delay,
               letterSpacing: '0.01em',
             } as React.CSSProperties & { '--float-duration': string; '--float-delay': string }}
           >
@@ -408,14 +333,12 @@ function DonorWallSection() {
           </div>
         ))}
       </div>
-
-      {/* Centered text overlay with ultra-transparent glass card */}
       <div className="relative z-10 flex flex-col items-center justify-center text-center pointer-events-none" style={{ minHeight: '420px', padding: '80px 24px' }}>
-        <div className="bg-white/10 backdrop-blur-md border border-white/30 rounded-3xl p-8 lg:p-12 shadow-[0_8px_32px_rgba(30,58,95,0.06)] max-w-3xl">
-          <h2 className="hw-heading-font text-[#1E3A5F] font-extrabold text-4xl lg:text-5xl tracking-tight leading-tight mix-blend-multiply mb-4">
+        <div className="bg-white/10 backdrop-blur-md rounded-3xl p-8 lg:p-12 shadow-[0_8px_32px_rgba(30,58,95,0.06)] max-w-3xl">
+          <h2 className="hw-heading-font text-[#1E3A5F] font-semibold text-4xl lg:text-5xl leading-tight mix-blend-multiply mb-4">
             Thank you to our Donors
           </h2>
-          <p className="text-stone-600/90 text-lg lg:text-xl font-medium tracking-wide">
+          <p className="text-stone-600/90 text-lg lg:text-xl font-light tracking-wide">
             Each of these names has made a contribution and a lasting impact on the lives of our children.
           </p>
         </div>
@@ -423,7 +346,6 @@ function DonorWallSection() {
     </section>
   );
 }
-
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Page
@@ -451,28 +373,29 @@ export default function HealingWingsHome() {
           yearsOfImpact,
         });
       })
-      .catch(() => {
-        // Keep defaults when live stats are unavailable.
-      });
+      .catch(() => {});
     return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
-    <div style={{ fontFamily: 'var(--hw-font-body)' }}>
+    // hw-snap-container enables CSS scroll snapping
+    <div className="hw-snap-container" style={{ fontFamily: 'var(--hw-font-body)' }}>
       <NavBar />
-      <HeroSection />
-      <ImpactBar
+      <HeroSection
         residentsServed={impactKpis.residentsServed}
         safehousesActive={impactKpis.safehousesActive}
         reintegrationRatePct={impactKpis.reintegrationRatePct}
         yearsOfImpact={impactKpis.yearsOfImpact}
       />
       <MissionSection />
-      <CarouselPillarsSection />
+      <ApproachSection />
       <DonationBanner />
-      <DonorWallSection />
-      <Footer />
+      {/* Final snap — donor wall + footer together */}
+      <div className="hw-snap-final">
+        <DonorWallSection />
+        <Footer />
+      </div>
     </div>
   );
 }
