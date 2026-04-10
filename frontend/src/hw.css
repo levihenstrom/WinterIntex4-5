@@ -249,6 +249,26 @@
   scroll-snap-stop: always;
 }
 
+/* ── Mission cinematic: full-bleed → framed transition ─────────── */
+.hw-mission-cinematic .hw-mission-img-frame {
+  inset: 0;
+  border-radius: 0;
+  transition: inset 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+              border-radius 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hw-mission-cinematic.hw-mission-framed .hw-mission-img-frame {
+  inset: 24px;
+  border-radius: 16px;
+}
+
+@media (min-width: 768px) {
+  .hw-mission-cinematic.hw-mission-framed .hw-mission-img-frame {
+    inset: 40px;
+    border-radius: 20px;
+  }
+}
+
 /* ── Nav link dot separators ───────────────────────────────────── */
 .hw-nav-link {
   position: relative;

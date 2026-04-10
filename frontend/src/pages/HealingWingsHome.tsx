@@ -67,17 +67,17 @@ function HeroSection({
       <div className="absolute inset-0 hw-hero-overlay" />
 
       {/* Hero text — upper portion */}
-      <div className="relative z-10 flex-1 flex flex-col items-center justify-center text-center px-6 pb-8">
+      <div className="relative z-10 flex-1 flex flex-col items-center justify-center text-center px-6 pb-8" style={{ paddingTop: '18vh' }}>
         <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-semibold text-white leading-tight max-w-4xl hw-heading-font hw-text-shadow-heavy">
           Every child deserves
           <br />
           <em>to heal and soar</em>
         </h1>
-        <p className="mt-5 text-base md:text-lg text-white/75 max-w-xl leading-relaxed hw-text-shadow-heavy font-light tracking-wide">
+        <p className="mt-3 text-base md:text-lg text-white/75 max-w-xl leading-relaxed hw-text-shadow-heavy font-light tracking-wide">
           HealingWings provides safe homes, counseling, and education for children who are survivors of
           trafficking and abuse in the World.
         </p>
-        <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+        <div className="mt-4 flex flex-col sm:flex-row gap-4 justify-center">
           <a
             href="#donate"
             className="hw-btn-magenta inline-flex items-center gap-2 px-8 py-3.5 rounded-full font-semibold text-sm tracking-wide no-underline shadow-xl"
@@ -112,65 +112,74 @@ function HeroSection({
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Section 2 — Mission / About  (snap chapter 2)
+// Full-bleed image that transitions to a framed editorial layout on settle.
 // ─────────────────────────────────────────────────────────────────────────────
 function MissionSection() {
-  const fadeRef = useFadeIn();
+  const sectionRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          // Short delay so user sees the full-bleed first, then the frame settles in
+          setTimeout(() => el.classList.add('hw-mission-framed'), 300);
+        } else {
+          el.classList.remove('hw-mission-framed');
+        }
+      },
+      { threshold: 0.6 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <section
       id="mission"
-      className="hw-snap-section relative hw-bg-offwhite flex items-center overflow-hidden"
+      ref={sectionRef}
+      className="hw-snap-section hw-mission-cinematic relative bg-white flex items-center justify-center overflow-hidden"
     >
-      <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-8 py-10">
-        <div
-          className="hw-fade-in hw-mission-card grid grid-cols-1 lg:grid-cols-2 w-full group cursor-default rounded-2xl overflow-hidden shadow-xl"
-          ref={fadeRef}
-        >
-          {/* Photo */}
-          <div className="w-full h-[260px] md:h-[360px] lg:h-full overflow-hidden">
-            <img
-              src={MISSION_IMG}
-              alt="A child in a safe space"
-              className="w-full h-full object-cover transition-transform duration-[1500ms] ease-out group-hover:scale-105"
-            />
-          </div>
+      {/* Image wrapper — transitions from full-bleed to framed, contains text too */}
+      <div className="hw-mission-img-frame absolute inset-0 transition-all duration-700 ease-out overflow-hidden">
+        <img
+          src={MISSION_IMG}
+          alt="A child in a safe space"
+          className="w-full h-full object-cover"
+        />
+        {/* Gradient overlay for text readability */}
+        <div className="absolute inset-0" style={{
+          background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.3) 55%, rgba(0,0,0,0.05) 100%)'
+        }} />
 
-          {/* Text */}
-          <div className="p-7 md:p-10 lg:p-12 flex flex-col justify-center bg-white">
-            <span className="hw-eyebrow">Our Mission</span>
-            <h2 className="hw-heading mt-3 text-2xl md:text-3xl lg:text-4xl font-semibold leading-snug hw-heading-font">
-              We believe every child deserves safety, healing, and a future.
-            </h2>
-            <div className="mt-4 space-y-3 text-stone-500 leading-relaxed text-[14px] font-light">
-              <p>
-                HealingWings provides safe homes and professional rehabilitation services for girl survivors of sexual abuse and trafficking, helping them successfully reintegrate into family life and society.
-              </p>
-              <p>
-                With residential shelters serving girls aged 8 to 18, we work alongside local authorities and the Department of Social Welfare and Development (DSWD) to rescue, shelter, and restore.
-              </p>
-            </div>
-            <div className="mt-5 grid grid-cols-2 gap-2.5">
-              {[
-                { icon: <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M3 12L12 3l9 9" /><path d="M9 21V12h6v9" /><path d="M3 12v9h18v-9" /></svg>, label: 'Safe Residential Homes' },
-                { icon: <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M12 21C12 21 4 14.5 4 9a8 8 0 0 1 16 0c0 5.5-8 12-8 12z" /><path d="M12 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2z" fill="currentColor" /><path d="M12 11v3" /></svg>, label: 'Trauma Counseling' },
-                { icon: <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" /></svg>, label: 'Education Programs' },
-                { icon: <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>, label: 'Family Reintegration' },
-              ].map((item) => (
-                <div key={item.label} className="flex items-center gap-2 text-stone-600 text-[13px] font-medium">
-                  <span className="hw-text-teal flex-shrink-0">{item.icon}</span>
-                  <span>{item.label}</span>
-                </div>
-              ))}
-            </div>
-            <a
-              href="#donate"
-              className="hw-btn-magenta inline-flex items-center gap-2 px-6 py-2.5 rounded-full font-semibold text-sm mt-6 no-underline self-start"
-            >
-              How We Help →
-            </a>
-          </div>
-        </div>
-      </div>
+        {/* Text — lives inside the frame so it clips with rounded corners */}
+        <div className="absolute inset-0 flex flex-col justify-end px-8 md:px-16 lg:px-20 pb-10 md:pb-14">
+        {/* Eyebrow with pill backdrop */}
+        <span
+          className="hw-eyebrow mb-3 self-start px-3 py-1 rounded-full text-white tracking-widest"
+          style={{ background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', letterSpacing: '0.18em' }}
+        >
+          Our Mission
+        </span>
+        <h2
+          className="hw-heading-font text-white font-semibold leading-[1.1] max-w-2xl"
+          style={{ fontSize: 'clamp(2rem, 4.5vw, 3.75rem)' }}
+        >
+          We believe every child deserves safety, healing, and a future.
+        </h2>
+        <p className="mt-4 text-white/70 text-[15px] font-light leading-relaxed max-w-lg">
+          Safe homes, counseling, and education for girl survivors of trafficking and abuse — helping them heal and return to family life.
+        </p>
+        <a
+          href="#donate"
+          className="mt-5 inline-flex items-center gap-2 px-7 py-3 rounded-full font-semibold text-sm no-underline self-start text-white"
+          style={{ background: '#D97706' }}
+        >
+          How to Help →
+        </a>
+        </div>{/* end text */}
+      </div>{/* end hw-mission-img-frame */}
     </section>
   );
 }
