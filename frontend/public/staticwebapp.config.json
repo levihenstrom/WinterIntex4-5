@@ -23,6 +23,18 @@
       "headers": {
         "Content-Type": "application/javascript"
       }
+    },
+    {
+      "route": "/*.svg",
+      "headers": {
+        "Content-Type": "image/svg+xml"
+      }
+    },
+    {
+      "route": "/*.png",
+      "headers": {
+        "Content-Type": "image/png"
+      }
     }
   ],
   "mimeTypes": {
