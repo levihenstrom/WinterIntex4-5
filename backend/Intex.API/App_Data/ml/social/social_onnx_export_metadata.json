@@ -78,16 +78,16 @@
     "donation_value_log1p": {
       "onnx_input_name": "X",
       "onnx_bytes": 752,
-      "max_abs_diff_sklearn_vs_onnx": 2.6183341717000985e-07,
-      "sklearn_preview": 7.467207169959796,
+      "max_abs_diff_sklearn_vs_onnx": 2.6183442614069463e-07,
+      "sklearn_preview": 7.467207169958787,
       "onnx_preview": 7.467207431793213,
       "joblib_source": "donation_value_log1p_pipeline.joblib"
     },
     "p_any_referral": {
       "onnx_input_name": "X",
       "onnx_bytes": 1378,
-      "max_abs_diff_inner_sklearn_vs_onnx": 2.0261068822691186e-08,
-      "inner_sklearn_proba_preview": 0.8196983730838103,
+      "max_abs_diff_inner_sklearn_vs_onnx": 2.0261072486427167e-08,
+      "inner_sklearn_proba_preview": 0.8196983730838067,
       "onnx_proba_preview": 0.8196983933448792,
       "joblib_source": "any_referral_classifier_pipeline.joblib",
       "unwrap": "used_fold0_inner_pipeline"
